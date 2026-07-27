@@ -1,11 +1,12 @@
 package com.cosmocraft.trading_cells.feature.converter.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.ConverterRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.converter.application.port.input.ConverterUseCase;
+import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterCycle;
 import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterStage;
-import com.cosmocraft.trading_cells.feature.machines.application.MachineSettings;
-import com.cosmocraft.trading_cells.feature.incubators.adapters.input.CapturedMobStackAdapter;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubatorKind;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.input.VillagerCapturerItem;
+import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -17,7 +18,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
-import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -42,12 +42,12 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     private static final String STAGE_TICKS_TAG = "StageTicks";
     private static final String CURED_READY_TAG = "CuredReady";
     private static final String CURE_DISCOUNT_TAG = "TradingCellsCureDiscount";
-    private static final int[] VILLAGER_SLOTS = new int[]{VILLAGER_SLOT};
     private static final int[] POTION_SLOTS = new int[]{1, 2, 3, 4};
     private static final int[] APPLE_SLOTS = new int[]{5, 6, 7, 8};
     private static final int[] NO_SLOTS = new int[0];
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
+    private final ConverterUseCase converterService = FeatureComposition.converter();
     private ConverterStage stage = ConverterStage.IDLE;
     private int stageTicks;
     private boolean curedReady;
@@ -59,7 +59,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
                 case 0 -> stage.ordinal();
                 case 1 -> stageTicks;
                 case 2 -> curedReady ? 1 : 0;
-                case 3 -> stage.durationTicks();
+                case 3 -> converterService.durationTicks(stage);
                 default -> 0;
             };
         }
@@ -109,7 +109,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
         return items.get(VILLAGER_SLOT).copy();
     }
 
-    public InteractionResult insertVillagerFromCapturer(ItemStack stack, Player player) {
+    public InteractionResult insertVillagerFromCapturer(ItemStack stack) {
         if (hasStoredVillager()) {
             return InteractionResult.SUCCESS_SERVER;
         }
@@ -117,7 +117,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
             return InteractionResult.PASS;
         }
         items.set(VILLAGER_SLOT, stack.copyWithCount(1));
-        VillagerCapturerItem.clearCapturedVillager(stack);
+        CapturedMobStackAdapter.clearData(CapturedMobKind.VILLAGER, stack);
         stage = ConverterStage.IDLE;
         stageTicks = 0;
         curedReady = false;
@@ -132,15 +132,18 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
         if (!hasStoredVillager()) {
             return InteractionResult.SUCCESS_SERVER;
         }
-        if (VillagerCapturerItem.hasCapturedVillager(stack)) {
+        if (CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)) {
             return InteractionResult.SUCCESS_SERVER;
         }
-        CompoundTag data = VillagerCapturerItem.getCapturedVillagerData(items.get(VILLAGER_SLOT));
+        CompoundTag data = CapturedMobStackAdapter.copyData(
+                CapturedMobKind.VILLAGER,
+                items.get(VILLAGER_SLOT)
+        );
         if (data == null) {
             return InteractionResult.FAIL;
         }
         ItemStack target = stack.getCount() <= 1 ? stack : new ItemStack(stack.getItem());
-        VillagerCapturerItem.setCapturedVillagerData(target, data);
+        CapturedMobStackAdapter.setData(CapturedMobKind.VILLAGER, target, data);
         if (target != stack) {
             stack.shrink(1);
             if (!player.getInventory().add(target)) {
@@ -160,43 +163,39 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
         if (level == null || level.isClientSide()) {
             return;
         }
-        if (!isAdultVillager(items.get(VILLAGER_SLOT))) {
-            cancelProcess();
-            return;
-        }
-
-        if (stage == ConverterStage.IDLE) {
-            if (!curedReady && hasIngredient(POTION_SLOTS, true) && hasIngredient(APPLE_SLOTS, false)) {
+        boolean canStart = hasIngredient(POTION_SLOTS, true)
+                && hasIngredient(APPLE_SLOTS, false);
+        ConverterCycle.Step step = converterService.advance(
+                stage,
+                stageTicks,
+                isAdultVillager(items.get(VILLAGER_SLOT)),
+                canStart,
+                curedReady
+        );
+        stage = step.stage();
+        stageTicks = step.ticks();
+        switch (step.transition()) {
+            case IDLE -> {
+                // No state mutation is required while the converter remains idle.
+            }
+            case STARTED -> {
                 consumeIngredient(POTION_SLOTS, true);
                 consumeIngredient(APPLE_SLOTS, false);
-                stage = ConverterStage.INFECTING;
-                stageTicks = 0;
                 markChangedAndSync();
             }
-            return;
-        }
-
-        stageTicks++;
-        if (stageTicks < stage.durationTicks()) {
-            setChanged();
-            if (stageTicks % 20 == 0) {
+            case ADVANCED -> {
+                setChanged();
+                if (stageTicks % 20 == 0) {
+                    markChangedAndSync();
+                }
+            }
+            case INFECTED, CANCELLED -> markChangedAndSync();
+            case CURED -> {
+                applyCureDiscount();
+                curedReady = true;
                 markChangedAndSync();
             }
-            return;
         }
-
-        if (stage == ConverterStage.INFECTING) {
-            stage = ConverterStage.CURING;
-            stageTicks = 0;
-            markChangedAndSync();
-            return;
-        }
-
-        applyCureDiscount();
-        stage = ConverterStage.IDLE;
-        stageTicks = 0;
-        curedReady = true;
-        markChangedAndSync();
     }
 
     @Override
@@ -205,7 +204,11 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     }
 
     @Override
-    public @Nullable AbstractContainerMenu createMenu(int containerId, @NonNull Inventory inventory, @NonNull Player player) {
+    public @NonNull AbstractContainerMenu createMenu(
+            int containerId,
+            @NonNull Inventory inventory,
+            @NonNull Player player
+    ) {
         return new ConverterMenu(containerId, inventory, this, dataAccess);
     }
 
@@ -338,7 +341,11 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
             items.set(slot, input.read(SLOT_TAG_PREFIX + slot, ItemStack.CODEC).orElse(ItemStack.EMPTY));
         }
         stage = ConverterStage.fromId(input.getIntOr(STAGE_TAG, 0));
-        stageTicks = Math.max(0, Math.min(stage.durationTicks(), input.getIntOr(STAGE_TICKS_TAG, 0)));
+        stageTicks = Math.clamp(
+                input.getIntOr(STAGE_TICKS_TAG, 0),
+                0,
+                converterService.durationTicks(stage)
+        );
         curedReady = input.getBooleanOr(CURED_READY_TAG, false);
     }
 
@@ -371,24 +378,11 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     }
 
     private void applyCureDiscount() {
-        if (level == null) {
-            return;
-        }
-        Villager villager = VillagerCapturerItem.createCapturedVillager(level, items.get(VILLAGER_SLOT), worldPosition);
-        if (villager == null) {
-            return;
-        }
-        int current = villager.getPersistentData().getInt(CURE_DISCOUNT_TAG).orElse(0);
-        villager.getPersistentData().putInt(
-                CURE_DISCOUNT_TAG,
-                Math.min(
-                        MachineSettings.values().converterMaximumCureDiscount(),
-                        current + MachineSettings.values().converterCureDiscountPerCycle()
-                )
-        );
-        VillagerCapturerItem.setCapturedVillagerData(
+        CapturedMobStackAdapter.updatePersistentInt(
+                CapturedMobKind.VILLAGER,
                 items.get(VILLAGER_SLOT),
-                VillagerCapturerItem.createCapturedVillagerData(villager)
+                CURE_DISCOUNT_TAG,
+                converterService::increasedCureDiscount
         );
     }
 
@@ -424,8 +418,8 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     }
 
     private static boolean isAdultVillager(ItemStack stack) {
-        return CapturedMobStackAdapter.isFilledCapturer(IncubatorKind.VILLAGER, stack)
-                && !CapturedMobStackAdapter.isBaby(IncubatorKind.VILLAGER, stack);
+        return CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)
+                && !CapturedMobStackAdapter.isBaby(CapturedMobKind.VILLAGER, stack);
     }
 
     private static boolean isPotionSlot(int slot) {

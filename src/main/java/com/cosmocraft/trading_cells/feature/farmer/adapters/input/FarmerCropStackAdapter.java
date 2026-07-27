@@ -51,12 +51,13 @@ public final class FarmerCropStackAdapter {
     }
 
     public static BlockState cropState(FarmerCrop crop, int growthTicks, int maxGrowthTicks) {
-        int clampedTicks = Math.max(0, Math.min(maxGrowthTicks, growthTicks));
+        int duration = Math.max(0, maxGrowthTicks);
+        int clampedTicks = Math.clamp(growthTicks, 0, duration);
         return switch (crop) {
-            case WHEAT -> Blocks.WHEAT.defaultBlockState().setValue(CropBlock.AGE, stage(clampedTicks, maxGrowthTicks, 7));
-            case CARROT -> Blocks.CARROTS.defaultBlockState().setValue(CropBlock.AGE, stage(clampedTicks, maxGrowthTicks, 7));
-            case POTATO -> Blocks.POTATOES.defaultBlockState().setValue(CropBlock.AGE, stage(clampedTicks, maxGrowthTicks, 7));
-            case BEETROOT -> Blocks.BEETROOTS.defaultBlockState().setValue(BeetrootBlock.AGE, stage(clampedTicks, maxGrowthTicks, 3));
+            case WHEAT -> Blocks.WHEAT.defaultBlockState().setValue(CropBlock.AGE, stage(clampedTicks, duration, 7));
+            case CARROT -> Blocks.CARROTS.defaultBlockState().setValue(CropBlock.AGE, stage(clampedTicks, duration, 7));
+            case POTATO -> Blocks.POTATOES.defaultBlockState().setValue(CropBlock.AGE, stage(clampedTicks, duration, 7));
+            case BEETROOT -> Blocks.BEETROOTS.defaultBlockState().setValue(BeetrootBlock.AGE, stage(clampedTicks, duration, 3));
             case NONE -> Blocks.AIR.defaultBlockState();
         };
     }

@@ -3,8 +3,8 @@ package com.cosmocraft.trading_cells.feature.breeders.adapters.output.client;
 import com.cosmocraft.trading_cells.feature.breeders.adapters.input.BreederBlock;
 import com.cosmocraft.trading_cells.feature.breeders.adapters.input.BreederBlockEntity;
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederKind;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.input.PiglinCapturerItem;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.input.VillagerCapturerItem;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.MachineEntityRenderScales;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -22,7 +22,6 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -111,9 +110,33 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
         double sideZ = side.getStepZ();
         double backX = -state.facing.getStepX() * PARENT_BACK_OFFSET;
         double backZ = -state.facing.getStepZ() * PARENT_BACK_OFFSET;
+        EntitySubmitContext context = new EntitySubmitContext(
+                state.lightCoords,
+                poseStack,
+                submitNodeCollector,
+                camera
+        );
 
-        submitEntity(state.parentA, state.parentAScale, 0.5D - sideX * PARENT_SIDE_OFFSET + backX, ENTITY_Y, 0.5D - sideZ * PARENT_SIDE_OFFSET + backZ, state.lightCoords, poseStack, submitNodeCollector, camera);
-        submitEntity(state.parentB, state.parentBScale, 0.5D + sideX * PARENT_SIDE_OFFSET + backX, ENTITY_Y, 0.5D + sideZ * PARENT_SIDE_OFFSET + backZ, state.lightCoords, poseStack, submitNodeCollector, camera);
+        submitEntity(
+                state.parentA,
+                state.parentAScale,
+                new Vec3(
+                        0.5D - sideX * PARENT_SIDE_OFFSET + backX,
+                        ENTITY_Y,
+                        0.5D - sideZ * PARENT_SIDE_OFFSET + backZ
+                ),
+                context
+        );
+        submitEntity(
+                state.parentB,
+                state.parentBScale,
+                new Vec3(
+                        0.5D + sideX * PARENT_SIDE_OFFSET + backX,
+                        ENTITY_Y,
+                        0.5D + sideZ * PARENT_SIDE_OFFSET + backZ
+                ),
+                context
+        );
     }
 
     private static void submitBedPart(BlockModelRenderState bedState, Direction facing, boolean head, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int lightCoords) {
@@ -132,31 +155,37 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
         poseStack.popPose();
     }
 
-    private void submitEntity(@Nullable EntityRenderState entityState, float scale, double x, double y, double z, int lightCoords, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+    private void submitEntity(
+            @Nullable EntityRenderState entityState,
+            float scale,
+            Vec3 position,
+            EntitySubmitContext context
+    ) {
         if (entityState == null) {
             return;
         }
-        PreviewEntityRenderUtil.applyLight(entityState, lightCoords);
-        poseStack.pushPose();
-        poseStack.translate(x, y, z);
-        poseStack.scale(scale, scale, scale);
-        entityRenderer.submit(entityState, camera, 0.0D, 0.0D, 0.0D, poseStack, submitNodeCollector);
-        poseStack.popPose();
+        PreviewEntityRenderUtil.applyLight(entityState, context.lightCoords());
+        context.poseStack().pushPose();
+        context.poseStack().translate(position.x(), position.y(), position.z());
+        context.poseStack().scale(scale, scale, scale);
+        entityRenderer.submit(
+                entityState,
+                context.camera(),
+                0.0D,
+                0.0D,
+                0.0D,
+                context.poseStack(),
+                context.collector()
+        );
+        context.poseStack().popPose();
     }
 
     private @Nullable EntityRenderState extractParent(Level level, ItemStack stack, BreederKind kind, Direction lookDirection, float partialTicks, int lightCoords) {
         Entity entity = null;
-        if (kind == BreederKind.VILLAGER) {
-            CompoundTag data = VillagerCapturerItem.getCapturedVillagerData(stack);
-            if (data != null) {
-                entity = VillagerCapturerItem.createCapturedVillager(level, data, BlockPos.ZERO);
-            }
-        } else {
-            CompoundTag data = PiglinCapturerItem.getCapturedPiglinData(stack);
-            if (data != null) {
-                entity = PiglinCapturerItem.createCapturedPiglin(level, data, BlockPos.ZERO);
-            }
-        }
+        CapturedMobKind capturedKind = kind == BreederKind.VILLAGER
+                ? CapturedMobKind.VILLAGER
+                : CapturedMobKind.PIGLIN;
+        entity = CapturedMobStackAdapter.createEntity(capturedKind, level, stack, BlockPos.ZERO);
 
         if (entity == null) {
             return null;
@@ -181,6 +210,14 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
             livingEntity.yBodyRot = yaw;
             livingEntity.yBodyRotO = yaw;
         }
+    }
+
+    private record EntitySubmitContext(
+            int lightCoords,
+            PoseStack poseStack,
+            SubmitNodeCollector collector,
+            CameraRenderState camera
+    ) {
     }
 
     @Override

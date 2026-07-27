@@ -1,9 +1,10 @@
 package com.cosmocraft.trading_cells.feature.ironfarm.adapters.input;
 
-import com.cosmocraft.trading_cells.feature.incubators.adapters.input.CapturedMobStackAdapter;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubatorKind;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.ironfarm.domain.model.IronFarmCycle;
+import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
+import com.cosmocraft.trading_cells.platform.neoforge.menu.MachineMenuLayout;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -19,9 +20,9 @@ public final class IronFarmMenu extends AbstractContainerMenu {
     public static final int TOGGLE_FLOWERS_BUTTON = 0;
     public static final int DISABLE_FLOWERS_BUTTON = 1;
     public static final int ENABLE_FLOWERS_BUTTON = 2;
-    public static final int VILLAGER_ROW_X = 56;
+    public static final int VILLAGER_ROW_X = MachineMenuLayout.machineX(56);
     public static final int VILLAGER_ROW_Y = 24;
-    public static final int OUTPUT_ROW_X = 44;
+    public static final int OUTPUT_ROW_X = MachineMenuLayout.machineX(44);
     public static final int OUTPUT_ROW_Y = 72;
     private static final int MACHINE_SLOT_COUNT = IronFarmBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
@@ -58,7 +59,10 @@ public final class IronFarmMenu extends AbstractContainerMenu {
                     OUTPUT_ROW_Y
             ));
         }
-        addStandardInventorySlots(inventory, 8, 140);
+        addStandardInventorySlots(inventory, MachineMenuLayout.PLAYER_INVENTORY_X, MachineMenuLayout.PLAYER_INVENTORY_SLOT_Y);
+        for (Slot equipmentSlot : PlayerEquipmentSlots.create(inventory)) {
+            addSlot(equipmentSlot);
+        }
         addDataSlots(data);
     }
 
@@ -118,7 +122,7 @@ public final class IronFarmMenu extends AbstractContainerMenu {
     @Override
     public @NonNull ItemStack quickMoveStack(@NonNull Player player, int index) {
         Slot slot = slots.get(index);
-        if (slot == null || !slot.hasItem()) {
+        if (!slot.hasItem()) {
             return ItemStack.EMPTY;
         }
         ItemStack stack = slot.getItem();
@@ -148,8 +152,8 @@ public final class IronFarmMenu extends AbstractContainerMenu {
     }
 
     private static boolean isAdultVillager(ItemStack stack) {
-        return CapturedMobStackAdapter.isFilledCapturer(IncubatorKind.VILLAGER, stack)
-                && !CapturedMobStackAdapter.isBaby(IncubatorKind.VILLAGER, stack);
+        return CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)
+                && !CapturedMobStackAdapter.isBaby(CapturedMobKind.VILLAGER, stack);
     }
 
     private static final class VillagerSlot extends Slot {

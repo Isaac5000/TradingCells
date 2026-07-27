@@ -1,9 +1,10 @@
 package com.cosmocraft.trading_cells.feature.incubators.adapters.input;
 
-import com.cosmocraft.trading_cells.feature.incubators.adapters.output.IncubatorRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.incubators.application.port.output.IncubatorTickPort;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubationCycle;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubatorKind;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.incubators.application.port.input.IncubatorUseCase;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
+import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -21,7 +22,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -31,7 +31,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public abstract class IncubatorBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider, IncubatorTickPort {
+public abstract class IncubatorBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider {
     public static final int INPUT_SLOT = 0;
     public static final int OUTPUT_SLOT = 1;
     public static final int CONTAINER_SIZE = 2;
@@ -42,7 +42,8 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
     private static final int[] INPUT_SLOTS = new int[]{INPUT_SLOT};
     private static final int[] OUTPUT_SLOTS = new int[]{OUTPUT_SLOT};
 
-    private final IncubatorKind kind;
+    private final CapturedMobKind kind;
+    private final IncubatorUseCase incubatorService = FeatureComposition.incubator();
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private int incubationTicks;
     private @Nullable CompoundTag preparedBlockDropData;
@@ -52,7 +53,7 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         public int get(int index) {
             return switch (index) {
                 case 0 -> incubationTicks;
-                case 1 -> IncubationCycle.ticksToAdult(kind);
+                case 1 -> incubatorService.durationTicks(kind);
                 default -> 0;
             };
         }
@@ -60,7 +61,7 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         @Override
         public void set(int index, int value) {
             if (index == 0) {
-                incubationTicks = Math.max(0, Math.min(IncubationCycle.ticksToAdult(kind), value));
+                incubationTicks = Math.clamp(value, 0, incubatorService.durationTicks(kind));
             }
         }
 
@@ -70,12 +71,12 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         }
     };
 
-    protected IncubatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, IncubatorKind kind) {
+    protected IncubatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, CapturedMobKind kind) {
         super(type, pos, state);
         this.kind = kind;
     }
 
-    public IncubatorKind kind() {
+    public CapturedMobKind kind() {
         return kind;
     }
 
@@ -83,26 +84,31 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         return dataAccess;
     }
 
-    public static void serverTick(Level level, BlockPos pos, BlockState state, IncubatorBlockEntity incubator) {
-        if (!level.isClientSide()) {
-            IncubatorRegistrationAdapter.TICK_INCUBATOR_USE_CASE.tick(incubator);
-        }
+    void processTick() {
+        processIncubation();
     }
 
-    @Override
-    public void processIncubation() {
+    private void processIncubation() {
         ItemStack input = items.get(INPUT_SLOT);
-        if (!CapturedMobStackAdapter.isBaby(kind, input)) {
-            resetProgressIfNeeded();
+        TimedProcess.Step step = incubatorService.advance(
+                kind,
+                incubationTicks,
+                CapturedMobStackAdapter.isBaby(kind, input),
+                items.get(OUTPUT_SLOT).isEmpty()
+        );
+        int previousTicks = incubationTicks;
+        incubationTicks = step.ticks();
+        if (step.transition() == TimedProcess.Transition.IDLE
+                || step.transition() == TimedProcess.Transition.PAUSED) {
             return;
         }
-
-        if (!items.get(OUTPUT_SLOT).isEmpty()) {
+        if (step.transition() == TimedProcess.Transition.RESET) {
+            if (previousTicks != 0) {
+                markChangedAndSync();
+            }
             return;
         }
-
-        incubationTicks = IncubationCycle.advance(kind, incubationTicks);
-        if (!IncubationCycle.isComplete(kind, incubationTicks)) {
+        if (step.transition() == TimedProcess.Transition.ADVANCED) {
             setChanged();
             return;
         }
@@ -141,13 +147,17 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
 
     @Override
     public @NonNull Component getDisplayName() {
-        return Component.translatable(kind == IncubatorKind.VILLAGER
+        return Component.translatable(kind == CapturedMobKind.VILLAGER
                 ? "container.trading_cells.villager_incubator"
                 : "container.trading_cells.piglin_incubator");
     }
 
     @Override
-    public @Nullable AbstractContainerMenu createMenu(int containerId, @NonNull Inventory inventory, @NonNull Player player) {
+    public @NonNull AbstractContainerMenu createMenu(
+            int containerId,
+            @NonNull Inventory inventory,
+            @NonNull Player player
+    ) {
         return new IncubatorMenu(kind, containerId, inventory, this, dataAccess);
     }
 
@@ -245,7 +255,11 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
     }
 
     @Override
-    public boolean canPlaceItemThroughFace(int slot, @NonNull ItemStack stack, @Nullable Direction direction) {
+    public boolean canPlaceItemThroughFace( // NOSONAR - Minecraft explicitly permits a null automation side.
+            int slot,
+            @NonNull ItemStack stack,
+            @Nullable Direction direction
+    ) {
         return direction != Direction.DOWN && canPlaceItem(slot, stack);
     }
 
@@ -259,10 +273,11 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         super.loadAdditional(input);
         items.set(INPUT_SLOT, input.read(INPUT_TAG, ItemStack.CODEC).orElse(ItemStack.EMPTY));
         items.set(OUTPUT_SLOT, input.read(OUTPUT_TAG, ItemStack.CODEC).orElse(ItemStack.EMPTY));
-        incubationTicks = Math.max(0, Math.min(
-                IncubationCycle.ticksToAdult(kind),
-                input.getIntOr(INCUBATION_TICKS_TAG, 0)
-        ));
+        incubationTicks = Math.clamp(
+                input.getIntOr(INCUBATION_TICKS_TAG, 0),
+                0,
+                incubatorService.durationTicks(kind)
+        );
         preparedBlockDropData = null;
     }
 
@@ -294,13 +309,6 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
-        }
-    }
-
-    private void resetProgressIfNeeded() {
-        if (incubationTicks != 0) {
-            incubationTicks = 0;
-            setChanged();
         }
     }
 

@@ -1,11 +1,13 @@
 package com.cosmocraft.trading_cells.platform.neoforge.bootstrap;
 
-import com.cosmocraft.trading_cells.feature.autotrader.adapters.output.client.AutotraderClientRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.AutotraderClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.breeders.adapters.output.client.BreederClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.client.ConverterClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.output.client.FarmerClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.output.client.IncubatorClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client.IronFarmClientRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.VillagerTradingCellClientRegistrationAdapter;
+import com.cosmocraft.trading_cells.platform.neoforge.client.network.TradingCellClientPayloadRegistration;
 import com.cosmocraft.trading_cells.platform.neoforge.event.CapturerClientEvent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModContainer;
@@ -23,6 +25,7 @@ public class TradingCellsClient {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         var modBus = container.getEventBus();
         if (modBus != null) {
+            modBus.addListener(TradingCellClientPayloadRegistration::onRegisterClientPayloads);
             modBus.addListener(CapturerClientEvent::onRegisterSpecialModelRenderer);
             modBus.addListener(CapturerClientEvent::onRegisterBlockEntityRenderers);
             modBus.addListener(BreederClientRegistrationAdapter::onRegisterMenuScreens);
@@ -31,6 +34,7 @@ public class TradingCellsClient {
             modBus.addListener(FarmerClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(FarmerClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(AutotraderClientRegistrationAdapter::onRegisterMenuScreens);
+            modBus.addListener(VillagerTradingCellClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(AutotraderClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(IronFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(IronFarmClientRegistrationAdapter::onRegisterRenderers);

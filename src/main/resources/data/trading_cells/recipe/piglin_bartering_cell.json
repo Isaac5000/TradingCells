@@ -1,6 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "category": "building",
+  "show_notification": false,
   "key": {
     "B": "minecraft:nether_wart_block",
     "P": "minecraft:blackstone",

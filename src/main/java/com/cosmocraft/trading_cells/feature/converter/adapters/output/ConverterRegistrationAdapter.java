@@ -22,7 +22,7 @@ public final class ConverterRegistrationAdapter {
     public static final String CONVERTER_ID = "converter";
 
     public static final DeferredBlock<ConverterBlock> CONVERTER_BLOCK = Registration.BLOCKS.register(CONVERTER_ID, () ->
-            new ConverterBlock(MachineBlockProperties.create(CONVERTER_ID))
+            new ConverterBlock(MachineBlockProperties.villager(CONVERTER_ID))
     );
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ConverterBlockEntity>> CONVERTER_BLOCK_ENTITY =

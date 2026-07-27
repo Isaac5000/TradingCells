@@ -1,6 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "category": "building",
+  "show_notification": false,
   "key": {
     "B": "minecraft:stripped_oak_log",
     "G": "minecraft:glass_pane",

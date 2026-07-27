@@ -1,19 +1,32 @@
 {
   "variants": {
     "facing=north": {
-      "model": "trading_cells:block/piglin_breeder"
+      "type": "neoforge:composite",
+      "models": [
+        {"model": "trading_cells:block/piglin_breeder_frame"},
+        {"model": "trading_cells:block/piglin_cage_glass"}
+      ]
     },
     "facing=east": {
-      "model": "trading_cells:block/piglin_breeder",
-      "y": 90
+      "type": "neoforge:composite",
+      "models": [
+        {"model": "trading_cells:block/piglin_breeder_frame", "y": 90},
+        {"model": "trading_cells:block/piglin_cage_glass", "y": 90}
+      ]
     },
     "facing=south": {
-      "model": "trading_cells:block/piglin_breeder",
-      "y": 180
+      "type": "neoforge:composite",
+      "models": [
+        {"model": "trading_cells:block/piglin_breeder_frame", "y": 180},
+        {"model": "trading_cells:block/piglin_cage_glass", "y": 180}
+      ]
     },
     "facing=west": {
-      "model": "trading_cells:block/piglin_breeder",
-      "y": 270
+      "type": "neoforge:composite",
+      "models": [
+        {"model": "trading_cells:block/piglin_breeder_frame", "y": 270},
+        {"model": "trading_cells:block/piglin_cage_glass", "y": 270}
+      ]
     }
   }
 }

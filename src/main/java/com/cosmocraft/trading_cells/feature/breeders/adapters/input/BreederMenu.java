@@ -1,11 +1,13 @@
 package com.cosmocraft.trading_cells.feature.breeders.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.breeders.adapters.output.BreederRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederFood;
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederKind;
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederRecipe;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.input.PiglinCapturerItem;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.input.VillagerCapturerItem;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.output.TradingCellsRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
+import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
+import com.cosmocraft.trading_cells.platform.neoforge.menu.MachineMenuLayout;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -21,6 +23,17 @@ import org.jspecify.annotations.NonNull;
 
 public final class BreederMenu extends AbstractContainerMenu {
     public static final int SELECT_VARIANT_BUTTON_BASE = 20;
+    public static final int FOOD_SLOT_X = MachineMenuLayout.machineX(80);
+    public static final int FOOD_SLOT_Y = 24;
+    public static final int PARENT_A_SLOT_X = MachineMenuLayout.machineX(44);
+    public static final int PARENT_B_SLOT_X = MachineMenuLayout.machineX(116);
+    public static final int PARENT_SLOT_Y = 44;
+    public static final int BABY_PREVIEW_SLOT_X = MachineMenuLayout.machineX(80);
+    public static final int BABY_PREVIEW_SLOT_Y = 82;
+    public static final int EMPTY_CAPTURER_SLOT_X = MachineMenuLayout.machineX(48);
+    public static final int FILLED_CAPTURER_SLOT_X = MachineMenuLayout.machineX(112);
+    public static final int CAPTURER_SLOT_Y = 100;
+    private static final int DATA_COUNT = 6;
     private static final int BREEDER_SLOT_COUNT = BreederBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = BREEDER_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
@@ -31,32 +44,53 @@ public final class BreederMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public static BreederMenu villager(int containerId, Inventory inventory) {
-        return new BreederMenu(BreederKind.VILLAGER, containerId, inventory, new SimpleContainer(BREEDER_SLOT_COUNT), new SimpleContainerData(4));
+        return new BreederMenu(
+                BreederKind.VILLAGER,
+                containerId,
+                inventory,
+                new SimpleContainer(BREEDER_SLOT_COUNT),
+                new SimpleContainerData(DATA_COUNT)
+        );
     }
 
     public static BreederMenu piglin(int containerId, Inventory inventory) {
-        return new BreederMenu(BreederKind.PIGLIN, containerId, inventory, new SimpleContainer(BREEDER_SLOT_COUNT), new SimpleContainerData(4));
+        return new BreederMenu(
+                BreederKind.PIGLIN,
+                containerId,
+                inventory,
+                new SimpleContainer(BREEDER_SLOT_COUNT),
+                new SimpleContainerData(DATA_COUNT)
+        );
     }
 
-    public BreederMenu(BreederKind kind, int containerId, Inventory inventory, Container container, ContainerData data) {
+    public BreederMenu(
+            BreederKind kind,
+            int containerId,
+            Inventory inventory,
+            Container container,
+            ContainerData containerData
+    ) {
         super(kind == BreederKind.VILLAGER
                 ? BreederRegistrationAdapter.VILLAGER_BREEDER_MENU.get()
                 : BreederRegistrationAdapter.PIGLIN_BREEDER_MENU.get(), containerId);
         checkContainerSize(container, BREEDER_SLOT_COUNT);
-        checkContainerDataCount(data, 4);
+        checkContainerDataCount(containerData, DATA_COUNT);
         this.kind = kind;
         this.container = container;
-        this.data = data;
+        this.data = containerData;
 
-        addSlot(new FilteredSlot(container, BreederBlockEntity.FOOD_SLOT, 80, 16, this::isValidFood));
-        addSlot(new FilteredSlot(container, BreederBlockEntity.PARENT_A_SLOT, 41, 48, this::isValidAdultParent));
-        addSlot(new FilteredSlot(container, BreederBlockEntity.PARENT_B_SLOT, 116, 48, this::isValidAdultParent));
-        addSlot(new PreviewSlot(container, BreederBlockEntity.BABY_PREVIEW_SLOT, 80, 79));
-        addSlot(new FilteredSlot(container, BreederBlockEntity.EMPTY_CAPTURER_SLOT, 45, 115, this::isEmptyCapturer));
-        addSlot(new OutputSlot(container, BreederBlockEntity.FILLED_CAPTURER_SLOT, 115, 115));
+        addSlot(new FilteredSlot(container, BreederBlockEntity.FOOD_SLOT, FOOD_SLOT_X, FOOD_SLOT_Y, this::isValidFood));
+        addSlot(new FilteredSlot(container, BreederBlockEntity.PARENT_A_SLOT, PARENT_A_SLOT_X, PARENT_SLOT_Y, this::isValidAdultParent));
+        addSlot(new FilteredSlot(container, BreederBlockEntity.PARENT_B_SLOT, PARENT_B_SLOT_X, PARENT_SLOT_Y, this::isValidAdultParent));
+        addSlot(new PreviewSlot(container, BreederBlockEntity.BABY_PREVIEW_SLOT, BABY_PREVIEW_SLOT_X, BABY_PREVIEW_SLOT_Y));
+        addSlot(new FilteredSlot(container, BreederBlockEntity.EMPTY_CAPTURER_SLOT, EMPTY_CAPTURER_SLOT_X, CAPTURER_SLOT_Y, this::isEmptyCapturer));
+        addSlot(new OutputSlot(container, BreederBlockEntity.FILLED_CAPTURER_SLOT, FILLED_CAPTURER_SLOT_X, CAPTURER_SLOT_Y));
 
-        addStandardInventorySlots(inventory, 8, 140);
-        addDataSlots(data);
+        addStandardInventorySlots(inventory, MachineMenuLayout.PLAYER_INVENTORY_X, MachineMenuLayout.PLAYER_INVENTORY_SLOT_Y);
+        for (Slot equipmentSlot : PlayerEquipmentSlots.create(inventory)) {
+            addSlot(equipmentSlot);
+        }
+        addDataSlots(containerData);
     }
 
     public BreederKind kind() {
@@ -73,6 +107,17 @@ public final class BreederMenu extends AbstractContainerMenu {
 
     public int maxBreedTicks() {
         return Math.max(1, data.get(3));
+    }
+
+    public int foodCost(BreederFood food) {
+        if (!BreederRecipe.isFood(kind, food)) {
+            return 0;
+        }
+        return Math.max(1, switch (food) {
+            case BREAD, PORK -> data.get(4);
+            case VEGETABLE, CRIMSON_FUNGUS -> data.get(5);
+            case NONE -> 0;
+        });
     }
 
     public String selectedVillagerVariantKey() {
@@ -112,9 +157,8 @@ public final class BreederMenu extends AbstractContainerMenu {
 
     @Override
     public @NonNull ItemStack quickMoveStack(@NonNull Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
         Slot slot = slots.get(index);
-        if (slot == null || !slot.hasItem()) {
+        if (!slot.hasItem()) {
             return ItemStack.EMPTY;
         }
 
@@ -123,29 +167,8 @@ public final class BreederMenu extends AbstractContainerMenu {
         }
 
         ItemStack stack = slot.getItem();
-        result = stack.copy();
-
-        if (index < BREEDER_SLOT_COUNT) {
-            if (!moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (isValidFood(stack)) {
-            if (!moveItemStackTo(stack, BreederBlockEntity.FOOD_SLOT, BreederBlockEntity.FOOD_SLOT + 1, false)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (isValidAdultParent(stack)) {
-            if (!moveItemStackTo(stack, BreederBlockEntity.PARENT_A_SLOT, BreederBlockEntity.PARENT_B_SLOT + 1, false)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (isEmptyCapturer(stack)) {
-            if (!moveItemStackTo(stack, BreederBlockEntity.EMPTY_CAPTURER_SLOT, BreederBlockEntity.EMPTY_CAPTURER_SLOT + 1, false)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (index < PLAYER_INVENTORY_END) {
-            if (!moveItemStackTo(stack, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (!moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false)) {
+        ItemStack result = stack.copy();
+        if (!moveQuickMovedStack(index, stack)) {
             return ItemStack.EMPTY;
         }
 
@@ -158,6 +181,39 @@ public final class BreederMenu extends AbstractContainerMenu {
         return result;
     }
 
+    private boolean moveQuickMovedStack(int index, ItemStack stack) {
+        if (index < BREEDER_SLOT_COUNT) {
+            return moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true);
+        }
+        if (isValidFood(stack)) {
+            return moveItemStackTo(
+                    stack,
+                    BreederBlockEntity.FOOD_SLOT,
+                    BreederBlockEntity.FOOD_SLOT + 1,
+                    false
+            );
+        }
+        if (isValidAdultParent(stack)) {
+            return moveItemStackTo(
+                    stack,
+                    BreederBlockEntity.PARENT_A_SLOT,
+                    BreederBlockEntity.PARENT_B_SLOT + 1,
+                    false
+            );
+        }
+        if (isEmptyCapturer(stack)) {
+            return moveItemStackTo(
+                    stack,
+                    BreederBlockEntity.EMPTY_CAPTURER_SLOT,
+                    BreederBlockEntity.EMPTY_CAPTURER_SLOT + 1,
+                    false
+            );
+        }
+        return index < PLAYER_INVENTORY_END
+                ? moveItemStackTo(stack, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)
+                : moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false);
+    }
+
     private boolean isValidFood(ItemStack stack) {
         return BreederRecipe.isFood(kind, MinecraftBreederFood.from(stack));
     }
@@ -166,27 +222,25 @@ public final class BreederMenu extends AbstractContainerMenu {
         if (stack.isEmpty() || !stack.is(capturerItem())) {
             return false;
         }
-        if (kind == BreederKind.VILLAGER) {
-            CompoundTag data = VillagerCapturerItem.getCapturedVillagerData(stack);
-            return data != null && !VillagerCapturerItem.isBabyVillager(data);
-        }
-        CompoundTag data = PiglinCapturerItem.getCapturedPiglinData(stack);
-        return data != null && !PiglinCapturerItem.isBabyPiglin(data);
+        CompoundTag data = CapturedMobStackAdapter.copyData(capturedKind(), stack);
+        return data != null && !CapturedMobStackAdapter.isBaby(capturedKind(), data);
     }
 
     private boolean isEmptyCapturer(ItemStack stack) {
         if (stack.isEmpty() || !stack.is(capturerItem())) {
             return false;
         }
-        return kind == BreederKind.VILLAGER
-                ? !VillagerCapturerItem.hasCapturedVillager(stack)
-                : !PiglinCapturerItem.hasCapturedPiglin(stack);
+        return !CapturedMobStackAdapter.isFilledCapturer(capturedKind(), stack);
     }
 
     private Item capturerItem() {
+        return CapturedMobStackAdapter.capturerItem(capturedKind());
+    }
+
+    private CapturedMobKind capturedKind() {
         return kind == BreederKind.VILLAGER
-                ? TradingCellsRegistrationAdapter.VILLAGER_CAPTURER_ITEM.get()
-                : TradingCellsRegistrationAdapter.PIGLIN_CAPTURER_ITEM.get();
+                ? CapturedMobKind.VILLAGER
+                : CapturedMobKind.PIGLIN;
     }
 
     @FunctionalInterface

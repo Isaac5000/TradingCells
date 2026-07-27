@@ -1,7 +1,7 @@
 package com.cosmocraft.trading_cells.platform.neoforge.bootstrap;
 
-import com.cosmocraft.trading_cells.feature.machines.application.MachineSettings;
-import com.cosmocraft.trading_cells.platform.neoforge.config.NeoForgeMachineSettingsAdapter;
+import com.cosmocraft.trading_cells.platform.neoforge.config.FeatureSettingsProvider;
+import com.cosmocraft.trading_cells.platform.neoforge.config.NeoForgeFeatureSettingsAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellPayloadRegistration;
 import com.cosmocraft.trading_cells.platform.neoforge.registration.Registration;
 import com.mojang.logging.LogUtils;
@@ -25,6 +25,6 @@ public class TradingCells {
 
         // 2. Register the configuration
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
-        MachineSettings.configure(new NeoForgeMachineSettingsAdapter());
+        FeatureSettingsProvider.configure(new NeoForgeFeatureSettingsAdapter());
     }
 }

@@ -1,10 +1,12 @@
 package com.cosmocraft.trading_cells.feature.ironfarm.adapters.input;
 
-import com.cosmocraft.trading_cells.feature.incubators.adapters.input.CapturedMobStackAdapter;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubatorKind;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.ironfarm.application.port.input.IronFarmUseCase;
 import com.cosmocraft.trading_cells.feature.ironfarm.domain.model.IronFarmCycle;
-import com.cosmocraft.trading_cells.feature.machines.application.MachineSettings;
+import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -41,6 +43,7 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
     private static final int[] OUTPUT_SLOTS = new int[]{3, 4, 5, 6};
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
+    private final IronFarmUseCase ironFarmService = FeatureComposition.ironFarm();
     private int cycleTicks;
     private boolean flowersEnabled = true;
 
@@ -51,9 +54,11 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
                 case 0 -> cycleTicks;
                 case 1 -> flowersEnabled ? 1 : 0;
                 case 2 -> villagerCount();
-                case 3 -> IronFarmCycle.cycleTicks();
-                case 4 -> IronFarmCycle.multiplier(villagerCount());
-                case 5 -> IronFarmCycle.multiplier(Math.min(VILLAGER_SLOT_COUNT, villagerCount() + 1));
+                case 3 -> ironFarmService.cycle().cycleTicks();
+                case 4 -> ironFarmService.cycle().multiplier(villagerCount());
+                case 5 -> ironFarmService.cycle().multiplier(
+                        Math.min(VILLAGER_SLOT_COUNT, villagerCount() + 1)
+                );
                 case 6 -> VILLAGER_SLOT_COUNT;
                 default -> 0;
             };
@@ -62,7 +67,7 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
         @Override
         public void set(int index, int value) {
             if (index == 0) {
-                cycleTicks = Math.max(0, Math.min(IronFarmCycle.cycleTicks(), value));
+                cycleTicks = Math.clamp(value, 0, ironFarmService.cycle().cycleTicks());
             } else if (index == 1) {
                 flowersEnabled = value != 0;
                 markChangedAndSync();
@@ -87,47 +92,35 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
         return cycleTicks;
     }
 
+    public boolean isGolemVisible() {
+        return ironFarmService.cycle().isGolemVisible(cycleTicks);
+    }
+
+    public boolean hasGolemRedHitFlash() {
+        return ironFarmService.cycle().hasRedHitFlash(cycleTicks);
+    }
+
     @Override
     public void processTick() {
         if (level == null || level.isClientSide()) {
             return;
         }
-        int multiplier = IronFarmCycle.multiplier(villagerCount());
-        if (multiplier == 0) {
-            resetProgress();
-            return;
-        }
-
-        ItemStack iron = new ItemStack(Items.IRON_INGOT, MachineSettings.values().ironFarmBaseIron() * multiplier);
+        IronFarmCycle cycle = ironFarmService.cycle();
+        int villagerCount = villagerCount();
+        int multiplier = cycle.multiplier(villagerCount);
+        ItemStack iron = new ItemStack(Items.IRON_INGOT, ironFarmService.baseIron() * multiplier);
         ItemStack maximumPoppies = flowersEnabled
-                ? new ItemStack(Items.POPPY, MachineSettings.values().ironFarmMaximumPoppies() * multiplier)
+                ? new ItemStack(Items.POPPY, ironFarmService.maximumPoppies() * multiplier)
                 : ItemStack.EMPTY;
-        if (!canStoreTogether(iron, maximumPoppies)) {
-            return;
-        }
-
-        cycleTicks++;
-        if (IronFarmCycle.isGolemHitTick(cycleTicks)) {
-            level.playSound(null, worldPosition, SoundEvents.IRON_GOLEM_HURT, SoundSource.BLOCKS, 0.9F, 0.9F);
-        }
-        if (cycleTicks < IronFarmCycle.cycleTicks()) {
-            setChanged();
-            if (cycleTicks % 20 == 0
-                    || IronFarmCycle.isGolemHitTick(cycleTicks)
-                    || IronFarmCycle.isRedHitFlashEnding(cycleTicks)) {
-                markChangedAndSync();
-            }
-            return;
-        }
-
-        level.playSound(null, worldPosition, SoundEvents.IRON_GOLEM_DEATH, SoundSource.BLOCKS, 1.0F, 1.0F);
-        storeOutput(iron);
-        if (flowersEnabled) {
-            int poppies = level.getRandom().nextInt(MachineSettings.values().ironFarmMaximumPoppies() + 1) * multiplier;
-            storeOutput(new ItemStack(Items.POPPY, poppies));
-        }
-        cycleTicks = 0;
-        markChangedAndSync();
+        boolean outputAvailable = multiplier > 0 && canStoreTogether(iron, maximumPoppies);
+        int previousTicks = cycleTicks;
+        TimedProcess.Step step = ironFarmService.advance(
+                cycleTicks,
+                villagerCount,
+                outputAvailable
+        );
+        cycleTicks = step.ticks();
+        applyCycleTransition(step.transition(), previousTicks, cycle, iron, multiplier);
     }
 
     @Override
@@ -231,7 +224,11 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
         for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
             items.set(slot, input.read(SLOT_TAG_PREFIX + slot, ItemStack.CODEC).orElse(ItemStack.EMPTY));
         }
-        cycleTicks = Math.max(0, Math.min(IronFarmCycle.cycleTicks(), input.getIntOr(CYCLE_TICKS_TAG, 0)));
+        cycleTicks = Math.clamp(
+                input.getIntOr(CYCLE_TICKS_TAG, 0),
+                0,
+                ironFarmService.cycle().cycleTicks()
+        );
         flowersEnabled = input.getBooleanOr(FLOWERS_ENABLED_TAG, true);
     }
 
@@ -266,6 +263,63 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
             }
         }
         return count;
+    }
+
+    private void applyCycleTransition(
+            TimedProcess.Transition transition,
+            int previousTicks,
+            IronFarmCycle cycle,
+            ItemStack iron,
+            int multiplier
+    ) {
+        switch (transition) {
+            case IDLE, PAUSED -> {
+                // The process state is already up to date.
+            }
+            case RESET -> {
+                if (previousTicks != 0) {
+                    markChangedAndSync();
+                }
+            }
+            case ADVANCED -> processAdvancedTick(cycle);
+            case COMPLETED -> completeCycle(iron, multiplier);
+        }
+    }
+
+    private void processAdvancedTick(IronFarmCycle cycle) {
+        if (cycle.isGolemHitTick(cycleTicks)) {
+            level.playSound(
+                    null,
+                    worldPosition,
+                    SoundEvents.IRON_GOLEM_HURT,
+                    SoundSource.BLOCKS,
+                    0.9F,
+                    0.9F
+            );
+        }
+        setChanged();
+        if (cycleTicks % 20 == 0
+                || cycle.isGolemHitTick(cycleTicks)
+                || cycle.isRedHitFlashEnding(cycleTicks)) {
+            markChangedAndSync();
+        }
+    }
+
+    private void completeCycle(ItemStack iron, int multiplier) {
+        level.playSound(
+                null,
+                worldPosition,
+                SoundEvents.IRON_GOLEM_DEATH,
+                SoundSource.BLOCKS,
+                1.0F,
+                1.0F
+        );
+        storeOutput(iron);
+        if (flowersEnabled) {
+            int poppies = level.getRandom().nextInt(ironFarmService.maximumPoppies() + 1) * multiplier;
+            storeOutput(new ItemStack(Items.POPPY, poppies));
+        }
+        markChangedAndSync();
     }
 
     private boolean canStoreTogether(ItemStack first, ItemStack second) {
@@ -320,16 +374,9 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
         return false;
     }
 
-    private void resetProgress() {
-        if (cycleTicks != 0) {
-            cycleTicks = 0;
-            markChangedAndSync();
-        }
-    }
-
     private static boolean isAdultVillager(ItemStack stack) {
-        return CapturedMobStackAdapter.isFilledCapturer(IncubatorKind.VILLAGER, stack)
-                && !CapturedMobStackAdapter.isBaby(IncubatorKind.VILLAGER, stack);
+        return CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)
+                && !CapturedMobStackAdapter.isBaby(CapturedMobKind.VILLAGER, stack);
     }
 
     private static boolean isVillagerSlot(int slot) {

@@ -22,7 +22,7 @@ public final class FarmerRegistrationAdapter {
     public static final String FARMER_ID = "farmer";
 
     public static final DeferredBlock<FarmerBlock> FARMER_BLOCK = Registration.BLOCKS.register(FARMER_ID, () ->
-            new FarmerBlock(MachineBlockProperties.create(FARMER_ID))
+            new FarmerBlock(MachineBlockProperties.villager(FARMER_ID))
     );
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FarmerBlockEntity>> FARMER_BLOCK_ENTITY =

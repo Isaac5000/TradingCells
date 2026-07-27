@@ -1,0 +1,7 @@
+{
+  "parent": "trading_cells:block/machine_cage_glass",
+  "textures": {
+    "glass": "minecraft:block/tinted_glass",
+    "particle": "minecraft:block/blackstone"
+  }
+}

@@ -1,1 +1,0 @@
-La textura de Galleta con Leche es dinámica: el modelo usa minecraft:item/cookie como layer0 y trading_cells:item/cookie_with_milk_overlay como layer1. Así mantiene la galleta vanilla o la de cualquier resource pack y solo añade las tiras lechosas encima.

@@ -5,8 +5,6 @@ import com.cosmocraft.trading_cells.feature.incubators.adapters.input.PiglinIncu
 import com.cosmocraft.trading_cells.feature.incubators.adapters.input.PiglinIncubatorBlockEntity;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.input.VillagerIncubatorBlock;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.input.VillagerIncubatorBlockEntity;
-import com.cosmocraft.trading_cells.feature.incubators.application.port.input.TickIncubatorUseCase;
-import com.cosmocraft.trading_cells.feature.incubators.application.usecase.TickIncubatorUseCaseImp;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineBlockProperties;
 import com.cosmocraft.trading_cells.platform.neoforge.registration.Registration;
@@ -19,25 +17,22 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 
 public final class IncubatorRegistrationAdapter {
-    public static final TickIncubatorUseCase TICK_INCUBATOR_USE_CASE = new TickIncubatorUseCaseImp();
-
     public static final String VILLAGER_INCUBATOR_ID = "villager_incubator";
     public static final String PIGLIN_INCUBATOR_ID = "piglin_incubator";
 
     public static final DeferredBlock<VillagerIncubatorBlock> VILLAGER_INCUBATOR_BLOCK =
             Registration.BLOCKS.register(VILLAGER_INCUBATOR_ID, () -> new VillagerIncubatorBlock(
-                    incubatorProperties(VILLAGER_INCUBATOR_ID, Blocks.WOOL.yellow())
+                    MachineBlockProperties.villagerCopyOf(VILLAGER_INCUBATOR_ID, Blocks.WOOL.yellow())
             ));
 
     public static final DeferredBlock<PiglinIncubatorBlock> PIGLIN_INCUBATOR_BLOCK =
             Registration.BLOCKS.register(PIGLIN_INCUBATOR_ID, () -> new PiglinIncubatorBlock(
-                    incubatorProperties(PIGLIN_INCUBATOR_ID, Blocks.WOOL.red())
+                    MachineBlockProperties.piglinCopyOf(PIGLIN_INCUBATOR_ID, Blocks.WOOL.red())
             ));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<VillagerIncubatorBlockEntity>> VILLAGER_INCUBATOR_BLOCK_ENTITY =
@@ -77,10 +72,6 @@ public final class IncubatorRegistrationAdapter {
 
     public static void load() {
         // Forces class loading so all DeferredRegister entries are created.
-    }
-
-    private static BlockBehaviour.Properties incubatorProperties(String id, net.minecraft.world.level.block.Block wool) {
-        return MachineBlockProperties.copyOf(id, wool);
     }
 
     private static Item.Properties itemProperties(String id) {

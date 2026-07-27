@@ -22,7 +22,7 @@ public final class IronFarmRegistrationAdapter {
     public static final String IRON_FARM_ID = "iron_farm";
 
     public static final DeferredBlock<IronFarmBlock> IRON_FARM_BLOCK = Registration.BLOCKS.register(IRON_FARM_ID, () ->
-            new IronFarmBlock(MachineBlockProperties.create(IRON_FARM_ID))
+            new IronFarmBlock(MachineBlockProperties.villager(IRON_FARM_ID))
     );
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IronFarmBlockEntity>> IRON_FARM_BLOCK_ENTITY =

@@ -1,6 +1,5 @@
 package com.cosmocraft.trading_cells.platform.neoforge.machine;
 
-import com.cosmocraft.trading_cells.feature.machines.application.port.output.MachineTickPort;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -14,12 +13,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public abstract class PortableMachineBlockEntity extends BlockEntity implements MachineTickPort {
+public abstract class PortableMachineBlockEntity extends BlockEntity {
     private @Nullable CompoundTag preparedBlockDropData;
 
     protected PortableMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
+
+    /** Server-side lifecycle entry point invoked by the owning block adapter. */
+    public abstract void processTick();
 
     public final void prepareForBlockDrop(HolderLookup.Provider registries) {
         beforeBlockDropSnapshot();
@@ -49,7 +51,7 @@ public abstract class PortableMachineBlockEntity extends BlockEntity implements 
     }
 
     @Override
-    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
+    public @NonNull Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 

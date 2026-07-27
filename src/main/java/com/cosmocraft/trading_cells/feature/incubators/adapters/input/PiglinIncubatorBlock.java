@@ -4,13 +4,11 @@ import com.cosmocraft.trading_cells.feature.incubators.adapters.output.Incubator
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
-public final class PiglinIncubatorBlock extends IncubatorBlock {
+public final class PiglinIncubatorBlock extends IncubatorBlock<PiglinIncubatorBlockEntity> {
     public static final MapCodec<PiglinIncubatorBlock> CODEC = simpleCodec(PiglinIncubatorBlock::new);
 
     public PiglinIncubatorBlock(Properties properties) {
@@ -23,12 +21,12 @@ public final class PiglinIncubatorBlock extends IncubatorBlock {
     }
 
     @Override
-    public @Nullable BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
+    public @NonNull PiglinIncubatorBlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
         return new PiglinIncubatorBlockEntity(pos, state);
     }
 
     @Override
-    protected BlockEntityType<? extends IncubatorBlockEntity> getBlockEntityType() {
+    protected BlockEntityType<PiglinIncubatorBlockEntity> getBlockEntityType() {
         return IncubatorRegistrationAdapter.PIGLIN_INCUBATOR_BLOCK_ENTITY.get();
     }
 }

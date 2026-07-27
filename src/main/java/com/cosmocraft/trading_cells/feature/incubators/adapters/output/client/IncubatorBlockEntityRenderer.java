@@ -1,9 +1,9 @@
 package com.cosmocraft.trading_cells.feature.incubators.adapters.output.client;
 
-import com.cosmocraft.trading_cells.feature.incubators.adapters.input.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.input.IncubatorBlock;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.input.IncubatorBlockEntity;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubatorKind;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -74,7 +74,7 @@ public final class IncubatorBlockEntityRenderer implements BlockEntityRenderer<I
         }
 
         boolean baby = CapturedMobStackAdapter.isBaby(state.kind, displayStack);
-        if (state.kind == IncubatorKind.PIGLIN && baby && entity instanceof LivingEntity livingEntity) {
+        if (state.kind == CapturedMobKind.PIGLIN && baby && entity instanceof LivingEntity livingEntity) {
             livingEntity.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
             livingEntity.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
         }
@@ -129,7 +129,7 @@ public final class IncubatorBlockEntityRenderer implements BlockEntityRenderer<I
         public @Nullable EntityRenderState displayEntity;
         public float scale = BABY_SCALE;
         public Direction facing = Direction.NORTH;
-        public IncubatorKind kind = IncubatorKind.VILLAGER;
+        public CapturedMobKind kind = CapturedMobKind.VILLAGER;
         private ItemStack cachedStack = ItemStack.EMPTY;
         private @Nullable Entity cachedEntity;
 

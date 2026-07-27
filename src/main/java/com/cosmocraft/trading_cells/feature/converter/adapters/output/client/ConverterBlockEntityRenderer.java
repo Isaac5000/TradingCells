@@ -2,8 +2,8 @@ package com.cosmocraft.trading_cells.feature.converter.adapters.output.client;
 
 import com.cosmocraft.trading_cells.feature.converter.adapters.input.ConverterBlockEntity;
 import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterStage;
-import com.cosmocraft.trading_cells.feature.incubators.adapters.input.CapturedMobStackAdapter;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubatorKind;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.MachineEntityRenderScales;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
@@ -84,27 +84,23 @@ public final class ConverterBlockEntityRenderer implements BlockEntityRenderer<C
     @Override
     public void submit(State state, @NonNull PoseStack poseStack, @NonNull SubmitNodeCollector collector, @NonNull CameraRenderState camera) {
         Direction side = state.facing.getClockWise();
-        submitEntity(
-                state.villager,
-                SIDE_ENTITY_SCALE,
-                0.5D + side.getStepX() * 0.25D,
-                0.11D,
-                0.5D + side.getStepZ() * 0.25D,
+        EntitySubmitContext context = new EntitySubmitContext(
                 state.lightCoords,
                 poseStack,
                 collector,
                 camera
         );
         submitEntity(
+                state.villager,
+                SIDE_ENTITY_SCALE,
+                new Vec3(0.5D + side.getStepX() * 0.25D, 0.11D, 0.5D + side.getStepZ() * 0.25D),
+                context
+        );
+        submitEntity(
                 state.zombie,
                 SIDE_ENTITY_SCALE,
-                0.5D - side.getStepX() * 0.25D,
-                0.11D,
-                0.5D - side.getStepZ() * 0.25D,
-                state.lightCoords,
-                poseStack,
-                collector,
-                camera
+                new Vec3(0.5D - side.getStepX() * 0.25D, 0.11D, 0.5D - side.getStepZ() * 0.25D),
+                context
         );
     }
 
@@ -119,23 +115,26 @@ public final class ConverterBlockEntityRenderer implements BlockEntityRenderer<C
     private void submitEntity(
             @Nullable EntityRenderState state,
             float scale,
-            double x,
-            double y,
-            double z,
-            int lightCoords,
-            PoseStack poseStack,
-            SubmitNodeCollector collector,
-            CameraRenderState camera
+            Vec3 position,
+            EntitySubmitContext context
     ) {
         if (state == null) {
             return;
         }
-        PreviewEntityRenderUtil.applyLight(state, lightCoords);
-        poseStack.pushPose();
-        poseStack.translate(x, y, z);
-        poseStack.scale(scale, scale, scale);
-        entityRenderer.submit(state, camera, 0.0D, 0.0D, 0.0D, poseStack, collector);
-        poseStack.popPose();
+        PreviewEntityRenderUtil.applyLight(state, context.lightCoords());
+        context.poseStack().pushPose();
+        context.poseStack().translate(position.x(), position.y(), position.z());
+        context.poseStack().scale(scale, scale, scale);
+        entityRenderer.submit(
+                state,
+                context.camera(),
+                0.0D,
+                0.0D,
+                0.0D,
+                context.poseStack(),
+                context.collector()
+        );
+        context.poseStack().popPose();
     }
 
     private static void orient(Entity entity, float yaw) {
@@ -175,7 +174,7 @@ public final class ConverterBlockEntityRenderer implements BlockEntityRenderer<C
             }
             if (cachedVillager == null || !ItemStack.isSameItemSameComponents(cachedVillagerStack, stack)) {
                 cachedVillager = CapturedMobStackAdapter.createEntity(
-                        IncubatorKind.VILLAGER,
+                        CapturedMobKind.VILLAGER,
                         blockEntity.getLevel(),
                         stack,
                         blockEntity.getBlockPos()
@@ -202,15 +201,15 @@ public final class ConverterBlockEntityRenderer implements BlockEntityRenderer<C
             if (cachedZombieVillager == null
                     || !ItemStack.isSameItemSameComponents(cachedZombieVillagerStack, stack)) {
                 Entity source = CapturedMobStackAdapter.createEntity(
-                        IncubatorKind.VILLAGER,
+                        CapturedMobKind.VILLAGER,
                         level,
                         stack,
                         blockEntity.getBlockPos()
                 );
                 ZombieVillager zombieVillager = EntityTypes.ZOMBIE_VILLAGER.create(level, EntitySpawnReason.LOAD);
-                if (source instanceof Villager villager && zombieVillager != null) {
-                    zombieVillager.setVillagerData(villager.getVillagerData());
-                    zombieVillager.setCustomName(villager.getCustomName());
+                if (source instanceof Villager sourceVillager && zombieVillager != null) {
+                    zombieVillager.setVillagerData(sourceVillager.getVillagerData());
+                    zombieVillager.setCustomName(sourceVillager.getCustomName());
                 }
                 cachedZombieVillager = zombieVillager;
                 cachedZombieVillagerStack = stack.copy();
@@ -225,5 +224,13 @@ public final class ConverterBlockEntityRenderer implements BlockEntityRenderer<C
             cachedZombieVillager = null;
             cachedZombieVillagerStack = ItemStack.EMPTY;
         }
+    }
+
+    private record EntitySubmitContext(
+            int lightCoords,
+            PoseStack poseStack,
+            SubmitNodeCollector collector,
+            CameraRenderState camera
+    ) {
     }
 }

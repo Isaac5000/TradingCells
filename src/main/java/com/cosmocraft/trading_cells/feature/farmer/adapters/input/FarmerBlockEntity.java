@@ -1,18 +1,21 @@
 package com.cosmocraft.trading_cells.feature.farmer.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.farmer.adapters.output.FarmerRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.farmer.application.port.input.FarmerUseCase;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerCrop;
-import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerCycle;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerHarvest;
-import com.cosmocraft.trading_cells.feature.incubators.adapters.input.CapturedMobStackAdapter;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubatorKind;
-import com.cosmocraft.trading_cells.feature.machines.application.MachineSettings;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
+import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
@@ -22,6 +25,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -39,20 +43,24 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
 
     private static final String SLOT_TAG_PREFIX = "Slot";
     private static final String GROWTH_TICKS_TAG = "GrowthTicks";
+    private static final String GROWTH_DURATION_TICKS_TAG = "GrowthDurationTicks";
     private static final int[] TOP_SLOTS = new int[]{CROP_SLOT};
     private static final int[] SIDE_SLOTS = new int[]{VILLAGER_SLOT, HOE_SLOT};
     private static final int[] BOTTOM_SLOTS = new int[]{3, 4, 5, 6};
     private static final int[] NO_SLOTS = new int[0];
-
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
+    private final FarmerUseCase farmerService = FeatureComposition.farmer();
     private int growthTicks;
+    private int growthDurationTicks = farmerService.effectiveGrowthTicks(0.0D, 0);
+    private boolean cultivating;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
         public int get(int index) {
             return switch (index) {
                 case 0 -> growthTicks;
-                case 1 -> FarmerCycle.growthTicks();
+                case 1 -> effectiveGrowthTicks();
+                case 2 -> cultivating ? 1 : 0;
                 default -> 0;
             };
         }
@@ -60,13 +68,14 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         @Override
         public void set(int index, int value) {
             if (index == 0) {
-                growthTicks = Math.max(0, Math.min(FarmerCycle.growthTicks(), value));
+                growthDurationTicks = effectiveGrowthTicks();
+                growthTicks = Math.clamp(value, 0, growthDurationTicks);
             }
         }
 
         @Override
         public int getCount() {
-            return 2;
+            return 3;
         }
     };
 
@@ -82,6 +91,10 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         return growthTicks;
     }
 
+    public int growthDurationTicks() {
+        return growthDurationTicks;
+    }
+
     public FarmerCrop crop() {
         return FarmerCropStackAdapter.from(items.get(CROP_SLOT));
     }
@@ -93,19 +106,31 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         }
 
         FarmerCrop crop = crop();
-        if (!isAdultVillager(items.get(VILLAGER_SLOT)) || crop == FarmerCrop.NONE) {
-            resetProgress();
+        boolean canCultivate = isAdultVillager(items.get(VILLAGER_SLOT))
+                && crop != FarmerCrop.NONE;
+        int maximumGrowthTicks = updateGrowthDuration();
+        FarmerHarvest harvest = farmerService.harvest(crop, fortuneLevel());
+        boolean outputAvailable = canCultivate && canStoreHarvest(crop, harvest);
+        int previousTicks = growthTicks;
+        TimedProcess.Step step = farmerService.advance(
+                growthTicks,
+                maximumGrowthTicks,
+                canCultivate,
+                outputAvailable
+        );
+        growthTicks = step.ticks();
+        setCultivating(canCultivate && outputAvailable);
+        if (step.transition() == TimedProcess.Transition.IDLE
+                || step.transition() == TimedProcess.Transition.PAUSED) {
             return;
         }
-
-        FarmerHarvest harvest = FarmerCycle.harvest(crop, fortuneLevel());
-        if (!canStoreHarvest(crop, harvest)) {
+        if (step.transition() == TimedProcess.Transition.RESET) {
+            if (previousTicks != 0) {
+                markChangedAndSync();
+            }
             return;
         }
-
-        int efficiencyBonus = efficiencyLevel() * MachineSettings.values().farmerEfficiencyBonusPerLevel();
-        growthTicks = Math.min(FarmerCycle.growthTicks(), growthTicks + 1 + efficiencyBonus);
-        if (growthTicks < FarmerCycle.growthTicks()) {
+        if (step.transition() == TimedProcess.Transition.ADVANCED) {
             setChanged();
             if (growthTicks % 20 == 0) {
                 markChangedAndSync();
@@ -115,7 +140,6 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
 
         storeOutput(FarmerCropStackAdapter.produce(crop, harvest.produceCount()));
         storeOutput(FarmerCropStackAdapter.seeds(crop, harvest.seedCount()));
-        growthTicks = 0;
         markChangedAndSync();
     }
 
@@ -154,12 +178,16 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         if (!isValidSlot(slot) || count <= 0 || items.get(slot).isEmpty()) {
             return ItemStack.EMPTY;
         }
+        updateGrowthDuration();
         ItemStack removed = items.get(slot).split(count);
         if (items.get(slot).isEmpty()) {
             items.set(slot, ItemStack.EMPTY);
         }
         if (slot == VILLAGER_SLOT || (slot == CROP_SLOT && items.get(slot).isEmpty())) {
             growthTicks = 0;
+            cultivating = false;
+        } else if (slot == HOE_SLOT) {
+            updateGrowthDuration();
         }
         markChangedAndSync();
         return removed;
@@ -170,10 +198,14 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         if (!isValidSlot(slot)) {
             return ItemStack.EMPTY;
         }
+        updateGrowthDuration();
         ItemStack removed = items.get(slot);
         items.set(slot, ItemStack.EMPTY);
         if (slot == VILLAGER_SLOT || slot == CROP_SLOT) {
             growthTicks = 0;
+            cultivating = false;
+        } else if (slot == HOE_SLOT) {
+            updateGrowthDuration();
         }
         return removed;
     }
@@ -187,12 +219,18 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
             return;
         }
         FarmerCrop previousCrop = crop();
+        updateGrowthDuration();
         ItemStack inserted = stack.copy();
-        int max = slot == VILLAGER_SLOT || slot == HOE_SLOT ? 1 : Math.min(64, inserted.getMaxStackSize());
+        int max = slot == VILLAGER_SLOT || slot == CROP_SLOT || slot == HOE_SLOT
+                ? 1
+                : Math.min(64, inserted.getMaxStackSize());
         inserted.setCount(Math.min(max, inserted.getCount()));
         items.set(slot, inserted);
         if (slot == VILLAGER_SLOT || (slot == CROP_SLOT && previousCrop != crop())) {
             growthTicks = 0;
+            cultivating = false;
+        } else if (slot == HOE_SLOT) {
+            updateGrowthDuration();
         }
         markChangedAndSync();
     }
@@ -206,7 +244,8 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
     public boolean canPlaceItem(int slot, @NonNull ItemStack stack) {
         return switch (slot) {
             case VILLAGER_SLOT -> isAdultVillager(stack);
-            case CROP_SLOT -> FarmerCropStackAdapter.isSupported(stack);
+            case CROP_SLOT -> FarmerCropStackAdapter.isSupported(stack)
+                    && items.get(CROP_SLOT).isEmpty();
             case HOE_SLOT -> stack.getItem() instanceof HoeItem;
             default -> false;
         };
@@ -231,7 +270,14 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
 
     @Override
     public boolean canPlaceItemThroughFace(int slot, @NonNull ItemStack stack, @Nullable Direction direction) {
-        return direction != Direction.DOWN && canPlaceItem(slot, stack);
+        if (direction == Direction.DOWN) {
+            return false;
+        }
+        if (slot == CROP_SLOT
+                && (!items.get(CROP_SLOT).isEmpty() || stack.getCount() != 1)) {
+            return false;
+        }
+        return canPlaceItem(slot, stack);
     }
 
     @Override
@@ -245,7 +291,16 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
             items.set(slot, input.read(SLOT_TAG_PREFIX + slot, ItemStack.CODEC).orElse(ItemStack.EMPTY));
         }
-        growthTicks = Math.max(0, Math.min(FarmerCycle.growthTicks(), input.getIntOr(GROWTH_TICKS_TAG, 0)));
+        growthTicks = Math.max(0, input.getIntOr(GROWTH_TICKS_TAG, 0));
+        growthDurationTicks = Math.max(
+                1,
+                input.getIntOr(
+                        GROWTH_DURATION_TICKS_TAG,
+                        farmerService.effectiveGrowthTicks(0.0D, 0)
+                )
+        );
+        growthTicks = Math.min(growthDurationTicks, growthTicks);
+        cultivating = false;
     }
 
     @Override
@@ -258,6 +313,7 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         }
         if (growthTicks > 0) {
             output.putInt(GROWTH_TICKS_TAG, growthTicks);
+            output.putInt(GROWTH_DURATION_TICKS_TAG, growthDurationTicks);
         }
     }
 
@@ -267,6 +323,8 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
             items.set(slot, ItemStack.EMPTY);
         }
         growthTicks = 0;
+        growthDurationTicks = farmerService.effectiveGrowthTicks(0.0D, 0);
+        cultivating = false;
         setChanged();
     }
 
@@ -285,7 +343,67 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
             return 0;
         }
         var efficiency = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.EFFICIENCY);
-        return hoe.getEnchantmentLevel(efficiency);
+        return Math.max(0, hoe.getEnchantmentLevel(efficiency));
+    }
+
+    private int effectiveGrowthTicks() {
+        return farmerService.effectiveGrowthTicks(
+                hoeMiningSpeed(),
+                efficiencyLevel()
+        );
+    }
+
+    private float hoeMiningSpeed() {
+        ItemStack hoe = items.get(HOE_SLOT);
+        if (hoe.isEmpty()) {
+            return 0.0F;
+        }
+
+        Tool tool = hoe.get(DataComponents.TOOL);
+        if (tool == null) {
+            return 0.0F;
+        }
+
+        float fastestRuleSpeed = Math.max(0.0F, tool.defaultMiningSpeed());
+        for (Tool.Rule rule : tool.rules()) {
+            if (rule.speed().isEmpty()) {
+                continue;
+            }
+            float ruleSpeed = Math.max(0.0F, rule.speed().orElse(0.0F));
+            if (rule.blocks().unwrapKey().filter(BlockTags.MINEABLE_WITH_HOE::equals).isPresent()) {
+                return ruleSpeed;
+            }
+            fastestRuleSpeed = Math.max(fastestRuleSpeed, ruleSpeed);
+        }
+        return fastestRuleSpeed;
+    }
+
+    private int updateGrowthDuration() {
+        int currentDuration = effectiveGrowthTicks();
+        if (growthDurationTicks != currentDuration) {
+            rescaleProgress(growthDurationTicks, currentDuration);
+            growthDurationTicks = currentDuration;
+        }
+        return currentDuration;
+    }
+
+    private void rescaleProgress(int previousMaximum, int newMaximum) {
+        if (growthTicks <= 0) {
+            return;
+        }
+        growthTicks = farmerService.rescaleProgress(
+                growthTicks,
+                previousMaximum,
+                newMaximum
+        );
+    }
+
+    private void setCultivating(boolean value) {
+        if (cultivating == value) {
+            return;
+        }
+        cultivating = value;
+        markChangedAndSync();
     }
 
     private boolean canStoreHarvest(FarmerCrop crop, FarmerHarvest harvest) {
@@ -341,16 +459,9 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         return false;
     }
 
-    private void resetProgress() {
-        if (growthTicks != 0) {
-            growthTicks = 0;
-            markChangedAndSync();
-        }
-    }
-
     private static boolean isAdultVillager(ItemStack stack) {
-        return CapturedMobStackAdapter.isFilledCapturer(IncubatorKind.VILLAGER, stack)
-                && !CapturedMobStackAdapter.isBaby(IncubatorKind.VILLAGER, stack);
+        return CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)
+                && !CapturedMobStackAdapter.isBaby(CapturedMobKind.VILLAGER, stack);
     }
 
     private static boolean isOutputSlot(int slot) {

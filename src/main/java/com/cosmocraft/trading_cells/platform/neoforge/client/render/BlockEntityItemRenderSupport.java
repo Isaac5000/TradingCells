@@ -26,6 +26,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Consumer;
 
@@ -41,7 +42,7 @@ public final class BlockEntityItemRenderSupport {
 
         @Override
         public void submit(
-                ItemStack stack,
+                @Nullable ItemStack stack,
                 @NonNull PoseStack poseStack,
                 @NonNull SubmitNodeCollector submitNodeCollector,
                 int packedLight,
@@ -51,7 +52,8 @@ public final class BlockEntityItemRenderSupport {
         ) {
             Minecraft minecraft = Minecraft.getInstance();
             Level level = minecraft.level;
-            if (level == null
+            if (stack == null
+                    || level == null
                     || !(stack.getItem() instanceof BlockItem blockItem)
                     || !(blockItem.getBlock() instanceof EntityBlock entityBlock)) {
                 return;
@@ -111,7 +113,7 @@ public final class BlockEntityItemRenderSupport {
                 return;
             }
 
-            BlockEntityRenderState state = (BlockEntityRenderState) renderer.createRenderState();
+            BlockEntityRenderState state = renderer.createRenderState();
             renderer.extractRenderState(blockEntity, state, 0.0F, Vec3.atCenterOf(BlockPos.ZERO), null);
             state.lightCoords = packedLight;
             renderer.submit(state, poseStack, submitNodeCollector, new CameraRenderState());

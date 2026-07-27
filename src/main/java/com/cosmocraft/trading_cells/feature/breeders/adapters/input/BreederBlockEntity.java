@@ -1,13 +1,13 @@
 package com.cosmocraft.trading_cells.feature.breeders.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederKind;
+import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederFood;
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederRecipe;
-import com.cosmocraft.trading_cells.feature.breeders.adapters.output.BreederRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.breeders.application.port.output.BreederTickPort;
-import com.cosmocraft.trading_cells.feature.machines.application.MachineSettings;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.input.PiglinCapturerItem;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.input.VillagerCapturerItem;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.output.TradingCellsRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.breeders.application.port.input.BreederUseCase;
+import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -25,7 +25,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -35,7 +34,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public abstract class BreederBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider, BreederTickPort {
+public abstract class BreederBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider {
     public static final int FOOD_SLOT = 0;
     public static final int PARENT_A_SLOT = 1;
     public static final int PARENT_B_SLOT = 2;
@@ -50,12 +49,15 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     private static final String BABY_TEMPLATE_TAG = "BabyTemplate";
     private static final String VILLAGER_VARIANT_TAG = "VillagerVariant";
 
+    // Automation contract: food enters from above, adult/empty capturers
+    // enter from either horizontal side, and the captured baby leaves below.
     private static final int[] TOP_SLOTS = new int[]{FOOD_SLOT};
     private static final int[] SIDE_SLOTS = new int[]{PARENT_A_SLOT, PARENT_B_SLOT, EMPTY_CAPTURER_SLOT};
     private static final int[] BOTTOM_SLOTS = new int[]{FILLED_CAPTURER_SLOT};
     private static final int[] NO_SLOTS = new int[0];
 
     private final BreederKind kind;
+    private final BreederUseCase breederService = FeatureComposition.breeder();
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private int breedTicks;
     private int pendingBabies;
@@ -70,7 +72,9 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
                 case 0 -> breedTicks;
                 case 1 -> pendingBabies;
                 case 2 -> villagerVariant;
-                case 3 -> BreederRecipe.breedTicks(kind);
+                case 3 -> breederService.durationTicks(kind);
+                case 4 -> breederService.foodCost(kind, primaryFood());
+                case 5 -> breederService.foodCost(kind, secondaryFood());
                 default -> 0;
             };
         }
@@ -80,7 +84,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
             if (index == 0) {
                 breedTicks = value;
             } else if (index == 1) {
-                pendingBabies = Math.max(0, Math.min(MachineSettings.values().maximumPendingBabies(), value));
+                pendingBabies = Math.clamp(value, 0, breederService.maximumPendingBabies());
             } else if (index == 2 && kind == BreederKind.VILLAGER) {
                 int normalized = VillagerVariantSelection.normalize(value);
                 if (villagerVariant != normalized) {
@@ -92,7 +96,15 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
 
         @Override
         public int getCount() {
-            return 4;
+            return 6;
+        }
+
+        private BreederFood primaryFood() {
+            return kind == BreederKind.VILLAGER ? BreederFood.BREAD : BreederFood.PORK;
+        }
+
+        private BreederFood secondaryFood() {
+            return kind == BreederKind.VILLAGER ? BreederFood.VEGETABLE : BreederFood.CRIMSON_FUNGUS;
         }
     };
 
@@ -117,15 +129,12 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         return dataAccess;
     }
 
-    public static void serverTick(Level level, BlockPos pos, BlockState state, BreederBlockEntity breeder) {
-        if (level.isClientSide()) {
-            return;
-        }
-        BreederRegistrationAdapter.TICK_BREEDER_USE_CASE.tick(breeder);
+    void processTick() {
+        processAutomation();
+        processBreedingProgress();
     }
 
-    @Override
-    public void processAutomation() {
+    private void processAutomation() {
         if (pendingBabies <= 0 || !getItem(FILLED_CAPTURER_SLOT).isEmpty()) {
             return;
         }
@@ -154,26 +163,32 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         markChangedAndSync();
     }
 
-    @Override
-    public void processBreedingProgress() {
-        if (!canGenerateBaby()) {
-            if (breedTicks != 0) {
-                breedTicks = 0;
+    private void processBreedingProgress() {
+        int previousTicks = breedTicks;
+        TimedProcess.Step step = breederService.advance(
+                breedTicks,
+                kind,
+                canGenerateBaby()
+        );
+        breedTicks = step.ticks();
+        if (step.transition() == TimedProcess.Transition.IDLE
+                || step.transition() == TimedProcess.Transition.PAUSED) {
+            return;
+        }
+        if (step.transition() == TimedProcess.Transition.RESET) {
+            if (previousTicks != 0) {
                 markChangedAndSync();
             }
             return;
         }
-
-        breedTicks++;
-        if (breedTicks < BreederRecipe.breedTicks(kind)) {
+        if (step.transition() == TimedProcess.Transition.ADVANCED) {
             setChanged();
             return;
         }
 
-        breedTicks = 0;
         consumeFoodCost();
         babyTemplate = createBabyTemplateFromParents();
-        pendingBabies = Math.min(MachineSettings.values().maximumPendingBabies(), pendingBabies + 1);
+        pendingBabies = Math.min(breederService.maximumPendingBabies(), pendingBabies + 1);
         markChangedAndSync();
     }
 
@@ -187,13 +202,14 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     private boolean hasFoodCost() {
         ItemStack food = getItem(FOOD_SLOT);
         var breederFood = MinecraftBreederFood.from(food);
-        return BreederRecipe.isFood(kind, breederFood) && food.getCount() >= BreederRecipe.cost(kind, breederFood);
+        return BreederRecipe.isFood(kind, breederFood)
+                && food.getCount() >= breederService.foodCost(kind, breederFood);
     }
 
     private void consumeFoodCost() {
         ItemStack food = getItem(FOOD_SLOT);
         if (!food.isEmpty()) {
-            food.shrink(BreederRecipe.cost(kind, MinecraftBreederFood.from(food)));
+            food.shrink(breederService.foodCost(kind, MinecraftBreederFood.from(food)));
             if (food.isEmpty()) {
                 items.set(FOOD_SLOT, ItemStack.EMPTY);
             }
@@ -233,6 +249,12 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
             baby.put("VillagerData", villagerData);
         } else {
             baby.putBoolean("IsBaby", true);
+            // Babies produced by the breeder must always be completely unarmed.
+            baby.remove("HandItems");
+            baby.remove("ArmorItems");
+            baby.remove("HandDropChances");
+            baby.remove("ArmorDropChances");
+            baby.remove("equipment");
         }
         return baby;
     }
@@ -252,10 +274,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     }
 
     private @Nullable CompoundTag getParentData(ItemStack stack) {
-        if (kind == BreederKind.VILLAGER) {
-            return VillagerCapturerItem.getCapturedVillagerData(stack);
-        }
-        return PiglinCapturerItem.getCapturedPiglinData(stack);
+        return CapturedMobStackAdapter.copyData(capturedKind(), stack);
     }
 
     private boolean isValidAdultParent(ItemStack stack) {
@@ -266,32 +285,28 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         if (data == null) {
             return false;
         }
-        return kind == BreederKind.VILLAGER
-                ? !VillagerCapturerItem.isBabyVillager(data)
-                : !PiglinCapturerItem.isBabyPiglin(data);
+        return !CapturedMobStackAdapter.isBaby(capturedKind(), data);
     }
 
     private boolean isEmptyCapturer(ItemStack stack) {
         if (stack.isEmpty() || !stack.is(capturerItem())) {
             return false;
         }
-        return kind == BreederKind.VILLAGER
-                ? !VillagerCapturerItem.hasCapturedVillager(stack)
-                : !PiglinCapturerItem.hasCapturedPiglin(stack);
+        return !CapturedMobStackAdapter.isFilledCapturer(capturedKind(), stack);
     }
 
     private net.minecraft.world.item.Item capturerItem() {
-        return kind == BreederKind.VILLAGER
-                ? TradingCellsRegistrationAdapter.VILLAGER_CAPTURER_ITEM.get()
-                : TradingCellsRegistrationAdapter.PIGLIN_CAPTURER_ITEM.get();
+        return CapturedMobStackAdapter.capturerItem(capturedKind());
     }
 
     private void setCapturedData(ItemStack stack, CompoundTag data) {
-        if (kind == BreederKind.VILLAGER) {
-            VillagerCapturerItem.setCapturedVillagerData(stack, data);
-        } else {
-            PiglinCapturerItem.setCapturedPiglinData(stack, data);
-        }
+        CapturedMobStackAdapter.setData(capturedKind(), stack, data);
+    }
+
+    private CapturedMobKind capturedKind() {
+        return kind == BreederKind.VILLAGER
+                ? CapturedMobKind.VILLAGER
+                : CapturedMobKind.PIGLIN;
     }
 
 
@@ -336,7 +351,11 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     }
 
     @Override
-    public @Nullable AbstractContainerMenu createMenu(int containerId, @NonNull Inventory inventory, @NonNull Player player) {
+    public @NonNull AbstractContainerMenu createMenu(
+            int containerId,
+            @NonNull Inventory inventory,
+            @NonNull Player player
+    ) {
         return new BreederMenu(kind, containerId, inventory, this, dataAccess);
     }
 
@@ -449,7 +468,11 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     }
 
     @Override
-    public boolean canPlaceItemThroughFace(int slot, @NonNull ItemStack stack, @Nullable Direction direction) {
+    public boolean canPlaceItemThroughFace( // NOSONAR - Minecraft explicitly permits a null automation side.
+            int slot,
+            @NonNull ItemStack stack,
+            @Nullable Direction direction
+    ) {
         if (direction == Direction.UP) {
             return slot == FOOD_SLOT && canPlaceItem(slot, stack);
         }
@@ -476,9 +499,10 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
             }
         }
         breedTicks = Math.max(0, input.getIntOr(BREED_TICKS_TAG, 0));
-        pendingBabies = Math.max(
+        pendingBabies = Math.clamp(
+                input.getIntOr(PENDING_BABIES_TAG, 0),
                 0,
-                Math.min(MachineSettings.values().maximumPendingBabies(), input.getIntOr(PENDING_BABIES_TAG, 0))
+                breederService.maximumPendingBabies()
         );
         babyTemplate = input.read(BABY_TEMPLATE_TAG, CompoundTag.CODEC).orElse(null);
         villagerVariant = VillagerVariantSelection.normalize(input.getIntOr(VILLAGER_VARIANT_TAG, 0));

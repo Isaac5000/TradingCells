@@ -52,6 +52,12 @@ neoForge {
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            if (project.hasProperty('quickPlayWorld')) {
+                programArguments.addAll(
+                        '--quickPlaySingleplayer',
+                        project.property('quickPlayWorld').toString()
+                )
+            }
         }
 
         server {
@@ -175,6 +181,162 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+tasks.register('checkArchitecture') {
+    group = 'verification'
+    description = 'Checks hexagonal dependency boundaries and production registry safety.'
+    def sourceRoot = file('src/main/java')
+    inputs.files(fileTree(sourceRoot) {
+        include '**/*.java'
+    })
+
+    doLast {
+        def violations = []
+        def featurePrefix = 'com.cosmocraft.trading_cells.feature.'
+        def sharedPrefix = 'com.cosmocraft.trading_cells.shared.'
+        def sharedFeatures = ['captures'] as Set
+        fileTree(sourceRoot).matching { include '**/*.java' }.each { source ->
+            def relativePath = sourceRoot.toPath()
+                    .relativize(source.toPath())
+                    .toString()
+                    .replace('\\', '/')
+            def lines = source.readLines('UTF-8')
+            def imports = []
+            lines.eachWithIndex { line, index ->
+                if (line.startsWith('import ')) {
+                    imports << [text: line, line: index + 1]
+                }
+            }
+            def expectedPackage = relativePath
+                    .substring(0, relativePath.lastIndexOf('/'))
+                    .replace('/', '.')
+            def declaredPackage = lines.find { it.startsWith('package ') }
+            if (declaredPackage != "package ${expectedPackage};") {
+                violations << "${relativePath}: package does not match its directory"
+            }
+            def featureMatch = relativePath =~ /^com\/cosmocraft\/trading_cells\/feature\/([^\/]+)\//
+            def ownerFeature = featureMatch.find() ? featureMatch.group(1) : null
+            def sharedMatch = relativePath =~ /^com\/cosmocraft\/trading_cells\/shared\/([^\/]+)\//
+            def ownerSharedModule = sharedMatch.find() ? sharedMatch.group(1) : null
+
+            if (relativePath.contains('/domain/')) {
+                def forbidden = [
+                        'net.minecraft.',
+                        'net.neoforged.',
+                        'com.cosmocraft.trading_cells.platform.',
+                        '.adapters.',
+                        '.application.'
+                ]
+                imports.each { imported ->
+                    if (forbidden.any { imported.text.contains(it) }) {
+                        violations << "${relativePath}:${imported.line}: domain imports ${imported.text}"
+                    }
+                }
+            }
+
+            if (relativePath.contains('/application/')) {
+                def forbidden = [
+                        'net.minecraft.',
+                        'net.neoforged.',
+                        'com.cosmocraft.trading_cells.platform.',
+                        '.adapters.'
+                ]
+                imports.each { imported ->
+                    if (forbidden.any { imported.text.contains(it) }) {
+                        violations << "${relativePath}:${imported.line}: application imports ${imported.text}"
+                    }
+                }
+            }
+
+            def sourceText = lines.join('\n')
+            if (relativePath.contains('/adapters/')
+                    && sourceText.contains('.application.service.')) {
+                violations << "${relativePath}: adapter imports a concrete application service"
+            }
+            if (relativePath.contains('/adapters/')
+                    && sourceText.contains('FeatureSettingsProvider')) {
+                violations << "${relativePath}: adapter accesses configuration instead of an input port"
+            }
+            if (relativePath.contains('/application/service/')
+                    && !(sourceText =~ /implements\s+\w+UseCase/).find()) {
+                violations << "${relativePath}: application service does not implement an input port"
+            }
+            if (sourceText =~ /new\s+\w+Service\s*\(/) {
+                if (relativePath != 'com/cosmocraft/trading_cells/platform/neoforge/bootstrap/FeatureComposition.java') {
+                    violations << "${relativePath}: concrete services may only be created in FeatureComposition"
+                }
+            }
+
+            if (ownerFeature != null) {
+                imports.each { imported ->
+                    if (imported.text.startsWith("import ${sharedPrefix}")
+                            && !imported.text.contains('.shared.machines.domain.')) {
+                        violations << "${relativePath}:${imported.line}: use a public shared-domain boundary"
+                        return
+                    }
+                    if (!imported.text.startsWith("import ${featurePrefix}")) {
+                        return
+                    }
+                    def target = imported.text
+                            .substring(("import ${featurePrefix}").length())
+                            .takeWhile { it != '.' }
+                    if (target == ownerFeature) {
+                        return
+                    }
+                    if (!sharedFeatures.contains(target)) {
+                        violations << "${relativePath}:${imported.line}: feature ${ownerFeature} depends on ${target}"
+                        return
+                    }
+                    if (target == 'captures'
+                            && !imported.text.contains('.captures.domain.')
+                            && !imported.text.contains('.captures.adapters.api.')) {
+                        violations << "${relativePath}:${imported.line}: use the public Captures API"
+                    }
+                }
+            }
+            if (ownerSharedModule != null) {
+                imports.each { imported ->
+                    if (imported.text.startsWith("import ${featurePrefix}")) {
+                        violations << "${relativePath}:${imported.line}: shared kernel depends on a feature"
+                    }
+                }
+            }
+
+            [
+                    'RegisterGameTestsEvent',
+                    'GameTestInstance',
+                    'net.minecraft.gametest'
+            ].each { forbiddenGameTestApi ->
+                if (sourceText.contains(forbiddenGameTestApi)) {
+                    violations << "${relativePath}: production source contains ${forbiddenGameTestApi}"
+                }
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            throw new GradleException(
+                    "Architecture violations:\n - " + violations.join('\n - ')
+            )
+        }
+    }
+}
+
+tasks.register('verifyDomainRules', JavaExec) {
+    group = 'verification'
+    description = 'Runs dependency-free checks for the pure feature rules.'
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.cosmocraft.trading_cells.architecture.DomainRulesVerification'
+}
+
+tasks.named('test', Test).configure {
+    failOnNoDiscoveredTests = false
+}
+
+tasks.named('check').configure {
+    dependsOn tasks.named('checkArchitecture')
+    dependsOn tasks.named('verifyDomainRules')
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

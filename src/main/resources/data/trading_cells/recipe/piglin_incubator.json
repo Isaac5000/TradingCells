@@ -1,6 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "category": "building",
+  "show_notification": false,
   "key": {
     "B": "minecraft:red_wool",
     "P": "minecraft:blackstone",

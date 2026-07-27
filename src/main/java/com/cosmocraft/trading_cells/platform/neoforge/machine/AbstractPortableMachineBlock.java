@@ -1,6 +1,5 @@
 package com.cosmocraft.trading_cells.platform.neoforge.machine;
 
-import com.cosmocraft.trading_cells.feature.machines.application.usecase.MachineUseCases;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -26,10 +25,12 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public abstract class AbstractPortableMachineBlock extends BaseEntityBlock {
+public abstract class AbstractPortableMachineBlock<T extends PortableMachineBlockEntity> extends BaseEntityBlock {
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     protected AbstractPortableMachineBlock(Properties properties) {
@@ -38,7 +39,7 @@ public abstract class AbstractPortableMachineBlock extends BaseEntityBlock {
     }
 
     @Override
-    public @Nullable BlockState getStateForPlacement(@NonNull BlockPlaceContext context) {
+    public @NonNull BlockState getStateForPlacement(@NonNull BlockPlaceContext context) {
         return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
@@ -50,6 +51,16 @@ public abstract class AbstractPortableMachineBlock extends BaseEntityBlock {
     @Override
     protected @NonNull RenderShape getRenderShape(@NonNull BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    @Override
+    protected @NonNull VoxelShape getShape(
+            @NonNull BlockState state,
+            @NonNull BlockGetter level,
+            @NonNull BlockPos pos,
+            @NonNull CollisionContext context
+    ) {
+        return MachineCageBlockShapes.CAGE;
     }
 
     @Override
@@ -92,16 +103,17 @@ public abstract class AbstractPortableMachineBlock extends BaseEntityBlock {
     }
 
     @Override
-    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(
+    public <B extends BlockEntity> @Nullable BlockEntityTicker<B> getTicker(
             @NonNull Level level,
             @NonNull BlockState state,
-            @NonNull BlockEntityType<T> type
+            @NonNull BlockEntityType<B> type
     ) {
-        if (level.isClientSide() || type != machineType()) {
+        if (level.isClientSide()) {
             return null;
         }
-        return (tickerLevel, tickerPos, tickerState, blockEntity) ->
-                MachineUseCases.TICK.tick((PortableMachineBlockEntity) blockEntity);
+        return createTickerHelper(type, machineType(), (_, _, _, machine) ->
+                machine.processTick()
+        );
     }
 
     @Override
@@ -126,7 +138,7 @@ public abstract class AbstractPortableMachineBlock extends BaseEntityBlock {
             @NonNull Player player,
             @NonNull BlockPos pos,
             @NonNull BlockState state,
-            @Nullable BlockEntity blockEntity,
+            @Nullable BlockEntity blockEntity, // NOSONAR - Minecraft's Block API explicitly permits no block entity.
             @NonNull ItemStack tool
     ) {
         player.awardStat(Stats.BLOCK_MINED.get(this));
@@ -144,9 +156,17 @@ public abstract class AbstractPortableMachineBlock extends BaseEntityBlock {
         machine.discardContentsAfterBlockDrop();
     }
 
-    protected abstract BlockEntityType<? extends PortableMachineBlockEntity> machineType();
+    protected abstract BlockEntityType<T> machineType();
 
-    private static InteractionResult openMenu(Level level, BlockPos pos, Player player) {
+    protected void onMenuOpened(
+            ServerPlayer player,
+            PortableMachineBlockEntity machine,
+            int containerId
+    ) {
+        // Most machines need no extra synchronization after opening their menu.
+    }
+
+    private InteractionResult openMenu(Level level, BlockPos pos, Player player) {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
@@ -154,7 +174,9 @@ public abstract class AbstractPortableMachineBlock extends BaseEntityBlock {
         if (blockEntity instanceof PortableMachineBlockEntity machine
                 && machine instanceof net.minecraft.world.MenuProvider provider
                 && player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.openMenu(provider);
+            serverPlayer.openMenu(provider).ifPresent(containerId ->
+                    onMenuOpened(serverPlayer, machine, containerId)
+            );
             return InteractionResult.SUCCESS_SERVER;
         }
         return InteractionResult.FAIL;

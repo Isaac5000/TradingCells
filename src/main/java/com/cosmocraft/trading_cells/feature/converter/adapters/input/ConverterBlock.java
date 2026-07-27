@@ -1,9 +1,9 @@
 package com.cosmocraft.trading_cells.feature.converter.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.ConverterRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.input.VillagerCapturerItem;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
-import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.NonNull;
 
-public final class ConverterBlock extends AbstractPortableMachineBlock {
+public final class ConverterBlock extends AbstractPortableMachineBlock<ConverterBlockEntity> {
     public static final MapCodec<ConverterBlock> CODEC = simpleCodec(ConverterBlock::new);
 
     public ConverterBlock(Properties properties) {
@@ -52,16 +52,16 @@ public final class ConverterBlock extends AbstractPortableMachineBlock {
         if (converter == null) {
             return InteractionResult.FAIL;
         }
-        if (stack.getItem() instanceof VillagerCapturerItem) {
-            return VillagerCapturerItem.hasCapturedVillager(stack)
-                    ? converter.insertVillagerFromCapturer(stack, player)
+        if (CapturedMobStackAdapter.isCapturer(CapturedMobKind.VILLAGER, stack)) {
+            return CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)
+                    ? converter.insertVillagerFromCapturer(stack)
                     : converter.extractVillagerToCapturer(stack, player);
         }
         return super.useItemOn(stack, state, level, pos, player, hand, hit);
     }
 
     @Override
-    protected BlockEntityType<? extends PortableMachineBlockEntity> machineType() {
+    protected BlockEntityType<ConverterBlockEntity> machineType() {
         return ConverterRegistrationAdapter.CONVERTER_BLOCK_ENTITY.get();
     }
 

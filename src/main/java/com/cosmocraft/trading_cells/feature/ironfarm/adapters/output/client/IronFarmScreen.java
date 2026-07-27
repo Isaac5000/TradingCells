@@ -3,7 +3,9 @@ package com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotSprites;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -12,19 +14,26 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
 public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> {
-    private static final Identifier COBBLESTONE = Identifier.fromNamespaceAndPath("minecraft", "textures/block/cobblestone.png");
-    private static final int PROGRESS_X = 54;
-    private static final int PROGRESS_Y = 51;
-    private static final int PROGRESS_WIDTH = 68;
-    private static final int PROGRESS_HEIGHT = 8;
+    private static final Identifier COBBLESTONE = Identifier.fromNamespaceAndPath(
+            "minecraft",
+            "textures/block/cobblestone.png"
+    );
+    private static final MachineScreenTheme THEME = MachineScreenTheme.IRON_FARM;
+    private static final int INFO_TEXT_COLOR = 0xFFFFFFFF;
+    private static final int PROGRESS_FRAME_X = MachineScreenLayout.machineX(54);
+    private static final int PROGRESS_FRAME_Y = 47;
+    private static final int PROGRESS_X = PROGRESS_FRAME_X + MachineScreenLayout.PROGRESS_FILL_X_OFFSET;
+    private static final int PROGRESS_Y = PROGRESS_FRAME_Y + MachineScreenLayout.PROGRESS_FILL_Y_OFFSET;
+    private static final int PROGRESS_WIDTH = MachineScreenLayout.PROGRESS_FILL_WIDTH;
+    private static final int PROGRESS_HEIGHT = MachineScreenLayout.PROGRESS_FILL_HEIGHT;
+    private static final int FLOWERS_X = MachineScreenLayout.machineX(8) - 16;
     private Checkbox flowersCheckbox;
 
     public IronFarmScreen(IronFarmMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, MachineScreenLayout.WIDTH, MachineScreenLayout.HEIGHT);
-        titleLabelX = 8;
-        titleLabelY = 6;
-        inventoryLabelX = 8;
-        inventoryLabelY = 129;
+        titleLabelY = MachineScreenLayout.TITLE_Y;
+        inventoryLabelX = MachineScreenLayout.PLAYER_INVENTORY_LABEL_X;
+        inventoryLabelY = MachineScreenLayout.PLAYER_INVENTORY_LABEL_Y;
     }
 
     @Override
@@ -46,7 +55,7 @@ public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> 
             removeWidget(flowersCheckbox);
         }
         flowersCheckbox = addRenderableWidget(Checkbox.builder(Component.translatable("label.trading_cells.flowers"), font)
-                .pos(leftPos + 8, topPos + 104)
+                .pos(leftPos + FLOWERS_X, topPos + 93)
                 .maxWidth(74)
                 .selected(menu.flowersEnabled())
                 .onValueChange((checkbox, selected) -> setFlowersEnabled(selected))
@@ -58,15 +67,27 @@ public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> 
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         int x = leftPos;
         int y = topPos;
-        MachineScreenLayout.drawBackground(graphics, x, y, COBBLESTONE);
+        MachineScreenLayout.drawBackground(graphics, x, y, COBBLESTONE, THEME);
         for (int index = 0; index < IronFarmBlockEntity.VILLAGER_SLOT_COUNT; index++) {
+            int slotX = IronFarmMenu.VILLAGER_ROW_X + index * 24;
             MachineScreenLayout.drawSlot(
                     graphics,
                     x,
                     y,
-                    IronFarmMenu.VILLAGER_ROW_X + index * 24,
-                    IronFarmMenu.VILLAGER_ROW_Y
+                    slotX,
+                    IronFarmMenu.VILLAGER_ROW_Y,
+                    THEME
             );
+            if (!menu.getSlot(IronFarmBlockEntity.FIRST_VILLAGER_SLOT + index).hasItem()) {
+                MachineScreenLayout.drawEmptySlotSprite(
+                        graphics,
+                        x,
+                        y,
+                        slotX,
+                        IronFarmMenu.VILLAGER_ROW_Y,
+                        MachineSlotSprites.VILLAGER_HEAD
+                );
+            }
         }
         for (int index = 0; index < IronFarmBlockEntity.OUTPUT_SLOT_COUNT; index++) {
             MachineScreenLayout.drawSlot(
@@ -74,15 +95,22 @@ public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> 
                     x,
                     y,
                     IronFarmMenu.OUTPUT_ROW_X + index * 24,
-                    IronFarmMenu.OUTPUT_ROW_Y
+                    IronFarmMenu.OUTPUT_ROW_Y,
+                    THEME
             );
         }
-        MachineScreenLayout.drawProgressFrame(graphics, x + 53, y + 48);
-        drawEfficiencyInfo(graphics, x + 88, y + 99);
+        MachineScreenLayout.drawProgressFrame(graphics, x + PROGRESS_FRAME_X, y + PROGRESS_FRAME_Y, THEME);
+        drawEfficiencyInfo(graphics, x + MachineScreenLayout.machineX(88), y + 98);
 
         int progress = Math.min(PROGRESS_WIDTH, menu.cycleTicks() * PROGRESS_WIDTH / menu.maxCycleTicks());
         if (progress > 0) {
-            graphics.fill(x + PROGRESS_X, y + PROGRESS_Y, x + PROGRESS_X + progress, y + PROGRESS_Y + PROGRESS_HEIGHT, 0xFFD7D7D7);
+            graphics.fill(
+                    x + PROGRESS_X,
+                    y + PROGRESS_Y,
+                    x + PROGRESS_X + progress,
+                    y + PROGRESS_Y + PROGRESS_HEIGHT,
+                    0xFFD7D7D7
+            );
         }
         if (menu.cycleTicks() > 0) {
             MachineScreenUtil.drawCenteredCountdown(
@@ -98,8 +126,7 @@ public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> 
 
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.text(font, title, titleLabelX, titleLabelY, 0x303030, false);
-        graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0x303030, false);
+        MachineScreenLayout.drawLabels(graphics, font, title, playerInventoryTitle, THEME);
     }
 
     private void drawEfficiencyInfo(GuiGraphicsExtractor graphics, int x, int y) {
@@ -111,24 +138,17 @@ public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> 
                 Component.translatable("label.trading_cells.iron_villagers", villagers, maximum),
                 x,
                 y,
-                0x303030,
-                false
+                INFO_TEXT_COLOR,
+                true
         );
         graphics.text(
                 font,
                 Component.translatable("label.trading_cells.iron_current_efficiency", multiplier),
                 x,
                 y + 10,
-                0x303030,
-                false
+                INFO_TEXT_COLOR,
+                true
         );
-        Component next = villagers >= maximum
-                ? Component.translatable("label.trading_cells.iron_maximum")
-                : Component.translatable(
-                        "label.trading_cells.iron_next_efficiency",
-                        Math.max(0, menu.nextMultiplier() - multiplier)
-                );
-        graphics.text(font, next, x, y + 20, 0x303030, false);
     }
 
     private void setFlowersEnabled(boolean enabled) {

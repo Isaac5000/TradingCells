@@ -1,9 +1,8 @@
 package com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client;
 
-import com.cosmocraft.trading_cells.feature.incubators.adapters.input.CapturedMobStackAdapter;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubatorKind;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmBlockEntity;
-import com.cosmocraft.trading_cells.feature.ironfarm.domain.model.IronFarmCycle;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -83,13 +82,13 @@ public final class IronFarmBlockEntityRenderer implements BlockEntityRenderer<Ir
             state.zombie = extractEntity(zombie, partialTicks, state.lightCoords);
         }
 
-        if (IronFarmCycle.isGolemVisible(blockEntity.cycleTicks())) {
+        if (blockEntity.isGolemVisible()) {
             Entity golem = state.getOrCreateGolem(level);
             if (golem != null) {
                 orient(golem, state.facing.toYRot());
                 state.golem = extractEntity(golem, partialTicks, state.lightCoords);
                 if (state.golem instanceof LivingEntityRenderState livingState) {
-                    livingState.hasRedOverlay = IronFarmCycle.hasRedHitFlash(blockEntity.cycleTicks());
+                    livingState.hasRedOverlay = blockEntity.hasGolemRedHitFlash();
                 }
             }
         }
@@ -100,32 +99,32 @@ public final class IronFarmBlockEntityRenderer implements BlockEntityRenderer<Ir
         Direction side = state.facing.getClockWise();
         double leftX = 0.5D + side.getStepX() * 0.27D;
         double leftZ = 0.5D + side.getStepZ() * 0.27D;
+        EntitySubmitContext context = new EntitySubmitContext(
+                state.lightCoords,
+                poseStack,
+                collector,
+                camera
+        );
         for (int index = 0; index < state.villagers.length; index++) {
             double lineOffset = (index - 1) * 0.23D;
             submitEntity(
                     state.villagers[index],
                     VILLAGER_SCALE,
-                    leftX + state.facing.getStepX() * lineOffset,
-                    0.11D,
-                    leftZ + state.facing.getStepZ() * lineOffset,
-                    state.lightCoords,
-                    poseStack,
-                    collector,
-                    camera
+                    new Vec3(
+                            leftX + state.facing.getStepX() * lineOffset,
+                            0.11D,
+                            leftZ + state.facing.getStepZ() * lineOffset
+                    ),
+                    context
             );
         }
 
-        submitEntity(state.golem, GOLEM_SCALE, 0.5D, 0.13D, 0.5D, state.lightCoords, poseStack, collector, camera);
+        submitEntity(state.golem, GOLEM_SCALE, new Vec3(0.5D, 0.13D, 0.5D), context);
         submitEntity(
                 state.zombie,
                 ZOMBIE_SCALE,
-                0.5D - side.getStepX() * 0.28D,
-                0.11D,
-                0.5D - side.getStepZ() * 0.28D,
-                state.lightCoords,
-                poseStack,
-                collector,
-                camera
+                new Vec3(0.5D - side.getStepX() * 0.28D, 0.11D, 0.5D - side.getStepZ() * 0.28D),
+                context
         );
     }
 
@@ -140,23 +139,26 @@ public final class IronFarmBlockEntityRenderer implements BlockEntityRenderer<Ir
     private void submitEntity(
             @Nullable EntityRenderState state,
             float scale,
-            double x,
-            double y,
-            double z,
-            int lightCoords,
-            PoseStack poseStack,
-            SubmitNodeCollector collector,
-            CameraRenderState camera
+            Vec3 position,
+            EntitySubmitContext context
     ) {
         if (state == null) {
             return;
         }
-        PreviewEntityRenderUtil.applyLight(state, lightCoords);
-        poseStack.pushPose();
-        poseStack.translate(x, y, z);
-        poseStack.scale(scale, scale, scale);
-        entityRenderer.submit(state, camera, 0.0D, 0.0D, 0.0D, poseStack, collector);
-        poseStack.popPose();
+        PreviewEntityRenderUtil.applyLight(state, context.lightCoords());
+        context.poseStack().pushPose();
+        context.poseStack().translate(position.x(), position.y(), position.z());
+        context.poseStack().scale(scale, scale, scale);
+        entityRenderer.submit(
+                state,
+                context.camera(),
+                0.0D,
+                0.0D,
+                0.0D,
+                context.poseStack(),
+                context.collector()
+        );
+        context.poseStack().popPose();
     }
 
     private static void orient(Entity entity, float yaw) {
@@ -196,7 +198,7 @@ public final class IronFarmBlockEntityRenderer implements BlockEntityRenderer<Ir
             }
             if (cachedVillagers[index] == null || !ItemStack.isSameItemSameComponents(cachedVillagerStacks[index], stack)) {
                 cachedVillagers[index] = CapturedMobStackAdapter.createEntity(
-                        IncubatorKind.VILLAGER,
+                        CapturedMobKind.VILLAGER,
                         blockEntity.getLevel(),
                         stack,
                         blockEntity.getBlockPos()
@@ -228,5 +230,13 @@ public final class IronFarmBlockEntityRenderer implements BlockEntityRenderer<Ir
             cachedZombie = null;
             cachedGolem = null;
         }
+    }
+
+    private record EntitySubmitContext(
+            int lightCoords,
+            PoseStack poseStack,
+            SubmitNodeCollector collector,
+            CameraRenderState camera
+    ) {
     }
 }

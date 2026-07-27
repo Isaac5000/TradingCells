@@ -2,11 +2,11 @@ package com.cosmocraft.trading_cells.platform.neoforge.event;
 
 import com.cosmocraft.trading_cells.feature.breeders.adapters.output.BreederRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.breeders.adapters.output.client.BreederBlockEntityRenderer;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.output.TradingCellsRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.output.client.PiglinBarteringCellBlockEntityRenderer;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.output.client.PiglinCapturerItemRenderSupport;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.output.client.TradingCellBlockEntityRenderer;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.output.client.VillagerCapturerItemRenderSupport;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.PiglinBarteringCellBlockEntityRenderer;
+import com.cosmocraft.trading_cells.feature.captures.adapters.output.client.PiglinCapturerItemRenderSupport;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.TradingCellBlockEntityRenderer;
+import com.cosmocraft.trading_cells.feature.captures.adapters.output.client.VillagerCapturerItemRenderSupport;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.BlockEntityItemRenderSupport;
 import net.minecraft.resources.Identifier;
@@ -38,11 +38,11 @@ public final class CapturerClientEvent {
 
     public static void onRegisterBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(
-                TradingCellsRegistrationAdapter.VILLAGER_TRADING_CELL_BLOCK_ENTITY.get(),
+                TraderRegistrationAdapter.VILLAGER_TRADING_CELL_BLOCK_ENTITY.get(),
                 TradingCellBlockEntityRenderer::new
         );
         event.registerBlockEntityRenderer(
-                TradingCellsRegistrationAdapter.PIGLIN_BARTERING_CELL_BLOCK_ENTITY.get(),
+                TraderRegistrationAdapter.PIGLIN_BARTERING_CELL_BLOCK_ENTITY.get(),
                 PiglinBarteringCellBlockEntityRenderer::new
         );
         event.registerBlockEntityRenderer(

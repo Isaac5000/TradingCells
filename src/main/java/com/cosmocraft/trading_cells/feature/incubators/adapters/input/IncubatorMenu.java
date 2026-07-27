@@ -1,8 +1,10 @@
 package com.cosmocraft.trading_cells.feature.incubators.adapters.input;
 
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.output.IncubatorRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubationCycle;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubatorKind;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
+import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
+import com.cosmocraft.trading_cells.platform.neoforge.menu.MachineMenuLayout;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -20,13 +22,13 @@ public final class IncubatorMenu extends AbstractContainerMenu {
     private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
     private static final int PLAYER_HOTBAR_END = PLAYER_INVENTORY_END + 9;
 
-    private final IncubatorKind kind;
+    private final CapturedMobKind kind;
     private final Container container;
     private final ContainerData data;
 
     public static IncubatorMenu villager(int containerId, Inventory inventory) {
         return new IncubatorMenu(
-                IncubatorKind.VILLAGER,
+                CapturedMobKind.VILLAGER,
                 containerId,
                 inventory,
                 new SimpleContainer(INCUBATOR_SLOT_COUNT),
@@ -36,7 +38,7 @@ public final class IncubatorMenu extends AbstractContainerMenu {
 
     public static IncubatorMenu piglin(int containerId, Inventory inventory) {
         return new IncubatorMenu(
-                IncubatorKind.PIGLIN,
+                CapturedMobKind.PIGLIN,
                 containerId,
                 inventory,
                 new SimpleContainer(INCUBATOR_SLOT_COUNT),
@@ -45,13 +47,13 @@ public final class IncubatorMenu extends AbstractContainerMenu {
     }
 
     public IncubatorMenu(
-            IncubatorKind kind,
+            CapturedMobKind kind,
             int containerId,
             Inventory inventory,
             Container container,
             ContainerData data
     ) {
-        super(kind == IncubatorKind.VILLAGER
+        super(kind == CapturedMobKind.VILLAGER
                 ? IncubatorRegistrationAdapter.VILLAGER_INCUBATOR_MENU.get()
                 : IncubatorRegistrationAdapter.PIGLIN_INCUBATOR_MENU.get(), containerId);
         checkContainerSize(container, INCUBATOR_SLOT_COUNT);
@@ -60,13 +62,16 @@ public final class IncubatorMenu extends AbstractContainerMenu {
         this.container = container;
         this.data = data;
 
-        addSlot(new BabySlot(container, IncubatorBlockEntity.INPUT_SLOT, 45, 48));
-        addSlot(new OutputSlot(container, IncubatorBlockEntity.OUTPUT_SLOT, 115, 48));
-        addStandardInventorySlots(inventory, 8, 140);
+        addSlot(new BabySlot(container, IncubatorBlockEntity.INPUT_SLOT, MachineMenuLayout.machineX(45), 48));
+        addSlot(new OutputSlot(container, IncubatorBlockEntity.OUTPUT_SLOT, MachineMenuLayout.machineX(115), 48));
+        addStandardInventorySlots(inventory, MachineMenuLayout.PLAYER_INVENTORY_X, MachineMenuLayout.PLAYER_INVENTORY_SLOT_Y);
+        for (Slot equipmentSlot : PlayerEquipmentSlots.create(inventory)) {
+            addSlot(equipmentSlot);
+        }
         addDataSlots(data);
     }
 
-    public IncubatorKind kind() {
+    public CapturedMobKind kind() {
         return kind;
     }
 
@@ -86,7 +91,7 @@ public final class IncubatorMenu extends AbstractContainerMenu {
     @Override
     public @NonNull ItemStack quickMoveStack(@NonNull Player player, int index) {
         Slot slot = slots.get(index);
-        if (slot == null || !slot.hasItem()) {
+        if (!slot.hasItem()) {
             return ItemStack.EMPTY;
         }
 

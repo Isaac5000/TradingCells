@@ -5,8 +5,6 @@ import com.cosmocraft.trading_cells.feature.breeders.adapters.input.PiglinBreede
 import com.cosmocraft.trading_cells.feature.breeders.adapters.input.PiglinBreederBlockEntity;
 import com.cosmocraft.trading_cells.feature.breeders.adapters.input.VillagerBreederBlock;
 import com.cosmocraft.trading_cells.feature.breeders.adapters.input.VillagerBreederBlockEntity;
-import com.cosmocraft.trading_cells.feature.breeders.application.port.input.TickBreederUseCase;
-import com.cosmocraft.trading_cells.feature.breeders.application.usecase.TickBreederUseCaseImp;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineBlockProperties;
 import com.cosmocraft.trading_cells.platform.neoforge.registration.Registration;
@@ -24,19 +22,17 @@ import net.neoforged.neoforge.registries.DeferredItem;
 
 @SuppressWarnings("java:S1118")
 public final class BreederRegistrationAdapter {
-    public static final TickBreederUseCase TICK_BREEDER_USE_CASE = new TickBreederUseCaseImp();
-
     public static final String VILLAGER_BREEDER_ID = "villager_breeder";
     public static final String PIGLIN_BREEDER_ID = "piglin_breeder";
 
     public static final DeferredBlock<VillagerBreederBlock> VILLAGER_BREEDER_BLOCK =
             Registration.BLOCKS.register(VILLAGER_BREEDER_ID, () ->
-                    new VillagerBreederBlock(MachineBlockProperties.create(VILLAGER_BREEDER_ID))
+                    new VillagerBreederBlock(MachineBlockProperties.villager(VILLAGER_BREEDER_ID))
             );
 
     public static final DeferredBlock<PiglinBreederBlock> PIGLIN_BREEDER_BLOCK =
             Registration.BLOCKS.register(PIGLIN_BREEDER_ID, () ->
-                    new PiglinBreederBlock(MachineBlockProperties.create(PIGLIN_BREEDER_ID))
+                    new PiglinBreederBlock(MachineBlockProperties.piglin(PIGLIN_BREEDER_ID))
             );
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<VillagerBreederBlockEntity>> VILLAGER_BREEDER_BLOCK_ENTITY =

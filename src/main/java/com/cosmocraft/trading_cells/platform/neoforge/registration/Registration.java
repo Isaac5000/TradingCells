@@ -1,14 +1,15 @@
 package com.cosmocraft.trading_cells.platform.neoforge.registration;
 
-import com.cosmocraft.trading_cells.feature.autotrader.adapters.output.AutotraderRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.AutotraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.breeders.adapters.output.BreederRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.captures.adapters.output.CaptureRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.ConverterRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.output.FarmerRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.output.IncubatorRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.milkcookie.adapters.output.MilkCookieRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.milkcookie.adapters.input.MilkCookieCreativeTabEventAdapter;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.output.TradingCellsRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -38,7 +39,8 @@ public class Registration {
     }
 
     private static void loadFeatures(IEventBus modEventBus) {
-        TradingCellsRegistrationAdapter.load();
+        CaptureRegistrationAdapter.load();
+        TraderRegistrationAdapter.load();
         AutotraderRegistrationAdapter.load();
         ConverterRegistrationAdapter.load();
         BreederRegistrationAdapter.load();
@@ -46,6 +48,7 @@ public class Registration {
         FarmerRegistrationAdapter.load();
         IronFarmRegistrationAdapter.load();
         MilkCookieRegistrationAdapter.load();
+        CreativeTabRegistration.load();
         MilkCookieCreativeTabEventAdapter.register(modEventBus);
     }
 }

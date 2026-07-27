@@ -3,8 +3,8 @@ package com.cosmocraft.trading_cells.feature.farmer.adapters.output.client;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerBlockEntity;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerCropStackAdapter;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerCrop;
-import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerCycle;
-import com.cosmocraft.trading_cells.feature.tradecages.adapters.input.VillagerCapturerItem;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -22,7 +22,6 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -78,21 +77,27 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
 
         FarmerCrop crop = blockEntity.crop();
         if (crop != FarmerCrop.NONE) {
-            BlockState cropState = FarmerCropStackAdapter.cropState(crop, blockEntity.growthTicks(), FarmerCycle.growthTicks());
+            BlockState cropState = FarmerCropStackAdapter.cropState(
+                    crop,
+                    blockEntity.growthTicks(),
+                    blockEntity.growthDurationTicks()
+            );
             blockModelResolver.update(state.crop, cropState, BlockDisplayContext.create());
             state.crop.tintLayers().clear();
         }
 
-        CompoundTag data = VillagerCapturerItem.getCapturedVillagerData(blockEntity.getItem(FarmerBlockEntity.VILLAGER_SLOT));
-        if (data != null) {
-            Entity entity = VillagerCapturerItem.createCapturedVillager(level, data, BlockPos.ZERO);
-            if (entity != null) {
-                orient(entity, state.facing.toYRot());
-                PreviewEntityRenderUtil.prepare(entity);
-                state.villager = entityRenderer.extractEntity(entity, partialTicks);
-                PreviewEntityRenderUtil.applyLight(state.villager, state.lightCoords);
-                PreviewEntityRenderUtil.suppressWorldEffects(state.villager);
-            }
+        Entity entity = CapturedMobStackAdapter.createEntity(
+                CapturedMobKind.VILLAGER,
+                level,
+                blockEntity.getItem(FarmerBlockEntity.VILLAGER_SLOT),
+                BlockPos.ZERO
+        );
+        if (entity != null) {
+            orient(entity, state.facing.toYRot());
+            PreviewEntityRenderUtil.prepare(entity);
+            state.villager = entityRenderer.extractEntity(entity, partialTicks);
+            PreviewEntityRenderUtil.applyLight(state.villager, state.lightCoords);
+            PreviewEntityRenderUtil.suppressWorldEffects(state.villager);
         }
     }
 
@@ -105,8 +110,22 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
     ) {
         double plotX = 0.5D + state.facing.getStepX() * PLOT_OFFSET;
         double plotZ = 0.5D + state.facing.getStepZ() * PLOT_OFFSET;
-        submitBlock(state.farmland, plotX, 0.02D, plotZ, PLOT_SCALE, state.lightCoords, poseStack, submitNodeCollector);
-        submitBlock(state.crop, plotX, 0.29D, plotZ, PLOT_SCALE, state.lightCoords, poseStack, submitNodeCollector);
+        submitBlock(
+                state.farmland,
+                new Vec3(plotX, 0.02D, plotZ),
+                PLOT_SCALE,
+                state.lightCoords,
+                poseStack,
+                submitNodeCollector
+        );
+        submitBlock(
+                state.crop,
+                new Vec3(plotX, 0.29D, plotZ),
+                PLOT_SCALE,
+                state.lightCoords,
+                poseStack,
+                submitNodeCollector
+        );
 
         if (state.villager != null) {
             PreviewEntityRenderUtil.applyLight(state.villager, state.lightCoords);
@@ -124,9 +143,7 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
 
     private static void submitBlock(
             BlockModelRenderState state,
-            double centerX,
-            double y,
-            double centerZ,
+            Vec3 position,
             float scale,
             int lightCoords,
             PoseStack poseStack,
@@ -136,7 +153,11 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
             return;
         }
         poseStack.pushPose();
-        poseStack.translate(centerX - scale * 0.5D, y, centerZ - scale * 0.5D);
+        poseStack.translate(
+                position.x() - scale * 0.5D,
+                position.y(),
+                position.z() - scale * 0.5D
+        );
         poseStack.scale(scale, scale, scale);
         state.submit(poseStack, collector, lightCoords, OverlayTexture.NO_OVERLAY, EntityRenderState.NO_OUTLINE);
         poseStack.popPose();

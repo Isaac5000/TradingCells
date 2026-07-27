@@ -1,7 +1,5 @@
 package com.cosmocraft.trading_cells.feature.breeders.domain.model;
 
-import com.cosmocraft.trading_cells.feature.machines.application.MachineSettings;
-
 public final class BreederRecipe {
     private BreederRecipe() {
     }
@@ -13,23 +11,23 @@ public final class BreederRecipe {
         };
     }
 
-    public static int cost(BreederKind kind, BreederFood food) {
+    public static int cost(BreederKind kind, BreederFood food, BreederRules rules) {
         if (!isFood(kind, food)) {
             return Integer.MAX_VALUE;
         }
         return switch (kind) {
             case VILLAGER -> food == BreederFood.BREAD
-                    ? MachineSettings.values().villagerBreadCost()
-                    : MachineSettings.values().villagerVegetableCost();
+                    ? rules.villagerBreadCost()
+                    : rules.villagerVegetableCost();
             case PIGLIN -> food == BreederFood.PORK
-                    ? MachineSettings.values().piglinPorkCost()
-                    : MachineSettings.values().piglinCrimsonFungusCost();
+                    ? rules.piglinPorkCost()
+                    : rules.piglinCrimsonFungusCost();
         };
     }
 
-    public static int breedTicks(BreederKind kind) {
+    public static int breedTicks(BreederKind kind, BreederRules rules) {
         return kind == BreederKind.VILLAGER
-                ? MachineSettings.values().villagerBreederTicks()
-                : MachineSettings.values().piglinBreederTicks();
+                ? rules.villagerBreedTicks()
+                : rules.piglinBreedTicks();
     }
 }

@@ -1,17 +1,15 @@
 package com.cosmocraft.trading_cells.feature.converter.domain.model;
 
-import com.cosmocraft.trading_cells.feature.machines.application.MachineSettings;
-
 public enum ConverterStage {
     IDLE,
     INFECTING,
     CURING;
 
-    public int durationTicks() {
+    public int durationTicks(int infectionTicks, int cureTicks) {
         return switch (this) {
             case IDLE -> 0;
-            case INFECTING -> MachineSettings.values().converterInfectionTicks();
-            case CURING -> MachineSettings.values().converterCureTicks();
+            case INFECTING -> Math.max(1, infectionTicks);
+            case CURING -> Math.max(1, cureTicks);
         };
     }
 
@@ -21,6 +19,6 @@ public enum ConverterStage {
 
     public static ConverterStage fromId(int id) {
         ConverterStage[] values = values();
-        return values[Math.max(0, Math.min(values.length - 1, id))];
+        return values[Math.clamp(id, 0, values.length - 1)];
     }
 }

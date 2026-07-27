@@ -1,9 +1,11 @@
 package com.cosmocraft.trading_cells.feature.converter.adapters.input;
 
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.ConverterRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterStage;
-import com.cosmocraft.trading_cells.feature.incubators.adapters.input.CapturedMobStackAdapter;
-import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubatorKind;
+import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
+import com.cosmocraft.trading_cells.platform.neoforge.menu.MachineMenuLayout;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -37,12 +39,15 @@ public final class ConverterMenu extends AbstractContainerMenu {
 
         addSlot(new HiddenVillagerSlot(container, ConverterBlockEntity.VILLAGER_SLOT));
         for (int index = 0; index < ConverterBlockEntity.POTION_SLOT_COUNT; index++) {
-            addSlot(new PotionSlot(container, ConverterBlockEntity.FIRST_POTION_SLOT + index, 43 + index * 24, 35));
+            addSlot(new PotionSlot(container, ConverterBlockEntity.FIRST_POTION_SLOT + index, MachineMenuLayout.machineX(43) + index * 24, 35));
         }
         for (int index = 0; index < ConverterBlockEntity.APPLE_SLOT_COUNT; index++) {
-            addSlot(new AppleSlot(container, ConverterBlockEntity.FIRST_APPLE_SLOT + index, 43 + index * 24, 63));
+            addSlot(new AppleSlot(container, ConverterBlockEntity.FIRST_APPLE_SLOT + index, MachineMenuLayout.machineX(43) + index * 24, 63));
         }
-        addStandardInventorySlots(inventory, 8, 140);
+        addStandardInventorySlots(inventory, MachineMenuLayout.PLAYER_INVENTORY_X, MachineMenuLayout.PLAYER_INVENTORY_SLOT_Y);
+        for (Slot equipmentSlot : PlayerEquipmentSlots.create(inventory)) {
+            addSlot(equipmentSlot);
+        }
         addDataSlots(data);
     }
 
@@ -64,7 +69,7 @@ public final class ConverterMenu extends AbstractContainerMenu {
 
     public boolean hasVillager() {
         return CapturedMobStackAdapter.isFilledCapturer(
-                IncubatorKind.VILLAGER,
+                CapturedMobKind.VILLAGER,
                 container.getItem(ConverterBlockEntity.VILLAGER_SLOT)
         );
     }
@@ -80,28 +85,12 @@ public final class ConverterMenu extends AbstractContainerMenu {
             return ItemStack.EMPTY;
         }
         Slot slot = slots.get(index);
-        if (slot == null || !slot.hasItem()) {
+        if (!slot.hasItem()) {
             return ItemStack.EMPTY;
         }
         ItemStack stack = slot.getItem();
         ItemStack result = stack.copy();
-        if (index < MACHINE_SLOT_COUNT) {
-            if (!moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (ConverterIngredientAdapter.isWeaknessPotion(stack)) {
-            if (!moveItemStackTo(stack, ConverterBlockEntity.FIRST_POTION_SLOT, ConverterBlockEntity.FIRST_APPLE_SLOT, false)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (ConverterIngredientAdapter.isGoldenApple(stack)) {
-            if (!moveItemStackTo(stack, ConverterBlockEntity.FIRST_APPLE_SLOT, ConverterBlockEntity.CONTAINER_SIZE, false)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (index < PLAYER_INVENTORY_END) {
-            if (!moveItemStackTo(stack, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (!moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false)) {
+        if (!moveQuickMovedStack(index, stack)) {
             return ItemStack.EMPTY;
         }
 
@@ -113,9 +102,29 @@ public final class ConverterMenu extends AbstractContainerMenu {
         return result;
     }
 
-    private static boolean isAdultVillager(ItemStack stack) {
-        return CapturedMobStackAdapter.isFilledCapturer(IncubatorKind.VILLAGER, stack)
-                && !CapturedMobStackAdapter.isBaby(IncubatorKind.VILLAGER, stack);
+    private boolean moveQuickMovedStack(int index, ItemStack stack) {
+        if (index < MACHINE_SLOT_COUNT) {
+            return moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true);
+        }
+        if (ConverterIngredientAdapter.isWeaknessPotion(stack)) {
+            return moveItemStackTo(
+                    stack,
+                    ConverterBlockEntity.FIRST_POTION_SLOT,
+                    ConverterBlockEntity.FIRST_APPLE_SLOT,
+                    false
+            );
+        }
+        if (ConverterIngredientAdapter.isGoldenApple(stack)) {
+            return moveItemStackTo(
+                    stack,
+                    ConverterBlockEntity.FIRST_APPLE_SLOT,
+                    ConverterBlockEntity.CONTAINER_SIZE,
+                    false
+            );
+        }
+        return index < PLAYER_INVENTORY_END
+                ? moveItemStackTo(stack, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)
+                : moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false);
     }
 
     private static final class HiddenVillagerSlot extends Slot {

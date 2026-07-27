@@ -1,6 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
+  "show_notification": false,
   "key": {
     "A": "minecraft:light_blue_stained_glass",
     "E": "minecraft:ender_pearl"

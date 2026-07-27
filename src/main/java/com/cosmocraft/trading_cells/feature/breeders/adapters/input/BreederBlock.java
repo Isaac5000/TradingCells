@@ -1,5 +1,6 @@
 package com.cosmocraft.trading_cells.feature.breeders.adapters.input;
 
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineCageBlockShapes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.Direction;
@@ -25,10 +26,12 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public abstract class BreederBlock extends BaseEntityBlock {
+public abstract class BreederBlock<T extends BreederBlockEntity> extends BaseEntityBlock {
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     protected BreederBlock(Properties properties) {
@@ -37,7 +40,7 @@ public abstract class BreederBlock extends BaseEntityBlock {
     }
 
     @Override
-    public @Nullable BlockState getStateForPlacement(@NonNull BlockPlaceContext context) {
+    public @NonNull BlockState getStateForPlacement(@NonNull BlockPlaceContext context) {
         return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
@@ -49,6 +52,16 @@ public abstract class BreederBlock extends BaseEntityBlock {
     @Override
     protected @NonNull RenderShape getRenderShape(@NonNull BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    @Override
+    protected @NonNull VoxelShape getShape(
+            @NonNull BlockState state,
+            @NonNull BlockGetter level,
+            @NonNull BlockPos pos,
+            @NonNull CollisionContext context
+    ) {
+        return MachineCageBlockShapes.CAGE;
     }
 
     @Override
@@ -103,16 +116,17 @@ public abstract class BreederBlock extends BaseEntityBlock {
     }
 
     @Override
-    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(
+    public <B extends BlockEntity> @Nullable BlockEntityTicker<B> getTicker(
             @NonNull Level level,
             @NonNull BlockState state,
-            @NonNull BlockEntityType<T> type
+            @NonNull BlockEntityType<B> type
     ) {
-        if (level.isClientSide() || type != getBlockEntityType()) {
+        if (level.isClientSide()) {
             return null;
         }
-        return (tickerLevel, tickerPos, tickerState, tickerBlockEntity) ->
-                BreederBlockEntity.serverTick(tickerLevel, tickerPos, tickerState, (BreederBlockEntity) tickerBlockEntity);
+        return createTickerHelper(type, getBlockEntityType(), (_, _, _, breeder) ->
+                breeder.processTick()
+        );
     }
 
 
@@ -138,7 +152,7 @@ public abstract class BreederBlock extends BaseEntityBlock {
             @NonNull Player player,
             @NonNull BlockPos pos,
             @NonNull BlockState state,
-            @Nullable BlockEntity blockEntity,
+            @Nullable BlockEntity blockEntity, // NOSONAR - Minecraft's Block API explicitly permits no block entity.
             @NonNull ItemStack tool
     ) {
         player.awardStat(Stats.BLOCK_MINED.get(this));
@@ -156,5 +170,5 @@ public abstract class BreederBlock extends BaseEntityBlock {
         breeder.discardContentsAfterBlockDrop();
     }
 
-    protected abstract BlockEntityType<? extends BreederBlockEntity> getBlockEntityType();
+    protected abstract BlockEntityType<T> getBlockEntityType();
 }

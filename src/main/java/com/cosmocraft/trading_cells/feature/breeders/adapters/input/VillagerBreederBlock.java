@@ -4,13 +4,11 @@ import com.cosmocraft.trading_cells.feature.breeders.adapters.output.BreederRegi
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
-public final class VillagerBreederBlock extends BreederBlock {
+public final class VillagerBreederBlock extends BreederBlock<VillagerBreederBlockEntity> {
     public static final MapCodec<VillagerBreederBlock> CODEC = simpleCodec(VillagerBreederBlock::new);
 
     public VillagerBreederBlock(Properties properties) {
@@ -23,12 +21,12 @@ public final class VillagerBreederBlock extends BreederBlock {
     }
 
     @Override
-    public @Nullable BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
+    public @NonNull VillagerBreederBlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
         return new VillagerBreederBlockEntity(pos, state);
     }
 
     @Override
-    protected BlockEntityType<? extends BreederBlockEntity> getBlockEntityType() {
+    protected BlockEntityType<VillagerBreederBlockEntity> getBlockEntityType() {
         return BreederRegistrationAdapter.VILLAGER_BREEDER_BLOCK_ENTITY.get();
     }
 }
