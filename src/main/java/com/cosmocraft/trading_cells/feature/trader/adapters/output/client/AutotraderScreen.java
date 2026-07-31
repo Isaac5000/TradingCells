@@ -9,6 +9,7 @@ import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.Villa
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerGuiTextures;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenCommon;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeSprites;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.VillagerTradeMenuLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.network.ExtractTradingCellExperiencePayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.ResetTradesPayload;
@@ -35,14 +36,7 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMenu> {
-    private static final Identifier DROPDOWN = texture("selector/trade_dropdown");
-    private static final Identifier DROPDOWN_ROW = texture("selector/trade_dropdown_row");
-    private static final Identifier DROPDOWN_ROW_HOVERED = texture("selector/trade_dropdown_row_hovered");
-    private static final Identifier DROPDOWN_ROW_SELECTED = texture("selector/trade_dropdown_row_selected");
-    private static final Identifier DISABLED_SLOT_OVERLAY = texture("slots/disabled_slot_overlay");
-    private static final Identifier TRADE_ARROW = texture("arrows/trade_arrow");
-    private static final Identifier TRADE_ARROW_DISABLED = texture("arrows/trade_arrow_disabled");
+public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
     private static final Identifier RESET_NORMAL =
             Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "trader/reset/reset_trades");
     private static final Identifier RESET_HOVERED =
@@ -56,7 +50,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
     private static final int TRADE_COST_A_OFFSET = 3;
     private static final int TRADE_COST_B_OFFSET = 20;
     private static final int TRADE_ARROW_OFFSET = 50;
-    private static final int TRADE_RESULT_OFFSET = 75;
+    private static final int TRADE_RESULT_OFFSET = 69;
     private static final int DROPDOWN_X = VillagerTradeScreenLayout.AUTOTRADER_DROPDOWN_X;
     private static final int DROPDOWN_Y = VillagerTradeScreenLayout.AUTOTRADER_DROPDOWN_Y;
     private static final int DROPDOWN_VIEW_X = VillagerTradeScreenLayout.AUTOTRADER_DROPDOWN_VIEW_X;
@@ -473,7 +467,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
     private void drawSelector(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         graphics.blit(
                 RenderPipelines.GUI_TEXTURED,
-                DROPDOWN,
+                VillagerTradeSprites.DROPDOWN,
                 leftPos + SELECTOR_X,
                 topPos + SELECTOR_Y,
                 0,
@@ -500,6 +494,10 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
         int costBX = leftPos + SELECTOR_X + TRADE_COST_B_OFFSET;
         int arrowX = leftPos + SELECTOR_X + TRADE_ARROW_OFFSET;
         int resultX = leftPos + SELECTOR_X + TRADE_RESULT_OFFSET;
+        boolean selectorHovered = mouseX >= leftPos + SELECTOR_X
+                && mouseX < leftPos + SELECTOR_X + SELECTOR_W
+                && mouseY >= topPos + SELECTOR_Y
+                && mouseY < topPos + SELECTOR_Y + SELECTOR_H;
         VillagerTradeScreenCommon.drawOfferCostA(graphics, font, offer, costAX, itemY);
         if (!offer.getCostB().isEmpty()) {
             graphics.fakeItem(offer.getCostB(), costBX, itemY);
@@ -507,11 +505,9 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
         }
         VillagerTradeScreenCommon.drawTradeArrow(
                 graphics,
-                TRADE_ARROW,
-                TRADE_ARROW_DISABLED,
                 arrowX,
                 topPos + SELECTOR_Y + 4,
-                offer.isOutOfStock()
+                VillagerTradeSprites.state(offer.isOutOfStock(), dropdownOpen, selectorHovered)
         );
         graphics.fakeItem(offer.getResult(), resultX, itemY);
         graphics.itemDecorations(font, offer.getResult(), resultX, itemY);
@@ -520,10 +516,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 leftPos + SELECTOR_X + 94,
                 topPos + SELECTOR_Y + 8,
                 true,
-                mouseX >= leftPos + SELECTOR_X
-                        && mouseX < leftPos + SELECTOR_X + SELECTOR_W
-                        && mouseY >= topPos + SELECTOR_Y
-                        && mouseY < topPos + SELECTOR_Y + SELECTOR_H
+                selectorHovered
         );
     }
 
@@ -550,7 +543,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
             for (int index = 0; index < AutotraderPolicy.INPUT_SLOTS_PER_COST; index++) {
                 graphics.blit(
                         RenderPipelines.GUI_TEXTURED,
-                        DISABLED_SLOT_OVERLAY,
+                        VillagerTradeSprites.DISABLED_SLOT_OVERLAY,
                         leftPos + VillagerTradeMenuLayout.AUTOTRADER_ROW_X + index * 18,
                         topPos + VillagerTradeMenuLayout.AUTOTRADER_INPUT_B_Y,
                         0,
@@ -586,13 +579,13 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
         }
         VillagerTradeScreenCommon.drawTradeArrow(
                 graphics,
-                TRADE_ARROW,
-                TRADE_ARROW_DISABLED,
                 leftPos + VillagerTradeScreenLayout.PREVIEW_ARROW_X,
                 topPos
                         + VillagerTradeMenuLayout.MANUAL_TRADER_SLOT_Y
                         + VillagerTradeScreenLayout.AUTOTRADER_PREVIEW_ARROW_Y_OFFSET,
                 offer.isOutOfStock()
+                        ? VillagerTradeSprites.State.DISABLED
+                        : VillagerTradeSprites.State.NORMAL
         );
         drawItem(
                 graphics,
@@ -639,7 +632,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 topPos + DROPDOWN_Y + 1,
                 leftPos + DROPDOWN_X + SELECTOR_W - 1,
                 topPos + DROPDOWN_Y + contentHeight + 3,
-                0xFFD8D8D8
+                0xB3000000
         );
     }
 
@@ -657,18 +650,22 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 && mouseX < x + DROPDOWN_VIEW_W
                 && mouseY >= y
                 && mouseY < y + DROPDOWN_ROW_H;
-        Identifier rowTexture = dropdownRowTexture(index, hovered);
+        VillagerTradeSprites.State state = VillagerTradeSprites.state(
+                offer.isOutOfStock(),
+                index == focusedOffer,
+                hovered
+        );
         graphics.blit(
                 RenderPipelines.GUI_TEXTURED,
-                rowTexture,
+                VillagerTradeSprites.dropdownRow(state),
                 x,
                 y,
                 0,
                 0,
                 DROPDOWN_VIEW_W,
                 DROPDOWN_ROW_H,
-                94,
-                18
+                VillagerTradeSprites.DROPDOWN_ROW_WIDTH,
+                VillagerTradeSprites.DROPDOWN_ROW_HEIGHT
         );
         int costAX = x + TRADE_COST_A_OFFSET;
         int costBX = x + TRADE_COST_B_OFFSET;
@@ -680,22 +677,13 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
         }
         VillagerTradeScreenCommon.drawTradeArrow(
                 graphics,
-                TRADE_ARROW,
-                TRADE_ARROW_DISABLED,
                 x + TRADE_ARROW_OFFSET,
                 y + 4,
-                offer.isOutOfStock()
+                state
         );
         graphics.fakeItem(offer.getResult(), resultX, y + 1);
         graphics.itemDecorations(font, offer.getResult(), resultX, y + 1);
         setDropdownOfferTooltip(graphics, offer, x, y, mouseX, mouseY);
-    }
-
-    private Identifier dropdownRowTexture(int index, boolean hovered) {
-        if (index == focusedOffer) {
-            return DROPDOWN_ROW_SELECTED;
-        }
-        return hovered ? DROPDOWN_ROW_HOVERED : DROPDOWN_ROW;
     }
 
     private void setDropdownOfferTooltip(
@@ -1007,13 +995,6 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
 
     private int dropdownContentHeight() {
         return VillagerTradeScreenLayout.dropdownContentHeight(menu.offers().size());
-    }
-
-    private static Identifier texture(String name) {
-        return Identifier.fromNamespaceAndPath(
-                TradingCells.MOD_ID,
-                "textures/gui/trader/widgets/" + name + ".png"
-        );
     }
 
     private static final class SilentImageButton extends ImageButton { // NOSONAR - Minecraft widget inheritance is framework-defined.

@@ -9,7 +9,7 @@ package com.cosmocraft.trading_cells.platform.neoforge.menu;
  */
 public final class MachineMenuLayout {
     public static final int WIDTH = 204;
-    public static final int HEIGHT = 212;
+    public static final int HEIGHT = 215;
 
     /** Width used by vanilla-style machine and inventory layouts. */
     public static final int CONTENT_WIDTH = 176;
@@ -29,11 +29,11 @@ public final class MachineMenuLayout {
     public static final int PLAYER_INVENTORY_LABEL_Y = 122;
 
     public static final int EQUIPMENT_X = 6;
-    public static final int EQUIPMENT_HEAD_Y = 117;
-    public static final int EQUIPMENT_CHEST_Y = 135;
-    public static final int EQUIPMENT_LEGS_Y = 153;
-    public static final int EQUIPMENT_FEET_Y = 171;
-    public static final int EQUIPMENT_OFFHAND_Y = 189;
+    public static final int EQUIPMENT_HEAD_Y = 121;
+    public static final int EQUIPMENT_CHEST_Y = 139;
+    public static final int EQUIPMENT_LEGS_Y = 157;
+    public static final int EQUIPMENT_FEET_Y = 175;
+    public static final int EQUIPMENT_OFFHAND_Y = 193;
 
     private MachineMenuLayout() {
     }

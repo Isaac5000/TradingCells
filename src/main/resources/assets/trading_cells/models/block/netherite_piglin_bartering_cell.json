@@ -1,0 +1,9 @@
+{
+  "parent": "trading_cells:block/piglin_bartering_cell",
+  "textures": {
+    "base": "minecraft:block/netherite_block",
+    "frame": "minecraft:block/polished_blackstone_bricks",
+    "glass": "minecraft:block/tinted_glass",
+    "particle": "minecraft:block/netherite_block"
+  }
+}

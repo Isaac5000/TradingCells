@@ -15,10 +15,12 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -140,6 +142,7 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
 
         storeOutput(FarmerCropStackAdapter.produce(crop, harvest.produceCount()));
         storeOutput(FarmerCropStackAdapter.seeds(crop, harvest.seedCount()));
+        damageHoeAfterHarvest();
         markChangedAndSync();
     }
 
@@ -291,7 +294,7 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
             items.set(slot, input.read(SLOT_TAG_PREFIX + slot, ItemStack.CODEC).orElse(ItemStack.EMPTY));
         }
-        growthTicks = Math.max(0, input.getIntOr(GROWTH_TICKS_TAG, 0));
+        int storedGrowthTicks = input.getIntOr(GROWTH_TICKS_TAG, 0);
         growthDurationTicks = Math.max(
                 1,
                 input.getIntOr(
@@ -299,7 +302,7 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
                         farmerService.effectiveGrowthTicks(0.0D, 0)
                 )
         );
-        growthTicks = Math.min(growthDurationTicks, growthTicks);
+        growthTicks = Math.clamp(storedGrowthTicks, 0, growthDurationTicks);
         cultivating = false;
     }
 
@@ -335,6 +338,24 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         }
         var fortune = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
         return hoe.getEnchantmentLevel(fortune);
+    }
+
+    private void damageHoeAfterHarvest() {
+        ItemStack hoe = items.get(HOE_SLOT);
+        if (!farmerService.damagesHoe()
+                || hoe.isEmpty()
+                || !(level instanceof ServerLevel serverLevel)
+                || FarmerEnchantments.protectsHoe(hoe, serverLevel.registryAccess())) {
+            return;
+        }
+
+        hoe.hurtAndBreak(
+                1,
+                serverLevel,
+                (LivingEntity) null,
+                ignored -> items.set(HOE_SLOT, ItemStack.EMPTY)
+        );
+        updateGrowthDuration();
     }
 
     private int efficiencyLevel() {

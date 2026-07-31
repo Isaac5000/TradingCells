@@ -6,8 +6,6 @@ public record BreederRules(
         int piglinBreedTicks,
         int villagerBreadCost,
         int villagerVegetableCost,
-        int piglinPorkCost,
-        int piglinCrimsonFungusCost,
         int maximumPendingBabies
 ) {
     public BreederRules {
@@ -15,8 +13,6 @@ public record BreederRules(
         piglinBreedTicks = Math.max(1, piglinBreedTicks);
         villagerBreadCost = Math.max(1, villagerBreadCost);
         villagerVegetableCost = Math.max(1, villagerVegetableCost);
-        piglinPorkCost = Math.max(1, piglinPorkCost);
-        piglinCrimsonFungusCost = Math.max(1, piglinCrimsonFungusCost);
         maximumPendingBabies = Math.max(1, maximumPendingBabies);
     }
 }

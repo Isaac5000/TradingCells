@@ -1,0 +1,62 @@
+{
+  "model": {
+    "type": "minecraft:condition",
+    "property": "minecraft:has_component",
+    "component": "minecraft:custom_data",
+    "on_true": {
+      "type": "minecraft:select",
+      "property": "minecraft:display_context",
+      "cases": [
+        {
+          "when": ["gui"],
+          "model": {
+            "type": "minecraft:special",
+            "base": "trading_cells:item/unbreakable_villager_capturer",
+            "model": {"type": "trading_cells:villager_capturer_gui"}
+          }
+        },
+        {
+          "when": ["fixed"],
+          "model": {
+            "type": "minecraft:special",
+            "base": "trading_cells:item/unbreakable_villager_capturer",
+            "model": {"type": "trading_cells:villager_capturer_fixed"}
+          }
+        },
+        {
+          "when": ["on_shelf"],
+          "model": {
+            "type": "minecraft:special",
+            "base": "trading_cells:item/unbreakable_villager_capturer",
+            "model": {"type": "trading_cells:villager_capturer_on_shelf"}
+          }
+        },
+        {
+          "when": ["firstperson_lefthand", "firstperson_righthand"],
+          "model": {
+            "type": "minecraft:special",
+            "base": "trading_cells:item/unbreakable_villager_capturer",
+            "model": {"type": "trading_cells:villager_capturer_first_person"}
+          }
+        },
+        {
+          "when": ["thirdperson_lefthand", "thirdperson_righthand"],
+          "model": {
+            "type": "minecraft:special",
+            "base": "trading_cells:item/unbreakable_villager_capturer",
+            "model": {"type": "trading_cells:villager_capturer_third_person"}
+          }
+        }
+      ],
+      "fallback": {
+        "type": "minecraft:special",
+        "base": "trading_cells:item/unbreakable_villager_capturer",
+        "model": {"type": "trading_cells:villager_capturer"}
+      }
+    },
+    "on_false": {
+      "type": "minecraft:model",
+      "model": "trading_cells:item/unbreakable_villager_capturer"
+    }
+  }
+}

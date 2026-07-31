@@ -39,6 +39,7 @@ public abstract class PortableMachineBlockEntity extends BlockEntity {
     }
 
     protected void beforeBlockDropSnapshot() {
+        // Extension hook for machines that must flush transient state before serialization.
     }
 
     protected abstract void clearContentsForBlockDrop();

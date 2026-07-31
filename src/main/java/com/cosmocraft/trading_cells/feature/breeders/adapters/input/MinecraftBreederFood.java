@@ -15,26 +15,21 @@ public final class MinecraftBreederFood {
             new Option(Items.BEETROOT, BreederFood.VEGETABLE)
     );
     private static final List<Option> PIGLIN_OPTIONS = List.of(
-            new Option(Items.PORKCHOP, BreederFood.PORK),
-            new Option(Items.COOKED_PORKCHOP, BreederFood.PORK),
-            new Option(Items.CRIMSON_FUNGUS, BreederFood.CRIMSON_FUNGUS)
+            new Option(Items.COOKED_PORKCHOP, BreederFood.COOKED_PORKCHOP),
+            new Option(Items.NETHER_WART_BLOCK, BreederFood.NETHER_WART_BLOCK),
+            new Option(Items.PORKCHOP, BreederFood.RAW_PORKCHOP),
+            new Option(Items.CRIMSON_FUNGUS, BreederFood.CRIMSON_FUNGUS),
+            new Option(Items.NETHER_WART, BreederFood.NETHER_WART)
     );
 
     private MinecraftBreederFood() {
     }
 
-    public static BreederFood from(ItemStack stack) {
-        if (stack.is(Items.BREAD)) {
-            return BreederFood.BREAD;
-        }
-        if (stack.is(Items.CARROT) || stack.is(Items.POTATO) || stack.is(Items.BEETROOT)) {
-            return BreederFood.VEGETABLE;
-        }
-        if (stack.is(Items.PORKCHOP) || stack.is(Items.COOKED_PORKCHOP)) {
-            return BreederFood.PORK;
-        }
-        if (stack.is(Items.CRIMSON_FUNGUS)) {
-            return BreederFood.CRIMSON_FUNGUS;
+    public static BreederFood from(BreederKind kind, ItemStack stack) {
+        for (Option option : options(kind)) {
+            if (stack.is(option.item())) {
+                return option.food();
+            }
         }
         return BreederFood.NONE;
     }

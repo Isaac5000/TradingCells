@@ -48,6 +48,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     private static final String PENDING_BABIES_TAG = "PendingBabies";
     private static final String BABY_TEMPLATE_TAG = "BabyTemplate";
     private static final String VILLAGER_VARIANT_TAG = "VillagerVariant";
+    private static final String ACTIVE_FOOD_TAG = "ActiveFood";
 
     // Automation contract: food enters from above, adult/empty capturers
     // enter from either horizontal side, and the captured baby leaves below.
@@ -62,6 +63,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     private int breedTicks;
     private int pendingBabies;
     private int villagerVariant;
+    private BreederFood activeFood = BreederFood.NONE;
     private @Nullable CompoundTag babyTemplate;
     private @Nullable CompoundTag preparedBlockDropData;
 
@@ -73,8 +75,9 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
                 case 1 -> pendingBabies;
                 case 2 -> villagerVariant;
                 case 3 -> breederService.durationTicks(kind);
-                case 4 -> breederService.foodCost(kind, primaryFood());
-                case 5 -> breederService.foodCost(kind, secondaryFood());
+                case 4 -> breederService.foodCost(kind, BreederFood.BREAD);
+                case 5 -> breederService.foodCost(kind, BreederFood.VEGETABLE);
+                case 6 -> activeFood.ordinal();
                 default -> 0;
             };
         }
@@ -96,15 +99,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
 
         @Override
         public int getCount() {
-            return 6;
-        }
-
-        private BreederFood primaryFood() {
-            return kind == BreederKind.VILLAGER ? BreederFood.BREAD : BreederFood.PORK;
-        }
-
-        private BreederFood secondaryFood() {
-            return kind == BreederKind.VILLAGER ? BreederFood.VEGETABLE : BreederFood.CRIMSON_FUNGUS;
+            return 7;
         }
     };
 
@@ -149,7 +144,8 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
             return;
         }
 
-        ItemStack output = new ItemStack(capturerItem());
+        ItemStack output = capturers.copy();
+        output.setCount(1);
         setCapturedData(output, babyData);
         capturers.shrink(1);
         if (capturers.isEmpty()) {
@@ -164,11 +160,14 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     }
 
     private void processBreedingProgress() {
+        if (breedTicks == 0 && activeFood == BreederFood.NONE) {
+            activeFood = eligibleFood();
+        }
         int previousTicks = breedTicks;
         TimedProcess.Step step = breederService.advance(
                 breedTicks,
                 kind,
-                canGenerateBaby()
+                canGenerateBaby(activeFood)
         );
         breedTicks = step.ticks();
         if (step.transition() == TimedProcess.Transition.IDLE
@@ -176,6 +175,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
             return;
         }
         if (step.transition() == TimedProcess.Transition.RESET) {
+            activeFood = BreederFood.NONE;
             if (previousTicks != 0) {
                 markChangedAndSync();
             }
@@ -186,30 +186,42 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
             return;
         }
 
-        consumeFoodCost();
+        consumeFoodCost(activeFood);
+        activeFood = BreederFood.NONE;
         babyTemplate = createBabyTemplateFromParents();
         pendingBabies = Math.min(breederService.maximumPendingBabies(), pendingBabies + 1);
         markChangedAndSync();
     }
 
-    private boolean canGenerateBaby() {
+    private BreederFood eligibleFood() {
+        if (pendingBabies != 0
+                || !isValidAdultParent(getItem(PARENT_A_SLOT))
+                || !isValidAdultParent(getItem(PARENT_B_SLOT))) {
+            return BreederFood.NONE;
+        }
+        ItemStack food = getItem(FOOD_SLOT);
+        BreederFood candidate = MinecraftBreederFood.from(kind, food);
+        return hasFoodCost(food, candidate) ? candidate : BreederFood.NONE;
+    }
+
+    private boolean canGenerateBaby(BreederFood recipe) {
         return pendingBabies == 0
                 && isValidAdultParent(getItem(PARENT_A_SLOT))
                 && isValidAdultParent(getItem(PARENT_B_SLOT))
-                && hasFoodCost();
+                && hasFoodCost(getItem(FOOD_SLOT), recipe);
     }
 
-    private boolean hasFoodCost() {
-        ItemStack food = getItem(FOOD_SLOT);
-        var breederFood = MinecraftBreederFood.from(food);
-        return BreederRecipe.isFood(kind, breederFood)
-                && food.getCount() >= breederService.foodCost(kind, breederFood);
+    private boolean hasFoodCost(ItemStack food, BreederFood recipe) {
+        return recipe != BreederFood.NONE
+                && MinecraftBreederFood.from(kind, food) == recipe
+                && BreederRecipe.isFood(kind, recipe)
+                && food.getCount() >= breederService.foodCost(kind, recipe);
     }
 
-    private void consumeFoodCost() {
+    private void consumeFoodCost(BreederFood recipe) {
         ItemStack food = getItem(FOOD_SLOT);
-        if (!food.isEmpty()) {
-            food.shrink(breederService.foodCost(kind, MinecraftBreederFood.from(food)));
+        if (hasFoodCost(food, recipe)) {
+            food.shrink(breederService.foodCost(kind, recipe));
             if (food.isEmpty()) {
                 items.set(FOOD_SLOT, ItemStack.EMPTY);
             }
@@ -278,7 +290,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     }
 
     private boolean isValidAdultParent(ItemStack stack) {
-        if (stack.isEmpty() || !stack.is(capturerItem())) {
+        if (!CapturedMobStackAdapter.isCapturer(capturedKind(), stack)) {
             return false;
         }
         CompoundTag data = getParentData(stack);
@@ -289,7 +301,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     }
 
     private boolean isEmptyCapturer(ItemStack stack) {
-        if (stack.isEmpty() || !stack.is(capturerItem())) {
+        if (!CapturedMobStackAdapter.isCapturer(capturedKind(), stack)) {
             return false;
         }
         return !CapturedMobStackAdapter.isFilledCapturer(capturedKind(), stack);
@@ -319,6 +331,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         }
         breedTicks = 0;
         pendingBabies = 0;
+        activeFood = BreederFood.NONE;
         babyTemplate = null;
         setChanged();
     }
@@ -339,6 +352,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         }
         breedTicks = 0;
         pendingBabies = 0;
+        activeFood = BreederFood.NONE;
         babyTemplate = null;
         setChanged();
     }
@@ -435,7 +449,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     @Override
     public boolean canPlaceItem(int slot, @NonNull ItemStack stack) {
         return switch (slot) {
-            case FOOD_SLOT -> BreederRecipe.isFood(kind, MinecraftBreederFood.from(stack));
+            case FOOD_SLOT -> BreederRecipe.isFood(kind, MinecraftBreederFood.from(kind, stack));
             case PARENT_A_SLOT, PARENT_B_SLOT -> isValidAdultParent(stack);
             case EMPTY_CAPTURER_SLOT -> isEmptyCapturer(stack);
             default -> false;
@@ -451,6 +465,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         }
         breedTicks = 0;
         pendingBabies = 0;
+        activeFood = BreederFood.NONE;
         babyTemplate = null;
         preparedBlockDropData = null;
         markChangedAndSync();
@@ -506,7 +521,11 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         );
         babyTemplate = input.read(BABY_TEMPLATE_TAG, CompoundTag.CODEC).orElse(null);
         villagerVariant = VillagerVariantSelection.normalize(input.getIntOr(VILLAGER_VARIANT_TAG, 0));
+        activeFood = BreederFood.fromName(input.getStringOr(ACTIVE_FOOD_TAG, BreederFood.NONE.name()));
         preparedBlockDropData = null;
+        if (breedTicks == 0 || !BreederRecipe.isFood(kind, activeFood)) {
+            activeFood = BreederFood.NONE;
+        }
         if (babyTemplate != null && babyTemplate.isEmpty()) {
             babyTemplate = null;
         }
@@ -531,6 +550,9 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         }
         if (kind == BreederKind.VILLAGER && villagerVariant != 0) {
             output.putInt(VILLAGER_VARIANT_TAG, villagerVariant);
+        }
+        if (breedTicks > 0 && activeFood != BreederFood.NONE) {
+            output.putString(ACTIVE_FOOD_TAG, activeFood.name());
         }
     }
 

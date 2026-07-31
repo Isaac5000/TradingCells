@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "show_notification": false,
+  "key": {
+    "C": {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "trading_cells:villager_capturer",
+      "components": {
+        "!minecraft:custom_data": {}
+      }
+    },
+    "N": "minecraft:nether_star",
+    "O": "minecraft:crying_obsidian"
+  },
+  "pattern": [
+    " N ",
+    "OCO",
+    " O "
+  ],
+  "result": {
+    "count": 1,
+    "id": "trading_cells:unbreakable_villager_capturer"
+  }
+}

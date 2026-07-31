@@ -1,5 +1,6 @@
 package com.cosmocraft.trading_cells.platform.neoforge.bootstrap;
 
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturerDurability;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class Config {
@@ -8,6 +9,8 @@ public final class Config {
     public static final ModConfigSpec.IntValue BREEDER_TICKS;
     public static final ModConfigSpec.IntValue INCUBATOR_TICKS;
     public static final ModConfigSpec.IntValue FARMER_GROWTH_TICKS;
+    public static final ModConfigSpec.BooleanValue FARMER_DAMAGE_HOES;
+    public static final ModConfigSpec.IntValue CAPTURER_DURABILITY;
     public static final ModConfigSpec.IntValue IRON_FARM_CYCLE_TICKS;
     public static final ModConfigSpec.IntValue IRON_FARM_MULTIPLIER_BONUS;
     public static final ModConfigSpec.BooleanValue VILLAGER_INFINITE_TRADES;
@@ -29,11 +32,23 @@ public final class Config {
         BUILDER.pop();
 
         BUILDER.comment("Production tuning.").push("production");
+        BUILDER.comment("When enabled, each completed crop cycle can consume one point of hoe durability.");
+        FARMER_DAMAGE_HOES = BUILDER.define("farmerDamageHoes", true);
         BUILDER.comment(
-                "Adds this value to every iron-farm multiplier. Base multipliers are x2, x4 and x8; ",
-                "for example, 1 changes them to x3, x5 and x9. Use 0 for the defaults."
+                "Adds this value to every iron-farm multiplier. Base multipliers are x1, x2 and x3; ",
+                "for example, 15 changes them to x16, x17 and x18. Use 0 for the defaults."
         );
         IRON_FARM_MULTIPLIER_BONUS = BUILDER.defineInRange("ironFarmMultiplierBonus", 0, 0, 1_024);
+        BUILDER.pop();
+
+        BUILDER.comment("Capturer item settings.").push("capturers");
+        BUILDER.comment("Maximum durability shared by villager and piglin capturers. Default: 10 releases.");
+        CAPTURER_DURABILITY = BUILDER.defineInRange(
+                "durability",
+                CapturerDurability.DEFAULT_MAX_DAMAGE,
+                1,
+                32_767
+        );
         BUILDER.pop();
 
         SPEC = BUILDER.build();

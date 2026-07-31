@@ -9,6 +9,10 @@ public record IronFarmCycle(
         int golemHitInterval,
         int golemRedFlashTicks
 ) {
+    public static final int BASE_ONE_VILLAGER_MULTIPLIER = 1;
+    public static final int BASE_TWO_VILLAGER_MULTIPLIER = 2;
+    public static final int BASE_THREE_VILLAGER_MULTIPLIER = 3;
+
     public IronFarmCycle {
         cycleTicks = Math.max(1, cycleTicks);
         oneVillagerMultiplier = Math.max(0, oneVillagerMultiplier);

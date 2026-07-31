@@ -8,6 +8,7 @@ import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobSta
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.VillagerPoiAdapter;
+import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.TemporaryTradeDiscountStore;
 import com.cosmocraft.trading_cells.feature.trader.domain.service.TradeDiscountPolicy;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
@@ -47,7 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public final class AutotraderBlockEntity extends PortableMachineBlockEntity implements WorldlyContainer, MenuProvider {
+public final class AutotraderBlockEntity extends PortableMachineBlockEntity implements WorldlyContainer, MenuProvider { // NOSONAR - Minecraft fixes this hierarchy and BlockEntity uses identity, not value-based equals.
     public static final int VILLAGER_SLOT = 0;
     public static final int FIRST_INPUT_A_SLOT = 1;
     public static final int FIRST_INPUT_B_SLOT = FIRST_INPUT_A_SLOT + AutotraderPolicy.INPUT_SLOTS_PER_COST;
@@ -61,8 +62,6 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
     private static final String OFFER_AGE_TICKS_TAG = "OfferAgeTicks";
     private static final String RESTOCK_CHECK_TICKS_TAG = "RestockCheckTicks";
     private static final String CURE_DISCOUNT_TAG = "TradingCellsCureDiscount";
-    private static final String TEMPORARY_DISCOUNT_MASK_TAG = "TradingCellsTemporaryDiscountMask";
-    private static final String TEMPORARY_DISCOUNT_EXPIRES_TAG = "TradingCellsTemporaryDiscountExpires";
     private static final int[] INPUT_A_SLOTS = new int[]{1, 2, 3, 4};
     private static final int[] INPUT_B_SLOTS = new int[]{5, 6, 7, 8};
     private static final int[] OUTPUT_SLOTS = new int[]{9, 10, 11, 12};
@@ -76,6 +75,7 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
     private int offerAgeTicks;
     private int restockCheckTicks;
     private int offersRevision;
+    private long nextTemporaryDiscountExpiry = Long.MAX_VALUE;
     private boolean emptyOffersInitializationAttempted;
     private ItemStack storedPoiStack = ItemStack.EMPTY;
     private @Nullable AutotraderVillager cachedVillager;
@@ -447,7 +447,11 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         if (level == null || level.isClientSide()) {
             return;
         }
+        if (items.get(VILLAGER_SLOT).isEmpty()) {
+            return;
+        }
         AutotraderVillager villager = resolveVillager();
+        refreshExpiredTemporaryDiscounts(villager);
         tickOfferAge(villager);
         tickVillagerRestock(villager);
         MerchantOffer offer = selectedOffer(villager);
@@ -544,7 +548,7 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
     public @NonNull AbstractContainerMenu createMenu(
             int containerId,
             @NonNull Inventory inventory,
-            @NonNull Player player
+            @NonNull Player player // NOSONAR - MenuProvider fixes this parameter even when this menu needs only the inventory.
     ) {
         if (level != null && !level.isClientSide()) {
             boolean offersChanged = ensureOffersInitialized();
@@ -927,13 +931,20 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
     private void prepareAutomaticPrices(Villager villager) {
         int careerDiscount = Math.max(0, villager.getVillagerData().level() - 1);
         int cureDiscount = Math.max(0, villager.getPersistentData().getInt(CURE_DISCOUNT_TAG).orElse(0));
-        long temporaryMask = activeTemporaryDiscountMask(villager);
         MerchantOffers offers = villager.getOffers();
-        for (int offerIndex = 0; offerIndex < offers.size(); offerIndex++) {
-            MerchantOffer offer = offers.get(offerIndex);
+        long gameTime = level == null ? 0L : level.getGameTime();
+        TemporaryTradeDiscountStore.ActiveDiscounts temporaryDiscounts =
+                TemporaryTradeDiscountStore.activeDiscounts(
+                        villager.getPersistentData(),
+                        offers,
+                        gameTime,
+                        villager.registryAccess()
+                );
+        nextTemporaryDiscountExpiry = temporaryDiscounts.nextExpiry();
+        for (MerchantOffer offer : offers) {
             offer.resetSpecialPriceDiff();
             long totalDiscount = (long) careerDiscount + cureDiscount;
-            if (TradeDiscountPolicy.appliesTo(temporaryMask, offerIndex)) {
+            if (temporaryDiscounts.appliesTo(offer)) {
                 totalDiscount += TradeDiscountPolicy.TEMPORARY_DISCOUNT_PER_OFFER;
             }
             int discount = (int) Math.clamp(totalDiscount, 0L, Integer.MAX_VALUE);
@@ -942,16 +953,6 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         }
     }
 
-
-    private long activeTemporaryDiscountMask(Villager villager) {
-        long expiresAt = villager.getPersistentData().getLong(TEMPORARY_DISCOUNT_EXPIRES_TAG).orElse(0L);
-        if (level == null || TradeDiscountPolicy.expired(expiresAt, level.getGameTime())) {
-            villager.getPersistentData().remove(TEMPORARY_DISCOUNT_MASK_TAG);
-            villager.getPersistentData().remove(TEMPORARY_DISCOUNT_EXPIRES_TAG);
-            return 0L;
-        }
-        return villager.getPersistentData().getLong(TEMPORARY_DISCOUNT_MASK_TAG).orElse(0L);
-    }
 
     private void persistCachedVillager() {
         if (cachedVillager == null || level == null || level.isClientSide()) {
@@ -966,6 +967,18 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
     private void invalidateVillagerCache() {
         cachedVillager = null;
         cachedVillagerData = null;
+        nextTemporaryDiscountExpiry = Long.MAX_VALUE;
+    }
+
+    private void refreshExpiredTemporaryDiscounts(@Nullable AutotraderVillager villager) {
+        if (villager == null
+                || level == null
+                || level.getGameTime() < nextTemporaryDiscountExpiry) {
+            return;
+        }
+        prepareAutomaticPrices(villager);
+        persistCachedVillager();
+        markOffersChanged();
     }
 
     private void tickVillagerRestock(@Nullable AutotraderVillager villager) {
@@ -1127,8 +1140,7 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         return slot >= 0 && slot < CONTAINER_SIZE;
     }
 
-    // TODO revision manual (Sonar): Minecraft Entity identity and framework inheritance must be preserved.
-    private static final class AutotraderVillager extends Villager { // NOSONAR
+    private static final class AutotraderVillager extends Villager { // NOSONAR - Minecraft requires Entity identity and framework inheritance for this server-side proxy.
         private final AutotraderUseCase autotraderService;
 
         private AutotraderVillager(
@@ -1163,15 +1175,12 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         }
 
         private void markTemporaryDiscount(MerchantOffer offer) {
-            int offerIndex = getOffers().indexOf(offer);
-            long mask = getPersistentData().getLong(TEMPORARY_DISCOUNT_MASK_TAG).orElse(0L);
-            getPersistentData().putLong(
-                    TEMPORARY_DISCOUNT_MASK_TAG,
-                    TradeDiscountPolicy.markOffer(mask, offerIndex)
-            );
-            getPersistentData().putLong(
-                    TEMPORARY_DISCOUNT_EXPIRES_TAG,
-                    level().getGameTime() + TradeDiscountPolicy.TEMPORARY_DISCOUNT_TICKS
+            TemporaryTradeDiscountStore.markOffer(
+                    getPersistentData(),
+                    getOffers(),
+                    offer,
+                    level().getGameTime(),
+                    registryAccess()
             );
         }
 

@@ -33,10 +33,10 @@ public final class MachineScreenLayout {
     public static final int PROGRESS_FILL_HEIGHT = 9;
 
     private static final int TILE_SIZE = 16;
-    private static final int MACHINE_PANEL_X = 4;
-    private static final int MACHINE_PANEL_Y = 22;
-    private static final int MACHINE_PANEL_WIDTH = WIDTH - 8;
-    private static final int MACHINE_PANEL_HEIGHT = 95;
+    public static final int MACHINE_PANEL_X = 4;
+    public static final int MACHINE_PANEL_Y = 22;
+    public static final int MACHINE_PANEL_WIDTH = WIDTH - 8;
+    public static final int MACHINE_PANEL_HEIGHT = 95;
 
     private MachineScreenLayout() {
     }
@@ -155,12 +155,7 @@ public final class MachineScreenLayout {
                 screenY,
                 slotX,
                 slotY,
-                new SlotRenderer.Palette(
-                        theme.slot(),
-                        theme.frameDark(),
-                        theme.slotInner(),
-                        theme.slotHighlight()
-                )
+                theme.slotPalette()
         );
     }
 
@@ -199,10 +194,26 @@ public final class MachineScreenLayout {
             int y,
             Identifier surfaceTexture
     ) {
-        int panelX = x + MACHINE_PANEL_X;
-        int panelY = y + MACHINE_PANEL_Y;
-        tile(graphics, surfaceTexture, panelX, panelY, MACHINE_PANEL_WIDTH, MACHINE_PANEL_HEIGHT);
-        graphics.fill(panelX, panelY, panelX + MACHINE_PANEL_WIDTH, panelY + MACHINE_PANEL_HEIGHT, 0x24000000);
+        drawMachinePanelSurface(
+                graphics,
+                x + MACHINE_PANEL_X,
+                y + MACHINE_PANEL_Y,
+                surfaceTexture
+        );
+    }
+
+    /**
+     * Draws only the textured machine work area. Integrations such as REI use
+     * this crop so their recipes stay visually identical to the real screen.
+     */
+    public static void drawMachinePanelSurface(
+            GuiGraphicsExtractor graphics,
+            int x,
+            int y,
+            Identifier surfaceTexture
+    ) {
+        tile(graphics, surfaceTexture, x, y, MACHINE_PANEL_WIDTH, MACHINE_PANEL_HEIGHT);
+        graphics.fill(x, y, x + MACHINE_PANEL_WIDTH, y + MACHINE_PANEL_HEIGHT, 0x24000000);
     }
 
     private static void tile(

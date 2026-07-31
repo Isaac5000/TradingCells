@@ -1,11 +1,11 @@
 package com.cosmocraft.trading_cells.feature.captures.adapters.input;
 
-import com.cosmocraft.trading_cells.feature.captures.adapters.output.CaptureRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -25,7 +25,7 @@ public final class CaptureInteractionAdapter {
         }
 
         ItemStack heldItem = event.getEntity().getItemInHand(event.getHand());
-        if (!heldItem.is(CaptureRegistrationAdapter.VILLAGER_CAPTURER_ITEM.get())) {
+        if (!CapturedMobStackAdapter.isCapturer(CapturedMobKind.VILLAGER, heldItem)) {
             return;
         }
 
@@ -35,13 +35,11 @@ public final class CaptureInteractionAdapter {
             return;
         }
 
-        ItemStack captureTarget = createSingleCapturerTarget(heldItem);
-        if (!VillagerCapturerItem.captureVillager(captureTarget, villager)) {
+        if (!VillagerCapturerItem.captureVillager(heldItem, villager)) {
             event.setCancellationResult(InteractionResult.FAIL);
             return;
         }
 
-        finishStackedCapture(event.getEntity(), heldItem, captureTarget);
         villager.discard();
     }
 
@@ -54,7 +52,7 @@ public final class CaptureInteractionAdapter {
         }
 
         ItemStack heldItem = event.getEntity().getItemInHand(event.getHand());
-        if (!heldItem.is(CaptureRegistrationAdapter.PIGLIN_CAPTURER_ITEM.get())) {
+        if (!CapturedMobStackAdapter.isCapturer(CapturedMobKind.PIGLIN, heldItem)) {
             return;
         }
 
@@ -64,30 +62,11 @@ public final class CaptureInteractionAdapter {
             return;
         }
 
-        ItemStack captureTarget = createSingleCapturerTarget(heldItem);
-        if (!PiglinCapturerItem.capturePiglin(captureTarget, piglin)) {
+        if (!PiglinCapturerItem.capturePiglin(heldItem, piglin)) {
             event.setCancellationResult(InteractionResult.FAIL);
             return;
         }
 
-        finishStackedCapture(event.getEntity(), heldItem, captureTarget);
         piglin.discard();
-    }
-
-    private static ItemStack createSingleCapturerTarget(ItemStack heldItem) {
-        return heldItem.getCount() <= 1
-                ? heldItem
-                : new ItemStack(heldItem.getItem());
-    }
-
-    private static void finishStackedCapture(Player player, ItemStack heldItem, ItemStack captureTarget) {
-        if (captureTarget == heldItem) {
-            return;
-        }
-
-        heldItem.shrink(1);
-        if (!player.getInventory().add(captureTarget)) {
-            player.drop(captureTarget, false);
-        }
     }
 }

@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "trading_cells:item/piglin_barter_netherite_upgrade"
+  }
+}

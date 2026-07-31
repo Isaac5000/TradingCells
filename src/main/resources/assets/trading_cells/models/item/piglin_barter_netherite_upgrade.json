@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "trading_cells:item/upgrades_piglin_netherite_trader/piglin_barter_netherite_upgrade"
+  }
+}

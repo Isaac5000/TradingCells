@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.141'
+    id 'net.neoforged.moddev' version '2.0.143'
     id 'idea'
 }
 
@@ -27,7 +27,22 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // Add here additional repositories if required by some of the dependencies below.
+    maven {
+        name = 'Shedaniel'
+        url = 'https://maven.shedaniel.me'
+        content {
+            includeGroup 'me.shedaniel'
+            includeGroup 'me.shedaniel.cloth'
+            includeGroup 'dev.architectury'
+        }
+    }
+    maven {
+        name = 'Fabric'
+        url = 'https://maven.fabricmc.net'
+        content {
+            includeGroup 'net.fabricmc'
+        }
+    }
 }
 
 base {
@@ -52,6 +67,9 @@ neoForge {
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            // REI 26.2 still uses @OnlyIn. NeoForge reports every usage in the
+            // development log, but this avoids an upstream warning blocking runClient.
+            systemProperty 'neoforge.warnings.onlyin.hide', 'true'
             if (project.hasProperty('quickPlayWorld')) {
                 programArguments.addAll(
                         '--quickPlaySingleplayer',
@@ -119,12 +137,15 @@ configurations {
 }
 
 dependencies {
-    // Example optional mod dependency with JEI
-    // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
-    // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
-    // compileOnly "mezz.jei:jei-${mc_version}-neoforge-api:${jei_version}"
-    // We add the full version to localRuntime, not runtimeOnly, so that we do not publish a dependency on it
-    // localRuntime "mezz.jei:jei-${mc_version}-neoforge:${jei_version}"
+    compileOnly "me.shedaniel:RoughlyEnoughItems-api-neoforge:${rei_api_version}"
+    compileOnly("net.fabricmc:fabric-loader:0.19.3") {
+        transitive = false
+    }
+    compileOnly "dev.architectury:architectury-neoforge:${architectury_version}"
+    if (!project.hasProperty('withoutRei')) {
+        localRuntime "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
+        localRuntime "dev.architectury:architectury-neoforge:${architectury_version}"
+    }
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
@@ -153,6 +174,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             mod_name               : mod_name,
             mod_license            : mod_license,
             mod_version            : mod_version,
+            rei_version_range      : rei_version_range,
     ]
     inputs.properties replaceProperties
     expand replaceProperties
@@ -181,6 +203,7 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.compilerArgs.add('-Xlint:unchecked')
 }
 
 tasks.register('checkArchitecture') {

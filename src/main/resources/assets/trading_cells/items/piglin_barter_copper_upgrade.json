@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "trading_cells:item/piglin_barter_copper_upgrade"
+  }
+}

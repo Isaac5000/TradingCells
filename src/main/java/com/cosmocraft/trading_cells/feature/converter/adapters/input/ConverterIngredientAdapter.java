@@ -11,6 +11,11 @@ public final class ConverterIngredientAdapter {
     }
 
     public static boolean isWeaknessPotion(ItemStack stack) {
+        if (!stack.is(Items.POTION)
+                && !stack.is(Items.SPLASH_POTION)
+                && !stack.is(Items.LINGERING_POTION)) {
+            return false;
+        }
         PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
         return contents != null && (contents.is(Potions.WEAKNESS) || contents.is(Potions.LONG_WEAKNESS));
     }

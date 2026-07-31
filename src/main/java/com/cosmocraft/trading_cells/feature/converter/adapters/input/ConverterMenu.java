@@ -4,8 +4,8 @@ import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobSta
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.ConverterRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterStage;
-import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.MachineMenuLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -18,7 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 public final class ConverterMenu extends AbstractContainerMenu {
-    private static final int MACHINE_SLOT_COUNT = ConverterBlockEntity.CONTAINER_SIZE;
+    private static final int MACHINE_SLOT_COUNT = ConverterBlockEntity.STORAGE_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
     private static final int PLAYER_HOTBAR_END = PLAYER_INVENTORY_END + 9;
@@ -27,7 +27,12 @@ public final class ConverterMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public ConverterMenu(int containerId, Inventory inventory) {
-        this(containerId, inventory, new SimpleContainer(MACHINE_SLOT_COUNT), new SimpleContainerData(4));
+        this(
+                containerId,
+                inventory,
+                new SimpleContainer(ConverterBlockEntity.CONTAINER_SIZE),
+                new SimpleContainerData(4)
+        );
     }
 
     public ConverterMenu(int containerId, Inventory inventory, Container container, ContainerData data) {
@@ -39,12 +44,26 @@ public final class ConverterMenu extends AbstractContainerMenu {
 
         addSlot(new HiddenVillagerSlot(container, ConverterBlockEntity.VILLAGER_SLOT));
         for (int index = 0; index < ConverterBlockEntity.POTION_SLOT_COUNT; index++) {
-            addSlot(new PotionSlot(container, ConverterBlockEntity.FIRST_POTION_SLOT + index, MachineMenuLayout.machineX(43) + index * 24, 35));
+            addSlot(new PotionSlot(
+                    container,
+                    ConverterBlockEntity.FIRST_POTION_SLOT + index,
+                    MachineMenuLayout.machineX(43) + index * 24,
+                    35
+            ));
         }
         for (int index = 0; index < ConverterBlockEntity.APPLE_SLOT_COUNT; index++) {
-            addSlot(new AppleSlot(container, ConverterBlockEntity.FIRST_APPLE_SLOT + index, MachineMenuLayout.machineX(43) + index * 24, 63));
+            addSlot(new AppleSlot(
+                    container,
+                    ConverterBlockEntity.FIRST_APPLE_SLOT + index,
+                    MachineMenuLayout.machineX(43) + index * 24,
+                    63
+            ));
         }
-        addStandardInventorySlots(inventory, MachineMenuLayout.PLAYER_INVENTORY_X, MachineMenuLayout.PLAYER_INVENTORY_SLOT_Y);
+        addStandardInventorySlots(
+                inventory,
+                MachineMenuLayout.PLAYER_INVENTORY_X,
+                MachineMenuLayout.PLAYER_INVENTORY_SLOT_Y
+        );
         for (Slot equipmentSlot : PlayerEquipmentSlots.create(inventory)) {
             addSlot(equipmentSlot);
         }
@@ -118,7 +137,7 @@ public final class ConverterMenu extends AbstractContainerMenu {
             return moveItemStackTo(
                     stack,
                     ConverterBlockEntity.FIRST_APPLE_SLOT,
-                    ConverterBlockEntity.CONTAINER_SIZE,
+                    ConverterBlockEntity.STORAGE_SLOT_COUNT,
                     false
             );
         }
@@ -151,6 +170,18 @@ public final class ConverterMenu extends AbstractContainerMenu {
         @Override
         public boolean mayPlace(@NonNull ItemStack stack) {
             return ConverterIngredientAdapter.isWeaknessPotion(stack);
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return ConverterBlockEntity.POTION_SLOT_LIMIT;
+        }
+
+        @Override
+        public int getMaxStackSize(@NonNull ItemStack stack) {
+            return ConverterIngredientAdapter.isWeaknessPotion(stack)
+                    ? ConverterBlockEntity.POTION_SLOT_LIMIT
+                    : 0;
         }
     }
 

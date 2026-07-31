@@ -20,6 +20,16 @@ public final class MachineBlockProperties {
         return configure(BlockBehaviour.Properties.of(), id, SoundType.STONE);
     }
 
+    public static BlockBehaviour.Properties netherite(String id) {
+        return configure(
+                BlockBehaviour.Properties.of(),
+                id,
+                SoundType.NETHERITE_BLOCK,
+                5.0F,
+                1200.0F
+        );
+    }
+
     public static BlockBehaviour.Properties villagerCopyOf(String id, Block source) {
         return configure(BlockBehaviour.Properties.ofFullCopy(source), id, SoundType.METAL);
     }
@@ -33,12 +43,22 @@ public final class MachineBlockProperties {
             String id,
             SoundType soundType
     ) {
+        return configure(properties, id, soundType, 1.5F, 6.0F);
+    }
+
+    private static BlockBehaviour.Properties configure(
+            BlockBehaviour.Properties properties,
+            String id,
+            SoundType soundType,
+            float destroyTime,
+            float explosionResistance
+    ) {
         return properties
                 .setId(ResourceKey.create(
                         Registries.BLOCK,
                         Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, id)
                 ))
-                .strength(1.5F, 6.0F)
+                .strength(destroyTime, explosionResistance)
                 .sound(soundType)
                 .noOcclusion()
                 .isRedstoneConductor((state, getter, pos) -> false)

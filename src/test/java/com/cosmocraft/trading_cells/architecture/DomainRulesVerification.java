@@ -8,18 +8,19 @@ import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederRecipe;
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederRules;
 import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterCycle;
 import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterStage;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturerDurability;
 import com.cosmocraft.trading_cells.feature.captures.adapters.output.client.CapturedEntityGuiTransform;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerCycle;
 import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubationCycle;
 import com.cosmocraft.trading_cells.feature.ironfarm.domain.model.IronFarmCycle;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
-import com.cosmocraft.trading_cells.feature.milkcookie.application.usecase.CreateMilkCookieUseCaseImp;
-import com.cosmocraft.trading_cells.feature.milkcookie.domain.model.MilkCookieCreationRequest;
 import com.cosmocraft.trading_cells.feature.trader.domain.model.PiglinBarterCycle;
 import com.cosmocraft.trading_cells.feature.trader.domain.model.VillagerOfferPersistence;
+import com.cosmocraft.trading_cells.feature.trader.domain.service.TradeDiscountPolicy;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.SlotRenderer;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.VillagerTradeMenuLayout;
+import java.util.List;
 
 public final class DomainRulesVerification {
     private DomainRulesVerification() {
@@ -28,13 +29,14 @@ public final class DomainRulesVerification {
     public static void main(String[] args) { // NOSONAR - The JVM entry-point signature requires this parameter.
         verifyOfferLifecycle();
         verifyOfferSelection();
+        verifyTemporaryTradeDiscounts();
         verifyTimedProcesses();
         verifyBreederRules();
         verifyFarmerRules();
         verifyConverterRules();
         verifyIronFarmRules();
         verifyPiglinBarterRules();
-        verifyMilkCookieRules();
+        verifyCapturerRules();
         verifyCapturedEntityGuiCenter();
         verifyVillagerTradeGeometry();
     }
@@ -77,6 +79,34 @@ public final class DomainRulesVerification {
                 "Selection must wrap lists larger than four");
     }
 
+    private static void verifyTemporaryTradeDiscounts() {
+        List<TradeDiscountPolicy.ActiveDiscount<String>> initial = List.of(
+                new TradeDiscountPolicy.ActiveDiscount<>("emerald-book", 110L),
+                new TradeDiscountPolicy.ActiveDiscount<>("emerald-bread", 220L)
+        );
+        List<TradeDiscountPolicy.ActiveDiscount<String>> active =
+                TradeDiscountPolicy.active(initial, 120L);
+        require(!TradeDiscountPolicy.appliesTo(active, "emerald-book")
+                        && TradeDiscountPolicy.appliesTo(active, "emerald-bread"),
+                "Each offer discount must expire independently");
+
+        List<TradeDiscountPolicy.ActiveDiscount<String>> renewed =
+                TradeDiscountPolicy.renew(active, "emerald-bread", 130L);
+        renewed = TradeDiscountPolicy.renew(renewed, "emerald-bread", 140L);
+        require(renewed.size() == 1
+                        && renewed.getFirst().expiresAt() == TradeDiscountPolicy.renewedExpiry(140L),
+                "Repeated purchases must renew one layer instead of stacking magnitude");
+
+        List<TradeDiscountPolicy.ActiveDiscount<String>> reordered = List.of(
+                new TradeDiscountPolicy.ActiveDiscount<>("second-offer", 300L),
+                renewed.getFirst()
+        );
+        require(TradeDiscountPolicy.appliesTo(reordered, "emerald-bread"),
+                "Discount lookup must follow stable offer identity rather than list index");
+        require(TradeDiscountPolicy.nextExpiry(reordered) == 300L,
+                "The earliest independent offer expiry must schedule the next price refresh");
+    }
+
     private static void verifyTimedProcesses() {
         TimedProcess.Step paused = TimedProcess.advance(
                 7,
@@ -96,13 +126,19 @@ public final class DomainRulesVerification {
     }
 
     private static void verifyBreederRules() {
-        BreederRules rules = new BreederRules(100, 200, 3, 12, 2, 4, 64);
+        BreederRules rules = new BreederRules(100, 200, 3, 12, 64);
         require(BreederRecipe.breedTicks(BreederKind.PIGLIN, rules) == 200,
                 "Piglin duration must come from configuration");
-        require(BreederRecipe.cost(BreederKind.PIGLIN, BreederFood.PORK, rules) == 2,
-                "Piglin pork cost must come from configuration");
-        require(BreederRecipe.cost(BreederKind.PIGLIN, BreederFood.CRIMSON_FUNGUS, rules) == 4,
-                "Crimson fungus must remain a valid configured food");
+        require(BreederRecipe.cost(BreederKind.PIGLIN, BreederFood.COOKED_PORKCHOP, rules) == 2,
+                "Cooked porkchops must cost two");
+        require(BreederRecipe.cost(BreederKind.PIGLIN, BreederFood.NETHER_WART_BLOCK, rules) == 2,
+                "Nether wart blocks must cost two");
+        require(BreederRecipe.cost(BreederKind.PIGLIN, BreederFood.RAW_PORKCHOP, rules) == 4,
+                "Raw porkchops must cost four");
+        require(BreederRecipe.cost(BreederKind.PIGLIN, BreederFood.CRIMSON_FUNGUS, rules) == 6,
+                "Crimson fungi must cost six");
+        require(BreederRecipe.cost(BreederKind.PIGLIN, BreederFood.NETHER_WART, rules) == 12,
+                "Nether wart must cost twelve");
     }
 
     private static void verifyFarmerRules() {
@@ -151,10 +187,38 @@ public final class DomainRulesVerification {
     }
 
     private static void verifyIronFarmRules() {
-        IronFarmCycle cycle = new IronFarmCycle(1_200, 2, 4, 8, 80, 16, 5);
-        require(cycle.multiplier(1) == 2, "One villager multiplier must be configurable");
-        require(cycle.multiplier(3) == 8, "Three villager multiplier must be configurable");
+        IronFarmCycle cycle = new IronFarmCycle(
+                1_200,
+                IronFarmCycle.BASE_ONE_VILLAGER_MULTIPLIER,
+                IronFarmCycle.BASE_TWO_VILLAGER_MULTIPLIER,
+                IronFarmCycle.BASE_THREE_VILLAGER_MULTIPLIER,
+                80,
+                16,
+                5
+        );
+        require(cycle.multiplier(1) == 1, "One villager must use the x1 base multiplier");
+        require(cycle.multiplier(3) == 3, "Three villagers must use the x3 base multiplier");
         require(cycle.isGolemVisible(1_120), "The golem must appear during its attack window");
+
+        int bonus = 15;
+        IronFarmCycle configuredCycle = new IronFarmCycle(
+                1_200,
+                IronFarmCycle.BASE_ONE_VILLAGER_MULTIPLIER + bonus,
+                IronFarmCycle.BASE_TWO_VILLAGER_MULTIPLIER + bonus,
+                IronFarmCycle.BASE_THREE_VILLAGER_MULTIPLIER + bonus,
+                80,
+                16,
+                5
+        );
+        require(configuredCycle.multiplier(1) == 16 && configuredCycle.multiplier(3) == 18,
+                "The configured iron-farm value must be added to every base multiplier");
+    }
+
+    private static void verifyCapturerRules() {
+        require(CapturerDurability.maximum(10) == 10,
+                "The default capturer durability must allow ten releases");
+        require(CapturerDurability.maximum(0) == 1,
+                "Capturer durability must never become non-positive");
     }
 
     private static void verifyPiglinBarterRules() {
@@ -165,14 +229,6 @@ public final class DomainRulesVerification {
         require(PiglinBarterCycle.advance(1, 20, false).transition()
                         == PiglinBarterCycle.Transition.COMPLETED,
                 "A barter must complete when its countdown reaches zero");
-    }
-
-    private static void verifyMilkCookieRules() {
-        CreateMilkCookieUseCaseImp useCase = new CreateMilkCookieUseCaseImp();
-        require(useCase.canCreate(new MilkCookieCreationRequest(true, true)),
-                "An adult horse and a cookie must create the item");
-        require(!useCase.canCreate(new MilkCookieCreationRequest(true, false)),
-                "A non-adult horse must not create the item");
     }
 
     private static void verifyCapturedEntityGuiCenter() {

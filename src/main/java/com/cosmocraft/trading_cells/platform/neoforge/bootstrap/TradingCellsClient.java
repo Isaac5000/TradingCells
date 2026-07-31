@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.platform.neoforge.bootstrap;
 
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.AutotraderClientRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.NetheritePiglinBarteringCellClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.breeders.adapters.output.client.BreederClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.client.ConverterClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.output.client.FarmerClientRegistrationAdapter;
@@ -35,6 +36,8 @@ public class TradingCellsClient {
             modBus.addListener(FarmerClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(AutotraderClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(VillagerTradingCellClientRegistrationAdapter::onRegisterMenuScreens);
+            modBus.addListener(NetheritePiglinBarteringCellClientRegistrationAdapter::onRegisterMenuScreens);
+            modBus.addListener(NetheritePiglinBarteringCellClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(AutotraderClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(IronFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(IronFarmClientRegistrationAdapter::onRegisterRenderers);

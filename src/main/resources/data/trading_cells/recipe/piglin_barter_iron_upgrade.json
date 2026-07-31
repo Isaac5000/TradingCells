@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "N": "minecraft:iron_nugget",
+    "U": "trading_cells:piglin_barter_copper_upgrade"
+  },
+  "pattern": [
+    "NIN",
+    "IUI",
+    "NIN"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trading_cells:piglin_barter_iron_upgrade"
+  }
+}

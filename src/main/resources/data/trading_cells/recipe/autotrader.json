@@ -3,7 +3,7 @@
   "category": "building",
   "show_notification": false,
   "key": {
-    "B": "minecraft:emerald_block",
+    "B": "minecraft:emerald",
     "G": "minecraft:glass_pane",
     "I": "minecraft:iron_ingot"
   },

@@ -26,7 +26,7 @@ public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> 
     private static final int PROGRESS_Y = PROGRESS_FRAME_Y + MachineScreenLayout.PROGRESS_FILL_Y_OFFSET;
     private static final int PROGRESS_WIDTH = MachineScreenLayout.PROGRESS_FILL_WIDTH;
     private static final int PROGRESS_HEIGHT = MachineScreenLayout.PROGRESS_FILL_HEIGHT;
-    private static final int FLOWERS_X = MachineScreenLayout.machineX(8) - 16;
+    private static final int FLOWERS_X = MachineScreenLayout.machineX(8) - 14;
     private Checkbox flowersCheckbox;
 
     public IronFarmScreen(IronFarmMenu menu, Inventory inventory, Component title) {

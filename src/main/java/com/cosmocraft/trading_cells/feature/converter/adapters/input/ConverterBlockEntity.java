@@ -1,12 +1,12 @@
 package com.cosmocraft.trading_cells.feature.converter.adapters.input;
 
+import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.ConverterRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.converter.application.port.input.ConverterUseCase;
 import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterCycle;
 import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterStage;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
-import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
-import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -14,8 +14,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.Container;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -35,7 +35,9 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     public static final int POTION_SLOT_COUNT = 4;
     public static final int FIRST_APPLE_SLOT = FIRST_POTION_SLOT + POTION_SLOT_COUNT;
     public static final int APPLE_SLOT_COUNT = 4;
-    public static final int CONTAINER_SIZE = FIRST_APPLE_SLOT + APPLE_SLOT_COUNT;
+    public static final int STORAGE_SLOT_COUNT = FIRST_APPLE_SLOT + APPLE_SLOT_COUNT;
+    public static final int CONTAINER_SIZE = STORAGE_SLOT_COUNT;
+    public static final int POTION_SLOT_LIMIT = 1;
 
     private static final String SLOT_TAG_PREFIX = "Slot";
     private static final String STAGE_TAG = "Stage";
@@ -46,7 +48,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     private static final int[] APPLE_SLOTS = new int[]{5, 6, 7, 8};
     private static final int[] NO_SLOTS = new int[0];
 
-    private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
+    private final NonNullList<ItemStack> items = NonNullList.withSize(STORAGE_SLOT_COUNT, ItemStack.EMPTY);
     private final ConverterUseCase converterService = FeatureComposition.converter();
     private ConverterStage stage = ConverterStage.IDLE;
     private int stageTicks;
@@ -207,7 +209,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     public @NonNull AbstractContainerMenu createMenu(
             int containerId,
             @NonNull Inventory inventory,
-            @NonNull Player player
+            @NonNull Player player // NOSONAR - MenuProvider fixes this parameter even when this menu needs only the inventory.
     ) {
         return new ConverterMenu(containerId, inventory, this, dataAccess);
     }
@@ -229,15 +231,19 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
 
     @Override
     public @NonNull ItemStack getItem(int slot) {
-        return isValidSlot(slot) ? items.get(slot) : ItemStack.EMPTY;
+        return isStorageSlot(slot) ? items.get(slot) : ItemStack.EMPTY;
     }
 
     @Override
     public @NonNull ItemStack removeItem(int slot, int count) {
-        if (!isValidSlot(slot) || slot == VILLAGER_SLOT && isProcessing() || count <= 0 || items.get(slot).isEmpty()) {
+        if (!isStorageSlot(slot)
+                || slot == VILLAGER_SLOT && isProcessing()
+                || count <= 0
+                || items.get(slot).isEmpty()) {
             return ItemStack.EMPTY;
         }
-        ItemStack removed = items.get(slot).split(count);
+        int amount = isPotionSlot(slot) ? Math.min(POTION_SLOT_LIMIT, count) : count;
+        ItemStack removed = items.get(slot).split(amount);
         if (items.get(slot).isEmpty()) {
             items.set(slot, ItemStack.EMPTY);
         }
@@ -251,7 +257,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
 
     @Override
     public @NonNull ItemStack removeItemNoUpdate(int slot) {
-        if (!isValidSlot(slot) || slot == VILLAGER_SLOT && isProcessing()) {
+        if (!isStorageSlot(slot) || slot == VILLAGER_SLOT && isProcessing()) {
             return ItemStack.EMPTY;
         }
         ItemStack removed = items.get(slot);
@@ -265,7 +271,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
 
     @Override
     public void setItem(int slot, @NonNull ItemStack stack) {
-        if (!isValidSlot(slot)
+        if (!isStorageSlot(slot)
                 || slot == VILLAGER_SLOT && isProcessing()
                 || !stack.isEmpty() && !canPlaceItem(slot, stack)) {
             return;
@@ -275,6 +281,8 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
             inserted.setCount(Math.min(1, inserted.getCount()));
             curedReady = false;
             cancelProcess();
+        } else if (isPotionSlot(slot)) {
+            inserted.setCount(Math.min(POTION_SLOT_LIMIT, inserted.getCount()));
         } else {
             inserted.setCount(Math.min(inserted.getMaxStackSize(), inserted.getCount()));
         }
@@ -307,6 +315,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     @Override
     public int @NonNull [] getSlotsForFace(@NonNull Direction direction) {
         Direction facing = getBlockState().getValue(AbstractPortableMachineBlock.FACING);
+        // Viewed from the front of the block, clockwise is its physical left side.
         if (direction == facing.getClockWise()) {
             return POTION_SLOTS;
         }
@@ -337,8 +346,18 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
-        for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
-            items.set(slot, input.read(SLOT_TAG_PREFIX + slot, ItemStack.CODEC).orElse(ItemStack.EMPTY));
+        for (int slot = 0; slot < STORAGE_SLOT_COUNT; slot++) {
+            ItemStack loaded = input.read(SLOT_TAG_PREFIX + slot, ItemStack.CODEC).orElse(ItemStack.EMPTY);
+            if (isPotionSlot(slot)) {
+                if (ConverterIngredientAdapter.isWeaknessPotion(loaded)) {
+                    loaded.setCount(Math.min(POTION_SLOT_LIMIT, loaded.getCount()));
+                } else {
+                    loaded = ItemStack.EMPTY;
+                }
+            } else if (isAppleSlot(slot) && !ConverterIngredientAdapter.isGoldenApple(loaded)) {
+                loaded = ItemStack.EMPTY;
+            }
+            items.set(slot, loaded);
         }
         stage = ConverterStage.fromId(input.getIntOr(STAGE_TAG, 0));
         stageTicks = Math.clamp(
@@ -352,9 +371,10 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
-        for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
-            if (!items.get(slot).isEmpty()) {
-                output.store(SLOT_TAG_PREFIX + slot, ItemStack.CODEC, items.get(slot));
+        for (int slot = 0; slot < STORAGE_SLOT_COUNT; slot++) {
+            ItemStack stack = items.get(slot);
+            if (!stack.isEmpty()) {
+                output.store(SLOT_TAG_PREFIX + slot, ItemStack.CODEC, stack);
             }
         }
         if (stage != ConverterStage.IDLE) {
@@ -368,7 +388,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
 
     @Override
     protected void clearContentsForBlockDrop() {
-        for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
+        for (int slot = 0; slot < STORAGE_SLOT_COUNT; slot++) {
             items.set(slot, ItemStack.EMPTY);
         }
         stage = ConverterStage.IDLE;
@@ -389,7 +409,9 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     private boolean hasIngredient(int[] slots, boolean potion) {
         for (int slot : slots) {
             ItemStack stack = items.get(slot);
-            if (potion ? ConverterIngredientAdapter.isWeaknessPotion(stack) : ConverterIngredientAdapter.isGoldenApple(stack)) {
+            if (potion
+                    ? ConverterIngredientAdapter.isWeaknessPotion(stack)
+                    : ConverterIngredientAdapter.isGoldenApple(stack)) {
                 return true;
             }
         }
@@ -399,7 +421,9 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     private void consumeIngredient(int[] slots, boolean potion) {
         for (int slot : slots) {
             ItemStack stack = items.get(slot);
-            if (potion ? ConverterIngredientAdapter.isWeaknessPotion(stack) : ConverterIngredientAdapter.isGoldenApple(stack)) {
+            if (potion
+                    ? ConverterIngredientAdapter.isWeaknessPotion(stack)
+                    : ConverterIngredientAdapter.isGoldenApple(stack)) {
                 stack.shrink(1);
                 if (stack.isEmpty()) {
                     items.set(slot, ItemStack.EMPTY);
@@ -427,10 +451,10 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     }
 
     private static boolean isAppleSlot(int slot) {
-        return slot >= FIRST_APPLE_SLOT && slot < CONTAINER_SIZE;
+        return slot >= FIRST_APPLE_SLOT && slot < STORAGE_SLOT_COUNT;
     }
 
-    private static boolean isValidSlot(int slot) {
-        return slot >= 0 && slot < CONTAINER_SIZE;
+    private static boolean isStorageSlot(int slot) {
+        return slot >= 0 && slot < STORAGE_SLOT_COUNT;
     }
 }

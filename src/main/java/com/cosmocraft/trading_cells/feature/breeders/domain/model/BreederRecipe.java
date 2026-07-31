@@ -7,7 +7,10 @@ public final class BreederRecipe {
     public static boolean isFood(BreederKind kind, BreederFood food) {
         return switch (kind) {
             case VILLAGER -> food == BreederFood.BREAD || food == BreederFood.VEGETABLE;
-            case PIGLIN -> food == BreederFood.PORK || food == BreederFood.CRIMSON_FUNGUS;
+            case PIGLIN -> switch (food) {
+                case COOKED_PORKCHOP, NETHER_WART_BLOCK, RAW_PORKCHOP, CRIMSON_FUNGUS, NETHER_WART -> true;
+                default -> false;
+            };
         };
     }
 
@@ -19,9 +22,17 @@ public final class BreederRecipe {
             case VILLAGER -> food == BreederFood.BREAD
                     ? rules.villagerBreadCost()
                     : rules.villagerVegetableCost();
-            case PIGLIN -> food == BreederFood.PORK
-                    ? rules.piglinPorkCost()
-                    : rules.piglinCrimsonFungusCost();
+            case PIGLIN -> piglinCost(food);
+        };
+    }
+
+    public static int piglinCost(BreederFood food) {
+        return switch (food) {
+            case COOKED_PORKCHOP, NETHER_WART_BLOCK -> 2;
+            case RAW_PORKCHOP -> 4;
+            case CRIMSON_FUNGUS -> 6;
+            case NETHER_WART -> 12;
+            default -> Integer.MAX_VALUE;
         };
     }
 

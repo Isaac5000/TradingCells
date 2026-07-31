@@ -3,13 +3,15 @@
   "category": "equipment",
   "show_notification": false,
   "key": {
-    "E": "minecraft:ender_pearl",
-    "R": "minecraft:red_stained_glass"
+    "O": "minecraft:gold_ingot",
+    "H": "minecraft:iron_ingot",
+    "P": "minecraft:ender_pearl",
+    "B": "minecraft:blackstone"
   },
   "pattern": [
-    " R ",
-    "RER",
-    " R "
+    "OHO",
+    "BPB",
+    "HHH"
   ],
   "result": {
     "count": 1,

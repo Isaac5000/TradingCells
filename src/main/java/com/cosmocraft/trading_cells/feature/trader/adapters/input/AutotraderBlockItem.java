@@ -13,12 +13,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public final class AutotraderBlockItem extends BlockItem {
@@ -29,15 +26,11 @@ public final class AutotraderBlockItem extends BlockItem {
         super(block, properties);
     }
 
-    @Override
-    public void appendHoverText(
-            @NonNull ItemStack stack,
-            Item.@NonNull TooltipContext context,
-            @NonNull TooltipDisplay display,
-            @NonNull Consumer<Component> tooltip,
-            @NonNull TooltipFlag flag
+    void appendTooltip(
+            ItemStack stack,
+            Item.TooltipContext context,
+            Consumer<Component> tooltip
     ) {
-        super.appendHoverText(stack, context, display, tooltip, flag);
         CompoundTag blockEntityTag = blockEntityTag(stack);
         ItemStack villagerStack = decodeStack(blockEntityTag, VILLAGER_STACK_TAG, context.registries());
         ItemStack poiStack = decodeStack(blockEntityTag, POI_STACK_TAG, context.registries());

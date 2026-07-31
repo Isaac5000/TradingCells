@@ -4,11 +4,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.monster.piglin.Piglin;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
@@ -17,7 +17,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public class PiglinCapturerItem extends Item {
+public class PiglinCapturerItem extends AbstractCapturerItem {
     public PiglinCapturerItem(Properties properties) {
         super(properties);
     }
@@ -56,6 +56,7 @@ public class PiglinCapturerItem extends Item {
     }
 
     public static void setCapturedPiglinData(ItemStack stack, CompoundTag piglinData) {
+        AbstractCapturerItem.configureDurability(stack);
         CompoundTag cleanData = piglinData.copy();
         stripVolatileEntityData(cleanData);
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(cleanData));
@@ -101,6 +102,9 @@ public class PiglinCapturerItem extends Item {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return InteractionResult.FAIL;
+        }
 
         Piglin piglin = createCapturedPiglin(level, stack, context.getClickedPos().relative(context.getClickedFace()));
         if (piglin == null || !level.addFreshEntity(piglin)) {
@@ -108,16 +112,15 @@ public class PiglinCapturerItem extends Item {
         }
 
         clearCapturedPiglin(stack);
+        damageAfterRelease(stack, serverLevel, context.getPlayer(), context.getHand());
         return InteractionResult.CONSUME;
     }
 
     @Override
-    public int getMaxStackSize(@NonNull ItemStack stack) {
-        return hasCapturedPiglin(stack) ? 1 : getDefaultMaxStackSize();
-    }
-
-    @Override
     public boolean isFoil(@NonNull ItemStack stack) {
+        if (stack.has(DataComponents.UNBREAKABLE)) {
+            return false;
+        }
         return hasCapturedPiglin(stack) || super.isFoil(stack);
     }
 

@@ -12,6 +12,7 @@ Trading Cells es un mod para NeoForge que añade capturadores de aldeanos y pigl
 - **Clic derecho** sobre una jaula con aldeano usando el capturador vacío: saca el aldeano de vuelta al capturador.
 - El item brilla cuando contiene un aldeano.
 - El render del item muestra al aldeano capturado en GUI, mano, tercera persona y decoraciones compatibles.
+- Tiene 10 usos por defecto y pierde uno solo al liberar al aldeano; Irrompibilidad reduce el desgaste.
 
 ### Capturador de piglins (`trading_cells:piglin_capturer`)
 
@@ -21,6 +22,7 @@ Trading Cells es un mod para NeoForge que añade capturadores de aldeanos y pigl
 - **Clic derecho** sobre una jaula con piglin usando el capturador vacío: saca el piglin de vuelta al capturador.
 - El item brilla cuando contiene un piglin.
 - El render del item muestra al piglin capturado en GUI, mano, tercera persona y decoraciones compatibles.
+- Tiene 10 usos por defecto y pierde uno solo al liberar al piglin; Irrompibilidad reduce el desgaste.
 
 ### Jaula de comercio (`trading_cells:villager_trading_cell`)
 
@@ -67,9 +69,25 @@ Si el aldeano aún no tiene profesión persistente, el POI interno define su pro
 
 ## Requisitos
 
+- Trading Cells `1.0.0`
 - Minecraft `26.2.0`
-- NeoForge `26.2.0.8-beta`
+- NeoForge `26.2.0.40-beta`
 - Java `25`
+
+## Compatibilidad con REI
+
+Roughly Enough Items es opcional. Con REI `26.2.820` o posterior, el visor
+muestra las recetas normales del mod y los procesos de criaderos, incubadoras,
+cultivo, conversión, granja de hierro y trueque de piglins, incluido el
+trocador de Netherita.
+
+## Configuración relevante
+
+- `capturers.durability`: durabilidad común de ambos capturadores; por defecto, 10.
+- `production.farmerDamageHoes`: hace que cada cosecha completada desgaste la azada; activado por defecto.
+- `production.ironFarmMultiplierBonus`: suma el valor indicado a las bases `x1`, `x2` y `x3`.
+- `Toque del Granjero` evita el desgaste de la azada dentro del Cultivo para Aldeanos. Por ahora su libro solo aparece en creativo.
+- Los capturadores irrompibles existen como variantes creativas sin receta para una implementación posterior.
 
 ## Desarrollo
 

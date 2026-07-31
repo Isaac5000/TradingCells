@@ -17,7 +17,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
@@ -33,7 +32,7 @@ public final class BreederMenu extends AbstractContainerMenu {
     public static final int EMPTY_CAPTURER_SLOT_X = MachineMenuLayout.machineX(48);
     public static final int FILLED_CAPTURER_SLOT_X = MachineMenuLayout.machineX(112);
     public static final int CAPTURER_SLOT_Y = 100;
-    private static final int DATA_COUNT = 6;
+    private static final int DATA_COUNT = 7;
     private static final int BREEDER_SLOT_COUNT = BreederBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = BREEDER_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
@@ -113,11 +112,18 @@ public final class BreederMenu extends AbstractContainerMenu {
         if (!BreederRecipe.isFood(kind, food)) {
             return 0;
         }
-        return Math.max(1, switch (food) {
-            case BREAD, PORK -> data.get(4);
-            case VEGETABLE, CRIMSON_FUNGUS -> data.get(5);
+        int cost = switch (food) {
+            case BREAD -> data.get(4);
+            case VEGETABLE -> data.get(5);
+            case COOKED_PORKCHOP, NETHER_WART_BLOCK, RAW_PORKCHOP, CRIMSON_FUNGUS, NETHER_WART ->
+                    BreederRecipe.piglinCost(food);
             case NONE -> 0;
-        });
+        };
+        return Math.max(1, cost);
+    }
+
+    public BreederFood activeFood() {
+        return BreederFood.fromOrdinal(data.get(6));
     }
 
     public String selectedVillagerVariantKey() {
@@ -215,26 +221,23 @@ public final class BreederMenu extends AbstractContainerMenu {
     }
 
     private boolean isValidFood(ItemStack stack) {
-        return BreederRecipe.isFood(kind, MinecraftBreederFood.from(stack));
+        return BreederRecipe.isFood(kind, MinecraftBreederFood.from(kind, stack));
     }
 
     private boolean isValidAdultParent(ItemStack stack) {
-        if (stack.isEmpty() || !stack.is(capturerItem())) {
+        if (!CapturedMobStackAdapter.isCapturer(capturedKind(), stack)) {
             return false;
         }
-        CompoundTag data = CapturedMobStackAdapter.copyData(capturedKind(), stack);
-        return data != null && !CapturedMobStackAdapter.isBaby(capturedKind(), data);
+        CompoundTag capturedData = CapturedMobStackAdapter.copyData(capturedKind(), stack);
+        return capturedData != null
+                && !CapturedMobStackAdapter.isBaby(capturedKind(), capturedData);
     }
 
     private boolean isEmptyCapturer(ItemStack stack) {
-        if (stack.isEmpty() || !stack.is(capturerItem())) {
+        if (!CapturedMobStackAdapter.isCapturer(capturedKind(), stack)) {
             return false;
         }
         return !CapturedMobStackAdapter.isFilledCapturer(capturedKind(), stack);
-    }
-
-    private Item capturerItem() {
-        return CapturedMobStackAdapter.capturerItem(capturedKind());
     }
 
     private CapturedMobKind capturedKind() {

@@ -16,6 +16,12 @@ public final class FarmerService implements FarmerUseCase {
         this.settings = Objects.requireNonNull(settings);
     }
 
+    @Override
+    public boolean damagesHoe() {
+        return settings.farmerDamagesHoe();
+    }
+
+    @Override
     public int effectiveGrowthTicks(double toolSpeed, int efficiencyLevel) {
         return FarmerCycle.effectiveGrowthTicks(
                 settings.farmerGrowthTicks(),
@@ -24,10 +30,12 @@ public final class FarmerService implements FarmerUseCase {
         );
     }
 
+    @Override
     public FarmerHarvest harvest(FarmerCrop crop, int fortuneLevel) {
         return FarmerCycle.harvest(crop, fortuneLevel);
     }
 
+    @Override
     public TimedProcess.Step advance(
             int ticks,
             int durationTicks,
@@ -37,6 +45,7 @@ public final class FarmerService implements FarmerUseCase {
         return FarmerCycle.advance(ticks, durationTicks, canCultivate, outputAvailable);
     }
 
+    @Override
     public int rescaleProgress(int ticks, int previousMaximum, int newMaximum) {
         return FarmerCycle.rescaleProgress(ticks, previousMaximum, newMaximum);
     }

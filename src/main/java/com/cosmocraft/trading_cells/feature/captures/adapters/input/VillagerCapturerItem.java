@@ -5,12 +5,12 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
@@ -19,7 +19,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public class VillagerCapturerItem extends Item {
+public class VillagerCapturerItem extends AbstractCapturerItem {
     public VillagerCapturerItem(Properties properties) {
         super(properties);
     }
@@ -53,6 +53,7 @@ public class VillagerCapturerItem extends Item {
     }
 
     public static void setCapturedVillagerData(ItemStack stack, CompoundTag villagerData) {
+        AbstractCapturerItem.configureDurability(stack);
         CompoundTag cleanData = villagerData.copy();
         stripVolatileEntityData(cleanData);
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(cleanData));
@@ -104,6 +105,9 @@ public class VillagerCapturerItem extends Item {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return InteractionResult.FAIL;
+        }
 
         Villager villager = releaseVillager(level, stack, context.getClickedPos().relative(context.getClickedFace()));
         if (villager == null) {
@@ -118,16 +122,15 @@ public class VillagerCapturerItem extends Item {
         }
 
         clearCapturedVillager(stack);
+        damageAfterRelease(stack, serverLevel, context.getPlayer(), context.getHand());
         return InteractionResult.CONSUME;
     }
 
     @Override
-    public int getMaxStackSize(@NonNull ItemStack stack) {
-        return hasCapturedVillager(stack) ? 1 : getDefaultMaxStackSize();
-    }
-
-    @Override
     public boolean isFoil(@NonNull ItemStack stack) {
+        if (stack.has(DataComponents.UNBREAKABLE)) {
+            return false;
+        }
         return hasCapturedVillager(stack) || super.isFoil(stack);
     }
 

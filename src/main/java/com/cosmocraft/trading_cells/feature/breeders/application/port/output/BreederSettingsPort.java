@@ -9,9 +9,5 @@ public interface BreederSettingsPort {
 
     int villagerVegetableCost();
 
-    int piglinPorkCost();
-
-    int piglinCrimsonFungusCost();
-
     int maximumPendingBabies();
 }

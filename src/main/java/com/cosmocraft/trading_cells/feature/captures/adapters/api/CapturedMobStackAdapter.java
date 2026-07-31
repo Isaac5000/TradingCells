@@ -35,7 +35,8 @@ public final class CapturedMobStackAdapter {
     }
 
     public static boolean isCapturer(CapturedMobKind kind, ItemStack stack) {
-        return !stack.isEmpty() && stack.is(capturerItem(kind));
+        return !stack.isEmpty()
+                && (stack.is(capturerItem(kind)) || stack.is(unbreakableCapturerItem(kind)));
     }
 
     public static boolean isFilledCapturer(CapturedMobKind kind, ItemStack stack) {
@@ -114,6 +115,12 @@ public final class CapturedMobStackAdapter {
         return kind == CapturedMobKind.VILLAGER
                 ? CaptureRegistrationAdapter.VILLAGER_CAPTURER_ITEM.get()
                 : CaptureRegistrationAdapter.PIGLIN_CAPTURER_ITEM.get();
+    }
+
+    public static Item unbreakableCapturerItem(CapturedMobKind kind) {
+        return kind == CapturedMobKind.VILLAGER
+                ? CaptureRegistrationAdapter.UNBREAKABLE_VILLAGER_CAPTURER_ITEM.get()
+                : CaptureRegistrationAdapter.UNBREAKABLE_PIGLIN_CAPTURER_ITEM.get();
     }
 
     public static @Nullable CompoundTag copyData(CapturedMobKind kind, ItemStack stack) {

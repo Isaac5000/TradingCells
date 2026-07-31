@@ -4,6 +4,7 @@ import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobSta
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.TemporaryTradeDiscountStore;
 import com.cosmocraft.trading_cells.feature.trader.application.port.input.VillagerTraderUseCase;
 import com.cosmocraft.trading_cells.feature.trader.domain.service.TradeDiscountPolicy;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellExperiencePayload;
@@ -56,10 +57,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-public class VillagerTradingCellBlockEntity extends BlockEntity {
+public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - Minecraft fixes this hierarchy and BlockEntity uses identity, not value-based equals.
     private static final String CURE_DISCOUNT_TAG = "TradingCellsCureDiscount";
-    private static final String TEMPORARY_DISCOUNT_MASK_TAG = "TradingCellsTemporaryDiscountMask";
-    private static final String TEMPORARY_DISCOUNT_EXPIRES_TAG = "TradingCellsTemporaryDiscountExpires";
     private static final String LEGACY_VILLAGER_DATA_TAG = "StoredVillager";
     private static final String ENTITY_KIND_TAG = "StoredEntityKind";
     private static final String ENTITY_DATA_TAG = "StoredEntity";
@@ -839,7 +838,8 @@ public class VillagerTradingCellBlockEntity extends BlockEntity {
         if (!(level instanceof ServerLevel) || merchantVillager == null || merchantVillager.getTradingPlayer() == null) {
             return;
         }
-        if (level.getGameTime() % 20L == 0L) {
+        long gameTime = level.getGameTime();
+        if (merchantVillager.hasExpiredTemporaryDiscount(gameTime) || gameTime % 20L == 0L) {
             merchantVillager.sendCurrentOffers();
             saveProxyToStoredData();
         }
@@ -958,17 +958,17 @@ public class VillagerTradingCellBlockEntity extends BlockEntity {
         }
     }
 
-    // TODO revision manual (Sonar): Minecraft Entity identity and framework inheritance must be preserved.
-    private static final class TradingCellVillager extends Villager implements TradeBatchMerchant { // NOSONAR
+    private static final class TradingCellVillager extends Villager implements TradeBatchMerchant { // NOSONAR - Minecraft requires Entity identity and framework inheritance for this server-side proxy.
         private final VillagerTradingCellBlockEntity owner;
         private @Nullable UUID currentTradingPlayerId;
         private int tradeBatchDepth;
         private boolean tradeBatchStateChanged;
         private boolean tradeBatchOffersChanged;
+        private long nextTemporaryDiscountExpiry = Long.MAX_VALUE;
 
         private TradingCellVillager(@NonNull Level level, VillagerTradingCellBlockEntity owner) {
-            super(CapturedMobStackAdapter.villagerType(), level);
-            this.owner = owner;
+            super(CapturedMobStackAdapter.villagerType(), Objects.requireNonNull(level, "level"));
+            this.owner = Objects.requireNonNull(owner, "owner");
         }
 
         @Override
@@ -1011,7 +1011,9 @@ public class VillagerTradingCellBlockEntity extends BlockEntity {
         }
 
         @Override
-        public void setTradingPlayer(@Nullable Player player) {
+        public void setTradingPlayer(
+                @Nullable Player player // NOSONAR - Merchant uses null to close the active trading session.
+        ) {
             super.setTradingPlayer(player);
             if (player == null) {
                 if (currentTradingPlayerId != null) {
@@ -1104,8 +1106,15 @@ public class VillagerTradingCellBlockEntity extends BlockEntity {
             int reputation = getPlayerReputation(player);
             int careerDiscount = Math.max(0, getVillagerData().level() - 1);
             int cureDiscount = getPersistentData().getInt(CURE_DISCOUNT_TAG).orElse(0);
-            long temporaryMask = activeTemporaryDiscountMask();
             MobEffectInstance hero = player.getEffect(MobEffects.HERO_OF_THE_VILLAGE);
+            TemporaryTradeDiscountStore.ActiveDiscounts temporaryDiscounts =
+                    TemporaryTradeDiscountStore.activeDiscounts(
+                            getPersistentData(),
+                            offers,
+                            level().getGameTime(),
+                            registryAccess()
+                    );
+            nextTemporaryDiscountExpiry = temporaryDiscounts.nextExpiry();
             for (MerchantOffer offer : offers) {
                 if (reputation != 0) {
                     offer.addToSpecialPriceDiff(-Mth.floor(reputation * offer.getPriceMultiplier()));
@@ -1116,8 +1125,7 @@ public class VillagerTradingCellBlockEntity extends BlockEntity {
                 if (cureDiscount > 0) {
                     offer.addToSpecialPriceDiff(-cureDiscount);
                 }
-                int offerIndex = offers.indexOf(offer);
-                if (TradeDiscountPolicy.appliesTo(temporaryMask, offerIndex)) {
+                if (temporaryDiscounts.appliesTo(offer)) {
                     offer.addToSpecialPriceDiff(-TradeDiscountPolicy.TEMPORARY_DISCOUNT_PER_OFFER);
                 }
                 if (hero != null) {
@@ -1128,26 +1136,19 @@ public class VillagerTradingCellBlockEntity extends BlockEntity {
             }
         }
 
-
-        private void markTemporaryDiscount(MerchantOffer offer) {
-            int offerIndex = getOffers().indexOf(offer);
-            long mask = getPersistentData().getLong(TEMPORARY_DISCOUNT_MASK_TAG).orElse(0L);
-            long updated = TradeDiscountPolicy.markOffer(mask, offerIndex);
-            getPersistentData().putLong(TEMPORARY_DISCOUNT_MASK_TAG, updated);
-            getPersistentData().putLong(
-                    TEMPORARY_DISCOUNT_EXPIRES_TAG,
-                    level().getGameTime() + TradeDiscountPolicy.TEMPORARY_DISCOUNT_TICKS
-            );
+        private boolean hasExpiredTemporaryDiscount(long gameTime) {
+            return gameTime >= nextTemporaryDiscountExpiry;
         }
 
-        private long activeTemporaryDiscountMask() {
-            long expiresAt = getPersistentData().getLong(TEMPORARY_DISCOUNT_EXPIRES_TAG).orElse(0L);
-            if (TradeDiscountPolicy.expired(expiresAt, level().getGameTime())) {
-                getPersistentData().remove(TEMPORARY_DISCOUNT_MASK_TAG);
-                getPersistentData().remove(TEMPORARY_DISCOUNT_EXPIRES_TAG);
-                return 0L;
-            }
-            return getPersistentData().getLong(TEMPORARY_DISCOUNT_MASK_TAG).orElse(0L);
+
+        private void markTemporaryDiscount(MerchantOffer offer) {
+            TemporaryTradeDiscountStore.markOffer(
+                    getPersistentData(),
+                    getOffers(),
+                    offer,
+                    level().getGameTime(),
+                    registryAccess()
+            );
         }
 
         private void forceCareerLevelUpdate() {

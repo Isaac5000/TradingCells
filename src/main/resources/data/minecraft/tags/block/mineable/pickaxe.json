@@ -10,6 +10,7 @@
     "trading_cells:farmer",
     "trading_cells:autotrader",
     "trading_cells:iron_farm",
-    "trading_cells:converter"
+    "trading_cells:converter",
+    "trading_cells:netherite_piglin_bartering_cell"
   ]
 }

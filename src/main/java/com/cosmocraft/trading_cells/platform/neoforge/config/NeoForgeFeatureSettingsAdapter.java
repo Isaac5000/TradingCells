@@ -1,5 +1,6 @@
 package com.cosmocraft.trading_cells.platform.neoforge.config;
 
+import com.cosmocraft.trading_cells.feature.ironfarm.domain.model.IronFarmCycle;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.Config;
 
 public final class NeoForgeFeatureSettingsAdapter implements FeatureSettings {
@@ -8,10 +9,18 @@ public final class NeoForgeFeatureSettingsAdapter implements FeatureSettings {
     @Override public int villagerIncubatorTicks() { return Config.INCUBATOR_TICKS.get(); }
     @Override public int piglinIncubatorTicks() { return Config.INCUBATOR_TICKS.get(); }
     @Override public int farmerGrowthTicks() { return Config.FARMER_GROWTH_TICKS.get(); }
+    @Override public boolean farmerDamagesHoe() { return Config.FARMER_DAMAGE_HOES.get(); }
+    @Override public int capturerDurability() { return Config.CAPTURER_DURABILITY.get(); }
     @Override public int ironFarmCycleTicks() { return Config.IRON_FARM_CYCLE_TICKS.get(); }
-    @Override public int ironFarmOneVillagerMultiplier() { return 2 + Config.IRON_FARM_MULTIPLIER_BONUS.get(); }
-    @Override public int ironFarmTwoVillagerMultiplier() { return 4 + Config.IRON_FARM_MULTIPLIER_BONUS.get(); }
-    @Override public int ironFarmThreeVillagerMultiplier() { return 8 + Config.IRON_FARM_MULTIPLIER_BONUS.get(); }
+    @Override public int ironFarmOneVillagerMultiplier() {
+        return IronFarmCycle.BASE_ONE_VILLAGER_MULTIPLIER + Config.IRON_FARM_MULTIPLIER_BONUS.get();
+    }
+    @Override public int ironFarmTwoVillagerMultiplier() {
+        return IronFarmCycle.BASE_TWO_VILLAGER_MULTIPLIER + Config.IRON_FARM_MULTIPLIER_BONUS.get();
+    }
+    @Override public int ironFarmThreeVillagerMultiplier() {
+        return IronFarmCycle.BASE_THREE_VILLAGER_MULTIPLIER + Config.IRON_FARM_MULTIPLIER_BONUS.get();
+    }
     @Override public int ironFarmBaseIron() { return 1; }
     @Override public int ironFarmMaximumPoppies() { return 2; }
     @Override public int ironGolemAttackTicks() { return 80; }
@@ -29,7 +38,5 @@ public final class NeoForgeFeatureSettingsAdapter implements FeatureSettings {
     @Override public int autotraderLevelUpExperienceBonus() { return 5; }
     @Override public int villagerBreadCost() { return 3; }
     @Override public int villagerVegetableCost() { return 12; }
-    @Override public int piglinPorkCost() { return 2; }
-    @Override public int piglinCrimsonFungusCost() { return 4; }
     @Override public int maximumPendingBabies() { return 64; }
 }

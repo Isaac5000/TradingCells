@@ -31,7 +31,6 @@ las traducciones puras de API permanecen en adaptadores.
 | `farmer` | Ciclo de cultivo, fortuna y eficiencia. |
 | `converter` | Estados de infeccion, curacion y descuento. |
 | `ironfarm` | Produccion, multiplicadores y animacion temporal. |
-| `milkcookie` | Creacion y registro de la galleta con leche. |
 
 ## Trader
 
@@ -54,13 +53,11 @@ usar conceptos de ofertas de aldeano.
 `captures` es una feature independiente porque registra items propios, captura y
 libera entidades y publica una frontera usada por varias maquinas.
 
-No tiene capa `application`: actualmente no coordina una regla de negocio pura.
-Sus operaciones traducen directamente `ItemStack`, NBT y entidades de Minecraft.
-La interaccion del jugador vive en `CaptureInteractionAdapter`, y otras features
+Su capa `application` coordina la durabilidad configurable mediante
+`CaptureUseCase`, `CaptureSettingsPort` y `CaptureService`. Las operaciones que
+traducen `ItemStack`, NBT y entidades de Minecraft permanecen en adaptadores. La
+interaccion del jugador vive en `CaptureInteractionAdapter`, y otras features
 solo pueden usar `CapturedMobKind` o `CapturedMobStackAdapter`.
-
-Si aparecen reglas como capacidad, permisos, costes o persistencia externa,
-entonces deberan introducirse un puerto de entrada y un servicio de aplicacion.
 
 ## Shared Kernel
 
@@ -69,8 +66,8 @@ entonces deberan introducirse un puerto de entrada y un servicio de aplicacion.
 temporizados.
 
 La antigua interfaz global `MachineSettingsPort` se elimino. Cada feature posee
-su puerto de configuracion (`BreederSettingsPort`, `ConverterSettingsPort`,
-`FarmerSettingsPort`, `IncubatorSettingsPort`, `IronFarmSettingsPort` o
+su puerto de configuracion (`BreederSettingsPort`, `CaptureSettingsPort`,
+`ConverterSettingsPort`, `FarmerSettingsPort`, `IncubatorSettingsPort`, `IronFarmSettingsPort` o
 `TraderSettingsPort`). NeoForge los agrega mediante `FeatureSettings` solo en la
 capa de composicion.
 

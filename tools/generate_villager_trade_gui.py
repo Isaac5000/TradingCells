@@ -20,6 +20,10 @@ EQUIPMENT_SPRITES: Final = SPRITES / "container" / "slot"
 CAPTURE_SPRITES: Final = SPRITES / "captures"
 TRADE_DROPDOWN_FILE: Final = "trade_dropdown.png"
 DISABLED_SLOT_OVERLAY_FILE: Final = "disabled_slot_overlay.png"
+TRADE_ROW_NORMAL: Final = (26, 26, 26, 179)
+TRADE_ROW_HOVERED: Final = (42, 42, 42, 179)
+TRADE_ROW_SELECTED: Final = (24, 34, 24, 190)
+TRADE_ROW_DISABLED: Final = (24, 24, 24, 118)
 ATLAS_WIDTH: Final = 512
 ATLAS_HEIGHT: Final = 256
 MENU_WIDTH: Final = 348
@@ -134,6 +138,7 @@ def validate_widgets() -> None:
     validate_reset_sprites(failures)
     validate_equipment_sprites(failures)
     validate_capture_sprites(failures)
+    validate_trade_state_colors(failures)
     validate_removed_legacy_textures(failures)
     if failures:
         raise SystemExit("\n".join(failures))
@@ -149,8 +154,11 @@ def validate_widget_sizes(failures: list[str]) -> None:
         SELECTOR / "trade_dropdown_row.png": (94, 18),
         SELECTOR / "trade_dropdown_row_hovered.png": (94, 18),
         SELECTOR / "trade_dropdown_row_selected.png": (94, 18),
+        SELECTOR / "trade_dropdown_row_disabled.png": (94, 18),
         SLOTS / DISABLED_SLOT_OVERLAY_FILE: (18, 18),
         ARROWS / "trade_arrow.png": (14, 10),
+        ARROWS / "trade_arrow_hovered.png": (14, 10),
+        ARROWS / "trade_arrow_selected.png": (14, 10),
         ARROWS / "trade_arrow_disabled.png": (14, 10),
     }
     for path, expected_size in expected_sizes.items():
@@ -174,6 +182,28 @@ def first_vertical_symmetry_mismatch(image: Image.Image) -> tuple[int, int] | No
             if image.getpixel((x, y)) != image.getpixel((x, image.height - 1 - y)):
                 return x, y
     return None
+
+
+def validate_trade_state_colors(failures: list[str]) -> None:
+    expected = {
+        ROWS / "trade_row.png": TRADE_ROW_NORMAL,
+        ROWS / "trade_row_hovered.png": TRADE_ROW_HOVERED,
+        ROWS / "trade_row_selected.png": TRADE_ROW_SELECTED,
+        ROWS / "trade_row_disabled.png": TRADE_ROW_DISABLED,
+        SELECTOR / "trade_dropdown_row.png": TRADE_ROW_NORMAL,
+        SELECTOR / "trade_dropdown_row_hovered.png": TRADE_ROW_HOVERED,
+        SELECTOR / "trade_dropdown_row_selected.png": TRADE_ROW_SELECTED,
+        SELECTOR / "trade_dropdown_row_disabled.png": TRADE_ROW_DISABLED,
+    }
+    for path, expected_color in expected.items():
+        if not path.exists():
+            continue
+        with Image.open(path) as source:
+            actual_color = source.convert("RGBA").getpixel((4, 4))
+        if actual_color != expected_color:
+            failures.append(
+                f"{path.name}: interior color {actual_color}, expected {expected_color}"
+            )
 
 
 def validate_reset_sprites(failures: list[str]) -> None:
@@ -224,37 +254,37 @@ def generate_widgets() -> None:
 
 
 def generate_trade_rows() -> None:
-    for name, fill, highlight in (
-        ("trade_row", (174, 174, 174), (226, 226, 226)),
-        ("trade_row_hovered", (184, 184, 180), (232, 232, 226)),
-        ("trade_row_selected", (160, 170, 156), (214, 224, 208)),
-        ("trade_row_disabled", (126, 126, 126), (174, 174, 174)),
+    for name, fill, border in (
+        ("trade_row", TRADE_ROW_NORMAL, (76, 76, 76, 210)),
+        ("trade_row_hovered", TRADE_ROW_HOVERED, (126, 126, 126, 225)),
+        ("trade_row_selected", TRADE_ROW_SELECTED, (126, 180, 102, 235)),
+        ("trade_row_disabled", TRADE_ROW_DISABLED, (55, 55, 55, 145)),
     ):
         image = Image.new("RGBA", (100, 24), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
-        draw.rectangle((0, 0, 99, 23), fill=(38, 38, 38))
+        draw.rectangle((0, 0, 99, 23), fill=border)
         draw.rectangle((1, 1, 98, 22), fill=fill)
-        draw.line((0, 0, 99, 0), fill=highlight)
-        draw.line((0, 0, 0, 23), fill=highlight)
+        draw.line((1, 1, 98, 1), fill=border)
         image.save(ROWS / f"{name}.png")
 
 
 def generate_trade_selector() -> None:
     image = Image.new("RGBA", (102, 18), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    draw.rectangle((0, 0, 101, 17), fill=(47, 47, 47))
-    draw.rectangle((1, 1, 100, 16), fill=(190, 190, 190))
-    draw.rectangle((86, 2, 99, 15), fill=(166, 166, 166))
+    draw.rectangle((0, 0, 101, 17), fill=(76, 76, 76, 220))
+    draw.rectangle((1, 1, 100, 16), fill=TRADE_ROW_NORMAL)
+    draw.rectangle((86, 2, 99, 15), fill=(58, 58, 58, 205))
     image.save(SELECTOR / TRADE_DROPDOWN_FILE)
 
-    for name, fill in (
-        ("trade_dropdown_row", (174, 174, 174)),
-        ("trade_dropdown_row_hovered", (184, 184, 180)),
-        ("trade_dropdown_row_selected", (160, 170, 156)),
+    for name, fill, border in (
+        ("trade_dropdown_row", TRADE_ROW_NORMAL, (76, 76, 76, 210)),
+        ("trade_dropdown_row_hovered", TRADE_ROW_HOVERED, (126, 126, 126, 225)),
+        ("trade_dropdown_row_selected", TRADE_ROW_SELECTED, (126, 180, 102, 235)),
+        ("trade_dropdown_row_disabled", TRADE_ROW_DISABLED, (55, 55, 55, 145)),
     ):
         image = Image.new("RGBA", (94, 18), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
-        draw.rectangle((0, 0, 93, 17), fill=(35, 35, 35))
+        draw.rectangle((0, 0, 93, 17), fill=border)
         draw.rectangle((1, 1, 92, 16), fill=fill)
         image.save(SELECTOR / f"{name}.png")
 
@@ -270,8 +300,10 @@ def generate_disabled_slot_overlay() -> None:
 
 def generate_trade_arrows() -> None:
     for name, border, body in (
-        ("trade_arrow", (45, 45, 45, 255), (224, 224, 216, 255)),
-        ("trade_arrow_disabled", (76, 76, 76, 235), (151, 151, 146, 235)),
+        ("trade_arrow", (12, 12, 12, 255), (218, 218, 210, 255)),
+        ("trade_arrow_hovered", (12, 12, 12, 255), (244, 224, 132, 255)),
+        ("trade_arrow_selected", (20, 42, 18, 255), (142, 214, 108, 255)),
+        ("trade_arrow_disabled", (54, 54, 54, 185), (126, 126, 122, 170)),
     ):
         image = Image.new("RGBA", (14, 10), (0, 0, 0, 0))
         pixels = image.load()
@@ -344,8 +376,11 @@ def legacy_generated_textures() -> list[Path]:
             "trade_dropdown_row.png",
             "trade_dropdown_row_hovered.png",
             "trade_dropdown_row_selected.png",
+            "trade_dropdown_row_disabled.png",
             DISABLED_SLOT_OVERLAY_FILE,
             "trade_arrow.png",
+            "trade_arrow_hovered.png",
+            "trade_arrow_selected.png",
             "trade_arrow_disabled.png",
         )),
         TRADER / "default.png",

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": "minecraft:netherite_upgrade_smithing_template",
+  "base": "trading_cells:piglin_barter_diamond_upgrade",
+  "addition": "minecraft:netherite_ingot",
+  "result": {
+    "id": "trading_cells:piglin_barter_netherite_upgrade"
+  }
+}

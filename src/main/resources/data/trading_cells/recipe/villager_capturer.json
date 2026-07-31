@@ -3,13 +3,14 @@
   "category": "equipment",
   "show_notification": false,
   "key": {
-    "A": "minecraft:light_blue_stained_glass",
-    "E": "minecraft:ender_pearl"
+    "H": "minecraft:iron_ingot",
+    "C": "minecraft:glass",
+    "P": "minecraft:ender_pearl"
   },
   "pattern": [
-    " A ",
-    "AEA",
-    " A "
+    "HHH",
+    "CPC",
+    "HHH"
   ],
   "result": {
     "count": 1,

@@ -24,7 +24,9 @@ import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -128,6 +130,9 @@ public final class TradingCellBlockEntityRenderer implements BlockEntityRenderer
     }
 
     private static BlockState orientPoiBlockState(BlockState state, Direction facing) {
+        if (state.is(Blocks.GRINDSTONE) && state.hasProperty(BlockStateProperties.ATTACH_FACE)) {
+            state = state.setValue(BlockStateProperties.ATTACH_FACE, AttachFace.FLOOR);
+        }
         if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
             return state.setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
         }

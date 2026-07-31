@@ -24,7 +24,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -113,6 +115,9 @@ public final class AutotraderBlockEntityRenderer implements BlockEntityRenderer<
     }
 
     private static BlockState orientPoi(BlockState state, Direction facing) {
+        if (state.is(Blocks.GRINDSTONE) && state.hasProperty(BlockStateProperties.ATTACH_FACE)) {
+            state = state.setValue(BlockStateProperties.ATTACH_FACE, AttachFace.FLOOR);
+        }
         if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
             return state.setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
         }

@@ -7,6 +7,7 @@ import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.Villa
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerGuiTextures;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenCommon;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeSprites;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.VillagerTradeMenuLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.network.ExtractTradingCellExperiencePayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.ResetTradesPayload;
@@ -37,13 +38,7 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-public final class VillagerTradingCellScreen extends AbstractContainerScreen<VillagerTradingCellMenu> {
-    private static final Identifier TRADE_ROW = texture("rows/trade_row");
-    private static final Identifier TRADE_ROW_HOVERED = texture("rows/trade_row_hovered");
-    private static final Identifier TRADE_ROW_SELECTED = texture("rows/trade_row_selected");
-    private static final Identifier TRADE_ROW_DISABLED = texture("rows/trade_row_disabled");
-    private static final Identifier TRADE_ARROW = texture("arrows/trade_arrow");
-    private static final Identifier TRADE_ARROW_DISABLED = texture("arrows/trade_arrow_disabled");
+public final class VillagerTradingCellScreen extends AbstractContainerScreen<VillagerTradingCellMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
     private static final Identifier RESET_NORMAL =
             Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "trader/reset/reset_trades");
     private static final Identifier RESET_HOVERED =
@@ -346,11 +341,11 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
         }
         VillagerTradeScreenCommon.drawTradeArrow(
                 graphics,
-                TRADE_ARROW,
-                TRADE_ARROW_DISABLED,
                 leftPos + VillagerTradeScreenLayout.PREVIEW_ARROW_X,
                 topPos + VillagerTradeMenuLayout.MANUAL_TRADER_SLOT_Y + 4,
                 offer.isOutOfStock()
+                        ? VillagerTradeSprites.State.DISABLED
+                        : VillagerTradeSprites.State.NORMAL
         );
     }
 
@@ -368,25 +363,38 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
             int x = leftPos + ROW_X;
             int y = topPos + ROW_Y + row * ROW_HEIGHT;
             boolean hovered = mouseX >= x && mouseX < x + ROW_WIDTH && mouseY >= y && mouseY < y + ROW_HEIGHT;
-            Identifier rowTexture = tradeRowTexture(offer, index, hovered);
-            graphics.blit(RenderPipelines.GUI_TEXTURED, rowTexture, x, y, 0, 0, ROW_WIDTH, ROW_HEIGHT, ROW_WIDTH, ROW_HEIGHT);
-            drawOfferItems(graphics, offer, x, y, mouseX, mouseY);
+            VillagerTradeSprites.State state = VillagerTradeSprites.state(
+                    offer.isOutOfStock(),
+                    index == selectedOffer,
+                    hovered
+            );
+            graphics.blit(
+                    RenderPipelines.GUI_TEXTURED,
+                    VillagerTradeSprites.row(state),
+                    x,
+                    y,
+                    0,
+                    0,
+                    ROW_WIDTH,
+                    ROW_HEIGHT,
+                    VillagerTradeSprites.ROW_WIDTH,
+                    VillagerTradeSprites.ROW_HEIGHT
+            );
+            drawOfferItems(graphics, offer, x, y, mouseX, mouseY, state);
         }
         graphics.disableScissor();
         drawScrollbar(graphics, offers.size(), mouseX, mouseY);
     }
 
-    private Identifier tradeRowTexture(MerchantOffer offer, int index, boolean hovered) {
-        if (offer.isOutOfStock()) {
-            return TRADE_ROW_DISABLED;
-        }
-        if (index == selectedOffer) {
-            return TRADE_ROW_SELECTED;
-        }
-        return hovered ? TRADE_ROW_HOVERED : TRADE_ROW;
-    }
-
-    private void drawOfferItems(GuiGraphicsExtractor graphics, MerchantOffer offer, int x, int y, int mouseX, int mouseY) {
+    private void drawOfferItems(
+            GuiGraphicsExtractor graphics,
+            MerchantOffer offer,
+            int x,
+            int y,
+            int mouseX,
+            int mouseY,
+            VillagerTradeSprites.State state
+    ) {
         ItemStack first = offer.getCostA();
         ItemStack second = offer.getCostB();
         ItemStack result = offer.getResult();
@@ -411,11 +419,9 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
 
         VillagerTradeScreenCommon.drawTradeArrow(
                 graphics,
-                TRADE_ARROW,
-                TRADE_ARROW_DISABLED,
                 arrowX,
                 y + 7,
-                offer.isOutOfStock()
+                state
         );
         graphics.fakeItem(result, resultX, itemY);
         graphics.itemDecorations(font, result, resultX, itemY);
@@ -571,13 +577,6 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
                 VillagerTradeScreenLayout.XP_DISPLAY_HEIGHT,
                 leftPos + VillagerTradeScreenLayout.XP_ICON_X,
                 topPos + VillagerTradeScreenLayout.XP_ICON_Y
-        );
-    }
-
-    private static Identifier texture(String name) {
-        return Identifier.fromNamespaceAndPath(
-                TradingCells.MOD_ID,
-                "textures/gui/trader/widgets/" + name + ".png"
         );
     }
 

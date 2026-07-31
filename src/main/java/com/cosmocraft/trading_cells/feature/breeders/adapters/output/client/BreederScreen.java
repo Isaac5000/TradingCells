@@ -23,7 +23,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 
-public final class BreederScreen extends AbstractContainerScreen<BreederMenu> {
+public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
     private static final Identifier OAK_PLANKS = Identifier.fromNamespaceAndPath(
             "minecraft",
             "textures/block/oak_planks.png"
@@ -40,12 +40,14 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> {
     private static final int PROGRESS_HEIGHT = MachineScreenLayout.PROGRESS_FILL_HEIGHT;
 
     private static final int MAX_VISIBLE_FOODS = 3;
-    private static final int FOOD_INFO_BUTTON_X = 7;
-    private static final int FOOD_INFO_BUTTON_Y = 24;
-    private static final int FOOD_INFO_BUTTON_SIZE = 16;
-    private static final int FOOD_LIST_X = 4;
-    private static final int FOOD_LIST_Y = FOOD_INFO_BUTTON_Y + FOOD_INFO_BUTTON_SIZE + 2;
-    private static final int FOOD_LIST_WIDTH = MachineScreenLayout.WIDTH - FOOD_LIST_X * 2;
+    private static final int FOOD_INFO_BUTTON_SIZE = 12;
+    private static final int FOOD_INFO_BUTTON_X = MachineScreenLayout.MACHINE_PANEL_X
+            + MachineScreenLayout.MACHINE_PANEL_WIDTH - FOOD_INFO_BUTTON_SIZE - 3;
+    private static final int FOOD_INFO_BUTTON_Y = MachineScreenLayout.MACHINE_PANEL_Y
+            + MachineScreenLayout.MACHINE_PANEL_HEIGHT - FOOD_INFO_BUTTON_SIZE - 3;
+    private static final int FOOD_LIST_X = -20;
+    private static final int FOOD_LIST_Y = 42;
+    private static final int FOOD_LIST_WIDTH = MachineScreenLayout.WIDTH + 40;
     private static final int FOOD_HEADER_HEIGHT = 15;
     private static final int FOOD_ROW_HEIGHT = 28;
     private static final int FOOD_ITEM_X_OFFSET = 7;
@@ -300,11 +302,12 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (foodListOpen && isWithinFoodList(event.x(), event.y())) {
+        boolean overFoodButton = foodInfoButton != null
+                && foodInfoButton.isMouseOver(event.x(), event.y());
+        if (foodListOpen && !overFoodButton && isWithinFoodList(event.x(), event.y())) {
             return true;
         }
-        if (foodListOpen
-                && (foodInfoButton == null || !foodInfoButton.isMouseOver(event.x(), event.y()))) {
+        if (foodListOpen && !overFoodButton) {
             closeFoodList();
         }
         if (variantListOpen
@@ -406,24 +409,31 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> {
             ItemStack stack = new ItemStack(option.item());
             int rowX = panelX + 2;
             int rowY = panelY + FOOD_HEADER_HEIGHT + row * FOOD_ROW_HEIGHT;
+            boolean active = option.food() == menu.activeFood() && menu.breedTicks() > 0;
             boolean hovered = mouseX >= rowX
                     && mouseX < rowX + rowWidth
                     && mouseY >= rowY
                     && mouseY < rowY + FOOD_ROW_HEIGHT - 1;
+            int rowFill = theme.slot();
+            if (active) {
+                rowFill = theme.frameLight();
+            } else if (hovered) {
+                rowFill = theme.frame();
+            }
 
             graphics.fill(
                     rowX,
                     rowY,
                     rowX + rowWidth,
                     rowY + FOOD_ROW_HEIGHT - 1,
-                    hovered ? theme.frame() : theme.slot()
+                    rowFill
             );
             graphics.outline(
                     rowX,
                     rowY,
                     rowWidth,
                     FOOD_ROW_HEIGHT - 1,
-                    hovered ? theme.slotHighlight() : theme.frameLight()
+                    active || hovered ? theme.slotHighlight() : theme.frameLight()
             );
 
             int itemX = rowX + FOOD_ITEM_X_OFFSET;
@@ -439,9 +449,10 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> {
 
             String itemName = stack.getHoverName().getString();
             int maximumNameWidth = rowWidth - FOOD_NAME_X_OFFSET - 4;
+            String visibleName = font.plainSubstrByWidth(itemName, maximumNameWidth);
             graphics.text(
                     font,
-                    Component.literal(font.plainSubstrByWidth(itemName, maximumNameWidth)),
+                    Component.literal(visibleName),
                     rowX + FOOD_NAME_X_OFFSET,
                     rowY + 9,
                     theme.titleText(),
@@ -452,6 +463,8 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> {
                     && mouseY >= itemY
                     && mouseY < itemY + 16) {
                 graphics.setTooltipForNextFrame(font, stack, mouseX, mouseY);
+            } else if (hovered && !visibleName.equals(itemName)) {
+                graphics.setTooltipForNextFrame(font, Component.literal(itemName), mouseX, mouseY);
             }
         }
         drawFoodScrollbar(graphics, foods.size(), visible, panelX, panelY, theme);

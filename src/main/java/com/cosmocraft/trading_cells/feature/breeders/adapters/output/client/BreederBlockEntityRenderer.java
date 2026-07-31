@@ -181,11 +181,10 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
     }
 
     private @Nullable EntityRenderState extractParent(Level level, ItemStack stack, BreederKind kind, Direction lookDirection, float partialTicks, int lightCoords) {
-        Entity entity = null;
         CapturedMobKind capturedKind = kind == BreederKind.VILLAGER
                 ? CapturedMobKind.VILLAGER
                 : CapturedMobKind.PIGLIN;
-        entity = CapturedMobStackAdapter.createEntity(capturedKind, level, stack, BlockPos.ZERO);
+        Entity entity = CapturedMobStackAdapter.createEntity(capturedKind, level, stack, BlockPos.ZERO);
 
         if (entity == null) {
             return null;

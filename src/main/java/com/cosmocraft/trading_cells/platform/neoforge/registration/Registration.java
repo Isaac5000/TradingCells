@@ -5,10 +5,10 @@ import com.cosmocraft.trading_cells.feature.breeders.adapters.output.BreederRegi
 import com.cosmocraft.trading_cells.feature.captures.adapters.output.CaptureRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.ConverterRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.output.FarmerRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.output.IncubatorRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.milkcookie.adapters.output.MilkCookieRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.milkcookie.adapters.input.MilkCookieCreativeTabEventAdapter;
+import com.cosmocraft.trading_cells.feature.trader.adapters.input.TraderTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import net.minecraft.core.registries.Registries;
@@ -47,8 +47,8 @@ public class Registration {
         IncubatorRegistrationAdapter.load();
         FarmerRegistrationAdapter.load();
         IronFarmRegistrationAdapter.load();
-        MilkCookieRegistrationAdapter.load();
         CreativeTabRegistration.load();
-        MilkCookieCreativeTabEventAdapter.register(modEventBus);
+        FarmerTooltipEventAdapter.register(modEventBus);
+        TraderTooltipEventAdapter.register(modEventBus);
     }
 }

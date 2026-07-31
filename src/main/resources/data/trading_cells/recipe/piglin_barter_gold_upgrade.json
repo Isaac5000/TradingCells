@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "N": "minecraft:gold_nugget",
+    "U": "trading_cells:piglin_barter_iron_upgrade"
+  },
+  "pattern": [
+    "NGN",
+    "GUG",
+    "NGN"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trading_cells:piglin_barter_gold_upgrade"
+  }
+}

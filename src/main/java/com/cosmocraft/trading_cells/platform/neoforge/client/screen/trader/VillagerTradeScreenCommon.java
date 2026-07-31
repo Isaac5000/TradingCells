@@ -220,14 +220,22 @@ public final class VillagerTradeScreenCommon {
 
     public static void drawTradeArrow(
             GuiGraphicsExtractor graphics,
-            Identifier enabledTexture,
-            Identifier disabledTexture,
             int x,
             int y,
-            boolean disabled
+            VillagerTradeSprites.State state
     ) {
-        Identifier texture = disabled ? disabledTexture : enabledTexture;
-        graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, 0, 0, 14, 10, 14, 10);
+        graphics.blit(
+                RenderPipelines.GUI_TEXTURED,
+                VillagerTradeSprites.arrow(state),
+                x,
+                y,
+                0,
+                0,
+                VillagerTradeSprites.ARROW_WIDTH,
+                VillagerTradeSprites.ARROW_HEIGHT,
+                VillagerTradeSprites.ARROW_WIDTH,
+                VillagerTradeSprites.ARROW_HEIGHT
+        );
     }
 
     public static void drawDropdownChevron(

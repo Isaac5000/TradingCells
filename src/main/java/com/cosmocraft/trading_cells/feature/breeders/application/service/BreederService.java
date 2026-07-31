@@ -45,8 +45,6 @@ public final class BreederService implements BreederUseCase {
                 settings.piglinBreederTicks(),
                 settings.villagerBreadCost(),
                 settings.villagerVegetableCost(),
-                settings.piglinPorkCost(),
-                settings.piglinCrimsonFungusCost(),
                 settings.maximumPendingBabies()
         );
     }

@@ -11,12 +11,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public class VillagerTradingCellBlockItem extends BlockItem {
@@ -30,16 +27,11 @@ public class VillagerTradingCellBlockItem extends BlockItem {
         super(block, properties);
     }
 
-    @Override
-    public void appendHoverText(
-            @NonNull ItemStack itemStack,
-            Item.@NonNull TooltipContext context,
-            @NonNull TooltipDisplay display,
-            @NonNull Consumer<Component> builder,
-            @NonNull TooltipFlag tooltipFlag
+    void appendTooltip(
+            ItemStack itemStack,
+            Item.TooltipContext context,
+            Consumer<Component> builder
     ) {
-        super.appendHoverText(itemStack, context, display, builder, tooltipFlag);
-
         CompoundTag blockEntityTag = getBlockEntityTag(itemStack);
         CompoundTag villagerData = blockEntityTag == null ? null : getVillagerData(blockEntityTag);
         ItemStack poiStack = blockEntityTag == null

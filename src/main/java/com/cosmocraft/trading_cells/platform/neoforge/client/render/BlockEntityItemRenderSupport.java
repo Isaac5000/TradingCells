@@ -42,7 +42,7 @@ public final class BlockEntityItemRenderSupport {
 
         @Override
         public void submit(
-                @Nullable ItemStack stack,
+                @Nullable ItemStack stack, // NOSONAR - SpecialModelRenderer explicitly permits a missing render argument.
                 @NonNull PoseStack poseStack,
                 @NonNull SubmitNodeCollector submitNodeCollector,
                 int packedLight,

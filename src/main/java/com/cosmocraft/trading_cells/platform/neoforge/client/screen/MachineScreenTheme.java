@@ -55,6 +55,8 @@ public enum MachineScreenTheme {
     private final int slotHighlight;
     private final int titleText;
     private final int bodyText;
+    private final Identifier backgroundTexture;
+    private final SlotRenderer.Palette slotPalette;
 
     MachineScreenTheme( // NOSONAR - Enum palette entries require the complete color tuple.
             int frameDark,
@@ -74,6 +76,16 @@ public enum MachineScreenTheme {
         this.slotHighlight = slotHighlight;
         this.titleText = titleText;
         this.bodyText = bodyText;
+        this.backgroundTexture = Identifier.fromNamespaceAndPath(
+                TradingCells.MOD_ID,
+                "textures/gui/machines/backgrounds/" + name().toLowerCase(Locale.ROOT) + ".png"
+        );
+        this.slotPalette = new SlotRenderer.Palette(
+                slot,
+                frameDark,
+                slotInner,
+                slotHighlight
+        );
     }
 
     public int frameDark() {
@@ -109,9 +121,10 @@ public enum MachineScreenTheme {
     }
 
     public Identifier backgroundTexture() {
-        return Identifier.fromNamespaceAndPath(
-                TradingCells.MOD_ID,
-                "textures/gui/machines/backgrounds/" + name().toLowerCase(Locale.ROOT) + ".png"
-        );
+        return backgroundTexture;
+    }
+
+    public SlotRenderer.Palette slotPalette() {
+        return slotPalette;
     }
 }

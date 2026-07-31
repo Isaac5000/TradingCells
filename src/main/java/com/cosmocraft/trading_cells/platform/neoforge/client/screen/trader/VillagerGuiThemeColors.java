@@ -25,18 +25,19 @@ public record VillagerGuiThemeColors(
             0xFFDADADA,
             0xFF7E9D64
     );
+    private static final SlotRenderer.Palette NEUTRAL_SLOT_PALETTE = new SlotRenderer.Palette(
+            NEUTRAL.slotOuter(),
+            NEUTRAL.slotDark(),
+            NEUTRAL.slotInner(),
+            NEUTRAL.slotLight()
+    );
 
     public static VillagerGuiThemeColors resolve() {
         return NEUTRAL;
     }
 
     public SlotRenderer.Palette slotPalette() {
-        return new SlotRenderer.Palette(
-                slotOuter,
-                slotDark,
-                slotInner,
-                slotLight
-        );
+        return NEUTRAL_SLOT_PALETTE;
     }
 
     private static VillagerGuiThemeColors colors(

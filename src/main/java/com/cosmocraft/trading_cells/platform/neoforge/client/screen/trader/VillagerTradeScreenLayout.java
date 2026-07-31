@@ -61,6 +61,13 @@ public final class VillagerTradeScreenLayout {
     public static final int AUTOTRADER_DROPDOWN_VIEW_WIDTH = 94;
     public static final int AUTOTRADER_DROPDOWN_TRACK_X = 109;
     public static final int AUTOTRADER_DROPDOWN_HEIGHT = DROPDOWN_VISIBLE_ROWS * DROPDOWN_ROW_HEIGHT;
+    private static final int[] EQUIPMENT_SLOT_Y = new int[]{
+            VillagerTradeMenuLayout.EQUIPMENT_HEAD_Y,
+            VillagerTradeMenuLayout.EQUIPMENT_CHEST_Y,
+            VillagerTradeMenuLayout.EQUIPMENT_LEGS_Y,
+            VillagerTradeMenuLayout.EQUIPMENT_FEET_Y,
+            VillagerTradeMenuLayout.EQUIPMENT_OFFHAND_Y
+    };
 
     private VillagerTradeScreenLayout() {
     }
@@ -138,13 +145,7 @@ public final class VillagerTradeScreenLayout {
                     colors
             );
         }
-        for (int equipmentY : new int[]{
-                VillagerTradeMenuLayout.EQUIPMENT_HEAD_Y,
-                VillagerTradeMenuLayout.EQUIPMENT_CHEST_Y,
-                VillagerTradeMenuLayout.EQUIPMENT_LEGS_Y,
-                VillagerTradeMenuLayout.EQUIPMENT_FEET_Y,
-                VillagerTradeMenuLayout.EQUIPMENT_OFFHAND_Y
-        }) {
+        for (int equipmentY : EQUIPMENT_SLOT_Y) {
             drawSlotAtFramePosition(
                     graphics,
                     left,

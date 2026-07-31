@@ -8,6 +8,8 @@ import com.cosmocraft.trading_cells.feature.trader.application.service.PiglinBar
 import com.cosmocraft.trading_cells.feature.trader.application.service.VillagerTraderService;
 import com.cosmocraft.trading_cells.feature.breeders.application.port.input.BreederUseCase;
 import com.cosmocraft.trading_cells.feature.breeders.application.service.BreederService;
+import com.cosmocraft.trading_cells.feature.captures.application.port.input.CaptureUseCase;
+import com.cosmocraft.trading_cells.feature.captures.application.service.CaptureService;
 import com.cosmocraft.trading_cells.feature.converter.application.port.input.ConverterUseCase;
 import com.cosmocraft.trading_cells.feature.converter.application.service.ConverterService;
 import com.cosmocraft.trading_cells.feature.farmer.application.port.input.FarmerUseCase;
@@ -20,6 +22,10 @@ import com.cosmocraft.trading_cells.platform.neoforge.config.FeatureSettingsProv
 
 /** NeoForge composition root for feature use cases. */
 public final class FeatureComposition {
+    private static final CaptureUseCase CAPTURES = new CaptureService(
+            () -> FeatureSettingsProvider.values().capturerDurability()
+    );
+
     private FeatureComposition() {
     }
 
@@ -29,6 +35,10 @@ public final class FeatureComposition {
 
     public static BreederUseCase breeder() {
         return new BreederService(FeatureSettingsProvider.values());
+    }
+
+    public static CaptureUseCase captures() {
+        return CAPTURES;
     }
 
     public static ConverterUseCase converter() {

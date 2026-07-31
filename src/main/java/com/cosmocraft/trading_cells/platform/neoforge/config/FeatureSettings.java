@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.platform.neoforge.config;
 
 import com.cosmocraft.trading_cells.feature.breeders.application.port.output.BreederSettingsPort;
+import com.cosmocraft.trading_cells.feature.captures.application.port.output.CaptureSettingsPort;
 import com.cosmocraft.trading_cells.feature.converter.application.port.output.ConverterSettingsPort;
 import com.cosmocraft.trading_cells.feature.farmer.application.port.output.FarmerSettingsPort;
 import com.cosmocraft.trading_cells.feature.incubators.application.port.output.IncubatorSettingsPort;
@@ -9,6 +10,7 @@ import com.cosmocraft.trading_cells.feature.trader.application.port.output.Trade
 
 public interface FeatureSettings extends
         BreederSettingsPort,
+        CaptureSettingsPort,
         ConverterSettingsPort,
         FarmerSettingsPort,
         IncubatorSettingsPort,

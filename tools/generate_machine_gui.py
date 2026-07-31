@@ -11,7 +11,7 @@ BACKGROUNDS = ROOT / "machines" / "backgrounds"
 MACHINE_SLOTS = ROOT / "sprites" / "machines" / "slots"
 CAPTURES = ROOT / "sprites" / "captures"
 WIDTH = 204
-HEIGHT = 212
+HEIGHT = 215
 
 PALETTES = {
     "villager_breeder": (0x4A2E17, 0x8B5B2C, 0xD8A75D, 0xC18A4B),
@@ -59,27 +59,55 @@ def machine_background(colors: tuple[int, int, int, int]) -> Image.Image:
     panel(draw, (6, 4, WIDTH - 7, 19), dark, mid, light, inner)
     panel(draw, (3, 21, WIDTH - 4, 117), dark, mid, light, mid)
     panel(draw, (28, 119, WIDTH - 5, 132), dark, mid, light, mid)
-    panel(draw, (28, 133, WIDTH - 5, HEIGHT - 1), dark, mid, light, mid)
-    panel(draw, (3, 114, 25, 208), dark, mid, light, mid)
+    panel(draw, (28, 133, WIDTH - 5, HEIGHT - 5), dark, mid, light, mid)
+    panel(draw, (3, 118, 25, HEIGHT - 5), dark, mid, light, mid)
+    return image
+
+
+def empty_potion_sprite() -> Image.Image:
+    image = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    outline = (62, 62, 62, 255)
+    highlight = (178, 178, 178, 230)
+    draw.rectangle((6, 1, 9, 2), fill=outline)
+    draw.rectangle((7, 3, 8, 5), fill=outline)
+    draw.line(((6, 5), (4, 8), (4, 12), (6, 14), (9, 14), (11, 12), (11, 8), (9, 5)), fill=outline)
+    draw.rectangle((5, 9, 10, 12), fill=highlight)
+    draw.rectangle((6, 8, 9, 8), fill=highlight)
+    return image
+
+
+def empty_apple_sprite() -> Image.Image:
+    image = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    outline = (62, 62, 62, 255)
+    highlight = (178, 178, 178, 220)
+    draw.line(((8, 1), (8, 3), (10, 2)), fill=outline)
+    draw.rectangle((10, 2, 12, 3), fill=highlight)
+    draw.line(((5, 4), (3, 6), (3, 10), (5, 13), (7, 14)), fill=outline)
+    draw.line(((10, 4), (12, 6), (12, 10), (10, 13), (8, 14)), fill=outline)
+    draw.line(((5, 4), (7, 5), (8, 5), (10, 4)), fill=outline)
+    draw.rectangle((4, 7, 4, 10), fill=highlight)
     return image
 
 
 def generated_assets() -> dict[Path, Image.Image]:
-    return {
+    backgrounds = {
         BACKGROUNDS / f"{name}.png": machine_background(colors)
         for name, colors in PALETTES.items()
     }
+    return backgrounds
 
 
 def manually_maintained_sprites() -> dict[Path, tuple[int, int]]:
     return {
+        MACHINE_SLOTS / "empty_potion.png": (16, 16),
+        MACHINE_SLOTS / "empty_apple.png": (16, 16),
         CAPTURES / "empty_villager_head.png": (16, 16),
         CAPTURES / "empty_piglin_head.png": (16, 16),
         CAPTURES / "empty_capturer.png": (32, 32),
         MACHINE_SLOTS / "empty_hoe.png": (16, 16),
         MACHINE_SLOTS / "empty_wheat_seeds.png": (16, 16),
-        MACHINE_SLOTS / "empty_potion.png": (16, 16),
-        MACHINE_SLOTS / "empty_apple.png": (16, 16),
         MACHINE_SLOTS / "empty_bread.png": (16, 16),
         MACHINE_SLOTS / "empty_porkchop.png": (16, 16),
     }
