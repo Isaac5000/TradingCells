@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.feature.farmer.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.farmer.adapters.output.FarmerRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerKind;
 import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
@@ -13,41 +14,73 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 public final class FarmerMenu extends AbstractContainerMenu {
-    public static final int VILLAGER_SLOT_X = MachineMenuLayout.machineX(50);
+    public static final int WORKER_SLOT_X = MachineMenuLayout.machineX(50);
     public static final int HOE_SLOT_X = MachineMenuLayout.machineX(80);
     public static final int CROP_SLOT_X = MachineMenuLayout.machineX(110);
     public static final int INPUT_SLOT_Y = 30;
+    public static final int OUTPUT_COLUMN_COUNT = 9;
+    public static final int OUTPUT_SLOT_FIRST_X = MachineMenuLayout.machineX(8);
+    public static final int OUTPUT_SLOT_SPACING = 18;
+    public static final int OUTPUT_SLOT_FIRST_Y = 82;
+    public static final int OUTPUT_ROW_SPACING = 18;
     private static final int MACHINE_SLOT_COUNT = FarmerBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
     private static final int PLAYER_HOTBAR_END = PLAYER_INVENTORY_END + 9;
 
+    private final FarmerKind kind;
     private final Container container;
     private final ContainerData data;
 
-    public FarmerMenu(int containerId, Inventory inventory) {
-        this(containerId, inventory, new SimpleContainer(MACHINE_SLOT_COUNT), new SimpleContainerData(3));
+    public static FarmerMenu villager(int containerId, Inventory inventory) {
+        return clientMenu(FarmerKind.VILLAGER, containerId, inventory);
     }
 
-    public FarmerMenu(int containerId, Inventory inventory, Container container, ContainerData data) {
-        super(FarmerRegistrationAdapter.FARMER_MENU.get(), containerId);
+    public static FarmerMenu piglin(int containerId, Inventory inventory) {
+        return clientMenu(FarmerKind.PIGLIN, containerId, inventory);
+    }
+
+    private static FarmerMenu clientMenu(FarmerKind kind, int containerId, Inventory inventory) {
+        return new FarmerMenu(
+                kind,
+                containerId,
+                inventory,
+                new SimpleContainer(MACHINE_SLOT_COUNT),
+                new SimpleContainerData(3)
+        );
+    }
+
+    public FarmerMenu(
+            FarmerKind kind,
+            int containerId,
+            Inventory inventory,
+            Container container,
+            ContainerData data
+    ) {
+        super(kind == FarmerKind.VILLAGER
+                ? FarmerRegistrationAdapter.FARMER_MENU.get()
+                : FarmerRegistrationAdapter.PIGLIN_FARMER_MENU.get(), containerId);
         checkContainerSize(container, MACHINE_SLOT_COUNT);
         checkContainerDataCount(data, 3);
+        this.kind = kind;
         this.container = container;
         this.data = data;
 
-        addSlot(new VillagerSlot(container, FarmerBlockEntity.VILLAGER_SLOT, VILLAGER_SLOT_X, INPUT_SLOT_Y));
+        addSlot(new WorkerSlot(container, FarmerBlockEntity.WORKER_SLOT, WORKER_SLOT_X, INPUT_SLOT_Y));
         addSlot(new CropSlot(container, FarmerBlockEntity.CROP_SLOT, CROP_SLOT_X, INPUT_SLOT_Y));
         addSlot(new HoeSlot(container, FarmerBlockEntity.HOE_SLOT, HOE_SLOT_X, INPUT_SLOT_Y));
-        addSlot(new OutputSlot(container, FarmerBlockEntity.FIRST_OUTPUT_SLOT, MachineMenuLayout.machineX(43), 94));
-        addSlot(new OutputSlot(container, FarmerBlockEntity.FIRST_OUTPUT_SLOT + 1, MachineMenuLayout.machineX(67), 94));
-        addSlot(new OutputSlot(container, FarmerBlockEntity.FIRST_OUTPUT_SLOT + 2, MachineMenuLayout.machineX(91), 94));
-        addSlot(new OutputSlot(container, FarmerBlockEntity.FIRST_OUTPUT_SLOT + 3, MachineMenuLayout.machineX(115), 94));
+        for (int index = 0; index < FarmerBlockEntity.OUTPUT_SLOT_COUNT; index++) {
+            addSlot(new OutputSlot(
+                    container,
+                    FarmerBlockEntity.FIRST_OUTPUT_SLOT + index,
+                    outputSlotX(index),
+                    outputSlotY(index)
+            ));
+        }
         addStandardInventorySlots(inventory, MachineMenuLayout.PLAYER_INVENTORY_X, MachineMenuLayout.PLAYER_INVENTORY_SLOT_Y);
         for (Slot equipmentSlot : PlayerEquipmentSlots.create(inventory)) {
             addSlot(equipmentSlot);
@@ -57,6 +90,18 @@ public final class FarmerMenu extends AbstractContainerMenu {
 
     public int growthTicks() {
         return data.get(0);
+    }
+
+    public FarmerKind kind() {
+        return kind;
+    }
+
+    public static int outputSlotX(int index) {
+        return OUTPUT_SLOT_FIRST_X + index % OUTPUT_COLUMN_COUNT * OUTPUT_SLOT_SPACING;
+    }
+
+    public static int outputSlotY(int index) {
+        return OUTPUT_SLOT_FIRST_Y + index / OUTPUT_COLUMN_COUNT * OUTPUT_ROW_SPACING;
     }
 
     public int maxGrowthTicks() {
@@ -70,6 +115,11 @@ public final class FarmerMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(@NonNull Player player) {
         return container.stillValid(player);
+    }
+
+    @Override
+    public boolean canTakeItemForPickAll(ItemStack carried, Slot target) {
+        return target.container != container || target instanceof OutputSlot;
     }
 
     @Override
@@ -97,15 +147,15 @@ public final class FarmerMenu extends AbstractContainerMenu {
         if (index < MACHINE_SLOT_COUNT) {
             return moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true);
         }
-        if (isAdultVillager(stack)) {
+        if (isAdultWorker(stack)) {
             return moveItemStackTo(
                     stack,
-                    FarmerBlockEntity.VILLAGER_SLOT,
-                    FarmerBlockEntity.VILLAGER_SLOT + 1,
+                    FarmerBlockEntity.WORKER_SLOT,
+                    FarmerBlockEntity.WORKER_SLOT + 1,
                     false
             );
         }
-        if (FarmerCropStackAdapter.isSupported(stack)) {
+        if (FarmerCropStackAdapter.isSupported(kind, stack)) {
             return moveItemStackTo(
                     stack,
                     FarmerBlockEntity.CROP_SLOT,
@@ -113,7 +163,7 @@ public final class FarmerMenu extends AbstractContainerMenu {
                     false
             );
         }
-        if (stack.getItem() instanceof HoeItem) {
+        if (HoeTierCatalog.isSupported(stack)) {
             return moveItemStackTo(
                     stack,
                     FarmerBlockEntity.HOE_SLOT,
@@ -126,19 +176,22 @@ public final class FarmerMenu extends AbstractContainerMenu {
                 : moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false);
     }
 
-    private static boolean isAdultVillager(ItemStack stack) {
-        return CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)
-                && !CapturedMobStackAdapter.isBaby(CapturedMobKind.VILLAGER, stack);
+    private boolean isAdultWorker(ItemStack stack) {
+        CapturedMobKind capturedKind = kind == FarmerKind.VILLAGER
+                ? CapturedMobKind.VILLAGER
+                : CapturedMobKind.PIGLIN;
+        return CapturedMobStackAdapter.isFilledCapturer(capturedKind, stack)
+                && !CapturedMobStackAdapter.isBaby(capturedKind, stack);
     }
 
-    private static final class VillagerSlot extends Slot {
-        private VillagerSlot(Container container, int slot, int x, int y) {
+    private final class WorkerSlot extends Slot {
+        private WorkerSlot(Container container, int slot, int x, int y) {
             super(container, slot, x, y);
         }
 
         @Override
         public boolean mayPlace(@NonNull ItemStack stack) {
-            return isAdultVillager(stack);
+            return isAdultWorker(stack);
         }
 
         @Override
@@ -147,14 +200,14 @@ public final class FarmerMenu extends AbstractContainerMenu {
         }
     }
 
-    private static final class CropSlot extends Slot {
+    private final class CropSlot extends Slot {
         private CropSlot(Container container, int slot, int x, int y) {
             super(container, slot, x, y);
         }
 
         @Override
         public boolean mayPlace(@NonNull ItemStack stack) {
-            return FarmerCropStackAdapter.isSupported(stack);
+            return FarmerCropStackAdapter.isSupported(kind, stack);
         }
 
         @Override
@@ -170,7 +223,7 @@ public final class FarmerMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(@NonNull ItemStack stack) {
-            return stack.getItem() instanceof HoeItem;
+            return HoeTierCatalog.isSupported(stack);
         }
 
         @Override

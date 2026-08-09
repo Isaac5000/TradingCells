@@ -1,0 +1,5 @@
+{
+  "type":"minecraft:crafting_shaped","category":"misc","show_notification":false,
+  "key":{"C":"minecraft:popped_chorus_fruit","D":"minecraft:diamond_block","N":"minecraft:nether_star","U":"trading_cells:quarry_gold_upgrade"},
+  "pattern":["CNC","DUD","CDC"],"result":{"count":1,"id":"trading_cells:quarry_diamond_upgrade"}
+}

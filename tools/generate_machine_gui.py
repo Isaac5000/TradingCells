@@ -105,7 +105,7 @@ def manually_maintained_sprites() -> dict[Path, tuple[int, int]]:
         MACHINE_SLOTS / "empty_apple.png": (16, 16),
         CAPTURES / "empty_villager_head.png": (16, 16),
         CAPTURES / "empty_piglin_head.png": (16, 16),
-        CAPTURES / "empty_capturer.png": (32, 32),
+        CAPTURES / "empty_capturer.png": (16, 16),
         MACHINE_SLOTS / "empty_hoe.png": (16, 16),
         MACHINE_SLOTS / "empty_wheat_seeds.png": (16, 16),
         MACHINE_SLOTS / "empty_bread.png": (16, 16),

@@ -19,7 +19,7 @@ public final class VillagerTradeScreenLayout {
 
     public static final int TRADES_TITLE_CENTER_X = 62;
     public static final int PROFESSION_TITLE_CENTER_X = 233;
-    public static final int HEADER_TEXT_Y = 11;
+    public static final int HEADER_TEXT_Y = 12;
     public static final int LEVEL_TEXT_X = 129;
     public static final int PROFESSION_XP_RIGHT_X = 328;
     public static final int PROFESSION_TEXT_Y = 30;

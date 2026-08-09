@@ -1,8 +1,10 @@
 package com.cosmocraft.trading_cells.feature.farmer.adapters.output;
 
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerBlock;
-import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerBlockEntity;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerMenu;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.input.PiglinFarmerBlock;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.input.PiglinFarmerBlockEntity;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.input.VillagerFarmerBlockEntity;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineBlockProperties;
 import com.cosmocraft.trading_cells.platform.neoforge.registration.Registration;
@@ -20,14 +22,25 @@ import net.neoforged.neoforge.registries.DeferredItem;
 
 public final class FarmerRegistrationAdapter {
     public static final String FARMER_ID = "farmer";
+    public static final String PIGLIN_FARMER_ID = "piglin_farmer";
 
     public static final DeferredBlock<FarmerBlock> FARMER_BLOCK = Registration.BLOCKS.register(FARMER_ID, () ->
             new FarmerBlock(MachineBlockProperties.villager(FARMER_ID))
     );
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FarmerBlockEntity>> FARMER_BLOCK_ENTITY =
+    public static final DeferredBlock<PiglinFarmerBlock> PIGLIN_FARMER_BLOCK =
+            Registration.BLOCKS.register(PIGLIN_FARMER_ID, () ->
+                    new PiglinFarmerBlock(MachineBlockProperties.piglin(PIGLIN_FARMER_ID))
+            );
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<VillagerFarmerBlockEntity>> FARMER_BLOCK_ENTITY =
             Registration.BLOCK_ENTITY_TYPES.register(FARMER_ID, () ->
-                    new BlockEntityType<>(FarmerBlockEntity::new, FARMER_BLOCK.get())
+                    new BlockEntityType<>(VillagerFarmerBlockEntity::new, FARMER_BLOCK.get())
+            );
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PiglinFarmerBlockEntity>> PIGLIN_FARMER_BLOCK_ENTITY =
+            Registration.BLOCK_ENTITY_TYPES.register(PIGLIN_FARMER_ID, () ->
+                    new BlockEntityType<>(PiglinFarmerBlockEntity::new, PIGLIN_FARMER_BLOCK.get())
             );
 
     public static final DeferredItem<BlockItem> FARMER_ITEM = Registration.ITEMS.register(FARMER_ID, () ->
@@ -36,8 +49,24 @@ public final class FarmerRegistrationAdapter {
             ))
     );
 
+    public static final DeferredItem<BlockItem> PIGLIN_FARMER_ITEM = Registration.ITEMS.register(PIGLIN_FARMER_ID, () ->
+            new BlockItem(PIGLIN_FARMER_BLOCK.get(), new Item.Properties().setId(
+                    ResourceKey.create(
+                            Registries.ITEM,
+                            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, PIGLIN_FARMER_ID)
+                    )
+            ))
+    );
+
     public static final DeferredHolder<MenuType<?>, MenuType<FarmerMenu>> FARMER_MENU =
-            Registration.MENU_TYPES.register(FARMER_ID, () -> new MenuType<>(FarmerMenu::new, FeatureFlags.VANILLA_SET));
+            Registration.MENU_TYPES.register(FARMER_ID, () ->
+                    new MenuType<>(FarmerMenu::villager, FeatureFlags.VANILLA_SET)
+            );
+
+    public static final DeferredHolder<MenuType<?>, MenuType<FarmerMenu>> PIGLIN_FARMER_MENU =
+            Registration.MENU_TYPES.register(PIGLIN_FARMER_ID, () ->
+                    new MenuType<>(FarmerMenu::piglin, FeatureFlags.VANILLA_SET)
+            );
 
     private FarmerRegistrationAdapter() {
     }

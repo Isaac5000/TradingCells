@@ -11,15 +11,33 @@ import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterStag
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturerDurability;
 import com.cosmocraft.trading_cells.feature.captures.adapters.output.client.CapturedEntityGuiTransform;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerCycle;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerCrop;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerHarvest;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerProduct;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerYield;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.VanillaHoeTier;
+import com.cosmocraft.trading_cells.feature.experience.application.service.ExperienceStorageService;
+import com.cosmocraft.trading_cells.feature.experience.domain.model.ExperienceMath;
 import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubationCycle;
+import com.cosmocraft.trading_cells.feature.infusion.application.service.ArcaneInfusionService;
+import com.cosmocraft.trading_cells.feature.infusion.domain.model.ArcaneInfusionAttempt;
+import com.cosmocraft.trading_cells.feature.infusion.domain.model.ArcaneInfusionDecision;
 import com.cosmocraft.trading_cells.feature.ironfarm.domain.model.IronFarmCycle;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryBlockEntity;
+import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryCycle;
+import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
+import com.cosmocraft.trading_cells.feature.quarry.domain.model.VanillaPickaxeTier;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
 import com.cosmocraft.trading_cells.feature.trader.domain.model.PiglinBarterCycle;
 import com.cosmocraft.trading_cells.feature.trader.domain.model.VillagerOfferPersistence;
 import com.cosmocraft.trading_cells.feature.trader.domain.service.TradeDiscountPolicy;
+import com.cosmocraft.trading_cells.feature.trader.domain.model.PiglinBarterUpgradeYield;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.SlotRenderer;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.VillagerTradeMenuLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.event.HighLevelEnchantmentPalette;
 import java.util.List;
 
 public final class DomainRulesVerification {
@@ -31,14 +49,89 @@ public final class DomainRulesVerification {
         verifyOfferSelection();
         verifyTemporaryTradeDiscounts();
         verifyTimedProcesses();
+        verifyMachineActivity();
+        verifyMachineActivityEquivalence();
         verifyBreederRules();
         verifyFarmerRules();
         verifyConverterRules();
         verifyIronFarmRules();
+        verifyQuarryRules();
         verifyPiglinBarterRules();
         verifyCapturerRules();
         verifyCapturedEntityGuiCenter();
+        verifyDurationFormatting();
         verifyVillagerTradeGeometry();
+        verifyExperienceStorage();
+        verifyArcaneInfusion();
+        verifyHighLevelEnchantmentColors();
+    }
+
+    private static void verifyArcaneInfusion() {
+        ArcaneInfusionService infusion = new ArcaneInfusionService();
+        require(infusion.evaluate(new ArcaneInfusionAttempt(true, true, 14_999, 15_000))
+                        == ArcaneInfusionDecision.EXPERIENCE_REQUIRED,
+                "Arcane infusion must not consume resources with 14,999 XP");
+        require(infusion.evaluate(new ArcaneInfusionAttempt(true, true, 15_000, 15_000))
+                        == ArcaneInfusionDecision.READY,
+                "Arcane infusion must become ready at exactly 15,000 XP");
+        require(infusion.evaluate(new ArcaneInfusionAttempt(true, true, 29_999, 30_000))
+                        == ArcaneInfusionDecision.EXPERIENCE_REQUIRED,
+                "The Miner's Touch infusion must remain blocked with 29,999 XP");
+        require(infusion.evaluate(new ArcaneInfusionAttempt(true, true, 30_000, 30_000))
+                        == ArcaneInfusionDecision.READY,
+                "The Miner's Touch infusion must become ready at exactly 30,000 XP");
+        require(infusion.evaluate(new ArcaneInfusionAttempt(true, false, 15_000, 15_000))
+                        == ArcaneInfusionDecision.OUTPUT_BLOCKED,
+                "An occupied result slot must block the whole atomic infusion");
+        require(infusion.evaluate(new ArcaneInfusionAttempt(false, true, 15_000, 15_000))
+                        == ArcaneInfusionDecision.INGREDIENTS_REQUIRED,
+                "Incomplete ingredients must block the whole atomic infusion");
+        require(infusion.depositAll(30, 0.5F, Integer.MAX_VALUE - 1, Integer.MAX_VALUE) == 1,
+                "The infuser deposit must clamp safely at the positive int XP limit");
+        require(infusion.depositLevels(30, 0.5F, 0, Integer.MAX_VALUE, 0) == 0,
+                "Zero and negative level requests must not transfer XP");
+    }
+
+    private static void verifyExperienceStorage() {
+        ExperienceStorageService storage = new ExperienceStorageService();
+        require(ExperienceMath.pointsAtStartOfLevel(10) == 160,
+                "Level ten must start at the vanilla total of 160 XP points");
+        require(storage.depositLevels(10, 0.0F, 0, 1_000_000, 3) == 69,
+                "Storing three levels must transfer their exact vanilla point difference");
+        require(storage.withdrawLevels(7, 0.0F, 69, 3) == 69,
+                "Withdrawing those levels must restore the same XP points");
+        require(storage.depositAll(30, 0.5F, 999_990, 1_000_000) == 10,
+                "Deposit all must clamp to the block's remaining capacity");
+        require(ExperienceMath.maximumAdditionalLevels(0, 0.0F, 7) == 1,
+                "Seven stored points must buy exactly the first player level");
+        require(ExperienceMath.pointsAtStartOfLevel(21_863) == 2_147_407_943,
+                "The highest complete level representable by int XP must remain exact");
+        require(ExperienceMath.pointsAtStartOfLevel(21_864) == Integer.MAX_VALUE,
+                "XP totals above the int range must saturate without overflowing");
+        require(ExperienceMath.levelForTotalPoints(Integer.MAX_VALUE) == 21_863,
+                "The full int capacity must report the highest complete representable level");
+        require(storage.depositAll(30, 0.5F, Integer.MAX_VALUE - 3, Integer.MAX_VALUE) == 3,
+                "Depositing at int capacity must transfer only the remaining safe points");
+        require(storage.withdrawAll(21_863, 0.0F, 100_000) == 75_704,
+                "Withdraw all must stop at the player's remaining int XP capacity");
+    }
+
+    private static void verifyHighLevelEnchantmentColors() {
+        require(HighLevelEnchantmentPalette.colorFor(10, 255) == HighLevelEnchantmentPalette.FIXED_BLUE,
+                "Over-level enchantments through level ten must use the fixed blue");
+        require(HighLevelEnchantmentPalette.colorFor(255, 255)
+                        != HighLevelEnchantmentPalette.colorFor(10, 255),
+                "The maximum enchantment level must finish on a color distinct from blue");
+        require(HighLevelEnchantmentPalette.colorFor(300, 300)
+                        == HighLevelEnchantmentPalette.colorFor(255, 255),
+                "Changing the supported maximum must redistribute the same complete color curve");
+    }
+
+    private static void verifyDurationFormatting() {
+        require("1:56".equals(MachineScreenUtil.formatDuration(2_334)),
+                "Machine and REI durations must floor 116.7 seconds to 1:56");
+        require("0:05".equals(MachineScreenUtil.formatDuration(100)),
+                "Durations below one minute must retain the mm:ss format");
     }
 
     private static void verifyOfferLifecycle() {
@@ -125,6 +218,76 @@ public final class DomainRulesVerification {
                 "Invalid incubation input must reset progress");
     }
 
+    private static void verifyMachineActivity() {
+        MachineActivityController activity = new MachineActivityController();
+        require(activity.activity() == MachineActivityController.Activity.INACTIVE,
+                "A newly loaded machine must recalculate from an inactive state");
+        activity.transition(MachineActivityController.Activity.BLOCKED);
+        require(activity.remainsBlocked(), "A settled blocked machine must skip repeated capacity work");
+        activity.wake();
+        require(!activity.remainsBlocked(), "Inventory changes must wake a blocked machine immediately");
+        activity.transition(MachineActivityController.Activity.ACTIVE);
+        require(activity.activity() == MachineActivityController.Activity.ACTIVE,
+                "A woken machine must return to active processing");
+        activity.transition(MachineActivityController.Activity.INACTIVE);
+        require(activity.remainsInactive(), "A settled inactive machine must skip repeated input work");
+        MachineActivityController.wakeAll();
+        require(!activity.remainsInactive(), "Configuration and datapack reloads must wake inactive machines");
+    }
+
+    private static void verifyMachineActivityEquivalence() {
+        MachineActivityController activity = new MachineActivityController();
+        int baselineTicks = 0;
+        int optimizedTicks = 0;
+        boolean hasInputs = false;
+        boolean outputAvailable = true;
+        for (int tick = 0; tick < 500; tick++) {
+            if (tick == 3 || tick == 400) {
+                hasInputs = true;
+                activity.wake();
+            } else if (tick == 80) {
+                outputAvailable = false;
+                activity.wake();
+            } else if (tick == 130) {
+                outputAvailable = true;
+                activity.wake();
+            } else if (tick == 260) {
+                hasInputs = false;
+                activity.wake();
+            }
+
+            // Neither implementation progresses while its chunk is unloaded.
+            if (tick >= 200 && tick < 220) {
+                require(baselineTicks == optimizedTicks,
+                        "Chunk unloading must preserve identical machine progress");
+                continue;
+            }
+
+            TimedProcess.Step baseline = TimedProcess.advance(
+                    baselineTicks,
+                    37,
+                    TimedProcess.availability(hasInputs, outputAvailable)
+            );
+            baselineTicks = baseline.ticks();
+
+            if (!activity.remainsInactive() && !activity.remainsBlocked()) {
+                TimedProcess.Step optimized = TimedProcess.advance(
+                        optimizedTicks,
+                        37,
+                        TimedProcess.availability(hasInputs, outputAvailable)
+                );
+                optimizedTicks = optimized.ticks();
+                activity.transition(!hasInputs
+                        ? MachineActivityController.Activity.INACTIVE
+                        : outputAvailable
+                                ? MachineActivityController.Activity.ACTIVE
+                                : MachineActivityController.Activity.BLOCKED);
+            }
+            require(baselineTicks == optimizedTicks,
+                    "Sleeping inactive and blocked machines must remain tick-equivalent");
+        }
+    }
+
     private static void verifyBreederRules() {
         BreederRules rules = new BreederRules(100, 200, 3, 12, 64);
         require(BreederRecipe.breedTicks(BreederKind.PIGLIN, rules) == 200,
@@ -142,10 +305,120 @@ public final class DomainRulesVerification {
     }
 
     private static void verifyFarmerRules() {
+        require(FarmerHarvest.MAX_DISTINCT_OUTPUTS == 18,
+                "Villager and piglin crop farms must expose eighteen output slots");
         require(FarmerCycle.rescaleProgress(50, 100, 200) == 100,
                 "Changing a stack count or tool must preserve proportional progress");
-        require(FarmerCycle.effectiveGrowthTicks(3_000, 9.0D, 5) < 3_000,
-                "Efficiency must reduce the real growth duration");
+        require(FarmerCycle.effectiveGrowthTicks(
+                        3_000,
+                        VanillaHoeTier.WOODEN.miningSpeed(),
+                        VanillaHoeTier.WOODEN.timingPosition(),
+                        0
+                ) == 2_400,
+                "A wooden hoe must give both crop farms the quarry's 120-second duration");
+        require(FarmerCycle.effectiveGrowthTicks(
+                        3_000,
+                        VanillaHoeTier.NETHERITE.miningSpeed(),
+                        VanillaHoeTier.NETHERITE.timingPosition(),
+                        0
+                ) == 400,
+                "A netherite hoe must give both crop farms the quarry's 20-second duration");
+        require(FarmerCycle.effectiveGrowthTicks(
+                        3_000,
+                        VanillaHoeTier.NETHERITE.miningSpeed(),
+                        VanillaHoeTier.NETHERITE.timingPosition(),
+                        5
+                ) == 100,
+                "A netherite Efficiency V hoe must give both crop farms a five-second duration");
+        require(FarmerCycle.effectiveGrowthTicks(3_000, 0.0D, 0.0D, 5) == 3_000,
+                "A crop farm without a hoe must retain its configured duration");
+        require(FarmerCycle.effectiveGrowthTicks(
+                        3_000,
+                        VanillaHoeTier.IRON.miningSpeed(),
+                        VanillaHoeTier.IRON.timingPosition(),
+                        5
+                ) == FarmerCycle.effectiveGrowthTicks(
+                        3_000,
+                        VanillaHoeTier.IRON.miningSpeed(),
+                        VanillaHoeTier.IRON.timingPosition(),
+                        7
+                ),
+                "Crop-farm Efficiency levels above five must not reduce duration further");
+        require(FarmerCycle.effectiveGrowthTicks(
+                        3_000,
+                        VanillaHoeTier.GOLDEN.miningSpeed(),
+                        VanillaHoeTier.GOLDEN.timingPosition(),
+                        0
+                ) > FarmerCycle.effectiveGrowthTicks(
+                        3_000,
+                        VanillaHoeTier.STONE.miningSpeed(),
+                        VanillaHoeTier.STONE.timingPosition(),
+                        0
+                ),
+                "The golden hoe must use its low tier instead of its high mining speed");
+        int netheriteDuration = FarmerCycle.effectiveGrowthTicks(3_000, 9.0D, 6.0D, 0);
+        int tierSevenDuration = FarmerCycle.effectiveGrowthTicks(3_000, 10.0D, 7.0D, 0);
+        int tierEightDuration = FarmerCycle.effectiveGrowthTicks(3_000, 11.0D, 8.0D, 0);
+        require(tierSevenDuration < netheriteDuration && tierEightDuration < tierSevenDuration,
+                "Crop-farm hoe tiers above netherite must keep reducing duration");
+        require(netheriteDuration - tierSevenDuration > tierSevenDuration - tierEightDuration,
+                "Crop-farm tiers above netherite must provide diminishing reductions");
+        require(FarmerCycle.effectiveGrowthTicks(3_000, 103.0D, 100.0D, 5) >= 20,
+                "A modded hoe must never make a crop cycle faster than one second");
+        require(VanillaHoeTier.COPPER.miningSpeed() == 5.0D
+                        && VanillaHoeTier.COPPER.timingPosition() == 3.0D,
+                "The fixed vanilla catalog must include the copper hoe tier");
+        require(VanillaHoeTier.NETHERITE.miningSpeed() == 9.0D
+                        && VanillaHoeTier.NETHERITE.timingPosition() == 6.0D
+                        && VanillaHoeTier.GOLDEN.miningSpeed() == 12.0D
+                        && VanillaHoeTier.GOLDEN.timingPosition() == 1.0D,
+                "The fixed vanilla catalog must preserve netherite and gold tier values");
+
+        FarmerHarvest baseFungus = FarmerCycle.harvest(FarmerCrop.CRIMSON_FUNGUS, 0);
+        require(farmerYield(baseFungus, FarmerProduct.CRIMSON_STEM).count() == 4
+                        && farmerYield(baseFungus, FarmerProduct.CRIMSON_STEM).isGuaranteed(),
+                "A crimson fungus cycle must always produce four stems");
+        require(farmerYield(baseFungus, FarmerProduct.NETHER_WART_BLOCK).count() == 2
+                        && farmerYield(baseFungus, FarmerProduct.NETHER_WART_BLOCK).isGuaranteed(),
+                "A crimson fungus cycle must always produce two base wart blocks");
+        require(farmerYield(baseFungus, FarmerProduct.CRIMSON_FUNGUS).chanceBasisPoints() == 3_500,
+                "The base fungus return chance must remain balanced at 35 percent");
+        require(farmerYield(baseFungus, FarmerProduct.SHROOMLIGHT).chanceBasisPoints() == 2_000,
+                "The base shroomlight chance must remain balanced at 20 percent");
+
+        FarmerHarvest fortuneThree = FarmerCycle.harvest(FarmerCrop.WARPED_FUNGUS, 3);
+        require(farmerYield(fortuneThree, FarmerProduct.WARPED_FUNGUS).chanceBasisPoints() == 6_500,
+                "Fortune III must raise fungus chance to 65 percent");
+        require(farmerYield(fortuneThree, FarmerProduct.SHROOMLIGHT).chanceBasisPoints() == 4_250,
+                "Fortune III must raise shroomlight chance to 42.5 percent");
+        require(farmerYield(fortuneThree, FarmerProduct.WARPED_STEM).count() == 7,
+                "Fortune III must increase guaranteed stem yield");
+        require(farmerYield(fortuneThree, FarmerProduct.WARPED_WART_BLOCK).count() == 5,
+                "Fortune III must increase guaranteed wart block yield");
+        FarmerHarvest fortuneSeven = FarmerCycle.harvest(FarmerCrop.WARPED_FUNGUS, 7);
+        require(farmerYield(fortuneSeven, FarmerProduct.WARPED_STEM).count() == 11
+                        && farmerYield(fortuneSeven, FarmerProduct.WARPED_WART_BLOCK).count() == 9,
+                "Fortune VII must continue increasing guaranteed fungus harvests");
+        for (FarmerCrop crop : List.of(
+                FarmerCrop.CRIMSON_ROOTS,
+                FarmerCrop.NETHER_WART,
+                FarmerCrop.WEEPING_VINES,
+                FarmerCrop.NETHER_SPROUTS,
+                FarmerCrop.WARPED_ROOTS,
+                FarmerCrop.TWISTING_VINES
+        )) {
+            int baseCount = FarmerCycle.harvest(crop, 0).yields().getFirst().count();
+            int fortuneCount = FarmerCycle.harvest(crop, 3).yields().getFirst().count();
+            require(fortuneCount == baseCount + 3,
+                    "Fortune III must add three items to regular Nether crop " + crop);
+        }
+    }
+
+    private static FarmerYield farmerYield(FarmerHarvest harvest, FarmerProduct product) {
+        return harvest.yields().stream()
+                .filter(yield -> yield.product() == product)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Missing farmer product " + product));
     }
 
     private static void verifyConverterRules() {
@@ -221,6 +494,53 @@ public final class DomainRulesVerification {
                 "Capturer durability must never become non-positive");
     }
 
+    private static void verifyQuarryRules() {
+        require(QuarryBlockEntity.OUTPUT_SLOT_COUNT == 18,
+                "Both quarry variants must always expose eighteen output slots");
+        require(QuarryCycle.durationTicks(VanillaPickaxeTier.WOODEN.timingPosition(), 0) == 2_400,
+                "A wooden pickaxe without Efficiency must take exactly 120 seconds");
+        require(QuarryCycle.durationTicks(VanillaPickaxeTier.NETHERITE.timingPosition(), 0) == 400,
+                "A netherite pickaxe without Efficiency must take exactly 20 seconds");
+        require(QuarryCycle.durationTicks(VanillaPickaxeTier.NETHERITE.timingPosition(), 5) == 100,
+                "A netherite Efficiency V pickaxe must take exactly five seconds");
+        require(QuarryCycle.durationSeconds(2.5D, 0) == 56
+                        && QuarryCycle.durationTicks(2.5D, 0) == 1_120,
+                "Fractional quarry seconds must be rounded down before conversion to ticks");
+        require(QuarryCycle.durationTicks(VanillaPickaxeTier.WOODEN.timingPosition(), 0)
+                        > QuarryCycle.durationTicks(VanillaPickaxeTier.GOLDEN.timingPosition(), 0)
+                        && QuarryCycle.durationTicks(VanillaPickaxeTier.GOLDEN.timingPosition(), 0)
+                        > QuarryCycle.durationTicks(VanillaPickaxeTier.STONE.timingPosition(), 0),
+                "The golden pickaxe must keep its low harvest tier despite its high mining speed");
+        require(QuarryCycle.durationTicks(VanillaPickaxeTier.IRON.timingPosition(), 5)
+                        == QuarryCycle.durationTicks(VanillaPickaxeTier.IRON.timingPosition(), 7),
+                "Quarry Efficiency levels above five must not reduce duration further");
+        require(QuarryCycle.durationTicks(7.0D, 0) < QuarryCycle.durationTicks(6.0D, 0),
+                "A tier above netherite must still reduce the quarry duration");
+        require(QuarryCycle.durationTicks(6.0D, 0) - QuarryCycle.durationTicks(7.0D, 0)
+                        > QuarryCycle.durationTicks(7.0D, 0) - QuarryCycle.durationTicks(8.0D, 0)
+                        && QuarryCycle.durationTicks(7.0D, 0) - QuarryCycle.durationTicks(8.0D, 0)
+                        > QuarryCycle.durationTicks(8.0D, 0) - QuarryCycle.durationTicks(9.0D, 0),
+                "Tool tiers above netherite must provide diminishing time reductions");
+        require(QuarryCycle.durationTicks(100.0D, 5) >= QuarryCycle.MINIMUM_DURATION_TICKS
+                        && QuarryCycle.durationTicks(Double.MAX_VALUE, 5) >= QuarryCycle.MINIMUM_DURATION_TICKS,
+                "The modded-pickaxe curve must never become faster than one second");
+        for (double tierPosition : new double[] {0.0D, 2.5D, 6.0D, 7.0D, 100.0D}) {
+            for (int efficiency = 0; efficiency <= 7; efficiency++) {
+                require(QuarryCycle.durationTicks(tierPosition, efficiency) % 20 == 0,
+                        "Every quarry duration must contain a whole number of seconds");
+            }
+        }
+        require(QuarryCycle.rescaleProgress(100, 200, 100) == 50,
+                "A saved cycle must preserve proportional progress when duration rules change");
+        require(QuarryUpgradeTier.DIAMOND.supportsDeepMining()
+                        && QuarryUpgradeTier.NETHERITE.supportsDeepMining()
+                        && !QuarryUpgradeTier.GOLD.supportsDeepMining(),
+                "Deep Mining must only be available with diamond or netherite upgrades");
+        require(QuarryCycle.advance(10, 200, false, true).transition()
+                        == TimedProcess.Transition.PAUSED,
+                "A quarry without valid inputs must pause its progress");
+    }
+
     private static void verifyPiglinBarterRules() {
         PiglinBarterCycle.Step started = PiglinBarterCycle.advance(0, 20, true);
         require(started.ticksRemaining() == 20
@@ -229,6 +549,10 @@ public final class DomainRulesVerification {
         require(PiglinBarterCycle.advance(1, 20, false).transition()
                         == PiglinBarterCycle.Transition.COMPLETED,
                 "A barter must complete when its countdown reaches zero");
+        require(PiglinBarterUpgradeYield.upgradedAmount(10, 64, 4) == 15,
+                "The diamond piglin-barter upgrade must apply a x1.5 yield multiplier");
+        require(PiglinBarterUpgradeYield.upgradedAmount(10, 64, 5) == 20,
+                "The netherite piglin-barter upgrade must apply a x2 yield multiplier");
     }
 
     private static void verifyCapturedEntityGuiCenter() {

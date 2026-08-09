@@ -37,6 +37,7 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
+    private static final int OFFSCREEN_MOUSE_COORDINATE = -10_000;
     private static final Identifier RESET_NORMAL =
             Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "trader/reset/reset_trades");
     private static final Identifier RESET_HOVERED =
@@ -166,7 +167,10 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
 
     @Override
     public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        super.extractContents(graphics, mouseX, mouseY, partialTick);
+        boolean dropdownHovered = dropdownOpen && isInsideDropdown(mouseX, mouseY);
+        int contentMouseX = dropdownHovered ? OFFSCREEN_MOUSE_COORDINATE : mouseX;
+        int contentMouseY = dropdownHovered ? OFFSCREEN_MOUSE_COORDINATE : mouseY;
+        super.extractContents(graphics, contentMouseX, contentMouseY, partialTick);
         MerchantOffer selected = menu.selectedOffer();
         if (!dropdownOpen) {
             setSelectedOfferTooltip(graphics, selected, mouseX, mouseY);
@@ -181,6 +185,9 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (!dropdownOpen) {
+            return super.mouseClicked(event, doubleClick);
+        }
+        if (resetButton != null && resetButton.isMouseOver(event.x(), event.y())) {
             return super.mouseClicked(event, doubleClick);
         }
         if (handleDropdownScrollbarClick(event) || handleDropdownOfferClick(event)) {

@@ -1,22 +1,25 @@
 package com.cosmocraft.trading_cells.feature.farmer.adapters.input;
 
-import com.cosmocraft.trading_cells.feature.farmer.adapters.output.FarmerRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.farmer.application.port.input.FarmerUseCase;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerCrop;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerHarvest;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerKind;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerYield;
 import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
-import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
+import java.util.List;
+import java.util.stream.IntStream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
@@ -25,43 +28,63 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public final class FarmerBlockEntity extends PortableMachineBlockEntity implements WorldlyContainer, MenuProvider {
-    public static final int VILLAGER_SLOT = 0;
+public abstract class FarmerBlockEntity extends PortableMachineBlockEntity implements WorldlyContainer, MenuProvider {
+    public static final int WORKER_SLOT = 0;
     public static final int CROP_SLOT = 1;
     public static final int HOE_SLOT = 2;
     public static final int FIRST_OUTPUT_SLOT = 3;
-    public static final int OUTPUT_SLOT_COUNT = 4;
+    public static final int OUTPUT_SLOT_COUNT = FarmerHarvest.MAX_DISTINCT_OUTPUTS;
     public static final int CONTAINER_SIZE = FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT;
 
     private static final String SLOT_TAG_PREFIX = "Slot";
     private static final String GROWTH_TICKS_TAG = "GrowthTicks";
     private static final String GROWTH_DURATION_TICKS_TAG = "GrowthDurationTicks";
     private static final int[] TOP_SLOTS = new int[]{CROP_SLOT};
-    private static final int[] SIDE_SLOTS = new int[]{VILLAGER_SLOT, HOE_SLOT};
-    private static final int[] BOTTOM_SLOTS = new int[]{3, 4, 5, 6};
+    private static final int[] SIDE_SLOTS = new int[]{WORKER_SLOT, HOE_SLOT};
+    private static final int[] BOTTOM_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, CONTAINER_SIZE).toArray();
     private static final int[] NO_SLOTS = new int[0];
+    private final FarmerKind kind;
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private final FarmerUseCase farmerService = FeatureComposition.farmer();
+    private final MachineActivityController activity = new MachineActivityController();
     private int growthTicks;
-    private int growthDurationTicks = farmerService.effectiveGrowthTicks(0.0D, 0);
+    private int growthDurationTicks = farmerService.baseGrowthTicks();
     private boolean cultivating;
+    private List<ItemStack> pendingDynamicHarvest = List.of();
+    private boolean pendingDynamicHarvestReady;
+    private ItemStack cachedWorker = ItemStack.EMPTY;
+    private boolean cachedAdultWorker;
+    private boolean workerCacheInitialized;
+    private ItemStack cachedCropStack = ItemStack.EMPTY;
+    private FarmerCrop cachedCrop = FarmerCrop.NONE;
+    private boolean cachedDynamicCrop;
+    private boolean cropCacheInitialized;
+    private ItemStack cachedHoe = ItemStack.EMPTY;
+    private double cachedHoeSpeed;
+    private double cachedHoeTierPosition;
+    private int cachedEfficiencyLevel;
+    private int cachedFortuneLevel;
+    private boolean hoeCacheInitialized;
+    private FarmerHarvest cachedHarvest = FarmerHarvest.of();
+    private List<ItemStack> cachedMaximumHarvest = List.of();
+    private FarmerCrop cachedHarvestCrop = FarmerCrop.NONE;
+    private int cachedHarvestFortune = Integer.MIN_VALUE;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
         public int get(int index) {
             return switch (index) {
                 case 0 -> growthTicks;
-                case 1 -> effectiveGrowthTicks();
+                case 1 -> growthDurationTicks;
                 case 2 -> cultivating ? 1 : 0;
                 default -> 0;
             };
@@ -70,6 +93,8 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         @Override
         public void set(int index, int value) {
             if (index == 0) {
+                activity.wake();
+                refreshRuntimeCaches();
                 growthDurationTicks = effectiveGrowthTicks();
                 growthTicks = Math.clamp(value, 0, growthDurationTicks);
             }
@@ -81,8 +106,18 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         }
     };
 
-    public FarmerBlockEntity(BlockPos pos, BlockState state) {
-        super(FarmerRegistrationAdapter.FARMER_BLOCK_ENTITY.get(), pos, state);
+    protected FarmerBlockEntity(
+            BlockEntityType<?> type,
+            BlockPos pos,
+            BlockState state,
+            FarmerKind kind
+    ) {
+        super(type, pos, state);
+        this.kind = kind;
+    }
+
+    public FarmerKind kind() {
+        return kind;
     }
 
     public ContainerData dataAccess() {
@@ -98,21 +133,50 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
     }
 
     public FarmerCrop crop() {
-        return FarmerCropStackAdapter.from(items.get(CROP_SLOT));
+        return FarmerCropStackAdapter.from(kind, items.get(CROP_SLOT));
     }
 
     @Override
     public void processTick() {
-        if (level == null || level.isClientSide()) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        if (activity.remainsInactive()) {
             return;
         }
 
-        FarmerCrop crop = crop();
-        boolean canCultivate = isAdultVillager(items.get(VILLAGER_SLOT))
-                && crop != FarmerCrop.NONE;
+        refreshRuntimeCaches();
+        boolean canCultivate = cachedAdultWorker
+                && (cachedCrop != FarmerCrop.NONE || cachedDynamicCrop);
         int maximumGrowthTicks = updateGrowthDuration();
-        FarmerHarvest harvest = farmerService.harvest(crop, fortuneLevel());
-        boolean outputAvailable = canCultivate && canStoreHarvest(crop, harvest);
+        boolean completingCycle = growthTicks >= maximumGrowthTicks - 1;
+        if (!cachedDynamicCrop || !canCultivate) {
+            clearPendingDynamicHarvest();
+        } else if (completingCycle && !pendingDynamicHarvestReady) {
+            pendingDynamicHarvest = FarmerCropStackAdapter.dynamicVillagerHarvest(
+                    serverLevel,
+                    worldPosition,
+                    items.get(CROP_SLOT),
+                    items.get(HOE_SLOT),
+                    cachedFortuneLevel
+            );
+            pendingDynamicHarvestReady = true;
+        }
+        boolean outputAvailable = false;
+        if (canCultivate && activity.remainsBlocked()) {
+            setCultivating(false);
+            return;
+        }
+        if (canCultivate) {
+            outputAvailable = cachedDynamicCrop
+                    ? !completingCycle || canStoreStacks(pendingDynamicHarvest)
+                    : canStoreStacks(cachedMaximumHarvest);
+        }
+        activity.transition(canCultivate
+                ? outputAvailable
+                        ? MachineActivityController.Activity.ACTIVE
+                        : MachineActivityController.Activity.BLOCKED
+                : MachineActivityController.Activity.INACTIVE);
         int previousTicks = growthTicks;
         TimedProcess.Step step = farmerService.advance(
                 growthTicks,
@@ -127,6 +191,7 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
             return;
         }
         if (step.transition() == TimedProcess.Transition.RESET) {
+            clearPendingDynamicHarvest();
             if (previousTicks != 0) {
                 markChangedAndSync();
             }
@@ -140,20 +205,30 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
             return;
         }
 
-        storeOutput(FarmerCropStackAdapter.produce(crop, harvest.produceCount()));
-        storeOutput(FarmerCropStackAdapter.seeds(crop, harvest.seedCount()));
+        if (cachedDynamicCrop) {
+            storeStacks(pendingDynamicHarvest);
+            clearPendingDynamicHarvest();
+        } else {
+            storeHarvest(cachedHarvest);
+        }
         damageHoeAfterHarvest();
         markChangedAndSync();
     }
 
     @Override
     public @NonNull Component getDisplayName() {
-        return Component.translatable("container.trading_cells.farmer");
+        return Component.translatable(kind == FarmerKind.VILLAGER
+                ? "container.trading_cells.farmer"
+                : "container.trading_cells.piglin_farmer");
     }
 
     @Override
-    public @Nullable AbstractContainerMenu createMenu(int containerId, @NonNull Inventory inventory, @NonNull Player player) {
-        return new FarmerMenu(containerId, inventory, this, dataAccess);
+    public @NonNull AbstractContainerMenu createMenu(
+            int containerId,
+            @NonNull Inventory inventory,
+            @NonNull Player player
+    ) {
+        return new FarmerMenu(kind, containerId, inventory, this, dataAccess);
     }
 
     @Override
@@ -186,10 +261,15 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         if (items.get(slot).isEmpty()) {
             items.set(slot, ItemStack.EMPTY);
         }
-        if (slot == VILLAGER_SLOT || (slot == CROP_SLOT && items.get(slot).isEmpty())) {
+        if (slot == WORKER_SLOT || (slot == CROP_SLOT && items.get(slot).isEmpty())) {
             growthTicks = 0;
             cultivating = false;
-        } else if (slot == HOE_SLOT) {
+        }
+        if (slot == CROP_SLOT || slot == HOE_SLOT) {
+            clearPendingDynamicHarvest();
+        }
+        invalidateCache(slot);
+        if (slot == HOE_SLOT) {
             updateGrowthDuration();
         }
         markChangedAndSync();
@@ -204,10 +284,15 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         updateGrowthDuration();
         ItemStack removed = items.get(slot);
         items.set(slot, ItemStack.EMPTY);
-        if (slot == VILLAGER_SLOT || slot == CROP_SLOT) {
+        if (slot == WORKER_SLOT || slot == CROP_SLOT) {
             growthTicks = 0;
             cultivating = false;
-        } else if (slot == HOE_SLOT) {
+        }
+        if (slot == CROP_SLOT || slot == HOE_SLOT) {
+            clearPendingDynamicHarvest();
+        }
+        invalidateCache(slot);
+        if (slot == HOE_SLOT) {
             updateGrowthDuration();
         }
         return removed;
@@ -221,18 +306,24 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         if (!stack.isEmpty() && !canPlaceItem(slot, stack)) {
             return;
         }
-        FarmerCrop previousCrop = crop();
+        ItemStack previous = items.get(slot);
         updateGrowthDuration();
         ItemStack inserted = stack.copy();
-        int max = slot == VILLAGER_SLOT || slot == CROP_SLOT || slot == HOE_SLOT
+        int max = slot == WORKER_SLOT || slot == CROP_SLOT || slot == HOE_SLOT
                 ? 1
                 : Math.min(64, inserted.getMaxStackSize());
         inserted.setCount(Math.min(max, inserted.getCount()));
         items.set(slot, inserted);
-        if (slot == VILLAGER_SLOT || (slot == CROP_SLOT && previousCrop != crop())) {
+        if (slot == WORKER_SLOT || (slot == CROP_SLOT
+                && !ItemStack.isSameItemSameComponents(previous, inserted))) {
             growthTicks = 0;
             cultivating = false;
-        } else if (slot == HOE_SLOT) {
+        }
+        if (slot == CROP_SLOT || slot == HOE_SLOT) {
+            clearPendingDynamicHarvest();
+        }
+        invalidateCache(slot);
+        if (slot == HOE_SLOT) {
             updateGrowthDuration();
         }
         markChangedAndSync();
@@ -246,10 +337,10 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
     @Override
     public boolean canPlaceItem(int slot, @NonNull ItemStack stack) {
         return switch (slot) {
-            case VILLAGER_SLOT -> isAdultVillager(stack);
-            case CROP_SLOT -> FarmerCropStackAdapter.isSupported(stack)
+            case WORKER_SLOT -> isAdultWorkerUncached(stack);
+            case CROP_SLOT -> FarmerCropStackAdapter.isSupported(kind, stack)
                     && items.get(CROP_SLOT).isEmpty();
-            case HOE_SLOT -> stack.getItem() instanceof HoeItem;
+            case HOE_SLOT -> HoeTierCatalog.isSupported(stack);
             default -> false;
         };
     }
@@ -299,11 +390,14 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
                 1,
                 input.getIntOr(
                         GROWTH_DURATION_TICKS_TAG,
-                        farmerService.effectiveGrowthTicks(0.0D, 0)
+                        farmerService.baseGrowthTicks()
                 )
         );
         growthTicks = Math.clamp(storedGrowthTicks, 0, growthDurationTicks);
         cultivating = false;
+        clearPendingDynamicHarvest();
+        invalidateRuntimeCaches();
+        activity.reset();
     }
 
     @Override
@@ -326,18 +420,12 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
             items.set(slot, ItemStack.EMPTY);
         }
         growthTicks = 0;
-        growthDurationTicks = farmerService.effectiveGrowthTicks(0.0D, 0);
+        growthDurationTicks = farmerService.baseGrowthTicks();
         cultivating = false;
+        clearPendingDynamicHarvest();
+        invalidateRuntimeCaches();
+        activity.reset();
         setChanged();
-    }
-
-    private int fortuneLevel() {
-        ItemStack hoe = items.get(HOE_SLOT);
-        if (hoe.isEmpty() || level == null) {
-            return 0;
-        }
-        var fortune = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
-        return hoe.getEnchantmentLevel(fortune);
     }
 
     private void damageHoeAfterHarvest() {
@@ -355,51 +443,20 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
                 (LivingEntity) null,
                 ignored -> items.set(HOE_SLOT, ItemStack.EMPTY)
         );
+        invalidateHoeCache();
         updateGrowthDuration();
-    }
-
-    private int efficiencyLevel() {
-        ItemStack hoe = items.get(HOE_SLOT);
-        if (hoe.isEmpty() || level == null) {
-            return 0;
-        }
-        var efficiency = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.EFFICIENCY);
-        return Math.max(0, hoe.getEnchantmentLevel(efficiency));
     }
 
     private int effectiveGrowthTicks() {
         return farmerService.effectiveGrowthTicks(
-                hoeMiningSpeed(),
-                efficiencyLevel()
+                cachedHoeSpeed,
+                cachedHoeTierPosition,
+                cachedEfficiencyLevel
         );
     }
 
-    private float hoeMiningSpeed() {
-        ItemStack hoe = items.get(HOE_SLOT);
-        if (hoe.isEmpty()) {
-            return 0.0F;
-        }
-
-        Tool tool = hoe.get(DataComponents.TOOL);
-        if (tool == null) {
-            return 0.0F;
-        }
-
-        float fastestRuleSpeed = Math.max(0.0F, tool.defaultMiningSpeed());
-        for (Tool.Rule rule : tool.rules()) {
-            if (rule.speed().isEmpty()) {
-                continue;
-            }
-            float ruleSpeed = Math.max(0.0F, rule.speed().orElse(0.0F));
-            if (rule.blocks().unwrapKey().filter(BlockTags.MINEABLE_WITH_HOE::equals).isPresent()) {
-                return ruleSpeed;
-            }
-            fastestRuleSpeed = Math.max(fastestRuleSpeed, ruleSpeed);
-        }
-        return fastestRuleSpeed;
-    }
-
     private int updateGrowthDuration() {
+        refreshHoeCache();
         int currentDuration = effectiveGrowthTicks();
         if (growthDurationTicks != currentDuration) {
             rescaleProgress(growthDurationTicks, currentDuration);
@@ -427,62 +484,142 @@ public final class FarmerBlockEntity extends PortableMachineBlockEntity implemen
         markChangedAndSync();
     }
 
-    private boolean canStoreHarvest(FarmerCrop crop, FarmerHarvest harvest) {
-        NonNullList<ItemStack> simulated = NonNullList.withSize(OUTPUT_SLOT_COUNT, ItemStack.EMPTY);
-        for (int index = 0; index < OUTPUT_SLOT_COUNT; index++) {
-            simulated.set(index, items.get(FIRST_OUTPUT_SLOT + index).copy());
-        }
-        return merge(simulated, FarmerCropStackAdapter.produce(crop, harvest.produceCount()))
-                && merge(simulated, FarmerCropStackAdapter.seeds(crop, harvest.seedCount()));
+    private boolean canStoreStacks(List<ItemStack> stacks) {
+        return OrderedOutputInserter.canInsertAll(
+                items,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT,
+                stacks
+        );
     }
 
-    private void storeOutput(ItemStack stack) {
-        if (stack.isEmpty()) {
+    private void storeHarvest(FarmerHarvest harvest) {
+        if (level == null) {
             return;
         }
-        NonNullList<ItemStack> outputs = NonNullList.withSize(OUTPUT_SLOT_COUNT, ItemStack.EMPTY);
-        for (int index = 0; index < OUTPUT_SLOT_COUNT; index++) {
-            outputs.set(index, items.get(FIRST_OUTPUT_SLOT + index));
-        }
-        merge(outputs, stack);
-        for (int index = 0; index < OUTPUT_SLOT_COUNT; index++) {
-            items.set(FIRST_OUTPUT_SLOT + index, outputs.get(index));
+        for (FarmerYield yield : harvest.yields()) {
+                if (yield.isGuaranteed()
+                    || yield.succeeds(level.getRandom().nextInt(FarmerYield.CHANCE_SCALE))) {
+                OrderedOutputInserter.insert(
+                        items,
+                        FIRST_OUTPUT_SLOT,
+                        OUTPUT_SLOT_COUNT,
+                        FarmerCropStackAdapter.output(yield)
+                );
+            }
         }
     }
 
-    private static boolean merge(NonNullList<ItemStack> outputs, ItemStack source) {
-        if (source.isEmpty()) {
-            return true;
-        }
-        ItemStack remaining = source.copy();
-        for (ItemStack output : outputs) {
-            if (!output.isEmpty() && ItemStack.isSameItemSameComponents(output, remaining)) {
-                int moved = Math.min(remaining.getCount(), output.getMaxStackSize() - output.getCount());
-                output.grow(moved);
-                remaining.shrink(moved);
-                if (remaining.isEmpty()) {
-                    return true;
-                }
-            }
-        }
-        for (int index = 0; index < outputs.size(); index++) {
-            if (outputs.get(index).isEmpty()) {
-                int moved = Math.min(remaining.getCount(), remaining.getMaxStackSize());
-                ItemStack inserted = remaining.copy();
-                inserted.setCount(moved);
-                outputs.set(index, inserted);
-                remaining.shrink(moved);
-                if (remaining.isEmpty()) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    private void storeStacks(List<ItemStack> stacks) {
+        OrderedOutputInserter.insertAllValidated(
+                items,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT,
+                stacks
+        );
     }
 
-    private static boolean isAdultVillager(ItemStack stack) {
-        return CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)
-                && !CapturedMobStackAdapter.isBaby(CapturedMobKind.VILLAGER, stack);
+    private void clearPendingDynamicHarvest() {
+        pendingDynamicHarvest = List.of();
+        pendingDynamicHarvestReady = false;
+    }
+
+    private boolean isAdultWorkerUncached(ItemStack stack) {
+        CapturedMobKind capturedKind = capturedKind();
+        return CapturedMobStackAdapter.isFilledCapturer(capturedKind, stack)
+                && !CapturedMobStackAdapter.isBaby(capturedKind, stack);
+    }
+
+    private void refreshRuntimeCaches() {
+        refreshWorkerCache();
+        refreshCropCache();
+        refreshHoeCache();
+        refreshHarvestCache();
+    }
+
+    private void refreshWorkerCache() {
+        ItemStack worker = items.get(WORKER_SLOT);
+        if (workerCacheInitialized && ItemStack.isSameItemSameComponents(cachedWorker, worker)) {
+            return;
+        }
+        cachedWorker = worker.copy();
+        cachedAdultWorker = isAdultWorkerUncached(worker);
+        workerCacheInitialized = true;
+    }
+
+    private void refreshCropCache() {
+        ItemStack cropStack = items.get(CROP_SLOT);
+        if (cropCacheInitialized && ItemStack.isSameItemSameComponents(cachedCropStack, cropStack)) {
+            return;
+        }
+        cachedCropStack = cropStack.copy();
+        cachedCrop = FarmerCropStackAdapter.from(kind, cropStack);
+        cachedDynamicCrop = cachedCrop == FarmerCrop.NONE
+                && kind == FarmerKind.VILLAGER
+                && FarmerCropStackAdapter.isDynamicVillagerCrop(cropStack);
+        cropCacheInitialized = true;
+    }
+
+    private void refreshHoeCache() {
+        ItemStack hoe = items.get(HOE_SLOT);
+        if (hoeCacheInitialized && ItemStack.isSameItemSameComponents(cachedHoe, hoe)) {
+            return;
+        }
+        cachedHoe = hoe.copy();
+        cachedHoeSpeed = HoeTierCatalog.miningSpeed(hoe);
+        cachedHoeTierPosition = HoeTierCatalog.timingPosition(hoe);
+        cachedEfficiencyLevel = enchantmentLevel(hoe, Enchantments.EFFICIENCY);
+        cachedFortuneLevel = enchantmentLevel(hoe, Enchantments.FORTUNE);
+        hoeCacheInitialized = true;
+    }
+
+    private int enchantmentLevel(ItemStack stack, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> key) {
+        if (stack.isEmpty() || level == null) {
+            return 0;
+        }
+        var enchantment = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
+        return Math.max(0, stack.getEnchantmentLevel(enchantment));
+    }
+
+    private void refreshHarvestCache() {
+        if (cachedHarvestCrop == cachedCrop && cachedHarvestFortune == cachedFortuneLevel) {
+            return;
+        }
+        cachedHarvest = farmerService.harvest(cachedCrop, cachedFortuneLevel);
+        cachedMaximumHarvest = cachedHarvest.yields().stream()
+                .map(FarmerCropStackAdapter::output)
+                .toList();
+        cachedHarvestCrop = cachedCrop;
+        cachedHarvestFortune = cachedFortuneLevel;
+    }
+
+    private void invalidateCache(int slot) {
+        activity.wake();
+        switch (slot) {
+            case WORKER_SLOT -> workerCacheInitialized = false;
+            case CROP_SLOT -> cropCacheInitialized = false;
+            case HOE_SLOT -> invalidateHoeCache();
+            default -> {
+                // Output slots do not affect the input-derived caches.
+            }
+        }
+    }
+
+    private void invalidateHoeCache() {
+        hoeCacheInitialized = false;
+        cachedHarvestFortune = Integer.MIN_VALUE;
+    }
+
+    private void invalidateRuntimeCaches() {
+        workerCacheInitialized = false;
+        cropCacheInitialized = false;
+        invalidateHoeCache();
+        cachedHarvestCrop = FarmerCrop.NONE;
+        cachedMaximumHarvest = List.of();
+    }
+
+    private CapturedMobKind capturedKind() {
+        return kind == FarmerKind.VILLAGER ? CapturedMobKind.VILLAGER : CapturedMobKind.PIGLIN;
     }
 
     private static boolean isOutputSlot(int slot) {

@@ -85,7 +85,7 @@ public final class IronFarmBlockEntityRenderer implements BlockEntityRenderer<Ir
         if (blockEntity.isGolemVisible()) {
             Entity golem = state.getOrCreateGolem(level);
             if (golem != null) {
-                orient(golem, state.facing.toYRot());
+                orient(golem, side.getOpposite().toYRot());
                 state.golem = extractEntity(golem, partialTicks, state.lightCoords);
                 if (state.golem instanceof LivingEntityRenderState livingState) {
                     livingState.hasRedOverlay = blockEntity.hasGolemRedHitFlash();

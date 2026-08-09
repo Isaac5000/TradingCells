@@ -1,0 +1,7 @@
+{
+  "values": [],
+  "remove": [
+    "minecraft:fortune",
+    "minecraft:silk_touch"
+  ]
+}

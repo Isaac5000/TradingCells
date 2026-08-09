@@ -8,9 +8,14 @@
     "trading_cells:villager_incubator",
     "trading_cells:piglin_incubator",
     "trading_cells:farmer",
+    "trading_cells:piglin_farmer",
     "trading_cells:autotrader",
     "trading_cells:iron_farm",
     "trading_cells:converter",
-    "trading_cells:netherite_piglin_bartering_cell"
+    "trading_cells:netherite_piglin_bartering_cell",
+    "trading_cells:quarry",
+    "trading_cells:piglin_quarry",
+    "trading_cells:experience_storage",
+    "trading_cells:arcane_infuser"
   ]
 }

@@ -1,0 +1,12 @@
+forceload add 0 0 63 15
+gamerule doDaylightCycle false
+gamerule doWeatherCycle false
+gamerule doMobSpawning false
+fill 0 80 0 15 80 7 trading_cells:farmer replace
+fill 16 80 0 31 80 7 trading_cells:piglin_farmer replace
+fill 32 80 0 47 80 7 trading_cells:quarry replace
+fill 48 80 0 63 80 7 trading_cells:piglin_quarry replace
+fill 0 80 8 15 80 15 trading_cells:converter replace
+fill 16 80 8 31 80 15 trading_cells:iron_farm replace
+fill 32 80 8 47 80 15 trading_cells:villager_breeder replace
+fill 48 80 8 63 80 15 trading_cells:piglin_breeder replace

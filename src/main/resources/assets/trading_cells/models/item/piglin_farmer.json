@@ -1,0 +1,7 @@
+{
+  "parent": "trading_cells:item/piglin_breeder",
+  "textures": {
+    "base": "minecraft:block/crimson_nylium",
+    "particle": "minecraft:block/crimson_nylium"
+  }
+}

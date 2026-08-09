@@ -9,6 +9,7 @@ import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterStag
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -50,9 +51,13 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(STORAGE_SLOT_COUNT, ItemStack.EMPTY);
     private final ConverterUseCase converterService = FeatureComposition.converter();
+    private final MachineActivityController activity = new MachineActivityController();
     private ConverterStage stage = ConverterStage.IDLE;
     private int stageTicks;
     private boolean curedReady;
+    private boolean runtimeInputsCached;
+    private boolean cachedAdultVillager;
+    private boolean cachedCanStart;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -68,6 +73,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
 
         @Override
         public void set(int index, int value) {
+            activity.wake();
             if (index == 0) {
                 stage = ConverterStage.fromId(value);
             } else if (index == 1) {
@@ -104,7 +110,8 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     }
 
     public boolean hasStoredVillager() {
-        return isAdultVillager(items.get(VILLAGER_SLOT));
+        refreshRuntimeInputs();
+        return cachedAdultVillager;
     }
 
     public ItemStack copyDisplayVillagerStack() {
@@ -119,6 +126,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
             return InteractionResult.PASS;
         }
         items.set(VILLAGER_SLOT, stack.copyWithCount(1));
+        invalidateRuntimeInputs();
         CapturedMobStackAdapter.clearData(CapturedMobKind.VILLAGER, stack);
         stage = ConverterStage.IDLE;
         stageTicks = 0;
@@ -153,6 +161,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
             }
         }
         items.set(VILLAGER_SLOT, ItemStack.EMPTY);
+        invalidateRuntimeInputs();
         stage = ConverterStage.IDLE;
         stageTicks = 0;
         curedReady = false;
@@ -165,13 +174,20 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
         if (level == null || level.isClientSide()) {
             return;
         }
-        boolean canStart = hasIngredient(POTION_SLOTS, true)
-                && hasIngredient(APPLE_SLOTS, false);
+        if (activity.remainsInactive()) {
+            return;
+        }
+        refreshRuntimeInputs();
+        if (stage == ConverterStage.IDLE && (!cachedAdultVillager || !cachedCanStart)) {
+            activity.transition(MachineActivityController.Activity.INACTIVE);
+            return;
+        }
+        activity.transition(MachineActivityController.Activity.ACTIVE);
         ConverterCycle.Step step = converterService.advance(
                 stage,
                 stageTicks,
-                isAdultVillager(items.get(VILLAGER_SLOT)),
-                canStart,
+                cachedAdultVillager,
+                cachedCanStart,
                 curedReady
         );
         stage = step.stage();
@@ -187,9 +203,6 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
             }
             case ADVANCED -> {
                 setChanged();
-                if (stageTicks % 20 == 0) {
-                    markChangedAndSync();
-                }
             }
             case INFECTED, CANCELLED -> markChangedAndSync();
             case CURED -> {
@@ -251,6 +264,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
             curedReady = false;
             cancelProcess();
         }
+        invalidateRuntimeInputs();
         markChangedAndSync();
         return removed;
     }
@@ -266,6 +280,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
             curedReady = false;
             cancelProcess();
         }
+        invalidateRuntimeInputs();
         return removed;
     }
 
@@ -287,6 +302,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
             inserted.setCount(Math.min(inserted.getMaxStackSize(), inserted.getCount()));
         }
         items.set(slot, inserted);
+        invalidateRuntimeInputs();
         markChangedAndSync();
     }
 
@@ -366,6 +382,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
                 converterService.durationTicks(stage)
         );
         curedReady = input.getBooleanOr(CURED_READY_TAG, false);
+        invalidateRuntimeInputs();
     }
 
     @Override
@@ -394,6 +411,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
         stage = ConverterStage.IDLE;
         stageTicks = 0;
         curedReady = false;
+        invalidateRuntimeInputs();
         setChanged();
     }
 
@@ -428,6 +446,7 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
                 if (stack.isEmpty()) {
                     items.set(slot, ItemStack.EMPTY);
                 }
+                invalidateRuntimeInputs();
                 return;
             }
         }
@@ -444,6 +463,21 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
     private static boolean isAdultVillager(ItemStack stack) {
         return CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)
                 && !CapturedMobStackAdapter.isBaby(CapturedMobKind.VILLAGER, stack);
+    }
+
+    private void refreshRuntimeInputs() {
+        if (runtimeInputsCached) {
+            return;
+        }
+        cachedAdultVillager = isAdultVillager(items.get(VILLAGER_SLOT));
+        cachedCanStart = hasIngredient(POTION_SLOTS, true)
+                && hasIngredient(APPLE_SLOTS, false);
+        runtimeInputsCached = true;
+    }
+
+    private void invalidateRuntimeInputs() {
+        runtimeInputsCached = false;
+        activity.wake();
     }
 
     private static boolean isPotionSlot(int slot) {

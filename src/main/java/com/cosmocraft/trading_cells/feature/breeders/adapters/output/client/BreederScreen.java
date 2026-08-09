@@ -39,7 +39,8 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
     private static final int PROGRESS_WIDTH = MachineScreenLayout.PROGRESS_FILL_WIDTH;
     private static final int PROGRESS_HEIGHT = MachineScreenLayout.PROGRESS_FILL_HEIGHT;
 
-    private static final int MAX_VISIBLE_FOODS = 3;
+    private static final int MAX_VISIBLE_FOODS = 4;
+    private static final int OFFSCREEN_MOUSE_COORDINATE = -10_000;
     private static final int FOOD_INFO_BUTTON_SIZE = 12;
     private static final int FOOD_INFO_BUTTON_X = MachineScreenLayout.MACHINE_PANEL_X
             + MachineScreenLayout.MACHINE_PANEL_WIDTH - FOOD_INFO_BUTTON_SIZE - 3;
@@ -242,7 +243,11 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
 
     @Override
     public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        super.extractContents(graphics, mouseX, mouseY, partialTick);
+        boolean overlayHovered = foodListOpen && isWithinFoodList(mouseX, mouseY)
+                || variantListOpen && isWithinVariantList(mouseX, mouseY);
+        int contentMouseX = overlayHovered ? OFFSCREEN_MOUSE_COORDINATE : mouseX;
+        int contentMouseY = overlayHovered ? OFFSCREEN_MOUSE_COORDINATE : mouseY;
+        super.extractContents(graphics, contentMouseX, contentMouseY, partialTick);
         if (foodListOpen) {
             graphics.nextStratum();
             drawFoodList(graphics, mouseX, mouseY);
@@ -275,7 +280,7 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
             );
             graphics.centeredText(
                     font,
-                    Component.translatable(menu.villagerVariantKey(variant)),
+                    menu.villagerVariantName(variant),
                     rowX + VARIANT_LIST_WIDTH / 2,
                     rowY + 4,
                     0xFFFFFFFF

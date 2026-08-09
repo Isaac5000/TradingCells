@@ -1,8 +1,14 @@
 package com.cosmocraft.trading_cells.platform.neoforge.integration.rei;
 
 import com.cosmocraft.trading_cells.feature.breeders.adapters.input.BreederMenu;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerBlockEntity;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerMenu;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmMenu;
+import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserMenu;
+import com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfuserScreen;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryBlockEntity;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.NetheritePiglinBarteringCellBlockEntity;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.NetheritePiglinBarteringCellMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
@@ -10,6 +16,8 @@ import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScree
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.SlotRenderer;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenCommon;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeSprites;
 import java.util.ArrayList;
 import java.util.List;
 import me.shedaniel.math.Point;
@@ -62,8 +70,12 @@ final class TradingCellsReiMachineDisplay {
             case IRON_FARM -> addIronFarm(widgets, display, bounds);
             case PIGLIN_BARTERING -> addPiglinBartering(widgets, display, bounds);
             case NETHERITE_PIGLIN_BARTERING -> addNetheritePiglinBartering(widgets, display, bounds);
+            case QUARRY -> addQuarry(widgets, display, bounds);
+            case ARCANE_INFUSION -> addArcaneInfusion(widgets, display, bounds);
         }
-        if (isInstantBartering(display)) {
+        if (display.layout().kind() == TradingCellsReiLayout.Kind.ARCANE_INFUSION) {
+            return widgets;
+        } else if (isInstantBartering(display)) {
             addOutputAmountTooltip(widgets, display, bounds);
         } else {
             addProgressTooltip(widgets, display, bounds);
@@ -96,7 +108,9 @@ final class TradingCellsReiMachineDisplay {
                     layout.surface()
             );
             drawSlotFrames(graphics, display, bounds);
-            if (isInstantBartering(display)) {
+            if (layout.kind() == TradingCellsReiLayout.Kind.ARCANE_INFUSION) {
+                drawArcaneInfusionInfo(graphics, display, bounds);
+            } else if (isInstantBartering(display)) {
                 drawOutputAmount(graphics, display, bounds);
             } else {
                 drawProgress(graphics, display, bounds);
@@ -126,11 +140,17 @@ final class TradingCellsReiMachineDisplay {
                 drawSlot(graphics, bounds, MachineScreenLayout.machineX(115), 48, display);
             }
             case FARMING -> {
-                drawSlot(graphics, bounds, MachineScreenLayout.machineX(50), 30, display);
-                drawSlot(graphics, bounds, MachineScreenLayout.machineX(80), 30, display);
-                drawSlot(graphics, bounds, MachineScreenLayout.machineX(110), 30, display);
-                for (int index = 0; index < 4; index++) {
-                    drawSlot(graphics, bounds, MachineScreenLayout.machineX(43) + index * 24, 94, display);
+                drawSlot(graphics, bounds, FarmerMenu.WORKER_SLOT_X, FarmerMenu.INPUT_SLOT_Y, display);
+                drawSlot(graphics, bounds, FarmerMenu.HOE_SLOT_X, FarmerMenu.INPUT_SLOT_Y, display);
+                drawSlot(graphics, bounds, FarmerMenu.CROP_SLOT_X, FarmerMenu.INPUT_SLOT_Y, display);
+                for (int index = 0; index < FarmerBlockEntity.OUTPUT_SLOT_COUNT; index++) {
+                    drawSlot(
+                            graphics,
+                            bounds,
+                            FarmerMenu.outputSlotX(index),
+                            FarmerMenu.outputSlotY(index),
+                            display
+                    );
                 }
             }
             case CONVERSION -> {
@@ -194,19 +214,40 @@ final class TradingCellsReiMachineDisplay {
                             display
                     );
                 }
-                for (int lane = 0;
-                     lane < NetheritePiglinBarteringCellBlockEntity.OUTPUT_SLOT_COUNT;
-                     lane++) {
+                for (int index = 0;
+                     index < NetheritePiglinBarteringCellBlockEntity.OUTPUT_SLOT_COUNT;
+                     index++) {
                     drawSlot(
                             graphics,
                             bounds,
-                            NetheritePiglinBarteringCellMenu.OUTPUT_ROW_X
-                                    + lane * NetheritePiglinBarteringCellMenu.LANE_SPACING,
-                            NetheritePiglinBarteringCellMenu.OUTPUT_ROW_Y,
+                            NetheritePiglinBarteringCellMenu.outputSlotX(index),
+                            NetheritePiglinBarteringCellMenu.outputSlotY(index),
                             display
                     );
                 }
                 drawSlot(graphics, bounds, NETHERITE_PIGLIN_X, NETHERITE_PIGLIN_Y, display);
+            }
+            case QUARRY -> {
+                drawSlot(graphics, bounds, QuarryMenu.WORKER_SLOT_X, QuarryMenu.INPUT_SLOT_Y, display);
+                drawSlot(graphics, bounds, QuarryMenu.PICKAXE_SLOT_X, QuarryMenu.INPUT_SLOT_Y, display);
+                drawSlot(graphics, bounds, QuarryMenu.UPGRADE_SLOT_X, QuarryMenu.INPUT_SLOT_Y, display);
+                for (int index = 0; index < QuarryBlockEntity.OUTPUT_SLOT_COUNT; index++) {
+                    drawSlot(
+                            graphics,
+                            bounds,
+                            QuarryMenu.outputSlotX(index),
+                            QuarryMenu.outputSlotY(index),
+                            display
+                    );
+                }
+            }
+            case ARCANE_INFUSION -> {
+                drawSlot(graphics, bounds, ArcaneInfuserMenu.TOP_SLOT_X, ArcaneInfuserMenu.TOP_SLOT_Y, display);
+                drawSlot(graphics, bounds, ArcaneInfuserMenu.LEFT_SLOT_X, ArcaneInfuserMenu.LEFT_SLOT_Y, display);
+                drawSlot(graphics, bounds, ArcaneInfuserMenu.CENTER_SLOT_X, ArcaneInfuserMenu.CENTER_SLOT_Y, display);
+                drawSlot(graphics, bounds, ArcaneInfuserMenu.RIGHT_SLOT_X, ArcaneInfuserMenu.RIGHT_SLOT_Y, display);
+                drawSlot(graphics, bounds, ArcaneInfuserMenu.BOTTOM_SLOT_X, ArcaneInfuserMenu.BOTTOM_SLOT_Y, display);
+                drawSlot(graphics, bounds, ArcaneInfuserMenu.OUTPUT_SLOT_X, ArcaneInfuserMenu.OUTPUT_SLOT_Y, display);
             }
         }
     }
@@ -254,15 +295,13 @@ final class TradingCellsReiMachineDisplay {
                 display.layout().progressColor()
         );
 
-        String durationText = MachineScreenUtil.remainingTime(0, duration);
-        var font = Minecraft.getInstance().font;
-        graphics.text(
-                font,
-                durationText,
-                x + MachineScreenLayout.PROGRESS_FRAME_WIDTH / 2 - font.width(durationText) / 2,
+        String durationText = MachineScreenUtil.formatDuration(display.durationTicks());
+        graphics.centeredText(
+                Minecraft.getInstance().font,
+                Component.literal(durationText),
+                x + MachineScreenLayout.PROGRESS_FRAME_WIDTH / 2,
                 y + 3,
-                0xFFFFFFFF,
-                true
+                0xFFFFFFFF
         );
     }
 
@@ -311,6 +350,28 @@ final class TradingCellsReiMachineDisplay {
                 display.layout().theme().titleText(),
                 true
         );
+    }
+
+    private static void drawArcaneInfusionInfo(
+            me.shedaniel.rei.api.client.gui.compat.GuiGraphics graphics,
+            TradingCellsReiDisplay display,
+            Rectangle bounds
+    ) {
+        VillagerTradeScreenCommon.drawTradeArrow(
+                graphics,
+                screenX(bounds) + ArcaneInfuserScreen.RECIPE_VIEWER_X,
+                screenY(bounds) + ArcaneInfuserScreen.RECIPE_VIEWER_Y,
+                VillagerTradeSprites.State.NORMAL
+        );
+        if (!display.notes().isEmpty()) {
+            graphics.centeredText(
+                    Minecraft.getInstance().font,
+                    display.notes().getFirst(),
+                    bounds.getCenterX(),
+                    screenY(bounds) + ArcaneInfuserScreen.RECIPE_EXPERIENCE_Y + 1,
+                    display.layout().theme().titleText()
+            );
+        }
     }
 
     private static void addBreeding(
@@ -369,15 +430,15 @@ final class TradingCellsReiMachineDisplay {
             TradingCellsReiDisplay display,
             Rectangle bounds
     ) {
-        addInput(widgets, bounds, MachineScreenLayout.machineX(50), 30, input(display, 0));
-        addInput(widgets, bounds, MachineScreenLayout.machineX(80), 30, input(display, 2));
-        addInput(widgets, bounds, MachineScreenLayout.machineX(110), 30, input(display, 1));
+        addInput(widgets, bounds, FarmerMenu.WORKER_SLOT_X, FarmerMenu.INPUT_SLOT_Y, input(display, 0));
+        addInput(widgets, bounds, FarmerMenu.HOE_SLOT_X, FarmerMenu.INPUT_SLOT_Y, input(display, 2));
+        addInput(widgets, bounds, FarmerMenu.CROP_SLOT_X, FarmerMenu.INPUT_SLOT_Y, input(display, 1));
         for (int index = 0; index < display.getOutputEntries().size(); index++) {
             addOutput(
                     widgets,
                     bounds,
-                    MachineScreenLayout.machineX(43) + index * 24,
-                    94,
+                    FarmerMenu.outputSlotX(index),
+                    FarmerMenu.outputSlotY(index),
                     output(display, index)
             );
         }
@@ -459,10 +520,44 @@ final class TradingCellsReiMachineDisplay {
         addOutput(
                 widgets,
                 bounds,
-                NetheritePiglinBarteringCellMenu.OUTPUT_ROW_X,
-                NetheritePiglinBarteringCellMenu.OUTPUT_ROW_Y,
+                NetheritePiglinBarteringCellMenu.outputSlotX(0),
+                NetheritePiglinBarteringCellMenu.outputSlotY(0),
                 output(display, 0)
         );
+    }
+
+    private static void addQuarry(
+            List<Widget> widgets,
+            TradingCellsReiDisplay display,
+            Rectangle bounds
+    ) {
+        addInput(widgets, bounds, QuarryMenu.WORKER_SLOT_X, QuarryMenu.INPUT_SLOT_Y, input(display, 0));
+        addInput(widgets, bounds, QuarryMenu.PICKAXE_SLOT_X, QuarryMenu.INPUT_SLOT_Y, input(display, 1));
+        if (display.getInputEntries().size() > 2 && !input(display, 2).isEmpty()) {
+            addInput(widgets, bounds, QuarryMenu.UPGRADE_SLOT_X, QuarryMenu.INPUT_SLOT_Y, input(display, 2));
+        }
+        if (!display.getOutputEntries().isEmpty()) {
+            addOutput(
+                    widgets,
+                    bounds,
+                    QuarryMenu.outputSlotX(0),
+                    QuarryMenu.outputSlotY(0),
+                    output(display, 0)
+            );
+        }
+    }
+
+    private static void addArcaneInfusion(
+            List<Widget> widgets,
+            TradingCellsReiDisplay display,
+            Rectangle bounds
+    ) {
+        addInput(widgets, bounds, ArcaneInfuserMenu.TOP_SLOT_X, ArcaneInfuserMenu.TOP_SLOT_Y, input(display, 0));
+        addInput(widgets, bounds, ArcaneInfuserMenu.LEFT_SLOT_X, ArcaneInfuserMenu.LEFT_SLOT_Y, input(display, 1));
+        addInput(widgets, bounds, ArcaneInfuserMenu.CENTER_SLOT_X, ArcaneInfuserMenu.CENTER_SLOT_Y, input(display, 2));
+        addInput(widgets, bounds, ArcaneInfuserMenu.RIGHT_SLOT_X, ArcaneInfuserMenu.RIGHT_SLOT_Y, input(display, 3));
+        addInput(widgets, bounds, ArcaneInfuserMenu.BOTTOM_SLOT_X, ArcaneInfuserMenu.BOTTOM_SLOT_Y, input(display, 4));
+        addOutput(widgets, bounds, ArcaneInfuserMenu.OUTPUT_SLOT_X, ArcaneInfuserMenu.OUTPUT_SLOT_Y, output(display, 0));
     }
 
     private static void addProgressTooltip(
@@ -480,7 +575,7 @@ final class TradingCellsReiMachineDisplay {
         List<Component> tooltip = new ArrayList<>();
         tooltip.add(Component.translatable(
                 "rei.trading_cells.duration",
-                formattedSeconds(display.durationTicks())
+                MachineScreenUtil.formatDuration(display.durationTicks())
         ));
         tooltip.addAll(display.notes());
         widgets.add(Widgets.createTooltip(progressBounds, tooltip));
@@ -541,6 +636,11 @@ final class TradingCellsReiMachineDisplay {
             case IRON_FARM -> new Point(MachineScreenLayout.machineX(54), 47);
             case PIGLIN_BARTERING -> new Point(88, 53);
             case NETHERITE_PIGLIN_BARTERING -> new Point(88, 58);
+            case QUARRY -> new Point(
+                    (MachineScreenLayout.WIDTH - MachineScreenLayout.PROGRESS_FRAME_WIDTH) / 2,
+                    64
+            );
+            case ARCANE_INFUSION -> new Point(MachineScreenLayout.machineX(54), 77);
         };
     }
 
@@ -630,10 +730,4 @@ final class TradingCellsReiMachineDisplay {
         return bounds.y + PANEL_FRAME_SIZE - MachineScreenLayout.MACHINE_PANEL_Y;
     }
 
-    private static String formattedSeconds(int ticks) {
-        if (ticks % 20 == 0) {
-            return Integer.toString(ticks / 20);
-        }
-        return "%.1f".formatted(ticks / 20.0D);
-    }
 }

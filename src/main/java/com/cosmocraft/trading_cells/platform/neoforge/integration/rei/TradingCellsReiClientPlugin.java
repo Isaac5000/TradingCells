@@ -2,29 +2,39 @@ package com.cosmocraft.trading_cells.platform.neoforge.integration.rei;
 
 import com.cosmocraft.trading_cells.feature.breeders.adapters.output.BreederRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.breeders.adapters.output.client.BreederScreen;
+import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederKind;
+import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.ConverterRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.client.ConverterScreen;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.output.FarmerRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.output.client.FarmerScreen;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerKind;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.output.IncubatorRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.output.client.IncubatorScreen;
+import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfuserScreen;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client.IronFarmScreen;
-import com.cosmocraft.trading_cells.feature.trader.adapters.input.NetheritePiglinBarteringCellMenu;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.QuarryScreen;
+import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.NetheritePiglinBarteringCellScreen;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
 import java.util.List;
+import java.util.function.Function;
 import me.shedaniel.math.Rectangle;
 import me.shedaniel.rei.api.client.plugins.REIClientPlugin;
 import me.shedaniel.rei.api.client.registry.category.CategoryRegistry;
 import me.shedaniel.rei.api.client.registry.display.DisplayRegistry;
 import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
+import me.shedaniel.rei.api.client.registry.screen.ClickArea;
 import me.shedaniel.rei.api.client.registry.screen.ScreenRegistry;
 import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import me.shedaniel.rei.forge.REIPluginClient;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 @REIPluginClient
 public final class TradingCellsReiClientPlugin implements REIClientPlugin {
@@ -38,6 +48,8 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
             category("piglin_incubation");
     public static final CategoryIdentifier<TradingCellsReiDisplay> FARMING =
             category("farming");
+    public static final CategoryIdentifier<TradingCellsReiDisplay> PIGLIN_FARMING =
+            category("piglin_farming");
     public static final CategoryIdentifier<TradingCellsReiDisplay> CONVERSION =
             category("conversion");
     public static final CategoryIdentifier<TradingCellsReiDisplay> IRON_FARM =
@@ -46,6 +58,12 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
             category("piglin_bartering");
     public static final CategoryIdentifier<TradingCellsReiDisplay> NETHERITE_PIGLIN_BARTERING =
             category("netherite_piglin_bartering");
+    public static final CategoryIdentifier<TradingCellsReiDisplay> QUARRY =
+            category("quarry");
+    public static final CategoryIdentifier<TradingCellsReiDisplay> PIGLIN_QUARRY =
+            category("piglin_quarry");
+    public static final CategoryIdentifier<ArcaneInfusionReiDisplay> ARCANE_INFUSION =
+            ArcaneInfusionReiDisplay.CATEGORY;
 
     @Override
     public void registerCategories(CategoryRegistry registry) {
@@ -76,6 +94,11 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         FarmerRegistrationAdapter.FARMER_ITEM.get()
                 ),
                 new TradingCellsReiCategory(
+                        PIGLIN_FARMING,
+                        "category.trading_cells.piglin_farming",
+                        FarmerRegistrationAdapter.PIGLIN_FARMER_ITEM.get()
+                ),
+                new TradingCellsReiCategory(
                         CONVERSION,
                         "category.trading_cells.conversion",
                         ConverterRegistrationAdapter.CONVERTER_ITEM.get()
@@ -94,7 +117,18 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         NETHERITE_PIGLIN_BARTERING,
                         "category.trading_cells.netherite_piglin_bartering",
                         TraderRegistrationAdapter.NETHERITE_PIGLIN_BARTERING_CELL_ITEM.get()
-                )
+                ),
+                new TradingCellsReiCategory(
+                        QUARRY,
+                        "category.trading_cells.quarry",
+                        QuarryRegistrationAdapter.QUARRY_ITEM.get()
+                ),
+                new TradingCellsReiCategory(
+                        PIGLIN_QUARRY,
+                        "category.trading_cells.piglin_quarry",
+                        QuarryRegistrationAdapter.PIGLIN_QUARRY_ITEM.get()
+                ),
+                new ArcaneInfusionReiCategory()
         ));
 
         registry.addWorkstations(
@@ -114,6 +148,10 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                 EntryStacks.of(IncubatorRegistrationAdapter.PIGLIN_INCUBATOR_ITEM.get())
         );
         registry.addWorkstations(FARMING, EntryStacks.of(FarmerRegistrationAdapter.FARMER_ITEM.get()));
+        registry.addWorkstations(
+                PIGLIN_FARMING,
+                EntryStacks.of(FarmerRegistrationAdapter.PIGLIN_FARMER_ITEM.get())
+        );
         registry.addWorkstations(CONVERSION, EntryStacks.of(ConverterRegistrationAdapter.CONVERTER_ITEM.get()));
         registry.addWorkstations(IRON_FARM, EntryStacks.of(IronFarmRegistrationAdapter.IRON_FARM_ITEM.get()));
         registry.addWorkstations(
@@ -123,6 +161,15 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.addWorkstations(
                 NETHERITE_PIGLIN_BARTERING,
                 EntryStacks.of(TraderRegistrationAdapter.NETHERITE_PIGLIN_BARTERING_CELL_ITEM.get())
+        );
+        registry.addWorkstations(QUARRY, EntryStacks.of(QuarryRegistrationAdapter.QUARRY_ITEM.get()));
+        registry.addWorkstations(
+                PIGLIN_QUARRY,
+                EntryStacks.of(QuarryRegistrationAdapter.PIGLIN_QUARRY_ITEM.get())
+        );
+        registry.addWorkstations(
+                ARCANE_INFUSION,
+                EntryStacks.of(ArcaneInfuserRegistrationAdapter.ITEM.get())
         );
 
         registry.configure(
@@ -142,6 +189,7 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                 configuration -> configuration.setQuickCraftingEnabledByDefault(false)
         );
         registry.configure(FARMING, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(PIGLIN_FARMING, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(CONVERSION, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(IRON_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(PIGLIN_BARTERING, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
@@ -149,6 +197,9 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                 NETHERITE_PIGLIN_BARTERING,
                 configuration -> configuration.setQuickCraftingEnabledByDefault(false)
         );
+        registry.configure(QUARRY, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(PIGLIN_QUARRY, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(ARCANE_INFUSION, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
     }
 
     @Override
@@ -166,22 +217,29 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                 MachineScreenLayout.PROGRESS_FRAME_WIDTH,
                 MachineScreenLayout.PROGRESS_FRAME_HEIGHT
         );
-        registry.registerContainerClickArea(
+        registerMachineClickArea(
+                registry,
                 new Rectangle(progressArea.x, 65, progressArea.width, progressArea.height),
                 BreederScreen.class,
-                VILLAGER_BREEDING,
-                PIGLIN_BREEDING
+                screen -> screen.getMenu().kind() == BreederKind.VILLAGER
+                        ? VILLAGER_BREEDING
+                        : PIGLIN_BREEDING
         );
-        registry.registerContainerClickArea(
+        registerMachineClickArea(
+                registry,
                 new Rectangle(progressArea.x, 77, progressArea.width, progressArea.height),
                 IncubatorScreen.class,
-                VILLAGER_INCUBATION,
-                PIGLIN_INCUBATION
+                screen -> screen.getMenu().kind() == CapturedMobKind.VILLAGER
+                        ? VILLAGER_INCUBATION
+                        : PIGLIN_INCUBATION
         );
-        registry.registerContainerClickArea(
+        registerMachineClickArea(
+                registry,
                 new Rectangle(progressArea.x, 66, progressArea.width, progressArea.height),
                 FarmerScreen.class,
-                FARMING
+                screen -> screen.getMenu().kind() == FarmerKind.VILLAGER
+                        ? FARMING
+                        : PIGLIN_FARMING
         );
         registry.registerContainerClickArea(
                 new Rectangle(progressArea.x, 95, progressArea.width, progressArea.height),
@@ -193,15 +251,28 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                 IronFarmScreen.class,
                 IRON_FARM
         );
+        registerMachineClickArea(
+                registry,
+                new Rectangle(
+                        (MachineScreenLayout.WIDTH - MachineScreenLayout.PROGRESS_FRAME_WIDTH) / 2,
+                        64,
+                        progressArea.width,
+                        progressArea.height
+                ),
+                QuarryScreen.class,
+                screen -> screen.getMenu().kind() == QuarryKind.VILLAGER
+                        ? QUARRY
+                        : PIGLIN_QUARRY
+        );
         registry.registerContainerClickArea(
                 new Rectangle(
-                        NetheritePiglinBarteringCellMenu.GOLD_ROW_X + 20,
-                        NetheritePiglinBarteringCellMenu.GOLD_ROW_Y + 21,
-                        56,
-                        29
+                        ArcaneInfuserScreen.RECIPE_VIEWER_X,
+                        ArcaneInfuserScreen.RECIPE_VIEWER_Y,
+                        ArcaneInfuserScreen.RECIPE_VIEWER_WIDTH,
+                        ArcaneInfuserScreen.RECIPE_VIEWER_HEIGHT
                 ),
-                NetheritePiglinBarteringCellScreen.class,
-                NETHERITE_PIGLIN_BARTERING
+                ArcaneInfuserScreen.class,
+                ARCANE_INFUSION
         );
     }
 
@@ -214,5 +285,23 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
 
     private static CategoryIdentifier<TradingCellsReiDisplay> category(String path) {
         return CategoryIdentifier.of(TradingCells.MOD_ID, path);
+    }
+
+    private static <M extends AbstractContainerMenu, S extends AbstractContainerScreen<M>>
+    void registerMachineClickArea(
+            ScreenRegistry registry,
+            Rectangle area,
+            Class<S> screenClass,
+            Function<S, CategoryIdentifier<?>> categoryProvider
+    ) {
+        registry.registerClickArea(screenClass, context -> {
+            S screen = context.getScreen();
+            Rectangle absoluteArea = area.clone();
+            absoluteArea.translate(screen.getLeftPos(), screen.getTopPos());
+            if (!absoluteArea.contains(context.getMousePosition())) {
+                return ClickArea.Result.fail();
+            }
+            return ClickArea.Result.success().category(categoryProvider.apply(screen));
+        });
     }
 }

@@ -10,9 +10,14 @@ public final class FarmerClientRegistrationAdapter {
 
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(FarmerRegistrationAdapter.FARMER_MENU.get(), FarmerScreen::new);
+        event.register(FarmerRegistrationAdapter.PIGLIN_FARMER_MENU.get(), FarmerScreen::new);
     }
 
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(FarmerRegistrationAdapter.FARMER_BLOCK_ENTITY.get(), FarmerBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(
+                FarmerRegistrationAdapter.PIGLIN_FARMER_BLOCK_ENTITY.get(),
+                FarmerBlockEntityRenderer::new
+        );
     }
 }

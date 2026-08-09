@@ -5,12 +5,11 @@ import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMa
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
 
-public final class FarmerBlock extends AbstractPortableMachineBlock<FarmerBlockEntity> {
+public final class FarmerBlock extends AbstractPortableMachineBlock<VillagerFarmerBlockEntity> {
     public static final MapCodec<FarmerBlock> CODEC = simpleCodec(FarmerBlock::new);
 
     public FarmerBlock(Properties properties) {
@@ -23,12 +22,15 @@ public final class FarmerBlock extends AbstractPortableMachineBlock<FarmerBlockE
     }
 
     @Override
-    public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
-        return new FarmerBlockEntity(pos, state);
+    public @NonNull VillagerFarmerBlockEntity newBlockEntity(
+            @NonNull BlockPos pos,
+            @NonNull BlockState state
+    ) {
+        return new VillagerFarmerBlockEntity(pos, state);
     }
 
     @Override
-    protected BlockEntityType<FarmerBlockEntity> machineType() {
+    protected BlockEntityType<VillagerFarmerBlockEntity> machineType() {
         return FarmerRegistrationAdapter.FARMER_BLOCK_ENTITY.get();
     }
 }

@@ -1,0 +1,5 @@
+forceload add 0 0 63 15
+gamerule doDaylightCycle false
+gamerule doWeatherCycle false
+gamerule doMobSpawning false
+fill 0 80 0 63 80 15 minecraft:stone replace

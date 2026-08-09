@@ -28,9 +28,12 @@ las traducciones puras de API permanecen en adaptadores.
 | `captures` | Capturadores, datos de entidades capturadas y representacion cliente. |
 | `breeders` | Alimentos, coste, tiempo y produccion de criaderos. |
 | `incubators` | Crecimiento de entidades capturadas. |
-| `farmer` | Ciclo de cultivo, fortuna y eficiencia. |
+| `farmer` | Cultivos para aldeanos y piglins, fortuna, eficiencia y desgaste de azadas. |
+| `quarry` | Canteras para aldeanos y piglins, catalogos de materiales, herramientas y minado profundo. |
 | `converter` | Estados de infeccion, curacion y descuento. |
 | `ironfarm` | Produccion, multiplicadores y animacion temporal. |
+| `experience` | Calculo y transferencia segura de niveles para el deposito de experiencia. |
+| `infusion` | Recetas de infusion, consumo atomico, modos manual/automatico y deposito de XP. |
 
 ## Trader
 
@@ -68,7 +71,9 @@ temporizados.
 La antigua interfaz global `MachineSettingsPort` se elimino. Cada feature posee
 su puerto de configuracion (`BreederSettingsPort`, `CaptureSettingsPort`,
 `ConverterSettingsPort`, `FarmerSettingsPort`, `IncubatorSettingsPort`, `IronFarmSettingsPort` o
-`TraderSettingsPort`). NeoForge los agrega mediante `FeatureSettings` solo en la
+`TraderSettingsPort`). El deposito de experiencia no necesita configuracion
+externa: su caso de uso puro se compone mediante `ExperienceStorageUseCase`.
+NeoForge agrega los puertos configurables mediante `FeatureSettings` solo en la
 capa de composicion.
 
 ## Composicion

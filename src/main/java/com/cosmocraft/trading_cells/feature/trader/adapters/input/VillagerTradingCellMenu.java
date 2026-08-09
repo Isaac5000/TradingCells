@@ -472,24 +472,35 @@ public final class VillagerTradingCellMenu extends AbstractContainerMenu {
     }
 
     private void moveFromInventoryToPaymentSlot(int paymentSlot, ItemCost cost) {
+        ItemStack nextPayment = tradeContainer.getItem(paymentSlot).copy();
+        boolean changed = false;
         for (int i = PLAYER_INVENTORY_START; i < PLAYER_HOTBAR_END; i++) {
             ItemStack inventoryItem = slots.get(i).getItem();
-            ItemStack payment = tradeContainer.getItem(paymentSlot);
             if (!inventoryItem.isEmpty()
                     && cost.test(inventoryItem)
-                    && (payment.isEmpty()
-                    || ItemStack.isSameItemSameComponents(inventoryItem, payment))) {
+                    && (nextPayment.isEmpty()
+                    || ItemStack.isSameItemSameComponents(inventoryItem, nextPayment))) {
                 int moveCount = Math.min(
                         inventoryItem.getCount(),
-                        inventoryItem.getMaxStackSize() - payment.getCount()
+                        inventoryItem.getMaxStackSize() - nextPayment.getCount()
                 );
-                ItemStack newPayment = inventoryItem.copyWithCount(payment.getCount() + moveCount);
+                if (moveCount <= 0) {
+                    break;
+                }
+                if (nextPayment.isEmpty()) {
+                    nextPayment = inventoryItem.copyWithCount(moveCount);
+                } else {
+                    nextPayment.grow(moveCount);
+                }
                 inventoryItem.shrink(moveCount);
-                tradeContainer.setItem(paymentSlot, newPayment);
-                if (newPayment.getCount() >= newPayment.getMaxStackSize()) {
-                    return;
+                changed = true;
+                if (nextPayment.getCount() >= nextPayment.getMaxStackSize()) {
+                    break;
                 }
             }
+        }
+        if (changed) {
+            tradeContainer.setItem(paymentSlot, nextPayment);
         }
     }
 

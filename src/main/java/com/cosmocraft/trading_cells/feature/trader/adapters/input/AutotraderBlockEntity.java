@@ -11,7 +11,10 @@ import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.VillagerPo
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.TemporaryTradeDiscountStore;
 import com.cosmocraft.trading_cells.feature.trader.domain.service.TradeDiscountPolicy;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandler;
+import com.cosmocraft.trading_cells.platform.neoforge.registration.ExperienceFluidRegistration;
 import com.cosmocraft.trading_cells.platform.neoforge.trading.MerchantOfferComparator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -43,6 +46,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.storage.TagValueInput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,6 +75,14 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
 
     private final AutotraderUseCase autotraderService = FeatureComposition.autotrader();
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
+    private final ExperienceFluidHandler experienceFluidHandler = new ExperienceFluidHandler(
+            () -> FluidResource.of(ExperienceFluidRegistration.SOURCE.get()),
+            this::getStoredExperienceForFluid,
+            this::setStoredExperienceFromFluid,
+            () -> Integer.MAX_VALUE,
+            false,
+            this::markChangedAndSync
+    );
     private int selectedOfferIndex;
     private int storedExperience;
     private int offerAgeTicks;
@@ -79,7 +92,7 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
     private boolean emptyOffersInitializationAttempted;
     private ItemStack storedPoiStack = ItemStack.EMPTY;
     private @Nullable AutotraderVillager cachedVillager;
-    private @Nullable CompoundTag cachedVillagerData;
+    private ItemStack cachedVillagerStack = ItemStack.EMPTY;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -131,6 +144,10 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         return storedPoiStack.copy();
     }
 
+    public ResourceHandler<FluidResource> experienceFluidHandler() {
+        return experienceFluidHandler;
+    }
+
     public void extractExperience(Player player) {
         extractExperience(player, false);
     }
@@ -154,6 +171,14 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         storedExperience -= extracted;
         player.giveExperiencePoints(extracted);
         markChangedAndSync();
+    }
+
+    private void setStoredExperienceFromFluid(int amount) {
+        storedExperience = Math.max(0, amount);
+    }
+
+    private int getStoredExperienceForFluid() {
+        return storedExperience;
     }
 
     public boolean resetTransientTrades(Player player) {
@@ -461,13 +486,14 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
 
         ItemCost costA = offer.getItemCostA();
         @Nullable ItemCost costB = offer.getItemCostB().orElse(null);
-        ItemStack result = offer.assemble();
         if (countMatching(INPUT_A_SLOTS, costA) < offer.getCostA().getCount()
                 || costB != null && countMatching(INPUT_B_SLOTS, costB) < offer.getCostB().getCount()
-                || !canStoreOutput(result)) {
+                || !canStoreOutput(offer.getResult())) {
             return;
         }
 
+        ItemStack result = offer.assemble();
+        int previousVillagerLevel = villager.getVillagerData().level();
         consume(INPUT_A_SLOTS, costA, offer.getCostA().getCount());
         if (costB != null) {
             consume(INPUT_B_SLOTS, costB, offer.getCostB().getCount());
@@ -479,7 +505,7 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         );
         prepareAutomaticPrices(villager);
         persistCachedVillager();
-        markOffersChanged();
+        markAutomaticTradeChanged(previousVillagerLevel != villager.getVillagerData().level());
     }
 
     public @Nullable MerchantOffer selectedOffer() {
@@ -500,8 +526,12 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
     }
 
     public MerchantOffers offersSnapshot() {
+        return offersView().copy();
+    }
+
+    MerchantOffers offersView() {
         AutotraderVillager villager = resolveVillager();
-        return villager == null ? new MerchantOffers() : villager.getOffers().copy();
+        return villager == null ? new MerchantOffers() : villager.getOffers();
     }
 
     public VillagerData villagerDataSnapshot() {
@@ -784,6 +814,17 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         markChangedAndSync();
     }
 
+    private void markAutomaticTradeChanged(boolean visualStateChanged) {
+        int offerCount = cachedVillager == null ? 0 : cachedVillager.getOffers().size();
+        selectedOfferIndex = autotraderService.normalizeSelection(selectedOfferIndex, offerCount);
+        offersRevision++;
+        if (visualStateChanged) {
+            markChangedAndSync();
+        } else {
+            setChanged();
+        }
+    }
+
     private boolean canResetTrades() {
         if (level == null || level.isClientSide() || !hasStoredVillager() || storedPoiStack.isEmpty()) {
             return false;
@@ -857,18 +898,19 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         if (level == null || level.isClientSide()) {
             return null;
         }
+        ItemStack villagerStack = items.get(VILLAGER_SLOT);
+        if (cachedVillager != null
+                && ItemStack.isSameItemSameComponents(cachedVillagerStack, villagerStack)) {
+            return cachedVillager;
+        }
         CompoundTag currentData = CapturedMobStackAdapter.copyData(
                 CapturedMobKind.VILLAGER,
-                items.get(VILLAGER_SLOT)
+                villagerStack
         );
         if (currentData == null) {
             invalidateVillagerCache();
             return null;
         }
-        if (cachedVillager != null && currentData.equals(cachedVillagerData)) {
-            return cachedVillager;
-        }
-
         AutotraderVillager villager = new AutotraderVillager(level, autotraderService);
         villager.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), currentData.copy()));
         villager.setPos(worldPosition.getX() + 0.5D, worldPosition.getY(), worldPosition.getZ() + 0.5D);
@@ -878,7 +920,7 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
             prepareAutomaticPrices(villager);
         }
         cachedVillager = villager;
-        cachedVillagerData = currentData.copy();
+        cachedVillagerStack = villagerStack.copy();
         persistCachedVillager();
         return cachedVillager;
     }
@@ -960,13 +1002,13 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         }
         CompoundTag saved = CapturedMobStackAdapter.createVillagerData(cachedVillager);
         CapturedMobStackAdapter.setData(CapturedMobKind.VILLAGER, items.get(VILLAGER_SLOT), saved);
-        cachedVillagerData = saved.copy();
+        cachedVillagerStack = items.get(VILLAGER_SLOT).copy();
         setChanged();
     }
 
     private void invalidateVillagerCache() {
         cachedVillager = null;
-        cachedVillagerData = null;
+        cachedVillagerStack = ItemStack.EMPTY;
         nextTemporaryDiscountExpiry = Long.MAX_VALUE;
     }
 
@@ -1080,43 +1122,21 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
     }
 
     private boolean canStoreOutput(ItemStack source) {
-        int remaining = source.getCount();
-        for (int slot : OUTPUT_SLOTS) {
-            ItemStack stack = items.get(slot);
-            if (stack.isEmpty()) {
-                remaining -= source.getMaxStackSize();
-            } else if (ItemStack.isSameItemSameComponents(stack, source)) {
-                remaining -= stack.getMaxStackSize() - stack.getCount();
-            }
-            if (remaining <= 0) {
-                return true;
-            }
-        }
-        return false;
+        return OrderedOutputInserter.canInsert(
+                items,
+                FIRST_OUTPUT_SLOT,
+                AutotraderPolicy.OUTPUT_SLOTS,
+                source
+        );
     }
 
     private void storeOutput(ItemStack source) {
-        ItemStack remaining = source.copy();
-        for (int slot : OUTPUT_SLOTS) {
-            ItemStack stack = items.get(slot);
-            if (!stack.isEmpty() && ItemStack.isSameItemSameComponents(stack, remaining)) {
-                int moved = Math.min(remaining.getCount(), stack.getMaxStackSize() - stack.getCount());
-                stack.grow(moved);
-                remaining.shrink(moved);
-            }
-        }
-        for (int slot : OUTPUT_SLOTS) {
-            if (remaining.isEmpty()) {
-                return;
-            }
-            if (items.get(slot).isEmpty()) {
-                int moved = Math.min(remaining.getCount(), remaining.getMaxStackSize());
-                ItemStack inserted = remaining.copy();
-                inserted.setCount(moved);
-                items.set(slot, inserted);
-                remaining.shrink(moved);
-            }
-        }
+        OrderedOutputInserter.insert(
+                items,
+                FIRST_OUTPUT_SLOT,
+                AutotraderPolicy.OUTPUT_SLOTS,
+                source
+        );
     }
 
     private static boolean isAdultVillager(ItemStack stack) {

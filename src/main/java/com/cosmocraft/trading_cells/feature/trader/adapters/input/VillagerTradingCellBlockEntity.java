@@ -2,6 +2,7 @@ package com.cosmocraft.trading_cells.feature.trader.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
+import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.VillagerPoiAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.TemporaryTradeDiscountStore;
@@ -10,11 +11,11 @@ import com.cosmocraft.trading_cells.feature.trader.domain.service.TradeDiscountP
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellExperiencePayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellMenuSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.trading.MerchantOfferComparator;
+import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandler;
+import com.cosmocraft.trading_cells.platform.neoforge.registration.ExperienceFluidRegistration;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -30,13 +31,10 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.village.ReputationEventType;
-import net.minecraft.world.entity.ai.village.poi.PoiType;
-import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerData;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -48,6 +46,8 @@ import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -77,6 +77,14 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
     private static final Map<UUID, GlobalPos> OPEN_TRADING_CELLS_BY_PLAYER = new HashMap<>();
 
     private final VillagerTraderUseCase villagerTradeService = FeatureComposition.villagerTrader();
+    private final ExperienceFluidHandler experienceFluidHandler = new ExperienceFluidHandler(
+            () -> FluidResource.of(ExperienceFluidRegistration.SOURCE.get()),
+            this::getStoredExperienceForFluid,
+            this::setStoredExperienceFromFluid,
+            () -> Integer.MAX_VALUE,
+            false,
+            this::markExperienceFluidChanged
+    );
     private @Nullable StoredEntityKind storedEntityKind;
     private @Nullable CompoundTag storedEntityData;
     private ItemStack storedPoiStack = ItemStack.EMPTY;
@@ -86,6 +94,9 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
     private int offersRevision;
 
     void processTick() {
+        if (!hasStoredEntity() && merchantVillager == null && tradeRefreshTicks == 0) {
+            return;
+        }
         tickTradeRefresh();
         tickOpenTradingPriceSync();
     }
@@ -159,6 +170,10 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
 
     public boolean hasStoredEntity() {
         return storedEntityKind != null && storedEntityData != null && !storedEntityData.isEmpty();
+    }
+
+    public ResourceHandler<FluidResource> experienceFluidHandler() {
+        return experienceFluidHandler;
     }
 
     public boolean hasVillager() {
@@ -720,37 +735,7 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
     }
 
     private @Nullable String getProfessionForPoiStack(ItemStack stack) {
-        if (stack.isEmpty() || !(stack.getItem() instanceof BlockItem blockItem) || level == null) {
-            return null;
-        }
-
-        return blockItem.getBlock()
-                .getStateDefinition()
-                .getPossibleStates()
-                .stream()
-                .map(this::getProfessionForPoiState)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private @Nullable String getProfessionForPoiState(BlockState poiState) {
-        Holder<PoiType> poiType = PoiTypes.forState(poiState).orElse(null);
-        if (poiType == null) {
-            return null;
-        }
-
-        return level.registryAccess()
-                .lookupOrThrow(Registries.VILLAGER_PROFESSION)
-                .listElements()
-                .filter(profession -> !profession.is(VillagerProfession.NONE))
-                .filter(profession -> !profession.is(VillagerProfession.NITWIT))
-                .filter(profession -> profession.value().heldJobSite().test(poiType)
-                        || profession.value().acquirableJobSite().test(poiType))
-                .findFirst()
-                .flatMap(Holder::unwrapKey)
-                .map(key -> key.identifier().toString())
-                .orElse(null);
+        return level == null ? null : VillagerPoiAdapter.professionFor(level, stack);
     }
 
     private void addStoredExperience(int amount, @Nullable Player tradingPlayer) {
@@ -765,6 +750,24 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
         setChanged();
         if (tradingPlayer != null) {
             syncStoredExperience(tradingPlayer);
+        }
+    }
+
+    private void setStoredExperienceFromFluid(int amount) {
+        storedExperience = Math.max(0, amount);
+    }
+
+    private int getStoredExperienceForFluid() {
+        return storedExperience;
+    }
+
+    private void markExperienceFluidChanged() {
+        setChanged();
+        if (level != null) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+        if (merchantVillager != null && merchantVillager.getTradingPlayer() != null) {
+            syncStoredExperience(merchantVillager.getTradingPlayer());
         }
     }
 
@@ -840,8 +843,9 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
         }
         long gameTime = level.getGameTime();
         if (merchantVillager.hasExpiredTemporaryDiscount(gameTime) || gameTime % 20L == 0L) {
-            merchantVillager.sendCurrentOffers();
-            saveProxyToStoredData();
+            if (merchantVillager.sendCurrentOffersIfPricesChanged()) {
+                saveProxyToStoredData();
+            }
         }
     }
 
@@ -965,6 +969,10 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
         private boolean tradeBatchStateChanged;
         private boolean tradeBatchOffersChanged;
         private long nextTemporaryDiscountExpiry = Long.MAX_VALUE;
+        private int preparedReputation = Integer.MIN_VALUE;
+        private int preparedCareerDiscount = Integer.MIN_VALUE;
+        private int preparedCureDiscount = Integer.MIN_VALUE;
+        private int preparedHeroAmplifier = Integer.MIN_VALUE;
 
         private TradingCellVillager(@NonNull Level level, VillagerTradingCellBlockEntity owner) {
             super(CapturedMobStackAdapter.villagerType(), Objects.requireNonNull(level, "level"));
@@ -1015,6 +1023,7 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
                 @Nullable Player player // NOSONAR - Merchant uses null to close the active trading session.
         ) {
             super.setTradingPlayer(player);
+            invalidatePreparedPriceContext();
             if (player == null) {
                 if (currentTradingPlayerId != null) {
                     unregisterTradingPlayer(currentTradingPlayerId);
@@ -1083,6 +1092,24 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
                 resetUsedOffers(getOffers());
             }
             preparePrices(tradingPlayer);
+            sendPreparedCurrentOffers(tradingPlayer);
+        }
+
+        private boolean sendCurrentOffersIfPricesChanged() {
+            Player tradingPlayer = getTradingPlayer();
+            if (tradingPlayer == null || getOffers().isEmpty()) {
+                return false;
+            }
+            if (!hasExpiredTemporaryDiscount(level().getGameTime())
+                    && !priceContextChanged(tradingPlayer)) {
+                return false;
+            }
+            preparePrices(tradingPlayer);
+            sendPreparedCurrentOffers(tradingPlayer);
+            return true;
+        }
+
+        private void sendPreparedCurrentOffers(Player tradingPlayer) {
             if (tradingPlayer.containerMenu instanceof VillagerTradingCellMenu) {
                 owner.sendMenuSync(tradingPlayer, this);
             } else {
@@ -1134,6 +1161,25 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
                     offer.addToSpecialPriceDiff(-Math.max(reduction, 1));
                 }
             }
+            preparedReputation = reputation;
+            preparedCareerDiscount = careerDiscount;
+            preparedCureDiscount = cureDiscount;
+            preparedHeroAmplifier = hero == null ? -1 : hero.getAmplifier();
+        }
+
+        private boolean priceContextChanged(Player player) {
+            MobEffectInstance hero = player.getEffect(MobEffects.HERO_OF_THE_VILLAGE);
+            return preparedReputation != getPlayerReputation(player)
+                    || preparedCareerDiscount != Math.max(0, getVillagerData().level() - 1)
+                    || preparedCureDiscount != getPersistentData().getInt(CURE_DISCOUNT_TAG).orElse(0)
+                    || preparedHeroAmplifier != (hero == null ? -1 : hero.getAmplifier());
+        }
+
+        private void invalidatePreparedPriceContext() {
+            preparedReputation = Integer.MIN_VALUE;
+            preparedCareerDiscount = Integer.MIN_VALUE;
+            preparedCureDiscount = Integer.MIN_VALUE;
+            preparedHeroAmplifier = Integer.MIN_VALUE;
         }
 
         private boolean hasExpiredTemporaryDiscount(long gameTime) {

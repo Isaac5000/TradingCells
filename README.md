@@ -1,114 +1,101 @@
 # Trading Cells
 
-Trading Cells es un mod para NeoForge que añade capturadores de aldeanos y piglins, y una jaula de comercio orientable donde guardar una criatura capturada sin perder sus datos NBT.
-
-## Contenido del mod
-
-### Capturador de aldeanos (`trading_cells:villager_capturer`)
-
-- **Shift + clic derecho** sobre un aldeano: guarda ese aldeano dentro del item.
-- **Clic derecho** sobre un bloque normal con el capturador lleno: libera al aldeano guardado en el mundo.
-- **Clic derecho** sobre una jaula vacía con el capturador lleno: mete el aldeano en la jaula.
-- **Clic derecho** sobre una jaula con aldeano usando el capturador vacío: saca el aldeano de vuelta al capturador.
-- El item brilla cuando contiene un aldeano.
-- El render del item muestra al aldeano capturado en GUI, mano, tercera persona y decoraciones compatibles.
-- Tiene 10 usos por defecto y pierde uno solo al liberar al aldeano; Irrompibilidad reduce el desgaste.
-
-### Capturador de piglins (`trading_cells:piglin_capturer`)
-
-- **Shift + clic derecho** sobre un piglin: guarda ese piglin dentro del item.
-- **Clic derecho** sobre un bloque normal con el capturador lleno: libera al piglin guardado en el mundo.
-- **Clic derecho** sobre una jaula vacía con el capturador lleno: mete el piglin en la jaula.
-- **Clic derecho** sobre una jaula con piglin usando el capturador vacío: saca el piglin de vuelta al capturador.
-- El item brilla cuando contiene un piglin.
-- El render del item muestra al piglin capturado en GUI, mano, tercera persona y decoraciones compatibles.
-- Tiene 10 usos por defecto y pierde uno solo al liberar al piglin; Irrompibilidad reduce el desgaste.
-
-### Jaula de comercio (`trading_cells:villager_trading_cell`)
-
-- Caja metálica con laterales y parte superior de cristal para ver la criatura y el POI interno.
-- Tiene dirección horizontal al colocarla; la criatura renderizada mira hacia el frente de la jaula.
-- Puede guardar aldeanos o piglins, pero solo los aldeanos pueden comerciar.
-- **Clic derecho con mano vacía**, sin agacharte: abre la interfaz de comercio si dentro hay un aldeano adulto con comercios.
-- **Shift + clic derecho con mano vacía**:
-  - Si hay un POI guardado, lo retira primero y lo devuelve al inventario.
-  - Si no hay POI, libera la criatura guardada al mundo.
-- **Clic derecho con un bloque de trabajo de aldeano**: guarda ese bloque como POI interno.
-- **Clic derecho con otro bloque de trabajo**: sustituye el POI si el oficio del aldeano todavía no es persistente.
-- **Clic derecho con capturador vacío correcto**: saca la criatura de vuelta al capturador.
-- Si rompes la jaula con contenido dentro, caen la criatura dentro de su capturador correspondiente y el POI guardado.
-
-## POI y profesiones
-
-La jaula acepta los bloques de trabajo vanilla de aldeano:
-
-- Barril → pescador.
-- Alto horno → armero.
-- Soporte para pociones → clérigo.
-- Mesa de cartografía → cartógrafo.
-- Caldero → peletero.
-- Compostador → granjero.
-- Mesa de flechas → flechero.
-- Piedra de afilar → armero de armas.
-- Atril → bibliotecario.
-- Telar → pastor.
-- Mesa de herrería → herrero de herramientas.
-- Ahumador → carnicero.
-- Cortapiedras → albañil.
-
-Si el aldeano aún no tiene profesión persistente, el POI interno define su profesión. Al quitar el POI, pierde esa profesión temporal. Si el aldeano ya tiene profesión persistente por haber comerciado o subido de nivel, la jaula no la sobrescribe.
-
-## Comportamiento importante
-
-- Los datos NBT del aldeano/piglin se conservan: profesión, comercios, nombre, experiencia, inventario interno y edad.
-- Los datos temporales se limpian al capturar: posición, rotación, daño reciente, fuego y movimiento.
-- Los aldeanos bebé pueden guardarse, pero no pueden comerciar hasta que sean adultos.
-- La jaula guarda los usos de los comercios después de comerciar.
-- Si intentas extraer con el capturador equivocado, el mod avisa y no borra la criatura.
-- Para retirar el POI necesitas espacio en el inventario; si no hay espacio, el POI se queda dentro.
+Trading Cells es un mod para Minecraft 26.2 con NeoForge que automatiza el trabajo de aldeanos y piglins mediante máquinas portátiles. Conserva los datos de las criaturas, sus ofertas, inventarios y progresos cuando una máquina se rompe y vuelve a colocarse.
 
 ## Requisitos
 
-- Trading Cells `1.0.0`
 - Minecraft `26.2.0`
-- NeoForge `26.2.0.40-beta`
+- NeoForge `26.2.0.40-beta` o posterior compatible con Minecraft 26.2
 - Java `25`
+- Roughly Enough Items `26.2.820` o posterior es opcional
 
-## Compatibilidad con REI
+La versión actual del mod es `1.0.0`.
 
-Roughly Enough Items es opcional. Con REI `26.2.820` o posterior, el visor
-muestra las recetas normales del mod y los procesos de criaderos, incubadoras,
-cultivo, conversión, granja de hierro y trueque de piglins, incluido el
-trocador de Netherita.
+## Máquinas de aldeanos
 
-## Configuración relevante
+- **Trocador de Aldeanos**: conserva un aldeano adulto, su POI, ofertas, descuentos y experiencia de comercio. Admite intercambio masivo con Mayús.
+- **Autotrocador de Aldeanos**: ejecuta automáticamente la oferta elegida usando entradas y salidas automatizables.
+- **Criadero de Aldeanos**: consume alimentos configurados y capturadores vacíos para producir aldeanos bebé.
+- **Incubador de Aldeanos**: convierte un aldeano bebé capturado en adulto.
+- **Cultivo de Aldeanos**: procesa cultivos con dieciocho salidas; el nivel de la azada, Eficiencia y Fortuna afectan al ciclo.
+- **Convertidor de Aldeanos**: zombifica y cura sin perder ofertas, y conserva los descuentos de curación.
+- **Granja de Hierro**: produce hierro con multiplicadores base `x1`, `x2` y `x3` según los aldeanos instalados.
+- **Cantera de Aldeanos**: extrae materiales del Overworld. El pico, su nivel, Eficiencia, Fortuna y Toque de Seda afectan al resultado.
 
-- `capturers.durability`: durabilidad común de ambos capturadores; por defecto, 10.
-- `production.farmerDamageHoes`: hace que cada cosecha completada desgaste la azada; activado por defecto.
-- `production.ironFarmMultiplierBonus`: suma el valor indicado a las bases `x1`, `x2` y `x3`.
-- `Toque del Granjero` evita el desgaste de la azada dentro del Cultivo para Aldeanos. Por ahora su libro solo aparece en creativo.
-- Los capturadores irrompibles existen como variantes creativas sin receta para una implementación posterior.
+## Máquinas de piglins
+
+- **Trocador de Piglins**: automatiza la tabla de trueque vanilla.
+- **Trocador de Piglins de Netherite**: añade ocho salidas, cinco niveles de mejora y filtros en el nivel de Netherite.
+- **Criadero de Piglins** e **Incubador de Piglins**: reproducen y hacen crecer piglins capturados.
+- **Cultivo de Piglins**: cultiva vegetación del Nether con dieciocho salidas; Fortuna aumenta cantidades y probabilidades especiales.
+- **Cantera de Piglins**: extrae materiales del Nether y ofrece minado profundo con las mejoras compatibles.
+
+Las máquinas de comercio y trabajo rechazan aldeanos o piglins bebé cuando su función requiere una criatura adulta.
+
+## Capturadores
+
+Los capturadores guardan la entidad completa y se apilan de uno en uno. Tienen diez liberaciones por defecto, pierden durabilidad solo al soltar la criatura en el mundo y respetan Irrompibilidad.
+
+Existen variantes irrompibles para aldeanos y piglins. Se fabrican colocando el capturador normal en el centro, una estrella del Nether encima y obsidiana llorosa a izquierda, derecha y debajo. La criatura siempre se libera antes de que un capturador normal llegue a romperse.
+
+## Experiencia
+
+El **Almacén de Experiencia** permite guardar o retirar una cantidad concreta de niveles. Si el campo de cantidad queda vacío, el botón correspondiente transfiere todo lo posible. Su capacidad usa el rango positivo completo de `int`, hasta `2.147.483.647` puntos, con operaciones saturadas para impedir desbordamientos.
+
+El depósito expone experiencia líquida mediante la API de transferencia de NeoForge, con una equivalencia de un punto de XP por unidad de fluido. También se puede extraer experiencia líquida del Trocador y del Autotrocador de Aldeanos; estas dos máquinas son exclusivamente de salida.
+
+## Infusor Arcano
+
+El **Infusor Arcano** fabrica los libros de Toque del Granjero y Toque del Minero. Dispone de cinco entradas en cruz, una salida independiente y un depósito de hasta `2.147.483.647` puntos de experiencia. Toque del Granjero consume `15.000` puntos y Toque del Minero `30.000`. La operación es instantánea, procesa como máximo una receta por tick y solo consume los recursos cuando la receta completa, la experiencia y el espacio de salida están disponibles.
+
+- **Toque del Granjero**: libro en el centro, 16 alientos de dragón arriba, tótem de la inmortalidad a la izquierda, estrella del Nether a la derecha y bloque de netherita abajo.
+- **Toque del Minero**: libro en el centro, 1 fragmento de eco arriba, tótem de la inmortalidad a la izquierda, estrella del Nether a la derecha y bloque de netherita abajo.
+
+Las cinco entradas aceptan automatización desde cualquier cara y las tuberías o tolvas solo pueden extraer el resultado. El depósito admite entrada y salida de experiencia líquida, además de transferencias manuales de niveles del jugador. La máquina conserva inventario y experiencia al romperse y recolocarse.
+
+El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Saqueo añade aleatoriamente entre cero y su nivel sin sustituir el botín original. Las ciudades antiguas mantienen su obtención habitual de fragmentos de eco.
+
+## Encantamientos
+
+- **Toque del Granjero** evita el desgaste de azadas dentro de ambos Cultivos.
+- **Toque del Minero** evita el desgaste de picos dentro de ambas Canteras.
+- Los dos libros están disponibles en creativo y se pueden fabricar mediante Infusión Arcana.
+- Eficiencia se limita funcionalmente al nivel V dentro de Cultivos y Canteras.
+- Fortuna continúa escalando por encima del nivel vanilla donde la mecánica lo permite.
+- Las Canteras permiten combinar Fortuna y Toque de Seda; juntos aumentan selección y cantidad de menas.
+- El yunque conserva encantamientos superiores al límite vanilla al añadir otros encantamientos.
+- Los niveles XI a CCLV tienen numeración romana y los encantamientos por encima de su máximo normal usan una escala de color azul, verde y magenta.
+
+## Compatibilidad
+
+REI muestra los procesos de criaderos, incubadoras, cultivos, conversión, granja de hierro, canteras, trueques e infusión arcana, además de las recetas normales. Su integración es opcional y solo se carga en cliente.
+
+Las listas de profesiones, POI, aspectos de bioma, cultivos, alimentos y niveles de herramienta parten de datos vanilla fijos y se amplían dinámicamente con otros mods. Un elemento externo defectuoso se descarta; si no se puede conservar la ampliación, Trading Cells vuelve a la lista vanilla. Los nombres de profesiones usan el componente registrado por cada mod, incluido More Villagers.
+
+## Configuración
+
+- `timers.*`: duración base de criaderos, incubadoras, cultivos y granja de hierro.
+- `production.farmerDamageHoes`: activa el desgaste de azadas, por defecto `true`.
+- `production.ironFarmMultiplierBonus`: suma el valor indicado a `x1`, `x2` y `x3`.
+- `capturers.durability`: durabilidad común de ambos capturadores, por defecto `10`.
+- `timers.villagerInfiniteTrades`: mantiene disponibles las ofertas del Trader y Autotrader.
 
 ## Desarrollo
 
-Compilar:
-
 ```bash
-./gradlew build
+./gradlew clean build verifyDomainRules checkArchitecture
 ```
 
-Ejecutar cliente de desarrollo:
+Cliente de desarrollo con REI:
 
 ```bash
 ./gradlew runClient
 ```
 
-El proyecto usa el mod id `trading_cells`.
+Servidor dedicado de desarrollo, sin dependencias exclusivas de cliente:
 
+```bash
+./gradlew runServer
+```
 
-## Cambios funcionales recientes
-
-- La jaula de aldeanos ya no libera el aldeano con Shift + clic derecho; esa acción solo intenta retirar el POI.
-- Los aldeanos bebé no reciben oficio del POI y no pueden reiniciar/intercambiar comercios.
-- El aldeano bebé en primera persona conserva la misma escala base que el adulto; no se aumenta artificialmente.
-- Se añade `piglin_bartering_cell`, una jaula separada para piglins. Guarda un piglin con el capturador de piglins y permite hacer trueque usando lingotes de oro, generando recompensas desde la loot table vanilla `minecraft:gameplay/piglin_bartering`.
+El identificador del mod es `trading_cells`.

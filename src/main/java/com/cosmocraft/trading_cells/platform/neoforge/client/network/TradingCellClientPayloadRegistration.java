@@ -2,9 +2,11 @@ package com.cosmocraft.trading_cells.platform.neoforge.client.network;
 
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.VillagerTradingCellMenu;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.AutotraderMenu;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellExperiencePayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.AutotraderMenuSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellMenuSyncPayload;
+import com.cosmocraft.trading_cells.platform.neoforge.network.QuarryCatalogSyncPayload;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 
 public final class TradingCellClientPayloadRegistration {
@@ -52,6 +54,12 @@ public final class TradingCellClientPayloadRegistration {
                         )
                 ));
                 TradingCellClientExperienceState.update(payload.containerId(), payload.storedExperience());
+            }
+        });
+        event.register(QuarryCatalogSyncPayload.PAYLOAD_TYPE, (payload, context) -> {
+            if (context.player().containerMenu instanceof QuarryMenu menu
+                    && menu.containerId == payload.containerId()) {
+                menu.applyCatalogSnapshot(payload);
             }
         });
     }

@@ -7,7 +7,10 @@ import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistr
 import com.cosmocraft.trading_cells.feature.trader.application.port.input.PiglinBarterUseCase;
 import com.cosmocraft.trading_cells.feature.trader.domain.model.PiglinBarterCycle;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
+import java.util.stream.IntStream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -51,15 +54,16 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
     public static final int FIRST_GOLD_SLOT = 2;
     public static final int GOLD_SLOT_COUNT = 4;
     public static final int FIRST_OUTPUT_SLOT = FIRST_GOLD_SLOT + GOLD_SLOT_COUNT;
-    public static final int OUTPUT_SLOT_COUNT = 4;
+    public static final int OUTPUT_SLOT_COUNT = 8;
     public static final int CONTAINER_SIZE = FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT;
 
     private static final int[] INPUT_SLOTS = new int[]{2, 3, 4, 5};
-    private static final int[] OUTPUT_SLOTS = new int[]{6, 7, 8, 9};
+    private static final int[] OUTPUT_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, CONTAINER_SIZE).toArray();
     private static final int[] NO_SLOTS = new int[0];
 
     private final PiglinBarterUseCase barterService = FeatureComposition.piglinBarter();
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
+    private final MachineActivityController activity = new MachineActivityController();
     private ItemStack pendingReward = ItemStack.EMPTY;
     private int barterTicksRemaining;
     private int nextGoldSlotOffset;
@@ -74,9 +78,13 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
+        if (activity.remainsInactive() || activity.remainsBlocked()) {
+            return;
+        }
 
         if (barterTicksRemaining > 0) {
             advanceCurrentBarter();
+            updateActivity();
             return;
         }
 
@@ -84,10 +92,12 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
             if (tryStorePendingReward()) {
                 markChangedAndSync();
             }
+            updateActivity();
             return;
         }
 
         tryStartNextBarter(serverLevel);
+        updateActivity();
     }
 
     private void advanceCurrentBarter() {
@@ -158,7 +168,7 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
     }
 
     /**
-     * Inserts the entire completed reward or nothing. If the four outputs do
+     * Inserts the entire completed reward or nothing. If the eight outputs do
      * not have enough compatible capacity, the reward remains pending and the
      * machine pauses until space becomes available.
      */
@@ -166,67 +176,25 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
         if (pendingReward.isEmpty()) {
             return true;
         }
-        if (!canStoreWholeReward(pendingReward)) {
+        if (!OrderedOutputInserter.canInsert(
+                items,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT,
+                pendingReward
+        )) {
             return false;
         }
-
-        ItemStack remaining = pendingReward.copy();
-        mergeIntoExistingOutputs(remaining);
-        fillEmptyOutputs(remaining);
-        if (!remaining.isEmpty()) {
+        if (!OrderedOutputInserter.insert(
+                items,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT,
+                pendingReward
+        )) {
             return false;
         }
 
         pendingReward = ItemStack.EMPTY;
         return true;
-    }
-
-    private boolean canStoreWholeReward(ItemStack reward) {
-        int remaining = reward.getCount();
-        for (int slot = FIRST_OUTPUT_SLOT; slot < FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT; slot++) {
-            ItemStack output = items.get(slot);
-            if (output.isEmpty()) {
-                remaining -= reward.getMaxStackSize();
-            } else if (ItemStack.isSameItemSameComponents(output, reward)) {
-                remaining -= Math.max(0, output.getMaxStackSize() - output.getCount());
-            }
-            if (remaining <= 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void mergeIntoExistingOutputs(ItemStack remaining) {
-        for (int slot = FIRST_OUTPUT_SLOT;
-             slot < FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT && !remaining.isEmpty();
-             slot++) {
-            ItemStack output = items.get(slot);
-            if (output.isEmpty() || !ItemStack.isSameItemSameComponents(output, remaining)) {
-                continue;
-            }
-            int moved = Math.min(
-                    remaining.getCount(),
-                    Math.max(0, output.getMaxStackSize() - output.getCount())
-            );
-            if (moved > 0) {
-                output.grow(moved);
-                remaining.shrink(moved);
-            }
-        }
-    }
-
-    private void fillEmptyOutputs(ItemStack remaining) {
-        for (int slot = FIRST_OUTPUT_SLOT;
-             slot < FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT && !remaining.isEmpty();
-             slot++) {
-            if (!items.get(slot).isEmpty()) {
-                continue;
-            }
-            int moved = Math.min(remaining.getCount(), remaining.getMaxStackSize());
-            items.set(slot, remaining.copyWithCount(moved));
-            remaining.shrink(moved);
-        }
     }
 
     private int progressionLevel() {
@@ -312,6 +280,7 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
             return InteractionResult.SUCCESS_SERVER;
         }
         storedPiglinData = piglinData.copy();
+        activity.wake();
         CapturedMobStackAdapter.clearData(CapturedMobKind.PIGLIN, stack);
         markChangedAndSync();
         return InteractionResult.SUCCESS_SERVER;
@@ -334,6 +303,7 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
             }
         }
         storedPiglinData = null;
+        activity.wake();
         markChangedAndSync();
         return InteractionResult.SUCCESS_SERVER;
     }
@@ -381,6 +351,7 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
         if (items.get(slot).isEmpty()) {
             items.set(slot, ItemStack.EMPTY);
         }
+        activity.wake();
         markChangedAndSync();
         return removed;
     }
@@ -392,6 +363,7 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
         }
         ItemStack removed = items.get(slot);
         items.set(slot, ItemStack.EMPTY);
+        activity.wake();
         return removed;
     }
 
@@ -403,6 +375,7 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
         ItemStack inserted = stack.copy();
         inserted.setCount(Math.min(slotLimit(slot, inserted), inserted.getCount()));
         items.set(slot, inserted);
+        activity.wake();
         markChangedAndSync();
     }
 
@@ -448,6 +421,7 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
         pendingReward = ItemStack.EMPTY;
         barterTicksRemaining = 0;
         nextGoldSlotOffset = 0;
+        activity.reset();
         markChangedAndSync();
     }
 
@@ -511,6 +485,7 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
         if (pendingReward.isEmpty()) {
             barterTicksRemaining = 0;
         }
+        activity.reset();
     }
 
     private void loadCurrentLayout(ValueInput input) {
@@ -712,6 +687,19 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
         pendingReward = ItemStack.EMPTY;
         barterTicksRemaining = 0;
         nextGoldSlotOffset = 0;
+        activity.reset();
         setChanged();
+    }
+
+    private void updateActivity() {
+        if (barterTicksRemaining > 0) {
+            activity.transition(MachineActivityController.Activity.ACTIVE);
+        } else if (!pendingReward.isEmpty()) {
+            activity.transition(MachineActivityController.Activity.BLOCKED);
+        } else if (!hasAdultPiglin() || findNextGoldSlot() < 0) {
+            activity.transition(MachineActivityController.Activity.INACTIVE);
+        } else {
+            activity.transition(MachineActivityController.Activity.ACTIVE);
+        }
     }
 }

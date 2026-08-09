@@ -7,7 +7,13 @@ import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 public interface FarmerUseCase {
     boolean damagesHoe();
 
-    int effectiveGrowthTicks(double toolSpeed, int efficiencyLevel);
+    int baseGrowthTicks();
+
+    int effectiveGrowthTicks(
+            double toolSpeed,
+            double tierPosition,
+            int efficiencyLevel
+    );
 
     FarmerHarvest harvest(FarmerCrop crop, int fortuneLevel);
 

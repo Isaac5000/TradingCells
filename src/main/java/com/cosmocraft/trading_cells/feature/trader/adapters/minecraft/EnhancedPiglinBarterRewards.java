@@ -1,5 +1,6 @@
 package com.cosmocraft.trading_cells.feature.trader.adapters.minecraft;
 
+import com.cosmocraft.trading_cells.feature.trader.domain.model.PiglinBarterUpgradeYield;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.Holder;
@@ -28,8 +29,6 @@ public final class EnhancedPiglinBarterRewards {
     public static final int NETHERITE_UPGRADE_LEVEL = 5;
 
     private static final int[] QUALITY_ROLLS = new int[]{1, 2, 3, 4, 5, 6};
-    private static final int[] YIELD_NUMERATORS = new int[]{1, 1, 1, 1, 5, 3};
-    private static final int[] YIELD_DENOMINATORS = new int[]{1, 1, 1, 1, 4, 2};
     private static final int[] ENCHANTMENT_BONUSES = new int[]{0, 0, 0, 0, 1, 1};
 
     private EnhancedPiglinBarterRewards() {
@@ -104,23 +103,22 @@ public final class EnhancedPiglinBarterRewards {
         if (!usesStackYield(reward)) {
             return baseAmount;
         }
-        int safeLevel = safeUpgradeLevel(upgradeLevel);
-        long increased = (long) baseAmount * YIELD_NUMERATORS[safeLevel]
-                / YIELD_DENOMINATORS[safeLevel];
-        return (int) Math.min(reward.getMaxStackSize(), increased);
+        return PiglinBarterUpgradeYield.upgradedAmount(
+                baseAmount,
+                reward.getMaxStackSize(),
+                upgradeLevel
+        );
     }
 
     private static ItemStack applyYieldUpgrade(ItemStack reward, int upgradeLevel) {
-        int yieldNumerator = YIELD_NUMERATORS[upgradeLevel];
-        int yieldDenominator = YIELD_DENOMINATORS[upgradeLevel];
+        float yieldMultiplier = PiglinBarterUpgradeYield.multiplier(upgradeLevel);
         int enchantmentBonus = ENCHANTMENT_BONUSES[upgradeLevel];
-        if (yieldNumerator == yieldDenominator && enchantmentBonus == 0) {
+        if (yieldMultiplier == 1.0F && enchantmentBonus == 0) {
             return reward;
         }
 
         if (isPotionReward(reward)) {
             float currentScale = reward.getOrDefault(DataComponents.POTION_DURATION_SCALE, 1.0F);
-            float yieldMultiplier = (float) yieldNumerator / yieldDenominator;
             reward.set(DataComponents.POTION_DURATION_SCALE, currentScale * yieldMultiplier);
             return reward;
         }

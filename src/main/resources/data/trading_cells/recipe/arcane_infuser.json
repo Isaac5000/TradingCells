@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "show_notification": false,
+  "key": {
+    "C": "minecraft:crying_obsidian",
+    "E": "minecraft:enchanting_table",
+    "X": {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "trading_cells:experience_storage",
+      "components": {
+        "!minecraft:block_entity_data": {}
+      }
+    }
+  },
+  "pattern": [
+    "CEC",
+    "CXC",
+    "CCC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trading_cells:arcane_infuser"
+  }
+}

@@ -9,30 +9,50 @@ import java.util.Objects;
 /** Application boundary for iron farm production and animation timing. */
 public final class IronFarmService implements IronFarmUseCase {
     private final IronFarmSettingsPort settings;
+    private IronFarmCycle cachedCycle;
 
     public IronFarmService(IronFarmSettingsPort settings) {
         this.settings = Objects.requireNonNull(settings);
     }
 
     public IronFarmCycle cycle() {
-        return new IronFarmCycle(
-                settings.ironFarmCycleTicks(),
-                settings.ironFarmOneVillagerMultiplier(),
-                settings.ironFarmTwoVillagerMultiplier(),
-                settings.ironFarmThreeVillagerMultiplier(),
-                settings.ironGolemAttackTicks(),
-                settings.ironGolemHitInterval(),
-                settings.ironGolemRedFlashTicks()
-        );
+        int cycleTicks = settings.ironFarmCycleTicks();
+        int oneVillagerMultiplier = settings.ironFarmOneVillagerMultiplier();
+        int twoVillagerMultiplier = settings.ironFarmTwoVillagerMultiplier();
+        int threeVillagerMultiplier = settings.ironFarmThreeVillagerMultiplier();
+        int attackTicks = settings.ironGolemAttackTicks();
+        int hitInterval = settings.ironGolemHitInterval();
+        int redFlashTicks = settings.ironGolemRedFlashTicks();
+        if (cachedCycle == null
+                || cachedCycle.cycleTicks() != cycleTicks
+                || cachedCycle.oneVillagerMultiplier() != oneVillagerMultiplier
+                || cachedCycle.twoVillagerMultiplier() != twoVillagerMultiplier
+                || cachedCycle.threeVillagerMultiplier() != threeVillagerMultiplier
+                || cachedCycle.golemAttackTicks() != attackTicks
+                || cachedCycle.golemHitInterval() != hitInterval
+                || cachedCycle.golemRedFlashTicks() != redFlashTicks) {
+            cachedCycle = new IronFarmCycle(
+                    cycleTicks,
+                    oneVillagerMultiplier,
+                    twoVillagerMultiplier,
+                    threeVillagerMultiplier,
+                    attackTicks,
+                    hitInterval,
+                    redFlashTicks
+            );
+        }
+        return cachedCycle;
     }
 
+    @Override
     public TimedProcess.Step advance(
             int ticks,
             int villagerCount,
-            boolean outputAvailable
+            boolean outputAvailable,
+            IronFarmCycle cycle
     ) {
         TimedProcess.Availability availability = TimedProcess.availability(villagerCount > 0, outputAvailable);
-        return TimedProcess.advance(ticks, cycle().cycleTicks(), availability);
+        return TimedProcess.advance(ticks, cycle.cycleTicks(), availability);
     }
 
     public int baseIron() {

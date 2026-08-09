@@ -37,14 +37,7 @@ public final class VillagerTradeScreenCommon {
         if (data.profession() == VillagerProfession.NITWIT) {
             return Component.translatable("entity.minecraft.villager.nitwit");
         }
-        return data.profession().unwrapKey()
-                .map(key -> {
-                    Identifier id = key.identifier();
-                    return Component.translatable(
-                            "entity." + id.getNamespace() + ".villager." + id.getPath()
-                    );
-                })
-                .orElse(Component.translatable("gui.trading_cells.profession_title"));
+        return data.profession().value().name();
     }
 
     public static Component levelName(int level) {

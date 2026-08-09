@@ -1,0 +1,11 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "top": {"ingredient": "minecraft:dragon_breath", "count": 16},
+  "left": {"ingredient": "minecraft:totem_of_undying", "count": 1},
+  "center": {"ingredient": "minecraft:book", "count": 1},
+  "right": {"ingredient": "minecraft:nether_star", "count": 1},
+  "bottom": {"ingredient": "minecraft:netherite_block", "count": 1},
+  "experience": 15000,
+  "enchantment": "trading_cells:farmers_touch",
+  "level": 1
+}

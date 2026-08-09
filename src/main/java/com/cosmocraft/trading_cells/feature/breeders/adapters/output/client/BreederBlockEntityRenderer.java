@@ -38,7 +38,6 @@ import org.jspecify.annotations.Nullable;
 
 public final class BreederBlockEntityRenderer implements BlockEntityRenderer<BreederBlockEntity, BreederBlockEntityRenderer.State> {
     private static final float ADULT_SCALE = MachineEntityRenderScales.VILLAGER_BREEDER_ENTITY;
-    private static final float BABY_SCALE = 0.25F;
     private static final double PARENT_SIDE_OFFSET = 0.23D;
     private static final double PARENT_BACK_OFFSET = 0.05D;
     private static final double ENTITY_Y = 0.11D;
@@ -70,27 +69,34 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
         state.kind = blockEntity.kind();
         state.parentA = null;
         state.parentB = null;
-        state.baby = null;
-        state.bedFoot.clear();
-        state.bedHead.clear();
 
         Level level = blockEntity.getLevel();
-        if (level != null) {
-            state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(level, blockEntity.getBlockPos());
-
-            BlockState bedFoot = createBedState(state.kind, state.facing, BedPart.FOOT);
-            BlockState bedHead = createBedState(state.kind, state.facing, BedPart.HEAD);
-            blockModelResolver.update(state.bedFoot, bedFoot, BlockDisplayContext.create());
-            blockModelResolver.update(state.bedHead, bedHead, BlockDisplayContext.create());
-            state.bedFoot.tintLayers().clear();
-            state.bedHead.tintLayers().clear();
-
-            state.parentA = extractParent(level, blockEntity.getItem(BreederBlockEntity.PARENT_A_SLOT), state.kind, state.facing.getClockWise(), partialTicks, state.lightCoords);
-            state.parentB = extractParent(level, blockEntity.getItem(BreederBlockEntity.PARENT_B_SLOT), state.kind, state.facing.getCounterClockWise(), partialTicks, state.lightCoords);
-
-            ItemStack babyStack = blockEntity.createBabyPreviewStack();
-            state.baby = extractParent(level, babyStack, state.kind, state.facing, partialTicks, state.lightCoords);
+        if (level == null) {
+            state.clearCaches();
+            return;
         }
+        state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(level, blockEntity.getBlockPos());
+
+        Direction bedFacing = state.facing.getOpposite();
+        BlockState bedFoot = createBedState(state.kind, bedFacing, BedPart.FOOT);
+        BlockState bedHead = createBedState(state.kind, bedFacing, BedPart.HEAD);
+        if (bedFoot != state.cachedBedFoot) {
+            state.bedFoot.clear();
+            blockModelResolver.update(state.bedFoot, bedFoot, BlockDisplayContext.create());
+            state.bedFoot.tintLayers().clear();
+            state.cachedBedFoot = bedFoot;
+        }
+        if (bedHead != state.cachedBedHead) {
+            state.bedHead.clear();
+            blockModelResolver.update(state.bedHead, bedHead, BlockDisplayContext.create());
+            state.bedHead.tintLayers().clear();
+            state.cachedBedHead = bedHead;
+        }
+
+        Entity parentA = state.getOrCreateParent(0, blockEntity, level);
+        Entity parentB = state.getOrCreateParent(1, blockEntity, level);
+        state.parentA = extractParent(parentA, state.facing.getClockWise(), partialTicks, state.lightCoords);
+        state.parentB = extractParent(parentB, state.facing.getCounterClockWise(), partialTicks, state.lightCoords);
     }
 
     static BlockState createBedState(BreederKind kind, Direction facing, BedPart part) {
@@ -102,8 +108,9 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
 
     @Override
     public void submit(State state, @NonNull PoseStack poseStack, @NonNull SubmitNodeCollector submitNodeCollector, @NonNull CameraRenderState camera) {
-        submitBedPart(state.bedFoot, state.facing, false, poseStack, submitNodeCollector, state.lightCoords);
-        submitBedPart(state.bedHead, state.facing, true, poseStack, submitNodeCollector, state.lightCoords);
+        Direction bedFacing = state.facing.getOpposite();
+        submitBedPart(state.bedFoot, bedFacing, false, poseStack, submitNodeCollector, state.lightCoords);
+        submitBedPart(state.bedHead, bedFacing, true, poseStack, submitNodeCollector, state.lightCoords);
 
         Direction side = state.facing.getClockWise();
         double sideX = side.getStepX();
@@ -180,12 +187,12 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
         context.poseStack().popPose();
     }
 
-    private @Nullable EntityRenderState extractParent(Level level, ItemStack stack, BreederKind kind, Direction lookDirection, float partialTicks, int lightCoords) {
-        CapturedMobKind capturedKind = kind == BreederKind.VILLAGER
-                ? CapturedMobKind.VILLAGER
-                : CapturedMobKind.PIGLIN;
-        Entity entity = CapturedMobStackAdapter.createEntity(capturedKind, level, stack, BlockPos.ZERO);
-
+    private @Nullable EntityRenderState extractParent(
+            @Nullable Entity entity,
+            Direction lookDirection,
+            float partialTicks,
+            int lightCoords
+    ) {
         if (entity == null) {
             return null;
         }
@@ -230,11 +237,55 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
         public final BlockModelRenderState bedHead = new BlockModelRenderState();
         public @Nullable EntityRenderState parentA;
         public @Nullable EntityRenderState parentB;
-        public @Nullable EntityRenderState baby;
         public float parentAScale = ADULT_SCALE;
         public float parentBScale = ADULT_SCALE;
-        public float babyScale = BABY_SCALE;
         public Direction facing = Direction.NORTH;
         public BreederKind kind = BreederKind.VILLAGER;
+        private BlockState cachedBedFoot = Blocks.AIR.defaultBlockState();
+        private BlockState cachedBedHead = Blocks.AIR.defaultBlockState();
+        private final ItemStack[] cachedParentStacks = {ItemStack.EMPTY, ItemStack.EMPTY};
+        private final Entity[] cachedParents = new Entity[2];
+        private final BreederKind[] cachedParentKinds = {BreederKind.VILLAGER, BreederKind.VILLAGER};
+
+        private @Nullable Entity getOrCreateParent(
+                int index,
+                BreederBlockEntity blockEntity,
+                Level level
+        ) {
+            int slot = index == 0 ? BreederBlockEntity.PARENT_A_SLOT : BreederBlockEntity.PARENT_B_SLOT;
+            ItemStack stack = blockEntity.getItem(slot);
+            if (stack.isEmpty()) {
+                cachedParentStacks[index] = ItemStack.EMPTY;
+                cachedParents[index] = null;
+                return null;
+            }
+            if (cachedParents[index] == null
+                    || cachedParentKinds[index] != blockEntity.kind()
+                    || !ItemStack.isSameItemSameComponents(cachedParentStacks[index], stack)) {
+                CapturedMobKind capturedKind = blockEntity.kind() == BreederKind.VILLAGER
+                        ? CapturedMobKind.VILLAGER
+                        : CapturedMobKind.PIGLIN;
+                cachedParents[index] = CapturedMobStackAdapter.createEntity(
+                        capturedKind,
+                        level,
+                        stack,
+                        BlockPos.ZERO
+                );
+                cachedParentStacks[index] = stack.copy();
+                cachedParentKinds[index] = blockEntity.kind();
+            }
+            return cachedParents[index];
+        }
+
+        private void clearCaches() {
+            bedFoot.clear();
+            bedHead.clear();
+            cachedBedFoot = Blocks.AIR.defaultBlockState();
+            cachedBedHead = Blocks.AIR.defaultBlockState();
+            for (int index = 0; index < cachedParents.length; index++) {
+                cachedParentStacks[index] = ItemStack.EMPTY;
+                cachedParents[index] = null;
+            }
+        }
     }
 }

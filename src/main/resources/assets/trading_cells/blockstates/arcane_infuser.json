@@ -1,0 +1,32 @@
+{
+  "variants": {
+    "facing=north": {
+      "type": "neoforge:composite",
+      "models": [
+        {"model": "trading_cells:block/arcane_infuser_frame"},
+        {"model": "trading_cells:block/machine_cage_glass"}
+      ]
+    },
+    "facing=east": {
+      "type": "neoforge:composite",
+      "models": [
+        {"model": "trading_cells:block/arcane_infuser_frame", "y": 90},
+        {"model": "trading_cells:block/machine_cage_glass", "y": 90}
+      ]
+    },
+    "facing=south": {
+      "type": "neoforge:composite",
+      "models": [
+        {"model": "trading_cells:block/arcane_infuser_frame", "y": 180},
+        {"model": "trading_cells:block/machine_cage_glass", "y": 180}
+      ]
+    },
+    "facing=west": {
+      "type": "neoforge:composite",
+      "models": [
+        {"model": "trading_cells:block/arcane_infuser_frame", "y": 270},
+        {"model": "trading_cells:block/machine_cage_glass", "y": 270}
+      ]
+    }
+  }
+}

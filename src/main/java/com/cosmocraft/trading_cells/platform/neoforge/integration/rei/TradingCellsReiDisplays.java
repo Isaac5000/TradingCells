@@ -9,11 +9,21 @@ import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKin
 import com.cosmocraft.trading_cells.feature.converter.application.port.input.ConverterUseCase;
 import com.cosmocraft.trading_cells.feature.converter.domain.model.ConverterStage;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerCropStackAdapter;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.input.HoeTierCatalog;
 import com.cosmocraft.trading_cells.feature.farmer.application.port.input.FarmerUseCase;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerCrop;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerHarvest;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerKind;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerYield;
 import com.cosmocraft.trading_cells.feature.ironfarm.application.port.input.IronFarmUseCase;
 import com.cosmocraft.trading_cells.feature.ironfarm.domain.model.IronFarmCycle;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMaterialCatalog;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMaterialDefinition;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryPickaxeCatalog;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryCycle;
+import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
+import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.EnhancedPiglinBarterRewards;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.PiglinBarterCatalog;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
@@ -21,8 +31,11 @@ import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureCompositi
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.display.basic.BasicDisplay;
 import me.shedaniel.rei.api.common.entry.EntryIngredient;
@@ -53,7 +66,136 @@ public final class TradingCellsReiDisplays {
         addConversion(displays);
         addIronFarm(displays);
         addPiglinBartering(displays);
+        addQuarries(displays);
         return List.copyOf(displays);
+    }
+
+    private static void addQuarries(List<TradingCellsReiDisplay> displays) {
+        EntryIngredient pickaxes = described(
+                QuarryPickaxeCatalog.itemStacks(),
+                tooltip("rei.trading_cells.quarry_pickaxe")
+        );
+        for (QuarryKind kind : QuarryKind.values()) {
+            CapturedMobKind workerKind = kind == QuarryKind.VILLAGER
+                    ? CapturedMobKind.VILLAGER
+                    : CapturedMobKind.PIGLIN;
+            EntryIngredient worker = captured(workerKind, false, true);
+            for (QuarryMaterialDefinition definition : QuarryMaterialCatalog.definitions(kind)) {
+                List<ItemStack> outputStacks = quarryOutputStacks(definition);
+                if (outputStacks.isEmpty() || definition.weight(QuarryUpgradeTier.NETHERITE) <= 0) {
+                    continue;
+                }
+                QuarryUpgradeTier tier = definition.minimumUpgrade();
+                EntryIngredient upgrades = quarryUpgrades(tier);
+                List<EntryIngredient> inputs = List.of(worker, pickaxes, upgrades);
+                List<EntryIngredient> required = tier == QuarryUpgradeTier.NONE
+                        ? List.of(worker, pickaxes)
+                        : inputs;
+                int probability = QuarryMaterialCatalog.snapshot(
+                                kind,
+                                tier,
+                                new ItemStack(Items.NETHERITE_PICKAXE),
+                                false
+                        ).entries().stream()
+                        .filter(entry -> entry.definition().id().equals(definition.id()))
+                        .mapToInt(QuarryMaterialCatalog.CatalogEntry::probabilityPartsPerMillion)
+                        .findFirst()
+                        .orElse(0);
+                EntryIngredient output = described(
+                        outputStacks,
+                        definition.minimumAmount() == definition.maximumAmount()
+                                ? tooltip("rei.trading_cells.amount_exact", definition.maximumAmount())
+                                : tooltip(
+                                        "rei.trading_cells.amount_range",
+                                        definition.minimumAmount(),
+                                        definition.maximumAmount()
+                                ),
+                        tooltip("rei.trading_cells.quarry_probability", quarryProbability(probability)),
+                        quarryFortuneTooltip(definition)
+                );
+                String path = definition.id().getNamespace() + "/" + definition.id().getPath();
+                displays.add(barterDisplay(
+                        kind == QuarryKind.VILLAGER
+                                ? TradingCellsReiClientPlugin.QUARRY
+                                : TradingCellsReiClientPlugin.PIGLIN_QUARRY,
+                        kind == QuarryKind.VILLAGER
+                                ? TradingCellsReiLayout.QUARRY
+                                : TradingCellsReiLayout.PIGLIN_QUARRY,
+                        (kind == QuarryKind.VILLAGER ? "quarry/" : "piglin_quarry/") + path,
+                        inputs,
+                        required,
+                        List.of(output),
+                        QuarryCycle.BASE_DURATION_TICKS,
+                        List.of(Component.translatable(kind == QuarryKind.VILLAGER
+                                ? "rei.trading_cells.quarry_note"
+                                : "rei.trading_cells.piglin_quarry_note")),
+                        definition.minimumAmount(),
+                        definition.maximumAmount()
+                ));
+            }
+        }
+    }
+
+    private static List<ItemStack> quarryOutputStacks(QuarryMaterialDefinition definition) {
+        Set<Identifier> resultIds = new LinkedHashSet<>();
+        resultIds.add(definition.normalResult());
+        resultIds.add(definition.silkResult());
+        if (definition.deepSilkResult() != null) {
+            resultIds.add(definition.deepSilkResult());
+        }
+        return resultIds.stream()
+                .map(BuiltInRegistries.ITEM::getOptional)
+                .flatMap(Optional::stream)
+                .map(ItemStack::new)
+                .toList();
+    }
+
+    private static Component quarryFortuneTooltip(QuarryMaterialDefinition definition) {
+        if (definition.fortuneCompatible()) {
+            return tooltip("rei.trading_cells.quarry_fortune");
+        }
+        if (QuarryMaterialCatalog.fortuneAffectsSelection(definition)) {
+            return tooltip("rei.trading_cells.quarry_fortune_chance");
+        }
+        return tooltip("rei.trading_cells.quarry_no_fortune");
+    }
+
+    private static EntryIngredient quarryUpgrades(QuarryUpgradeTier minimum) {
+        List<ItemStack> stacks = new ArrayList<>();
+        if (minimum.ordinal() <= QuarryUpgradeTier.COPPER.ordinal()) {
+            stacks.add(QuarryRegistrationAdapter.QUARRY_COPPER_UPGRADE_ITEM.get().getDefaultInstance());
+        }
+        if (minimum.ordinal() <= QuarryUpgradeTier.IRON.ordinal()) {
+            stacks.add(QuarryRegistrationAdapter.QUARRY_IRON_UPGRADE_ITEM.get().getDefaultInstance());
+        }
+        if (minimum.ordinal() <= QuarryUpgradeTier.GOLD.ordinal()) {
+            stacks.add(QuarryRegistrationAdapter.QUARRY_GOLD_UPGRADE_ITEM.get().getDefaultInstance());
+        }
+        if (minimum.ordinal() <= QuarryUpgradeTier.DIAMOND.ordinal()) {
+            stacks.add(QuarryRegistrationAdapter.QUARRY_DIAMOND_UPGRADE_ITEM.get().getDefaultInstance());
+        }
+        stacks.add(QuarryRegistrationAdapter.QUARRY_NETHERITE_UPGRADE_ITEM.get().getDefaultInstance());
+        return described(
+                stacks,
+                tooltip(minimum == QuarryUpgradeTier.NONE
+                        ? "rei.trading_cells.quarry_optional_upgrade"
+                        : "rei.trading_cells.quarry_minimum_upgrade",
+                        Component.translatable("upgrade.trading_cells.quarry."
+                                + minimum.name().toLowerCase(Locale.ROOT))),
+                tooltip("rei.trading_cells.not_consumed")
+        );
+    }
+
+    private static String quarryProbability(int partsPerMillion) {
+        int value = Math.max(0, partsPerMillion);
+        double percent = value / 10_000.0D;
+        if (value < 1_000) {
+            return String.format(Locale.ROOT, "%.4f", percent);
+        }
+        if (value < 10_000) {
+            return String.format(Locale.ROOT, "%.3f", percent);
+        }
+        return String.format(Locale.ROOT, "%.2f", percent);
     }
 
     private static void addBreeding(List<TradingCellsReiDisplay> displays) {
@@ -117,47 +259,95 @@ public final class TradingCellsReiDisplays {
 
     private static void addFarming(List<TradingCellsReiDisplay> displays) {
         FarmerUseCase farmer = FeatureComposition.farmer();
-        EntryIngredient adultVillager = captured(CapturedMobKind.VILLAGER, false, true);
         EntryIngredient optionalHoe = described(
-                List.of(
-                        new ItemStack(Items.WOODEN_HOE),
-                        new ItemStack(Items.STONE_HOE),
-                        new ItemStack(Items.IRON_HOE),
-                        new ItemStack(Items.GOLDEN_HOE),
-                        new ItemStack(Items.DIAMOND_HOE),
-                        new ItemStack(Items.NETHERITE_HOE)
-                ),
+                HoeTierCatalog.itemStacks(),
                 tooltip("rei.trading_cells.optional_hoe")
         );
-        for (FarmerCrop crop : List.of(
-                FarmerCrop.WHEAT,
-                FarmerCrop.CARROT,
-                FarmerCrop.POTATO,
-                FarmerCrop.BEETROOT
-        )) {
-            EntryIngredient cropInput = described(cropInput(crop), 1, tooltip("rei.trading_cells.not_consumed"));
-            List<EntryIngredient> inputs = List.of(adultVillager, cropInput, optionalHoe);
-            FarmerHarvest harvest = farmer.harvest(crop, 0);
-            List<EntryIngredient> outputs = new ArrayList<>();
-            ItemStack produce = FarmerCropStackAdapter.produce(crop, harvest.produceCount());
-            if (!produce.isEmpty()) {
-                outputs.add(described(produce));
+        for (FarmerKind kind : FarmerKind.values()) {
+            boolean villager = kind == FarmerKind.VILLAGER;
+            EntryIngredient adultWorker = captured(
+                    villager ? CapturedMobKind.VILLAGER : CapturedMobKind.PIGLIN,
+                    false,
+                    true
+            );
+            if (villager) {
+                addVillagerFarming(displays, farmer, adultWorker, optionalHoe);
+                continue;
             }
-            ItemStack seeds = FarmerCropStackAdapter.seeds(crop, harvest.seedCount());
-            if (!seeds.isEmpty()) {
-                outputs.add(described(seeds));
+            for (FarmerCrop crop : FarmerCrop.supportedBy(kind)) {
+                FarmerHarvest harvest = farmer.harvest(crop, 0);
+                List<EntryIngredient> outputs = harvest.yields().stream()
+                        .map(TradingCellsReiDisplays::farmerOutput)
+                        .toList();
+                addFarmingDisplay(
+                        displays,
+                        farmer,
+                        adultWorker,
+                        optionalHoe,
+                        FarmerCropStackAdapter.input(crop),
+                        outputs,
+                        "piglin_farming/" + crop.name().toLowerCase(Locale.ROOT),
+                        false
+                );
             }
-            displays.add(display(
-                    TradingCellsReiClientPlugin.FARMING,
-                    TradingCellsReiLayout.FARMING,
-                    "farming/" + crop.name().toLowerCase(),
-                    inputs,
-                    List.of(adultVillager, cropInput),
-                    outputs,
-                    farmer.effectiveGrowthTicks(0.0D, 0),
-                    List.of(Component.translatable("rei.trading_cells.farming_note"))
-            ));
         }
+    }
+
+    private static void addVillagerFarming(
+            List<TradingCellsReiDisplay> displays,
+            FarmerUseCase farmer,
+            EntryIngredient adultWorker,
+            EntryIngredient optionalHoe
+    ) {
+        for (FarmerCropStackAdapter.Option option : FarmerCropStackAdapter.villagerOptions()) {
+            List<EntryIngredient> outputs;
+            if (option.crop() == FarmerCrop.NONE) {
+                outputs = List.of(described(
+                        FarmerCropStackAdapter.previewOutput(option),
+                        tooltip("rei.trading_cells.dynamic_crop_output")
+                ));
+            } else {
+                outputs = farmer.harvest(option.crop(), 0).yields().stream()
+                        .map(TradingCellsReiDisplays::farmerOutput)
+                        .toList();
+            }
+            Identifier itemId = BuiltInRegistries.ITEM.getKey(option.item());
+            addFarmingDisplay(
+                    displays,
+                    farmer,
+                    adultWorker,
+                    optionalHoe,
+                    new ItemStack(option.item()),
+                    outputs,
+                    "farming/" + itemId.getNamespace() + "/" + itemId.getPath(),
+                    true
+            );
+        }
+    }
+
+    private static void addFarmingDisplay(
+            List<TradingCellsReiDisplay> displays,
+            FarmerUseCase farmer,
+            EntryIngredient adultWorker,
+            EntryIngredient optionalHoe,
+            ItemStack crop,
+            List<EntryIngredient> outputs,
+            String path,
+            boolean villager
+    ) {
+        EntryIngredient cropInput = described(crop, tooltip("rei.trading_cells.not_consumed"));
+        displays.add(display(
+                villager ? TradingCellsReiClientPlugin.FARMING : TradingCellsReiClientPlugin.PIGLIN_FARMING,
+                villager ? TradingCellsReiLayout.FARMING : TradingCellsReiLayout.PIGLIN_FARMING,
+                path,
+                List.of(adultWorker, cropInput, optionalHoe),
+                List.of(adultWorker, cropInput),
+                outputs,
+                farmer.baseGrowthTicks(),
+                List.of(Component.translatable(villager
+                        ? "rei.trading_cells.farming_note"
+                        : "rei.trading_cells.piglin_farming_note"))
+        ));
     }
 
     private static void addConversion(List<TradingCellsReiDisplay> displays) {
@@ -367,14 +557,25 @@ public final class TradingCellsReiDisplays {
         return stack;
     }
 
-    private static Item cropInput(FarmerCrop crop) {
-        return switch (crop) {
-            case WHEAT -> Items.WHEAT_SEEDS;
-            case CARROT -> Items.CARROT;
-            case POTATO -> Items.POTATO;
-            case BEETROOT -> Items.BEETROOT_SEEDS;
-            case NONE -> Items.AIR;
-        };
+    private static EntryIngredient farmerOutput(FarmerYield yield) {
+        ItemStack stack = FarmerCropStackAdapter.output(yield);
+        if (yield.isGuaranteed()) {
+            return described(stack);
+        }
+        return described(
+                stack,
+                tooltip(
+                        "rei.trading_cells.base_chance",
+                        chancePercentage(yield.chanceBasisPoints())
+                )
+        );
+    }
+
+    private static String chancePercentage(int chanceBasisPoints) {
+        if (chanceBasisPoints % 100 == 0) {
+            return Integer.toString(chanceBasisPoints / 100);
+        }
+        return String.format(Locale.ROOT, "%.1f", chanceBasisPoints / 100.0D);
     }
 
     private static EntryIngredient barterResult(

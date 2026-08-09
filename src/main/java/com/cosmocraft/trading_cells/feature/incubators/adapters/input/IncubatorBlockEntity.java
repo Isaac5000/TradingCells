@@ -5,6 +5,7 @@ import com.cosmocraft.trading_cells.feature.incubators.application.port.input.In
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -45,7 +46,10 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
     private final CapturedMobKind kind;
     private final IncubatorUseCase incubatorService = FeatureComposition.incubator();
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
+    private final MachineActivityController activity = new MachineActivityController();
     private int incubationTicks;
+    private boolean inputCacheInitialized;
+    private boolean cachedBabyInput;
     private @Nullable CompoundTag preparedBlockDropData;
 
     private final ContainerData dataAccess = new ContainerData() {
@@ -61,6 +65,7 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         @Override
         public void set(int index, int value) {
             if (index == 0) {
+                activity.wake();
                 incubationTicks = Math.clamp(value, 0, incubatorService.durationTicks(kind));
             }
         }
@@ -85,7 +90,11 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
     }
 
     void processTick() {
+        if (activity.remainsInactive() || activity.remainsBlocked()) {
+            return;
+        }
         processIncubation();
+        updateActivity();
     }
 
     private void processIncubation() {
@@ -93,7 +102,7 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         TimedProcess.Step step = incubatorService.advance(
                 kind,
                 incubationTicks,
-                CapturedMobStackAdapter.isBaby(kind, input),
+                isBabyInput(),
                 items.get(OUTPUT_SLOT).isEmpty()
         );
         int previousTicks = incubationTicks;
@@ -123,6 +132,7 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         items.set(INPUT_SLOT, ItemStack.EMPTY);
         items.set(OUTPUT_SLOT, adult);
         incubationTicks = 0;
+        invalidateInputCache();
         markChangedAndSync();
     }
 
@@ -190,8 +200,10 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         if (items.get(slot).isEmpty()) {
             items.set(slot, ItemStack.EMPTY);
         }
+        activity.wake();
         if (slot == INPUT_SLOT) {
             incubationTicks = 0;
+            invalidateInputCache();
         }
         markChangedAndSync();
         return removed;
@@ -204,8 +216,10 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         }
         ItemStack removed = items.get(slot);
         items.set(slot, ItemStack.EMPTY);
+        activity.wake();
         if (slot == INPUT_SLOT) {
             incubationTicks = 0;
+            invalidateInputCache();
         }
         return removed;
     }
@@ -214,6 +228,7 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
     public void setItem(int slot, @NonNull ItemStack stack) {
         if (slot == OUTPUT_SLOT && stack.isEmpty()) {
             items.set(OUTPUT_SLOT, ItemStack.EMPTY);
+            activity.wake();
             markChangedAndSync();
             return;
         }
@@ -227,6 +242,7 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         inserted.setCount(Math.min(1, inserted.getCount()));
         items.set(INPUT_SLOT, inserted);
         incubationTicks = 0;
+        invalidateInputCache();
         markChangedAndSync();
     }
 
@@ -245,6 +261,7 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
     @Override
     public void clearContent() {
         preparedBlockDropData = null;
+        invalidateInputCache();
         clearStoredContents();
         markChangedAndSync();
     }
@@ -279,6 +296,8 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
                 incubatorService.durationTicks(kind)
         );
         preparedBlockDropData = null;
+        inputCacheInitialized = false;
+        activity.reset();
     }
 
     @Override
@@ -316,7 +335,31 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         items.set(INPUT_SLOT, ItemStack.EMPTY);
         items.set(OUTPUT_SLOT, ItemStack.EMPTY);
         incubationTicks = 0;
+        invalidateInputCache();
         setChanged();
+    }
+
+    private boolean isBabyInput() {
+        if (!inputCacheInitialized) {
+            cachedBabyInput = CapturedMobStackAdapter.isBaby(kind, items.get(INPUT_SLOT));
+            inputCacheInitialized = true;
+        }
+        return cachedBabyInput;
+    }
+
+    private void invalidateInputCache() {
+        inputCacheInitialized = false;
+        activity.wake();
+    }
+
+    private void updateActivity() {
+        if (items.get(INPUT_SLOT).isEmpty()) {
+            activity.transition(MachineActivityController.Activity.INACTIVE);
+        } else if (!isBabyInput() || !items.get(OUTPUT_SLOT).isEmpty()) {
+            activity.transition(MachineActivityController.Activity.BLOCKED);
+        } else {
+            activity.transition(MachineActivityController.Activity.ACTIVE);
+        }
     }
 
     private static boolean isValidSlot(int slot) {

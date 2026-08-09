@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "show_notification": false,
+  "key": {
+    "A": "minecraft:amethyst_shard",
+    "G": "minecraft:glass_pane",
+    "Q": "minecraft:quartz"
+  },
+  "pattern": [
+    "QGQ",
+    "G G",
+    "QAQ"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trading_cells:experience_storage"
+  }
+}

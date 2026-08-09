@@ -23,7 +23,7 @@ public final class Config {
         BREEDER_TICKS = ticks("breeder", 6_000);
         BUILDER.comment("Shared growth duration for villager and piglin incubators.");
         INCUBATOR_TICKS = ticks("incubator", 3_000);
-        BUILDER.comment("Base villager crop duration without a hoe. Default: 150 seconds.");
+        BUILDER.comment("Shared crop duration without a hoe for villager and piglin farms. Default: 150 seconds.");
         FARMER_GROWTH_TICKS = ticks("farmerGrowth", 3_000);
         BUILDER.comment("Iron farm cycle duration. Default: 60 seconds.");
         IRON_FARM_CYCLE_TICKS = ticks("ironFarmCycle", 1_200);
@@ -32,7 +32,7 @@ public final class Config {
         BUILDER.pop();
 
         BUILDER.comment("Production tuning.").push("production");
-        BUILDER.comment("When enabled, each completed crop cycle can consume one point of hoe durability.");
+        BUILDER.comment("When enabled, each completed villager or piglin crop cycle can consume one point of hoe durability.");
         FARMER_DAMAGE_HOES = BUILDER.define("farmerDamageHoes", true);
         BUILDER.comment(
                 "Adds this value to every iron-farm multiplier. Base multipliers are x1, x2 and x3; ",

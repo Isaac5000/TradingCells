@@ -2,6 +2,7 @@ package com.cosmocraft.trading_cells.feature.captures.adapters.input;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -11,6 +12,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
@@ -158,7 +160,7 @@ public class VillagerCapturerItem extends AbstractCapturerItem {
             }
         }
 
-        Component baseComponent = Component.translatable(getVillagerKeyFromTag(tag));
+        Component baseComponent = getVillagerNameFromTag(tag);
         if (isBabyVillager(tag)) {
             return Component.translatable("villager.baby", baseComponent);
         }
@@ -174,7 +176,7 @@ public class VillagerCapturerItem extends AbstractCapturerItem {
         return tag.getInt("Age").map(age -> age < 0).orElse(false);
     }
 
-    private static String getVillagerKeyFromTag(CompoundTag tag) {
+    private static Component getVillagerNameFromTag(CompoundTag tag) {
         if (tag.contains("VillagerData")) {
             var villagerDataOpt = tag.getCompound("VillagerData");
             if (villagerDataOpt.isPresent()) {
@@ -183,16 +185,20 @@ public class VillagerCapturerItem extends AbstractCapturerItem {
                 if (professionIdOpt.isPresent()) {
                     Identifier professionId = Identifier.tryParse(professionIdOpt.get());
                     if (professionId != null) {
-                        return "entity."
-                                + professionId.getNamespace()
-                                + ".villager."
-                                + professionId.getPath();
+                        return BuiltInRegistries.VILLAGER_PROFESSION.getOptional(professionId)
+                                .map(VillagerProfession::name)
+                                .orElseGet(() -> Component.translatable(
+                                        "entity.minecraft.villager."
+                                                + professionId.getNamespace()
+                                                + "."
+                                                + professionId.getPath()
+                                ));
                     }
                 }
             }
         }
 
-        return "entity.minecraft.villager.none";
+        return Component.translatable("entity.minecraft.villager.none");
     }
 
     private static void stripVolatileEntityData(CompoundTag entityData) {

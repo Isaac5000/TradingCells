@@ -1,0 +1,12 @@
+{
+  "parent": "trading_cells:block/villager_breeder",
+  "textures": {
+    "base": "minecraft:block/amethyst_block",
+    "base_left": "minecraft:block/amethyst_block",
+    "base_center": "minecraft:block/amethyst_block",
+    "base_right": "minecraft:block/amethyst_block",
+    "frame": "minecraft:block/crying_obsidian",
+    "glass": "minecraft:block/glass",
+    "particle": "minecraft:block/crying_obsidian"
+  }
+}

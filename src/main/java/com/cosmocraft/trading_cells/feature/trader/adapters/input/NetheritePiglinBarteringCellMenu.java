@@ -18,11 +18,13 @@ public final class NetheritePiglinBarteringCellMenu extends AbstractContainerMen
     public static final int CONTROL_SLOT_X = MachineMenuLayout.machineX(8);
     public static final int UPGRADE_SLOT_Y = 42;
     public static final int FILTER_SLOT_Y = 68;
-    public static final int GOLD_ROW_X = MachineMenuLayout.machineX(46);
-    public static final int GOLD_ROW_Y = 31;
-    public static final int OUTPUT_ROW_X = MachineMenuLayout.machineX(46);
-    public static final int OUTPUT_ROW_Y = 84;
-    public static final int LANE_SPACING = 24;
+    public static final int GOLD_ROW_X = MachineMenuLayout.machineX(55);
+    public static final int GOLD_ROW_Y = 36;
+    public static final int OUTPUT_ROW_X = MachineMenuLayout.machineX(55);
+    public static final int OUTPUT_ROW_Y = 72;
+    public static final int OUTPUT_COLUMN_COUNT = 4;
+    public static final int OUTPUT_ROW_SPACING = 18;
+    public static final int LANE_SPACING = 18;
 
     private static final int MACHINE_SLOT_COUNT = NetheritePiglinBarteringCellBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
@@ -61,12 +63,12 @@ public final class NetheritePiglinBarteringCellMenu extends AbstractContainerMen
                     GOLD_ROW_Y
             ));
         }
-        for (int lane = 0; lane < NetheritePiglinBarteringCellBlockEntity.OUTPUT_SLOT_COUNT; lane++) {
+        for (int index = 0; index < NetheritePiglinBarteringCellBlockEntity.OUTPUT_SLOT_COUNT; index++) {
             addSlot(new OutputSlot(
                     container,
-                    NetheritePiglinBarteringCellBlockEntity.FIRST_OUTPUT_SLOT + lane,
-                    OUTPUT_ROW_X + lane * LANE_SPACING,
-                    OUTPUT_ROW_Y
+                    NetheritePiglinBarteringCellBlockEntity.FIRST_OUTPUT_SLOT + index,
+                    outputSlotX(index),
+                    outputSlotY(index)
             ));
         }
 
@@ -87,13 +89,22 @@ public final class NetheritePiglinBarteringCellMenu extends AbstractContainerMen
                 .is(TraderRegistrationAdapter.PIGLIN_BARTER_NETHERITE_UPGRADE_ITEM.get());
     }
 
-    public boolean filterNeedsUpgrade() {
-        return !hasNetheriteUpgrade();
+    public static int outputSlotX(int index) {
+        return OUTPUT_ROW_X + index % OUTPUT_COLUMN_COUNT * LANE_SPACING;
+    }
+
+    public static int outputSlotY(int index) {
+        return OUTPUT_ROW_Y + index / OUTPUT_COLUMN_COUNT * OUTPUT_ROW_SPACING;
     }
 
     @Override
     public boolean stillValid(@NonNull Player player) {
         return container.stillValid(player);
+    }
+
+    @Override
+    public boolean canTakeItemForPickAll(ItemStack carried, Slot target) {
+        return target.container != container || target instanceof OutputSlot;
     }
 
     @Override

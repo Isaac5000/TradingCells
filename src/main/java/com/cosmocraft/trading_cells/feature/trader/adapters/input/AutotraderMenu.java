@@ -140,7 +140,7 @@ public final class AutotraderMenu extends AbstractContainerMenu {
 
     public MerchantOffers offers() {
         if (container instanceof AutotraderBlockEntity autotrader) {
-            return autotrader.offersSnapshot();
+            return autotrader.offersView();
         }
         return cachedOffers;
     }
@@ -269,7 +269,7 @@ public final class AutotraderMenu extends AbstractContainerMenu {
         PacketDistributor.sendToPlayer(serverPlayer, new AutotraderMenuSyncPayload(
                 containerId,
                 autotrader.hasStoredVillager(),
-                autotrader.offersSnapshot(),
+                autotrader.offersView(),
                 autotrader.villagerDataSnapshot(),
                 autotrader.villagerXpSnapshot(),
                 autotrader.canResetTradesForMenu(),

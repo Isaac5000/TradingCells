@@ -3,6 +3,7 @@ package com.cosmocraft.trading_cells.feature.farmer.adapters.output.client;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerBlockEntity;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerCropStackAdapter;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerCrop;
+import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerKind;
 import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
@@ -24,9 +25,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -61,44 +62,50 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
     ) {
         BlockEntityRenderer.super.extractRenderState(blockEntity, state, partialTicks, cameraPosition, breakProgress);
         state.facing = blockEntity.getBlockState().getValue(AbstractPortableMachineBlock.FACING);
-        state.villager = null;
-        state.farmland.clear();
-        state.crop.clear();
+        state.worker = null;
 
         Level level = blockEntity.getLevel();
         if (level == null) {
+            state.clearCaches();
             return;
         }
         state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(level, blockEntity.getBlockPos());
 
-        BlockState farmland = Blocks.FARMLAND.defaultBlockState().setValue(FarmlandBlock.MOISTURE, FarmlandBlock.MAX_MOISTURE);
-        blockModelResolver.update(state.farmland, farmland, BlockDisplayContext.create());
-        state.farmland.tintLayers().clear();
-
         FarmerCrop crop = blockEntity.crop();
-        if (crop != FarmerCrop.NONE) {
-            BlockState cropState = FarmerCropStackAdapter.cropState(
-                    crop,
-                    blockEntity.growthTicks(),
-                    blockEntity.growthDurationTicks()
-            );
-            blockModelResolver.update(state.crop, cropState, BlockDisplayContext.create());
-            state.crop.tintLayers().clear();
-        }
-
-        Entity entity = CapturedMobStackAdapter.createEntity(
-                CapturedMobKind.VILLAGER,
-                level,
-                blockEntity.getItem(FarmerBlockEntity.VILLAGER_SLOT),
-                BlockPos.ZERO
+        BlockState soil = FarmerCropStackAdapter.soilState(blockEntity.kind(), crop);
+        state.cachedSoil = updateBlockState(state.soil, soil, state.cachedSoil);
+        BlockState cropState = FarmerCropStackAdapter.cropState(
+                blockEntity.kind(),
+                blockEntity.getItem(FarmerBlockEntity.CROP_SLOT),
+                blockEntity.growthTicks(),
+                blockEntity.growthDurationTicks()
         );
+        state.cachedCrop = updateBlockState(state.crop, cropState, state.cachedCrop);
+
+        Entity entity = state.getOrCreateWorker(blockEntity, level);
         if (entity != null) {
             orient(entity, state.facing.toYRot());
             PreviewEntityRenderUtil.prepare(entity);
-            state.villager = entityRenderer.extractEntity(entity, partialTicks);
-            PreviewEntityRenderUtil.applyLight(state.villager, state.lightCoords);
-            PreviewEntityRenderUtil.suppressWorldEffects(state.villager);
+            state.worker = entityRenderer.extractEntity(entity, partialTicks);
+            PreviewEntityRenderUtil.applyLight(state.worker, state.lightCoords);
+            PreviewEntityRenderUtil.suppressWorldEffects(state.worker);
         }
+    }
+
+    private BlockState updateBlockState(
+            BlockModelRenderState renderState,
+            BlockState nextState,
+            BlockState cachedState
+    ) {
+        if (nextState == cachedState) {
+            return cachedState;
+        }
+        renderState.clear();
+        if (!nextState.isAir()) {
+            blockModelResolver.update(renderState, nextState, BlockDisplayContext.create());
+            renderState.tintLayers().clear();
+        }
+        return nextState;
     }
 
     @Override
@@ -111,7 +118,7 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
         double plotX = 0.5D + state.facing.getStepX() * PLOT_OFFSET;
         double plotZ = 0.5D + state.facing.getStepZ() * PLOT_OFFSET;
         submitBlock(
-                state.farmland,
+                state.soil,
                 new Vec3(plotX, 0.02D, plotZ),
                 PLOT_SCALE,
                 state.lightCoords,
@@ -127,8 +134,8 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
                 submitNodeCollector
         );
 
-        if (state.villager != null) {
-            PreviewEntityRenderUtil.applyLight(state.villager, state.lightCoords);
+        if (state.worker != null) {
+            PreviewEntityRenderUtil.applyLight(state.worker, state.lightCoords);
             poseStack.pushPose();
             poseStack.translate(
                     0.5D - state.facing.getStepX() * ENTITY_OFFSET,
@@ -136,7 +143,7 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
                     0.5D - state.facing.getStepZ() * ENTITY_OFFSET
             );
             poseStack.scale(ENTITY_SCALE, ENTITY_SCALE, ENTITY_SCALE);
-            entityRenderer.submit(state.villager, camera, 0.0D, 0.0D, 0.0D, poseStack, submitNodeCollector);
+            entityRenderer.submit(state.worker, camera, 0.0D, 0.0D, 0.0D, poseStack, submitNodeCollector);
             poseStack.popPose();
         }
     }
@@ -183,9 +190,44 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
     }
 
     public static final class State extends BlockEntityRenderState {
-        public final BlockModelRenderState farmland = new BlockModelRenderState();
+        public final BlockModelRenderState soil = new BlockModelRenderState();
         public final BlockModelRenderState crop = new BlockModelRenderState();
-        public @Nullable EntityRenderState villager;
+        public @Nullable EntityRenderState worker;
         public Direction facing = Direction.NORTH;
+        private BlockState cachedSoil = Blocks.AIR.defaultBlockState();
+        private BlockState cachedCrop = Blocks.AIR.defaultBlockState();
+        private ItemStack cachedWorkerStack = ItemStack.EMPTY;
+        private @Nullable Entity cachedWorker;
+
+        private @Nullable Entity getOrCreateWorker(FarmerBlockEntity blockEntity, Level level) {
+            ItemStack workerStack = blockEntity.getItem(FarmerBlockEntity.WORKER_SLOT);
+            if (workerStack.isEmpty()) {
+                cachedWorkerStack = ItemStack.EMPTY;
+                cachedWorker = null;
+                return null;
+            }
+            if (cachedWorker == null
+                    || !ItemStack.isSameItemSameComponents(cachedWorkerStack, workerStack)) {
+                cachedWorker = CapturedMobStackAdapter.createEntity(
+                        blockEntity.kind() == FarmerKind.VILLAGER
+                                ? CapturedMobKind.VILLAGER
+                                : CapturedMobKind.PIGLIN,
+                        level,
+                        workerStack,
+                        BlockPos.ZERO
+                );
+                cachedWorkerStack = workerStack.copy();
+            }
+            return cachedWorker;
+        }
+
+        private void clearCaches() {
+            soil.clear();
+            crop.clear();
+            cachedSoil = Blocks.AIR.defaultBlockState();
+            cachedCrop = Blocks.AIR.defaultBlockState();
+            cachedWorkerStack = ItemStack.EMPTY;
+            cachedWorker = null;
+        }
     }
 }

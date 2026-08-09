@@ -25,8 +25,7 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 
-@SuppressWarnings("java:S1118")
-public class TraderRegistrationAdapter {
+public final class TraderRegistrationAdapter {
     private static final String VILLAGER_TRADER_ID = "villager_trading_cell";
     private static final String PIGLIN_BARTERING_CELL_ID = "piglin_bartering_cell";
     public static final String NETHERITE_PIGLIN_BARTERING_CELL_ID = "netherite_piglin_bartering_cell";
@@ -126,6 +125,9 @@ public class TraderRegistrationAdapter {
             registerUpgrade(PIGLIN_BARTER_YIELD_UPGRADE_ID, PiglinBarterUpgradeItem.Tier.LEGACY_YIELD);
     public static final DeferredItem<PiglinBarterUpgradeItem> PIGLIN_BARTER_HYBRID_UPGRADE_ITEM =
             registerUpgrade(PIGLIN_BARTER_HYBRID_UPGRADE_ID, PiglinBarterUpgradeItem.Tier.LEGACY_HYBRID);
+
+    private TraderRegistrationAdapter() {
+    }
 
     private static DeferredItem<PiglinBarterUpgradeItem> registerUpgrade(
             String id,

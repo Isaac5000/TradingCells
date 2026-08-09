@@ -83,7 +83,7 @@ public final class VillagerEmploymentTooltip {
             }
         }
         return Component.translatable(
-                "entity." + identifier.getNamespace() + ".villager." + identifier.getPath()
+                "entity.minecraft.villager." + identifier.getNamespace() + "." + identifier.getPath()
         );
     }
 

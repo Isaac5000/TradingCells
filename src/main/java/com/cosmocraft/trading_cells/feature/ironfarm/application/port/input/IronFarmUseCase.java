@@ -6,7 +6,12 @@ import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 public interface IronFarmUseCase {
     IronFarmCycle cycle();
 
-    TimedProcess.Step advance(int ticks, int villagerCount, boolean outputAvailable);
+    TimedProcess.Step advance(
+            int ticks,
+            int villagerCount,
+            boolean outputAvailable,
+            IronFarmCycle cycle
+    );
 
     int baseIron();
 

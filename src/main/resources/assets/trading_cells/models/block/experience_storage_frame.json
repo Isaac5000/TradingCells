@@ -1,0 +1,11 @@
+{
+  "parent": "trading_cells:block/machine_cage_frame",
+  "textures": {
+    "base": "minecraft:block/amethyst_block",
+    "base_left": "minecraft:block/amethyst_block",
+    "base_center": "minecraft:block/amethyst_block",
+    "base_right": "minecraft:block/amethyst_block",
+    "frame": "minecraft:block/quartz_block_side",
+    "particle": "minecraft:block/quartz_block_side"
+  }
+}

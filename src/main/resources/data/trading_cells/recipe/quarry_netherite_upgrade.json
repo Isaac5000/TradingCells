@@ -1,0 +1,5 @@
+{
+  "type":"minecraft:smithing_transform","template":"minecraft:netherite_upgrade_smithing_template",
+  "base":"trading_cells:quarry_diamond_upgrade","addition":"minecraft:netherite_block",
+  "result":{"id":"trading_cells:quarry_netherite_upgrade"}
+}

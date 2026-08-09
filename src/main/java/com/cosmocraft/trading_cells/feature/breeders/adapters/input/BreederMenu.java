@@ -9,6 +9,7 @@ import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKin
 import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.MachineMenuLayout;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -126,8 +127,8 @@ public final class BreederMenu extends AbstractContainerMenu {
         return BreederFood.fromOrdinal(data.get(6));
     }
 
-    public String selectedVillagerVariantKey() {
-        return VillagerVariantSelection.translationKey(data.get(2));
+    public Component selectedVillagerVariantName() {
+        return VillagerVariantSelection.displayName(data.get(2));
     }
 
     public int selectedVillagerVariant() {
@@ -138,8 +139,8 @@ public final class BreederMenu extends AbstractContainerMenu {
         return VillagerVariantSelection.count();
     }
 
-    public String villagerVariantKey(int index) {
-        return VillagerVariantSelection.translationKey(index);
+    public Component villagerVariantName(int index) {
+        return VillagerVariantSelection.displayName(index);
     }
 
     @Override

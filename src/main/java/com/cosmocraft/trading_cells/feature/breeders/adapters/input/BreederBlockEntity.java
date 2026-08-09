@@ -6,6 +6,7 @@ import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederRecipe;
 import com.cosmocraft.trading_cells.feature.breeders.application.port.input.BreederUseCase;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
 import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import net.minecraft.core.BlockPos;
@@ -48,6 +49,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     private static final String PENDING_BABIES_TAG = "PendingBabies";
     private static final String BABY_TEMPLATE_TAG = "BabyTemplate";
     private static final String VILLAGER_VARIANT_TAG = "VillagerVariant";
+    private static final String VILLAGER_VARIANT_ID_TAG = "VillagerVariantId";
     private static final String ACTIVE_FOOD_TAG = "ActiveFood";
 
     // Automation contract: food enters from above, adult/empty capturers
@@ -60,12 +62,17 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     private final BreederKind kind;
     private final BreederUseCase breederService = FeatureComposition.breeder();
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
+    private final MachineActivityController activity = new MachineActivityController();
     private int breedTicks;
     private int pendingBabies;
     private int villagerVariant;
     private BreederFood activeFood = BreederFood.NONE;
     private @Nullable CompoundTag babyTemplate;
     private @Nullable CompoundTag preparedBlockDropData;
+    private boolean breedingInputsCached;
+    private boolean cachedParentAValid;
+    private boolean cachedParentBValid;
+    private BreederFood cachedFood = BreederFood.NONE;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -84,6 +91,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
 
         @Override
         public void set(int index, int value) {
+            activity.wake();
             if (index == 0) {
                 breedTicks = value;
             } else if (index == 1) {
@@ -125,8 +133,12 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     }
 
     void processTick() {
+        if (activity.remainsInactive() || activity.remainsBlocked()) {
+            return;
+        }
         processAutomation();
         processBreedingProgress();
+        updateActivity();
     }
 
     private void processAutomation() {
@@ -194,37 +206,39 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     }
 
     private BreederFood eligibleFood() {
+        refreshBreedingInputs();
         if (pendingBabies != 0
-                || !isValidAdultParent(getItem(PARENT_A_SLOT))
-                || !isValidAdultParent(getItem(PARENT_B_SLOT))) {
+                || !cachedParentAValid
+                || !cachedParentBValid) {
             return BreederFood.NONE;
         }
-        ItemStack food = getItem(FOOD_SLOT);
-        BreederFood candidate = MinecraftBreederFood.from(kind, food);
-        return hasFoodCost(food, candidate) ? candidate : BreederFood.NONE;
+        return hasStoredFoodCost(cachedFood) ? cachedFood : BreederFood.NONE;
     }
 
     private boolean canGenerateBaby(BreederFood recipe) {
+        refreshBreedingInputs();
         return pendingBabies == 0
-                && isValidAdultParent(getItem(PARENT_A_SLOT))
-                && isValidAdultParent(getItem(PARENT_B_SLOT))
-                && hasFoodCost(getItem(FOOD_SLOT), recipe);
+                && cachedParentAValid
+                && cachedParentBValid
+                && hasStoredFoodCost(recipe);
     }
 
-    private boolean hasFoodCost(ItemStack food, BreederFood recipe) {
+    private boolean hasStoredFoodCost(BreederFood recipe) {
+        ItemStack food = getItem(FOOD_SLOT);
         return recipe != BreederFood.NONE
-                && MinecraftBreederFood.from(kind, food) == recipe
+                && cachedFood == recipe
                 && BreederRecipe.isFood(kind, recipe)
                 && food.getCount() >= breederService.foodCost(kind, recipe);
     }
 
     private void consumeFoodCost(BreederFood recipe) {
         ItemStack food = getItem(FOOD_SLOT);
-        if (hasFoodCost(food, recipe)) {
+        if (hasStoredFoodCost(recipe)) {
             food.shrink(breederService.foodCost(kind, recipe));
             if (food.isEmpty()) {
                 items.set(FOOD_SLOT, ItemStack.EMPTY);
             }
+            invalidateBreedingInputs();
         }
     }
 
@@ -333,6 +347,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         pendingBabies = 0;
         activeFood = BreederFood.NONE;
         babyTemplate = null;
+        invalidateBreedingInputs();
         setChanged();
     }
 
@@ -354,6 +369,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         pendingBabies = 0;
         activeFood = BreederFood.NONE;
         babyTemplate = null;
+        invalidateBreedingInputs();
         setChanged();
     }
 
@@ -412,6 +428,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         if (stack.isEmpty()) {
             items.set(slot, ItemStack.EMPTY);
         }
+        invalidateBreedingInputs(slot);
         markChangedAndSync();
         return removed;
     }
@@ -423,6 +440,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         }
         ItemStack removed = items.get(slot);
         items.set(slot, ItemStack.EMPTY);
+        invalidateBreedingInputs(slot);
         return removed;
     }
 
@@ -438,6 +456,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         if (!items.get(slot).isEmpty() && items.get(slot).getCount() > getMaxStackSize()) {
             items.get(slot).setCount(getMaxStackSize());
         }
+        invalidateBreedingInputs(slot);
         markChangedAndSync();
     }
 
@@ -468,6 +487,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         activeFood = BreederFood.NONE;
         babyTemplate = null;
         preparedBlockDropData = null;
+        invalidateBreedingInputs();
         markChangedAndSync();
     }
 
@@ -520,7 +540,10 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
                 breederService.maximumPendingBabies()
         );
         babyTemplate = input.read(BABY_TEMPLATE_TAG, CompoundTag.CODEC).orElse(null);
-        villagerVariant = VillagerVariantSelection.normalize(input.getIntOr(VILLAGER_VARIANT_TAG, 0));
+        String storedVariantId = input.getStringOr(VILLAGER_VARIANT_ID_TAG, "");
+        villagerVariant = storedVariantId.isBlank()
+                ? VillagerVariantSelection.normalize(input.getIntOr(VILLAGER_VARIANT_TAG, 0))
+                : VillagerVariantSelection.indexOf(storedVariantId);
         activeFood = BreederFood.fromName(input.getStringOr(ACTIVE_FOOD_TAG, BreederFood.NONE.name()));
         preparedBlockDropData = null;
         if (breedTicks == 0 || !BreederRecipe.isFood(kind, activeFood)) {
@@ -529,6 +552,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         if (babyTemplate != null && babyTemplate.isEmpty()) {
             babyTemplate = null;
         }
+        invalidateBreedingInputs();
     }
 
     @Override
@@ -550,6 +574,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         }
         if (kind == BreederKind.VILLAGER && villagerVariant != 0) {
             output.putInt(VILLAGER_VARIANT_TAG, villagerVariant);
+            output.putString(VILLAGER_VARIANT_ID_TAG, VillagerVariantSelection.id(villagerVariant));
         }
         if (breedTicks > 0 && activeFood != BreederFood.NONE) {
             output.putString(ACTIVE_FOOD_TAG, activeFood.name());
@@ -570,6 +595,51 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    private void refreshBreedingInputs() {
+        if (breedingInputsCached) {
+            return;
+        }
+        cachedParentAValid = isValidAdultParent(items.get(PARENT_A_SLOT));
+        cachedParentBValid = isValidAdultParent(items.get(PARENT_B_SLOT));
+        cachedFood = MinecraftBreederFood.from(kind, items.get(FOOD_SLOT));
+        breedingInputsCached = true;
+    }
+
+    private void invalidateBreedingInputs(int slot) {
+        activity.wake();
+        if (slot == FOOD_SLOT || slot == PARENT_A_SLOT || slot == PARENT_B_SLOT) {
+            breedingInputsCached = false;
+        }
+    }
+
+    private void invalidateBreedingInputs() {
+        breedingInputsCached = false;
+        activity.wake();
+    }
+
+    private void updateActivity() {
+        if (breedTicks > 0 || activeFood != BreederFood.NONE) {
+            activity.transition(MachineActivityController.Activity.ACTIVE);
+            return;
+        }
+        if (pendingBabies > 0) {
+            activity.transition(MachineActivityController.Activity.BLOCKED);
+            return;
+        }
+        refreshBreedingInputs();
+        if (items.get(FOOD_SLOT).isEmpty()
+                || items.get(PARENT_A_SLOT).isEmpty()
+                || items.get(PARENT_B_SLOT).isEmpty()) {
+            activity.transition(MachineActivityController.Activity.INACTIVE);
+        } else if (cachedParentAValid
+                && cachedParentBValid
+                && hasStoredFoodCost(cachedFood)) {
+            activity.transition(MachineActivityController.Activity.ACTIVE);
+        } else {
+            activity.transition(MachineActivityController.Activity.BLOCKED);
         }
     }
 

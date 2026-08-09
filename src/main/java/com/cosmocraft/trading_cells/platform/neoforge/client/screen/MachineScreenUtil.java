@@ -9,7 +9,11 @@ public final class MachineScreenUtil {
 
     public static String remainingTime(int progressTicks, int maxTicks) {
         int remainingTicks = Math.max(0, maxTicks - progressTicks);
-        int totalSeconds = (remainingTicks + 19) / 20;
+        return formatDuration(remainingTicks);
+    }
+
+    public static String formatDuration(int ticks) {
+        int totalSeconds = Math.max(0, ticks) / 20;
         return "%d:%02d".formatted(totalSeconds / 60, totalSeconds % 60);
     }
 
@@ -22,6 +26,6 @@ public final class MachineScreenUtil {
             int maxTicks
     ) {
         String text = remainingTime(progressTicks, maxTicks);
-        graphics.text(font, text, centerX - font.width(text) / 2, y + 1, 0xFFFFFFFF, true);
+        graphics.text(font, text, centerX - font.width(text) / 2, y + 2, 0xFFFFFFFF, true);
     }
 }

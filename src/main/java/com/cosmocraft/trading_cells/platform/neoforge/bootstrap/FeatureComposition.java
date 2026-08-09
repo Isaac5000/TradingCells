@@ -14,10 +14,16 @@ import com.cosmocraft.trading_cells.feature.converter.application.port.input.Con
 import com.cosmocraft.trading_cells.feature.converter.application.service.ConverterService;
 import com.cosmocraft.trading_cells.feature.farmer.application.port.input.FarmerUseCase;
 import com.cosmocraft.trading_cells.feature.farmer.application.service.FarmerService;
+import com.cosmocraft.trading_cells.feature.experience.application.port.input.ExperienceStorageUseCase;
+import com.cosmocraft.trading_cells.feature.experience.application.service.ExperienceStorageService;
 import com.cosmocraft.trading_cells.feature.incubators.application.port.input.IncubatorUseCase;
 import com.cosmocraft.trading_cells.feature.incubators.application.service.IncubatorService;
+import com.cosmocraft.trading_cells.feature.infusion.application.port.input.ArcaneInfusionUseCase;
+import com.cosmocraft.trading_cells.feature.infusion.application.service.ArcaneInfusionService;
 import com.cosmocraft.trading_cells.feature.ironfarm.application.port.input.IronFarmUseCase;
 import com.cosmocraft.trading_cells.feature.ironfarm.application.service.IronFarmService;
+import com.cosmocraft.trading_cells.feature.quarry.application.port.input.QuarryUseCase;
+import com.cosmocraft.trading_cells.feature.quarry.application.service.QuarryService;
 import com.cosmocraft.trading_cells.platform.neoforge.config.FeatureSettingsProvider;
 
 /** NeoForge composition root for feature use cases. */
@@ -25,6 +31,8 @@ public final class FeatureComposition {
     private static final CaptureUseCase CAPTURES = new CaptureService(
             () -> FeatureSettingsProvider.values().capturerDurability()
     );
+    private static final ExperienceStorageUseCase EXPERIENCE_STORAGE = new ExperienceStorageService();
+    private static final ArcaneInfusionUseCase ARCANE_INFUSION = new ArcaneInfusionService();
 
     private FeatureComposition() {
     }
@@ -49,12 +57,24 @@ public final class FeatureComposition {
         return new FarmerService(FeatureSettingsProvider.values());
     }
 
+    public static ExperienceStorageUseCase experienceStorage() {
+        return EXPERIENCE_STORAGE;
+    }
+
+    public static ArcaneInfusionUseCase arcaneInfusion() {
+        return ARCANE_INFUSION;
+    }
+
     public static IncubatorUseCase incubator() {
         return new IncubatorService(FeatureSettingsProvider.values());
     }
 
     public static IronFarmUseCase ironFarm() {
         return new IronFarmService(FeatureSettingsProvider.values());
+    }
+
+    public static QuarryUseCase quarry() {
+        return new QuarryService();
     }
 
     public static VillagerTraderUseCase villagerTrader() {

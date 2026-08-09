@@ -22,10 +22,25 @@ public final class FarmerService implements FarmerUseCase {
     }
 
     @Override
-    public int effectiveGrowthTicks(double toolSpeed, int efficiencyLevel) {
+    public int baseGrowthTicks() {
+        return FarmerCycle.effectiveGrowthTicks(
+                settings.farmerGrowthTicks(),
+                0.0D,
+                0.0D,
+                0
+        );
+    }
+
+    @Override
+    public int effectiveGrowthTicks(
+            double toolSpeed,
+            double tierPosition,
+            int efficiencyLevel
+    ) {
         return FarmerCycle.effectiveGrowthTicks(
                 settings.farmerGrowthTicks(),
                 toolSpeed,
+                tierPosition,
                 efficiencyLevel
         );
     }

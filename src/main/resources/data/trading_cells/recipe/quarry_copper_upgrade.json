@@ -1,0 +1,5 @@
+{
+  "type":"minecraft:crafting_shaped","category":"misc","show_notification":false,
+  "key":{"B":"minecraft:copper_block","P":"minecraft:stone_pickaxe"},
+  "pattern":["BBB","BPB","BBB"],"result":{"count":1,"id":"trading_cells:quarry_copper_upgrade"}
+}

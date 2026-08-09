@@ -1,0 +1,7 @@
+{
+  "id":"trading_cells:ancient_debris","kind":"nether","minimum_upgrade":"netherite",
+  "minimum_pickaxe_speed":8.0,"weights":[0,0,0,0,0,5],
+  "minimum_amount":1,"maximum_amount":1,"normal_result":"minecraft:ancient_debris",
+  "silk_result":"minecraft:ancient_debris","fortune":false,"rock":false,"dynamic":false,
+  "source_mod":"minecraft","pool":"protected_rare"
+}

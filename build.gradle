@@ -52,6 +52,11 @@ base {
 // Mojang ships Java 25 to end users in 26.2, so mods should target Java 25.
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
+// Optional mods used only by selected development runs.
+configurations {
+    localRuntime
+}
+
 neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
@@ -64,6 +69,10 @@ neoForge {
     runs {
         client {
             client()
+            // REI is a client-only development dependency. Keeping it on this
+            // run's extra classpath prevents its LocalPlayer references from
+            // being scanned or initialized by dedicated-server runs.
+            additionalRuntimeClasspathConfiguration.extendsFrom(configurations.localRuntime)
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
@@ -80,8 +89,23 @@ neoForge {
 
         server {
             server()
+            // Keep dedicated-server runs isolated from client-only jars placed
+            // in run/mods (notably REI and its client-side dependencies).
+            gameDirectory = project.file('run-server')
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        performanceServer {
+            server()
+            gameDirectory = project.file(
+                    project.findProperty('performanceRunDirectory') ?: 'build/performance/server'
+            )
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            if (project.hasProperty('performanceJfr')) {
+                jvmArgument "-XX:StartFlightRecording=filename=${project.property('performanceJfr')},settings=profile,dumponexit=true"
+            }
         }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.
@@ -126,14 +150,6 @@ neoForge {
             sourceSet(sourceSets.main)
         }
     }
-}
-
-// Sets up a dependency configuration called 'localRuntime'.
-// This configuration should be used instead of 'runtimeOnly' to declare
-// a dependency that will be present for runtime testing but that is
-// "optional", meaning it will not be pulled by dependents of this mod.
-configurations {
-    runtimeClasspath.extendsFrom localRuntime
 }
 
 dependencies {
@@ -357,9 +373,32 @@ tasks.named('test', Test).configure {
     failOnNoDiscoveredTests = false
 }
 
+def pythonExecutable = System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')
+        ? 'python'
+        : 'python3'
+
+tasks.register('checkMachineGuiTextures', Exec) {
+    group = 'verification'
+    description = 'Validates generated machine backgrounds and machine slot sprites.'
+    commandLine pythonExecutable, 'tools/generate_machine_gui.py', '--check'
+    inputs.file('tools/generate_machine_gui.py')
+    inputs.dir('src/main/resources/assets/trading_cells/textures/gui/machines')
+}
+
+tasks.register('checkVillagerTradeGuiTextures', Exec) {
+    group = 'verification'
+    description = 'Validates villager trade backgrounds and widgets.'
+    commandLine pythonExecutable, 'tools/generate_villager_trade_gui.py', '--check'
+    inputs.file('tools/generate_villager_trade_gui.py')
+    inputs.dir('src/main/resources/assets/trading_cells/textures/gui/trader')
+    inputs.dir('src/main/resources/assets/trading_cells/textures/gui/sprites')
+}
+
 tasks.named('check').configure {
     dependsOn tasks.named('checkArchitecture')
     dependsOn tasks.named('verifyDomainRules')
+    dependsOn tasks.named('checkMachineGuiTextures')
+    dependsOn tasks.named('checkVillagerTradeGuiTextures')
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
