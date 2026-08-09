@@ -104,8 +104,14 @@ classpath reutiliza la salida de `main` y agrega las dependencias cliente
 opcionales. Los perfiles servidor siguen usando `main`, de modo que REI,
 Architectury y Cloth Config no pueden filtrarse al servidor dedicado ni al JAR.
 El perfil Vulkan prepara su configuracion local desactivando la ventana temprana
-OpenGL de NeoForge `26.2.0.55-beta`, como solucion temporal a la incidencia
+OpenGL de NeoForge `26.2.0.57`, como solucion temporal a la incidencia
 upstream `NeoForge#3230`; no existe ningun workaround dentro del codigo del mod.
+
+El source set `performanceClient` contiene un grabador de desarrollo separado.
+Solo se registra cuando se proporciona `performanceClientOutput`, puede excluir
+Trading Cells para medir un control vanilla y nunca forma parte de `main` ni del
+JAR publicado. La grabacion JFR y las capturas se realizan despues del
+calentamiento para no contaminar las metricas con la carga inicial.
 
 ## Verificacion
 
@@ -123,3 +129,8 @@ upstream `NeoForge#3230`; no existe ningun workaround dentro del codigo del mod.
 referencias a implementaciones graficas concretas y forma parte de `check`.
 
 `verifyDomainRules` ejecuta las comprobaciones puras del dominio.
+
+Las pruebas de equivalencia y los umbrales de rendimiento estan documentados en
+`tools/performance/README.md`. Un cambio local requiere al menos un 3 % repetible;
+uno estructural, un 10 %. Una regresion primaria superior al 1 % descarta la
+hipotesis.

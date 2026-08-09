@@ -38,9 +38,20 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("baseline", type=Path)
     parser.add_argument("candidate", type=Path)
-    parser.add_argument("--minimum-improvement", type=float, default=10.0)
-    parser.add_argument("--maximum-regression", type=float, default=2.0)
+    parser.add_argument(
+        "--risk",
+        choices=("local", "structural"),
+        default="structural",
+        help="Local changes require 3%%; shared/structural changes require 10%%.",
+    )
+    parser.add_argument("--minimum-improvement", type=float)
+    parser.add_argument("--maximum-regression", type=float, default=1.0)
     args = parser.parse_args()
+    minimum_improvement = (
+        args.minimum_improvement
+        if args.minimum_improvement is not None
+        else (3.0 if args.risk == "local" else 10.0)
+    )
 
     baseline = read_medians(args.baseline)
     candidate = read_medians(args.candidate)
@@ -54,13 +65,13 @@ def main() -> None:
             improvement = 0.0 if after == 0.0 else float("-inf")
         else:
             improvement = 100.0 * (before - after) / before
-        accepted_route |= metric in PRIMARY_METRICS and improvement >= args.minimum_improvement
+        accepted_route |= metric in PRIMARY_METRICS and improvement >= minimum_improvement
         if metric == "jvm_cpu_percent":
             metric_regressed = after - before > args.maximum_regression
         else:
             metric_regressed = improvement < -args.maximum_regression
         regressed |= metric in PRIMARY_METRICS and metric_regressed
-        status = "improved" if improvement >= args.minimum_improvement else "stable"
+        status = "improved" if improvement >= minimum_improvement else "stable"
         if metric_regressed:
             status = "regressed"
         print(f"{metric},{before:.6f},{after:.6f},{improvement:.2f},{status}")

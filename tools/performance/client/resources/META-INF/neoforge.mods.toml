@@ -1,0 +1,16 @@
+modLoader="javafml"
+loaderVersion="[11,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="trading_cells_performance"
+version="1.0.0"
+displayName="Trading Cells Performance Harness"
+description="Development-only frame-time recorder."
+
+[[dependencies.trading_cells_performance]]
+modId="trading_cells"
+type="optional"
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="CLIENT"

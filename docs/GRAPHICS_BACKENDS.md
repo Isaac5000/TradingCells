@@ -32,7 +32,7 @@ usar OpenGL como fallback si el equipo o el controlador no son compatibles.
 
 ### Ventana temprana de NeoForge
 
-NeoForge `26.2.0.55-beta` tiene abierta la incidencia
+NeoForge `26.2.0.57` tiene abierta la incidencia
 [`NeoForge#3230`](https://github.com/neoforged/NeoForge/issues/3230): su pantalla
 temprana crea una ventana con contexto OpenGL y Minecraft no puede reutilizarla
 para Vulkan. `runClientVulkan` ejecuta `prepareVulkanFmlConfig` y establece
@@ -40,7 +40,7 @@ para Vulkan. `runClientVulkan` ejecuta `prepareVulkanFmlConfig` y establece
 `run/vulkan/config/fml.toml`. El ajuste solo afecta a ese entorno ignorado por
 Git y no entra en el JAR.
 
-En una instalacion normal basada en `.55-beta`, el jugador debe aplicar el mismo
+En una instalacion normal basada en `.57`, el jugador debe aplicar el mismo
 valor en `config/fml.toml` mientras la correccion upstream siga pendiente.
 
 ## Frontera de codigo
@@ -70,3 +70,14 @@ ninguna utilidad grafica se carga en el lado servidor.
 
 El objetivo comprende los backends incluidos en Minecraft 26.2; no incluye el
 antiguo VulkanMod de terceros.
+
+## Medicion automatizada
+
+`tools/performance/run_client_benchmark.py` solicita y verifica el backend
+efectivo, fija mundo/camara/opciones, inicia JFR despues del calentamiento y toma
+la captura en un fotograma posterior. Admite las cuatro combinaciones
+OpenGL/Vulkan con/sin REI y un control `--without-trading-cells`.
+
+Las comparaciones usan `compare_client_results.py`. El comparador comprueba
+metadatos, media, p95, CPU, asignaciones, memoria, trafico y capturas. No aplica
+tolerancias visuales salvo que se indiquen explicitamente.

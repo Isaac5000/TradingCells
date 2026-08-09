@@ -1,0 +1,14 @@
+{
+  "date": "2026-08-09",
+  "minecraft_version": "26.2.0",
+  "neoforge_version": "26.2.0.57",
+  "java_version": "25.0.2",
+  "gradle_version": "9.5",
+  "git_commit": "5cb9870e9d6de61bf3c2ec45fb88503edb518e9b",
+  "git_dirty": true,
+  "operating_system": "Windows 11 10.0.22631",
+  "processor": "Intel64 Family 6 Model 167 Stepping 1",
+  "graphics_adapter": "NVIDIA GeForce RTX 3070 Ti",
+  "driver": "610.88",
+  "notes": "Source tree included pre-existing uncommitted work. Heavy JFR, worlds and screenshots remain under ignored build/performance."
+}

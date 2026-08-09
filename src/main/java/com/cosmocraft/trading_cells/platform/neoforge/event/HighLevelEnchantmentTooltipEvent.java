@@ -25,9 +25,9 @@ public final class HighLevelEnchantmentTooltipEvent {
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
-        Map<String, Component> replacements = new HashMap<>();
-        collectReplacements(stack.get(DataComponents.ENCHANTMENTS), replacements);
-        collectReplacements(stack.get(DataComponents.STORED_ENCHANTMENTS), replacements);
+        Map<String, Component> replacements = Map.of();
+        replacements = collectReplacements(stack.get(DataComponents.ENCHANTMENTS), replacements);
+        replacements = collectReplacements(stack.get(DataComponents.STORED_ENCHANTMENTS), replacements);
         if (replacements.isEmpty()) {
             return;
         }
@@ -41,26 +41,31 @@ public final class HighLevelEnchantmentTooltipEvent {
         }
     }
 
-    private static void collectReplacements(
+    private static Map<String, Component> collectReplacements(
             ItemEnchantments enchantments,
             Map<String, Component> replacements
     ) {
         if (enchantments == null || enchantments.isEmpty()) {
-            return;
+            return replacements;
         }
+        Map<String, Component> result = replacements;
         for (var entry : enchantments.entrySet()) {
             Holder<Enchantment> enchantment = entry.getKey();
             int level = entry.getIntValue();
             if (level <= enchantment.value().getMaxLevel()) {
                 continue;
             }
+            if (result.isEmpty()) {
+                result = new HashMap<>();
+            }
             Component original = Enchantment.getFullname(enchantment, level);
             Component colored = enchantment.value().description().copy()
                     .append(CommonComponents.SPACE)
                     .append(Component.translatable("enchantment.level." + level))
                     .withStyle(Style.EMPTY.withColor(colorFor(level)));
-            replacements.put(original.getString(), colored);
+            result.put(original.getString(), colored);
         }
+        return result;
     }
 
     public static int colorFor(int level) {

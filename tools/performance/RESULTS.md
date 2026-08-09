@@ -1,65 +1,97 @@
 # Resultados de rendimiento
 
-Mediciones realizadas el 2 de agosto de 2026 con Minecraft 26.2, NeoForge
-26.2.0.40-beta y Java 25. Cada escenario de servidor usa tres ejecuciones
-calentadas y presenta la mediana.
+Resultados locales conservados en `build/performance`. Los artefactos pesados
+estan ignorados por Git; este archivo registra las medianas y las decisiones.
 
-## Insertador de salidas
+## Cambios aceptados
 
-La prueba aleatoria compara el nuevo insertador con la simulacion anterior en
-250.000 inventarios por ejecucion. Verifica tanto la capacidad como el contenido
-final y el orden de llenado de slots.
+### Insertador de salidas
+
+Prueba aleatoria de 250.000 inventarios por ejecucion, con equivalencia de
+capacidad, contenido y orden de slots.
 
 | Ruta | Mediana |
 | --- | ---: |
-| Simulacion anterior | 45,806 ms |
-| Insertador sin inventario temporal | 26,692 ms |
-| Mejora | 41,73 % |
+| Simulacion anterior | 76,037 ms |
+| Insertador compartido | 48,255 ms |
+| Mejora | 36,54 % |
 
-## 1.024 maquinas inactivas
+### Maquinas inactivas
 
-Ambas mediciones usan copias del mismo mundo plantilla, semilla, configuracion y
-carga. La carga contiene 128 unidades de cada una de estas maquinas: Cultivo para
-Aldeanos, Cultivo para Piglins, Cantera de Aldeanos, Cantera de Piglins,
-Convertidor, Granja de Hierro, Criadero de Aldeanos y Criadero de Piglins.
+Medicion historica del 2 de agosto de 2026 con 1.024 maquinas, tres ejecuciones
+calentadas y el mismo mundo.
 
 | Metrica | Antes | Despues | Cambio |
 | --- | ---: | ---: | ---: |
 | MSPT medio | 1,572739 | 1,240755 | -21,11 % |
 | MSPT p95 | 2,576717 | 1,561241 | -39,41 % |
-| Asignaciones/s | 559.240,533 B | 559.240,533 B | 0 % |
-| Escrituras de chunks | 10 | 9 | -10 % |
 
-La CPU de este escenario queda por debajo del 1 % y oscila mas que la diferencia
-medida, por lo que se considera diagnostica y no una regresion repetible. El
-comparador acepta la optimizacion por superar el 10 % tanto en MSPT medio como en
-p95 sin empeorar esas latencias.
+Se conserva `MachineActivityController` con retornos tempranos. Los contadores
+siguen avanzando exactamente por tick cuando una maquina esta activa.
 
-## Decisiones descartadas
+### Tooltips de encantamientos
 
-No se guarda un estado `ACTIVE` en el bloque ni se elimina dinamicamente su ticker.
-Tras el retorno temprano, el despacho restante de Trading Cells quedo por debajo
-del umbral del 10 % en las muestras JFR. El cambio adicional no tenia una mejora
-demostrada y aumentaba el riesgo de incompatibilidad con estados persistentes.
+Medicion del 9 de agosto de 2026, cinco ejecuciones y 250.000 casos aleatorios de
+equivalencia por ejecucion. Escenario comun: objeto sin encantamientos por encima
+de su limite.
 
-Tampoco se compactan mas paquetes ni se cachean tooltips de REI sin una medicion
-que muestre una asignacion relevante. Estas hipotesis quedan fuera del codigo para
-evitar cambios sin beneficio reproducible.
+| Ruta | Mediana |
+| --- | ---: |
+| Mapa creado siempre | 48,247 ms |
+| Mapa perezoso | 13,704 ms |
+| Mejora | 71,60 % |
 
-## Prueba con el mundo existente
+Solo se evita crear un `HashMap` vacio. Texto, color y orden del tooltip no cambian.
 
-Una copia aislada del mundo de desarrollo alcanzo `Done`, ejecuto una grabacion JFR,
-guardo las tres dimensiones y se cerro limpiamente mediante RCON. El mundo original
-no se modifico. Esta ejecucion es una prueba de compatibilidad, no una comparacion
-de rendimiento antes/despues.
+## Hipotesis retiradas
 
-REI 26.2.821 mantiene en servidor dedicado sus avisos de `@OnlyIn` y errores al
-intentar cargar `LocalPlayer`; las trazas pertenecen al propio JAR de REI, no a
-Trading Cells, y no impidieron cargar ni guardar el mundo.
+- Ticker dinamico mediante un estado `ACTIVE`: menos del 10 % tras los retornos
+  tempranos y mayor riesgo de diferencias de tick.
+- Cache de preparacion del Autotrader: la repeticion final de cinco ejecuciones dio
+  12,479 ms frente a 11,605 ms, solo un 7,00 %. Todo el cambio de produccion fue
+  retirado.
+- Cache de posiciones/contextos en cinco renderizadores: la candidata empeoro la
+  mediana de 1,865/3,295 ms (media/p95) a 5,620/17,592 ms. Se restauro exactamente
+  el codigo anterior.
+- Snapshots compactos de Block Entity, agrupacion de paquetes e intercambio masivo:
+  no se conservaron cambios sin una plantilla multijugador comparable.
+- Caches adicionales de REI, entidades o textos: JFR no mostro una ruta propia con
+  peso suficiente en la escena disponible.
 
-## Cobertura pendiente manual
+## OpenGL y Vulkan
 
-Las escenas de 256 maquinas activas o bloqueadas, 2.304 intercambios y 64 maquinas
-visibles necesitan mundos con entidades capturadas y una sesion cliente real. Las
-herramientas permiten repetirlas con `--workload`, pero no se publican cifras hasta
-que se ejecuten con dos copias equivalentes del mismo mundo.
+Escena fija de 64 maquinas, 15 s de calentamiento y 5 s de medicion. Son pruebas
+funcionales de una ejecucion, no una comparacion estadistica entre backends.
+
+| Backend | Media | p95 | Estado |
+| --- | ---: | ---: | --- |
+| OpenGL | 1,874 ms | 3,187 ms | 64 maquinas completas |
+| Vulkan | 1,161 ms | 1,873 ms | 64 maquinas completas |
+
+Las capturas tienen la misma geometria y composicion. Solo 44 de 921.600 pixeles
+difieren mas de dos niveles de canal; la diferencia maxima es 12. REI 26.2.821
+carga y cierra correctamente en ambos backends. Sus avisos `@OnlyIn` pertenecen
+al propio REI.
+
+## Control vanilla
+
+Cinco ejecuciones OpenGL de 10 s, con mundo y camara fijos:
+
+| Variante | Media | p95 |
+| --- | ---: | ---: |
+| Sin Trading Cells | 1,285 ms | 2,836 ms |
+| Con Trading Cells | 1,353 ms | 2,745 ms |
+
+El resultado es inconcluso: la ruta media varia entre 0,799 y 4,959 ms aun sin el
+mod, mientras media y p95 cambian en sentidos opuestos. El comparador rechaza la
+estabilidad por +5,29 % en la media; no se atribuye causalidad ni se publica una
+mejora. Las cinco parejas de capturas son visualmente iguales dentro de un nivel
+de canal.
+
+## Servidor dedicado
+
+La plantilla vanilla y su medicion alcanzaron `Done`, guardaron el mundo y se
+cerraron mediante RCON. No aparecen `LocalPlayer`, `ClassNotFoundException` ni
+el mod cliente `trading_cells_performance` en el servidor. El mensaje de
+generador plano `No key layers in MapLike[{}]` procede de la configuracion
+vanilla de la plantilla y no de Trading Cells.

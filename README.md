@@ -5,7 +5,7 @@ Trading Cells es un mod para Minecraft 26.2 con NeoForge que automatiza el traba
 ## Requisitos
 
 - Minecraft `26.2.0`
-- NeoForge `26.2.0.55-beta` o posterior compatible con Minecraft 26.2
+- NeoForge `26.2.0.57` o posterior compatible con Minecraft 26.2
 - Java `25`
 - Roughly Enough Items `26.2.820` o posterior es opcional
 
@@ -78,7 +78,7 @@ Trading Cells utiliza exclusivamente las capas gráficas neutrales de Blaze3D qu
 
 Vulkan sigue siendo experimental en Minecraft 26.2. Si no puede iniciarse, Minecraft puede volver a OpenGL; el backend efectivo debe comprobarse en la línea `Using graphics backend` del registro o en `system_specs` desde la pantalla F3. Esta compatibilidad no supone soporte para el antiguo VulkanMod de terceros.
 
-NeoForge `26.2.0.55-beta` mantiene abierta una [incidencia en su pantalla de carga temprana](https://github.com/neoforged/NeoForge/issues/3230): esa ventana nace con contexto OpenGL y no puede entregarse después a Vulkan. `runClientVulkan` desactiva automáticamente solo esa pantalla en `run/vulkan/config/fml.toml`. En una instalación normal con esa revisión, Vulkan requiere establecer `earlyWindowControl = false` en `config/fml.toml` hasta que NeoForge integre la corrección; OpenGL no necesita este ajuste.
+NeoForge `26.2.0.57` mantiene abierta una [incidencia en su pantalla de carga temprana](https://github.com/neoforged/NeoForge/issues/3230): esa ventana nace con contexto OpenGL y no puede entregarse después a Vulkan. `runClientVulkan` desactiva automáticamente solo esa pantalla en `run/vulkan/config/fml.toml`. En una instalación normal con esa revisión, Vulkan requiere establecer `earlyWindowControl = false` en `config/fml.toml` hasta que NeoForge integre la corrección; OpenGL no necesita este ajuste.
 
 ## Configuración
 
@@ -119,6 +119,20 @@ Servidor dedicado de desarrollo, sin dependencias exclusivas de cliente:
 ```bash
 ./gradlew runServer
 ```
+
+Medicion reproducible de cliente y servidor:
+
+```bash
+python tools/performance/run_client_benchmark.py --backend opengl --scenario vanilla-control
+python tools/performance/run_server_benchmark.py --scenario idle-machines
+```
+
+El perfil cliente puede retirar REI con `--without-rei` y Trading Cells con
+`--without-trading-cells` para obtener un control vanilla. Los JFR empiezan
+despues del calentamiento y los resultados se guardan en CSV junto con backend,
+versiones, mundo, camara y configuracion. La metodologia completa y los cambios
+descartados estan en `tools/performance/README.md` y
+`tools/performance/RESULTS.md`.
 
 El identificador del mod es `trading_cells`.
 

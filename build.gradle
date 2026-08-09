@@ -64,10 +64,19 @@ sourceSets {
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
     }
+    performanceClient {
+        java.srcDir('tools/performance/client/java')
+        resources.srcDir('tools/performance/client/resources')
+    }
 }
 
 configurations.developmentClientCompileClasspath.extendsFrom(configurations.compileClasspath)
 configurations.developmentClientRuntimeClasspath.extendsFrom(
+        configurations.runtimeClasspath,
+        configurations.localRuntime
+)
+configurations.performanceClientCompileClasspath.extendsFrom(configurations.compileClasspath)
+configurations.performanceClientRuntimeClasspath.extendsFrom(
         configurations.runtimeClasspath,
         configurations.localRuntime
 )
@@ -95,6 +104,85 @@ def prepareVulkanFmlConfig = tasks.register('prepareVulkanFmlConfig') {
         if (updated != current) {
             configFile.setText(updated, 'UTF-8')
         }
+    }
+}
+
+def preparePerformanceVulkanFmlConfig = tasks.register('preparePerformanceVulkanFmlConfig') {
+    group = 'verification'
+    description = 'Disables the NeoForge early OpenGL window for Vulkan performance runs.'
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def runDirectory = project.file(
+                project.findProperty('performanceClientRunDirectory')
+                        ?: 'build/performance/client/vulkan'
+        )
+        def configFile = new File(runDirectory, 'config/fml.toml')
+        configFile.parentFile.mkdirs()
+        def setting = 'earlyWindowControl = false'
+        def current = configFile.exists() ? configFile.getText('UTF-8') : ''
+        def settingPattern = ~/(?m)^earlyWindowControl\s*=\s*(?:true|false)\s*$/
+        def updated
+        if (settingPattern.matcher(current).find()) {
+            updated = current.replaceFirst(settingPattern, setting)
+        } else if (current.isEmpty()) {
+            updated = setting + System.lineSeparator()
+        } else {
+            def separator = current.endsWith('\n') ? '' : System.lineSeparator()
+            updated = current + separator + setting + System.lineSeparator()
+        }
+        if (updated != current) {
+            configFile.setText(updated, 'UTF-8')
+        }
+    }
+}
+
+def configurePerformanceClientRun = { run, currentProject ->
+    if (currentProject.hasProperty('performanceClientOutput')) {
+        run.systemProperty(
+                'trading_cells.performance.client.output',
+                currentProject.property('performanceClientOutput').toString()
+        )
+    }
+    run.systemProperty(
+            'trading_cells.performance.client.warmupSeconds',
+            currentProject.findProperty('performanceClientWarmup')?.toString() ?: '15'
+    )
+    run.systemProperty(
+            'trading_cells.performance.client.measureSeconds',
+            currentProject.findProperty('performanceClientMeasure')?.toString() ?: '30'
+    )
+    run.systemProperty(
+            'trading_cells.performance.client.scenario',
+            currentProject.findProperty('performanceClientScenario')?.toString() ?: 'unspecified'
+    )
+    run.systemProperty(
+            'trading_cells.performance.client.requireWorld',
+            currentProject.hasProperty('quickPlayWorld').toString()
+    )
+    if (currentProject.hasProperty('performanceClientCamera')) {
+        run.systemProperty(
+                'trading_cells.performance.client.camera',
+                currentProject.property('performanceClientCamera').toString()
+        )
+    }
+    run.programArguments.addAll(
+            '--width',
+            currentProject.findProperty('performanceClientWidth')?.toString() ?: '1920',
+            '--height',
+            currentProject.findProperty('performanceClientHeight')?.toString() ?: '1080'
+    )
+    if (currentProject.hasProperty('quickPlayWorld')) {
+        run.programArguments.addAll(
+                '--quickPlaySingleplayer',
+                currentProject.property('quickPlayWorld').toString()
+        )
+    }
+    if (currentProject.hasProperty('performanceClientJfr')) {
+        run.systemProperty(
+                'trading_cells.performance.client.jfr',
+                currentProject.property('performanceClientJfr').toString()
+        )
     }
 }
 
@@ -131,7 +219,7 @@ neoForge {
             client()
             sourceSet = sourceSets.developmentClient
             gameDirectory = project.file('run/vulkan')
-            // NeoForge 26.2.0.55-beta still creates its early window with an
+            // NeoForge 26.2.0.57 still creates its early window with an
             // OpenGL context, which cannot be handed to Minecraft's Vulkan backend.
             taskBefore prepareVulkanFmlConfig.get()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
@@ -160,6 +248,35 @@ neoForge {
                         project.property('quickPlayWorld').toString()
                 )
             }
+        }
+
+        performanceClientVulkan {
+            client()
+            sourceSet = sourceSets.performanceClient
+            gameDirectory = project.file(
+                    project.findProperty('performanceClientRunDirectory')
+                            ?: 'build/performance/client/vulkan'
+            )
+            taskBefore preparePerformanceVulkanFmlConfig.get()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.warnings.onlyin.hide', 'true'
+            systemProperty 'neoforge.warnings.logofile.hide', 'true'
+            programArguments.addAll '--graphicsBackend', 'VULKAN'
+            configurePerformanceClientRun(delegate, project)
+        }
+
+        performanceClientOpenGL {
+            client()
+            sourceSet = sourceSets.performanceClient
+            gameDirectory = project.file(
+                    project.findProperty('performanceClientRunDirectory')
+                            ?: 'build/performance/client/opengl'
+            )
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.warnings.onlyin.hide', 'true'
+            systemProperty 'neoforge.warnings.logofile.hide', 'true'
+            programArguments.addAll '--graphicsBackend', 'OPENGL'
+            configurePerformanceClientRun(delegate, project)
         }
 
         server {
@@ -221,8 +338,15 @@ neoForge {
         // define mod <-> source bindings
         // these are used to tell the game which sources are for which mod
         // multi mod projects should define one per mod
-        "${mod_id}" {
-            sourceSet(sourceSets.main)
+        if (!project.hasProperty('performanceExcludeTradingCells')) {
+            "${mod_id}" {
+                sourceSet(sourceSets.main)
+            }
+        }
+        if (project.hasProperty('performanceClientOutput')) {
+            "trading_cells_performance" {
+                sourceSet(sourceSets.performanceClient)
+            }
         }
     }
 }

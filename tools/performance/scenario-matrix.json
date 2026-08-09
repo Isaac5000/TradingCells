@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "defaults": {
+    "runs_structural": 3,
+    "runs_local": 5,
+    "warmup_seconds": 15,
+    "measure_seconds": 30,
+    "maximum_regression_percent": 1
+  },
+  "server": [
+    {
+      "id": "idle-machines",
+      "machines": 1024,
+      "workload": "idle-machines.txt",
+      "template_required": false
+    },
+    {
+      "id": "active-machines",
+      "machines": 256,
+      "template_required": true,
+      "notes": "All inputs, tools and workers must be captured in the reusable template."
+    },
+    {
+      "id": "blocked-machines",
+      "machines": 256,
+      "template_required": true,
+      "notes": "Use valid inputs and completely full outputs."
+    },
+    {
+      "id": "bulk-trades",
+      "operations": 2304,
+      "template_required": true,
+      "notes": "Keep offers, discounts, inventory and RNG seed identical."
+    },
+    {
+      "id": "automation",
+      "template_required": true,
+      "notes": "Exercise hoppers plus item and liquid-experience capabilities."
+    }
+  ],
+  "client": [
+    {
+      "id": "vanilla-control",
+      "visible_machines": 0,
+      "variants": ["with_trading_cells", "without_trading_cells"]
+    },
+    {
+      "id": "visible-machines",
+      "visible_machines": 64,
+      "notes": "Use the same fixed camera and machine state for OpenGL and Vulkan."
+    },
+    {
+      "id": "menus-and-rei",
+      "notes": "Capture every machine screen and REI category with a fixed GUI scale."
+    }
+  ],
+  "backend_matrix": [
+    {"backend": "opengl", "with_rei": true},
+    {"backend": "opengl", "with_rei": false},
+    {"backend": "vulkan", "with_rei": true},
+    {"backend": "vulkan", "with_rei": false}
+  ]
+}

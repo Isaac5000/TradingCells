@@ -9,6 +9,7 @@ import datetime as dt
 import json
 import os
 from pathlib import Path
+import platform
 import queue
 import re
 import shutil
@@ -143,6 +144,7 @@ def write_server_files(game_directory: Path, rcon_port: int) -> None:
         "generate-structures": "false",
         "level-name": "world",
         "level-seed": "2620262",
+        "level-type": "minecraft:flat",
         "max-tick-time": "-1",
         "motd": "Trading Cells performance harness",
         "online-mode": "false",
@@ -484,21 +486,29 @@ def main() -> None:
     timestamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     output = (args.output_directory or root / "build" / "performance" / "results" / args.scenario / timestamp).resolve()
     output.mkdir(parents=True, exist_ok=False)
+    properties = read_gradle_properties(root)
+    metadata = {
+        "scenario": args.scenario,
+        "workload": str(workload),
+        "template_directory": str(args.template_directory or ""),
+        "runs": args.runs,
+        "warmup_seconds": args.warmup_seconds,
+        "measure_seconds": args.measure_seconds,
+        "git_commit": git_commit(root),
+        "git_dirty": git_dirty(root),
+        "minecraft_version": properties.get("minecraft_version", ""),
+        "neo_version": properties.get("neo_version", ""),
+        "java_home": os.environ.get("JAVA_HOME", ""),
+        "operating_system": platform.platform(),
+        "processor": platform.processor(),
+        "created_utc": dt.datetime.now(dt.UTC).isoformat(),
+    }
     (output / "metadata.txt").write_text(
-        "\n".join(
-            (
-                f"scenario={args.scenario}",
-                f"workload={workload}",
-                f"template_directory={args.template_directory or ''}",
-                f"runs={args.runs}",
-                f"warmup_seconds={args.warmup_seconds}",
-                f"measure_seconds={args.measure_seconds}",
-                f"git_commit={git_commit(root)}",
-                f"git_dirty={git_dirty(root)}",
-                f"created_utc={dt.datetime.now(dt.UTC).isoformat()}",
-            )
-        )
-        + "\n",
+        "\n".join(f"{key}={value}" for key, value in metadata.items()) + "\n",
+        encoding="utf-8",
+    )
+    (output / "metadata.json").write_text(
+        json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
     template = args.template_directory.resolve() if args.template_directory else output / "template"
@@ -539,6 +549,16 @@ def git_dirty(root: Path) -> str:
         ["git", "status", "--porcelain"], cwd=root, text=True, encoding="utf-8"
     )
     return str(bool(status.strip())).lower()
+
+
+def read_gradle_properties(root: Path) -> dict[str, str]:
+    result = {}
+    for raw_line in (root / "gradle.properties").read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, value = line.split("=", 1)
+            result[key.strip()] = value.strip()
+    return result
 
 
 if __name__ == "__main__":

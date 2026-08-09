@@ -4,7 +4,7 @@ Lee este archivo antes de recorrer el repositorio. Excluye de las busquedas ampl
 
 ## Entorno
 
-- Minecraft `26.2.0`, NeoForge `26.2.0.55-beta`, Java 25 y Gradle 9.5.
+- Minecraft `26.2.0`, NeoForge `26.2.0.57`, Java 25 y Gradle 9.5.
 - Mod `trading_cells`, version `1.0.0`.
 - REI es opcional; versiones en `gradle.properties` y dependencias en `build.gradle`.
 - Los clientes usan el source set de ejecucion `developmentClient`; el servidor conserva `main` sin REI.
@@ -71,6 +71,9 @@ Cada feature usa, cuando aporta valor, `domain`, `application/port`, `applicatio
 - Independencia de Vulkan/OpenGL: tarea `checkGraphicsBackendIndependence` y `docs/GRAPHICS_BACKENDS.md`.
 - Preparacion Vulkan: `prepareVulkanFmlConfig` desactiva la ventana temprana afectada por `NeoForge#3230` solo en `run/vulkan/`.
 - Medicion: `tools/performance/README.md` y `tools/performance/RESULTS.md`.
+- Matriz de escenarios: `tools/performance/scenario-matrix.json`; cliente con
+  `run_client_benchmark.py`, servidor con `run_server_benchmark.py` y
+  comparadores `compare_*_results.py`.
 - Publicacion: `docs/CURSEFORGE_DESCRIPTION_TEMPLATE.md`, `README.md` y `CHANGELOG.md`.
 - Candidatos regenerables o prescindibles: `DELETE.md`.
 

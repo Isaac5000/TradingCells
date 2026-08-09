@@ -72,12 +72,12 @@ Configure machine timers, capturer durability, hoe damage, infinite villager tra
 
 Trading Cells uses Minecraft 26.2's backend-neutral Blaze3D rendering APIs and supports the official OpenGL and experimental Vulkan backends without forcing either one. Minecraft may fall back to OpenGL when Vulkan is unavailable. This statement covers Minecraft's built-in backends and does not claim compatibility with the legacy third-party VulkanMod.
 
-NeoForge 26.2.0.55-beta has a known upstream early-loading-window issue when Vulkan is selected. Until NeoForge resolves it, set `earlyWindowControl = false` in `config/fml.toml` when using Vulkan. OpenGL is unaffected.
+NeoForge 26.2.0.57 has a known upstream early-loading-window issue when Vulkan is selected. Until NeoForge resolves it, set `earlyWindowControl = false` in `config/fml.toml` when using Vulkan. OpenGL is unaffected.
 
 ## Requirements
 
 - Minecraft 26.2.0
-- NeoForge 26.2.0.55-beta or a later compatible 26.2 build
+- NeoForge 26.2.0.57 or a later compatible 26.2 build
 - Java 25
 - Roughly Enough Items 26.2.820+ (optional, client-side)
 
