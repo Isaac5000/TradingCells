@@ -5,6 +5,7 @@ import com.cosmocraft.trading_cells.feature.experience.domain.model.ExperienceMa
 import com.cosmocraft.trading_cells.feature.experience.domain.model.ExperienceTransferAction;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.NonNegativeIntegerEditBox;
 import com.cosmocraft.trading_cells.platform.neoforge.network.ExperienceStorageTransferPayload;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -48,7 +49,7 @@ public final class ExperienceStorageScreen extends AbstractContainerScreen<Exper
     @Override
     protected void init() {
         super.init();
-        amountField = addRenderableWidget(new EditBox(
+        amountField = addRenderableWidget(new NonNegativeIntegerEditBox(
                 font,
                 leftPos + FIELD_X,
                 topPos + FIELD_Y,
@@ -57,7 +58,6 @@ public final class ExperienceStorageScreen extends AbstractContainerScreen<Exper
                 Component.translatable("gui.trading_cells.experience_amount")
         ));
         amountField.setMaxLength(10);
-        amountField.setFilter(value -> value.isEmpty() || value.chars().allMatch(Character::isDigit));
         amountField.setHint(Component.translatable("gui.trading_cells.experience_amount_hint"));
         amountField.setResponder(value -> updateButtonStates());
 

@@ -86,6 +86,27 @@ configuracion concreta se instala con `FeatureSettingsProvider` y
 Los IDs de registro, claves NBT y recursos no dependen del paquete Java, por lo
 que la reorganizacion conserva la compatibilidad de mundos.
 
+## Renderizado neutral
+
+El cliente se apoya en las abstracciones de Blaze3D y Minecraft 26.2:
+`SubmitNodeCollector`, estados de renderizado, `GuiGraphicsExtractor`,
+`RenderType`, `VertexConsumer`, modelos vanilla y `RenderPipelines`. Blaze3D
+elige internamente entre los backends oficiales Vulkan y OpenGL.
+
+El codigo del mod no puede importar ni referenciar implementaciones concretas
+de `org.lwjgl.opengl`, `org.lwjgl.vulkan`, `com.mojang.blaze3d.opengl` o
+`com.mojang.blaze3d.vulkan`, ni las clases `GlStateManager`, `GlDevice` o
+`VulkanDevice`. GLFW sigue permitido exclusivamente para entrada de teclado y
+raton. No se mantienen ramas de renderizado distintas por backend.
+
+Los perfiles cliente usan el source set vacio `developmentClient`, cuyo
+classpath reutiliza la salida de `main` y agrega las dependencias cliente
+opcionales. Los perfiles servidor siguen usando `main`, de modo que REI,
+Architectury y Cloth Config no pueden filtrarse al servidor dedicado ni al JAR.
+El perfil Vulkan prepara su configuracion local desactivando la ventana temprana
+OpenGL de NeoForge `26.2.0.55-beta`, como solucion temporal a la incidencia
+upstream `NeoForge#3230`; no existe ningun workaround dentro del codigo del mod.
+
 ## Verificacion
 
 `checkArchitecture` comprueba:
@@ -97,5 +118,8 @@ que la reorganizacion conserva la compatibilidad de mundos.
 - independencia del shared kernel;
 - composicion de servicios exclusivamente en `FeatureComposition`;
 - ausencia de GameTests de produccion en `src/main`.
+
+`checkGraphicsBackendIndependence` recorre todo `src/main/java`, rechaza
+referencias a implementaciones graficas concretas y forma parte de `check`.
 
 `verifyDomainRules` ejecuta las comprobaciones puras del dominio.

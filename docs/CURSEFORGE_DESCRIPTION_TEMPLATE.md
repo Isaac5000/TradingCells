@@ -68,10 +68,16 @@ Roughly Enough Items is optional. When installed, it displays the processes for 
 
 Configure machine timers, capturer durability, hoe damage, infinite villager trades, and the additive iron-farm production bonus. Defaults are designed to work as a complete progression without mandatory configuration.
 
+## Graphics Compatibility
+
+Trading Cells uses Minecraft 26.2's backend-neutral Blaze3D rendering APIs and supports the official OpenGL and experimental Vulkan backends without forcing either one. Minecraft may fall back to OpenGL when Vulkan is unavailable. This statement covers Minecraft's built-in backends and does not claim compatibility with the legacy third-party VulkanMod.
+
+NeoForge 26.2.0.55-beta has a known upstream early-loading-window issue when Vulkan is selected. Until NeoForge resolves it, set `earlyWindowControl = false` in `config/fml.toml` when using Vulkan. OpenGL is unaffected.
+
 ## Requirements
 
 - Minecraft 26.2.0
-- NeoForge 26.2.0.40-beta or a later compatible 26.2 build
+- NeoForge 26.2.0.55-beta or a later compatible 26.2 build
 - Java 25
 - Roughly Enough Items 26.2.820+ (optional, client-side)
 

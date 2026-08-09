@@ -4,11 +4,12 @@ Lee este archivo antes de recorrer el repositorio. Excluye de las busquedas ampl
 
 ## Entorno
 
-- Minecraft `26.2.0`, NeoForge `26.2.0.40-beta`, Java 25 y Gradle 9.5.
+- Minecraft `26.2.0`, NeoForge `26.2.0.55-beta`, Java 25 y Gradle 9.5.
 - Mod `trading_cells`, version `1.0.0`.
 - REI es opcional; versiones en `gradle.properties` y dependencias en `build.gradle`.
-- Comprobacion completa: `./gradlew clean build verifyDomainRules checkArchitecture`.
-- Arranques locales: `./gradlew runClient` y `./gradlew runServer`.
+- Los clientes usan el source set de ejecucion `developmentClient`; el servidor conserva `main` sin REI.
+- Comprobacion completa: `./gradlew clean build verifyDomainRules checkArchitecture checkGraphicsBackendIndependence`.
+- Arranques locales: `./gradlew runClient`, `./gradlew runClientVulkan`, `./gradlew runClientOpenGL` y `./gradlew runServer`.
 
 ## Puntos de entrada
 
@@ -40,6 +41,7 @@ Cada feature usa, cuando aporta valor, `domain`, `application/port`, `applicatio
 
 - Maquinas portatiles y persistencia: `platform/neoforge/machine/`.
 - Menus y coordenadas comunes: `platform/neoforge/menu/` y `platform/neoforge/client/screen/`.
+- Campo numerico compartido para XP: `platform/neoforge/client/screen/NonNegativeIntegerEditBox.java`.
 - Catalogos dinamicos tolerantes a fallos: `platform/neoforge/catalog/`.
 - Fluido de XP: `platform/neoforge/fluid/` y registros `ExperienceFluid*`.
 - REI: `platform/neoforge/integration/rei/`.
@@ -66,6 +68,8 @@ Cada feature usa, cuando aporta valor, `domain`, `application/port`, `applicatio
 
 - Pruebas/reglas puras: `src/test/java/com/cosmocraft/trading_cells/architecture/DomainRulesVerification.java`.
 - Regla de paquetes: tarea Gradle `checkArchitecture`.
+- Independencia de Vulkan/OpenGL: tarea `checkGraphicsBackendIndependence` y `docs/GRAPHICS_BACKENDS.md`.
+- Preparacion Vulkan: `prepareVulkanFmlConfig` desactiva la ventana temprana afectada por `NeoForge#3230` solo en `run/vulkan/`.
 - Medicion: `tools/performance/README.md` y `tools/performance/RESULTS.md`.
 - Publicacion: `docs/CURSEFORGE_DESCRIPTION_TEMPLATE.md`, `README.md` y `CHANGELOG.md`.
 - Candidatos regenerables o prescindibles: `DELETE.md`.
@@ -76,4 +80,5 @@ Cada feature usa, cuando aporta valor, `domain`, `application/port`, `applicatio
 - Los cambios de inventario deben llamar a la ruta de persistencia/sincronizacion de la Block Entity.
 - El servidor decide recetas, XP, botin y transferencias; el cliente solo presenta y solicita.
 - REI debe seguir siendo opcional y no debe cargar clases cliente en servidor dedicado.
+- El renderizado debe usar APIs neutrales de Blaze3D, sin clases internas de OpenGL o Vulkan.
 - El arbol de trabajo puede contener cambios del usuario: no revertir ni limpiar archivos ajenos.

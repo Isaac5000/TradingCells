@@ -5,7 +5,7 @@ Trading Cells es un mod para Minecraft 26.2 con NeoForge que automatiza el traba
 ## Requisitos
 
 - Minecraft `26.2.0`
-- NeoForge `26.2.0.40-beta` o posterior compatible con Minecraft 26.2
+- NeoForge `26.2.0.55-beta` o posterior compatible con Minecraft 26.2
 - Java `25`
 - Roughly Enough Items `26.2.820` o posterior es opcional
 
@@ -72,6 +72,14 @@ REI muestra los procesos de criaderos, incubadoras, cultivos, conversión, granj
 
 Las listas de profesiones, POI, aspectos de bioma, cultivos, alimentos y niveles de herramienta parten de datos vanilla fijos y se amplían dinámicamente con otros mods. Un elemento externo defectuoso se descarta; si no se puede conservar la ampliación, Trading Cells vuelve a la lista vanilla. Los nombres de profesiones usan el componente registrado por cada mod, incluido More Villagers.
 
+### Vulkan y OpenGL
+
+Trading Cells utiliza exclusivamente las capas gráficas neutrales de Blaze3D que proporciona Minecraft 26.2. No llama directamente a OpenGL ni a Vulkan y no fuerza un backend concreto, por lo que funciona con los backends oficiales `OPENGL` y `VULKAN`.
+
+Vulkan sigue siendo experimental en Minecraft 26.2. Si no puede iniciarse, Minecraft puede volver a OpenGL; el backend efectivo debe comprobarse en la línea `Using graphics backend` del registro o en `system_specs` desde la pantalla F3. Esta compatibilidad no supone soporte para el antiguo VulkanMod de terceros.
+
+NeoForge `26.2.0.55-beta` mantiene abierta una [incidencia en su pantalla de carga temprana](https://github.com/neoforged/NeoForge/issues/3230): esa ventana nace con contexto OpenGL y no puede entregarse después a Vulkan. `runClientVulkan` desactiva automáticamente solo esa pantalla en `run/vulkan/config/fml.toml`. En una instalación normal con esa revisión, Vulkan requiere establecer `earlyWindowControl = false` en `config/fml.toml` hasta que NeoForge integre la corrección; OpenGL no necesita este ajuste.
+
 ## Configuración
 
 - `timers.*`: duración base de criaderos, incubadoras, cultivos y granja de hierro.
@@ -83,13 +91,27 @@ Las listas de profesiones, POI, aspectos de bioma, cultivos, alimentos y niveles
 ## Desarrollo
 
 ```bash
-./gradlew clean build verifyDomainRules checkArchitecture
+./gradlew clean build verifyDomainRules checkArchitecture checkGraphicsBackendIndependence
 ```
 
 Cliente de desarrollo con REI:
 
 ```bash
 ./gradlew runClient
+```
+
+Clientes de prueba con un backend solicitado explícitamente y directorios de ejecución separados:
+
+```bash
+./gradlew runClientVulkan
+./gradlew runClientOpenGL
+```
+
+Los tres clientes incluyen REI salvo que se use `-PwithoutRei`. También aceptan `-PquickPlayWorld=<mundo>`:
+
+```bash
+./gradlew -PwithoutRei runClientVulkan
+./gradlew -PwithoutRei runClientOpenGL
 ```
 
 Servidor dedicado de desarrollo, sin dependencias exclusivas de cliente:
@@ -99,3 +121,5 @@ Servidor dedicado de desarrollo, sin dependencias exclusivas de cliente:
 ```
 
 El identificador del mod es `trading_cells`.
+
+La matriz gráfica y sus criterios de revisión están en [`docs/GRAPHICS_BACKENDS.md`](docs/GRAPHICS_BACKENDS.md).

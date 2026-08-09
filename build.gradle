@@ -57,6 +57,47 @@ configurations {
     localRuntime
 }
 
+sourceSets {
+    developmentClient {
+        java.setSrcDirs([])
+        resources.setSrcDirs([])
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations.developmentClientCompileClasspath.extendsFrom(configurations.compileClasspath)
+configurations.developmentClientRuntimeClasspath.extendsFrom(
+        configurations.runtimeClasspath,
+        configurations.localRuntime
+)
+
+def prepareVulkanFmlConfig = tasks.register('prepareVulkanFmlConfig') {
+    group = 'ide'
+    description = 'Disables the NeoForge early OpenGL window for Vulkan development runs.'
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def configFile = layout.projectDirectory.file('run/vulkan/config/fml.toml').asFile
+        configFile.parentFile.mkdirs()
+        def setting = 'earlyWindowControl = false'
+        def current = configFile.exists() ? configFile.getText('UTF-8') : ''
+        def settingPattern = ~/(?m)^earlyWindowControl\s*=\s*(?:true|false)\s*$/
+        def updated
+        if (settingPattern.matcher(current).find()) {
+            updated = current.replaceFirst(settingPattern, setting)
+        } else if (current.isEmpty()) {
+            updated = setting + System.lineSeparator()
+        } else {
+            def separator = current.endsWith('\n') ? '' : System.lineSeparator()
+            updated = current + separator + setting + System.lineSeparator()
+        }
+        if (updated != current) {
+            configFile.setText(updated, 'UTF-8')
+        }
+    }
+}
+
 neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
@@ -69,16 +110,50 @@ neoForge {
     runs {
         client {
             client()
-            // REI is a client-only development dependency. Keeping it on this
-            // run's extra classpath prevents its LocalPlayer references from
-            // being scanned or initialized by dedicated-server runs.
-            additionalRuntimeClasspathConfiguration.extendsFrom(configurations.localRuntime)
-
+            sourceSet = sourceSets.developmentClient
+            // The dedicated client source set includes optional client mods
+            // without exposing their classes to dedicated-server runs.
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             // REI 26.2 still uses @OnlyIn. NeoForge reports every usage in the
             // development log, but this avoids an upstream warning blocking runClient.
             systemProperty 'neoforge.warnings.onlyin.hide', 'true'
+            systemProperty 'neoforge.warnings.logofile.hide', 'true'
+            if (project.hasProperty('quickPlayWorld')) {
+                programArguments.addAll(
+                        '--quickPlaySingleplayer',
+                        project.property('quickPlayWorld').toString()
+                )
+            }
+        }
+
+        clientVulkan {
+            client()
+            sourceSet = sourceSets.developmentClient
+            gameDirectory = project.file('run/vulkan')
+            // NeoForge 26.2.0.55-beta still creates its early window with an
+            // OpenGL context, which cannot be handed to Minecraft's Vulkan backend.
+            taskBefore prepareVulkanFmlConfig.get()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.warnings.onlyin.hide', 'true'
+            systemProperty 'neoforge.warnings.logofile.hide', 'true'
+            programArguments.addAll '--graphicsBackend', 'VULKAN'
+            if (project.hasProperty('quickPlayWorld')) {
+                programArguments.addAll(
+                        '--quickPlaySingleplayer',
+                        project.property('quickPlayWorld').toString()
+                )
+            }
+        }
+
+        clientOpenGL {
+            client()
+            sourceSet = sourceSets.developmentClient
+            gameDirectory = project.file('run/opengl')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.warnings.onlyin.hide', 'true'
+            systemProperty 'neoforge.warnings.logofile.hide', 'true'
+            programArguments.addAll '--graphicsBackend', 'OPENGL'
             if (project.hasProperty('quickPlayWorld')) {
                 programArguments.addAll(
                         '--quickPlaySingleplayer',
@@ -361,6 +436,47 @@ tasks.register('checkArchitecture') {
     }
 }
 
+tasks.register('checkGraphicsBackendIndependence') {
+    group = 'verification'
+    description = 'Rejects direct dependencies on OpenGL or Vulkan implementation classes.'
+    def sourceRoot = file('src/main/java')
+    def forbiddenReferences = [
+            'org.lwjgl.opengl',
+            'org.lwjgl.vulkan',
+            'com.mojang.blaze3d.opengl',
+            'com.mojang.blaze3d.vulkan',
+            'GlStateManager',
+            'GlDevice',
+            'VulkanDevice'
+    ]
+    inputs.files(fileTree(sourceRoot) {
+        include '**/*.java'
+    })
+
+    doLast {
+        def violations = []
+        fileTree(sourceRoot).matching { include '**/*.java' }.each { source ->
+            def relativePath = sourceRoot.toPath()
+                    .relativize(source.toPath())
+                    .toString()
+                    .replace('\\', '/')
+            source.readLines('UTF-8').eachWithIndex { line, index ->
+                forbiddenReferences.each { forbiddenReference ->
+                    if (line.contains(forbiddenReference)) {
+                        violations << "${relativePath}:${index + 1}: references ${forbiddenReference}"
+                    }
+                }
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            throw new GradleException(
+                    "Graphics backend independence violations:\n - " + violations.join('\n - ')
+            )
+        }
+    }
+}
+
 tasks.register('verifyDomainRules', JavaExec) {
     group = 'verification'
     description = 'Runs dependency-free checks for the pure feature rules.'
@@ -396,6 +512,7 @@ tasks.register('checkVillagerTradeGuiTextures', Exec) {
 
 tasks.named('check').configure {
     dependsOn tasks.named('checkArchitecture')
+    dependsOn tasks.named('checkGraphicsBackendIndependence')
     dependsOn tasks.named('verifyDomainRules')
     dependsOn tasks.named('checkMachineGuiTextures')
     dependsOn tasks.named('checkVillagerTradeGuiTextures')

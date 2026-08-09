@@ -5,6 +5,7 @@ import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuse
 import com.cosmocraft.trading_cells.feature.infusion.domain.model.ArcaneInfusionTransferAction;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.NonNegativeIntegerEditBox;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenCommon;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeSprites;
 import com.cosmocraft.trading_cells.platform.neoforge.network.ArcaneInfuserTransferPayload;
@@ -91,7 +92,7 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
         ).tooltip(Tooltip.create(Component.translatable(
                 "tooltip.trading_cells.arcane_automatic_mode"
         ))).build());
-        amountField = addRenderableWidget(new EditBox(
+        amountField = addRenderableWidget(new NonNegativeIntegerEditBox(
                 font,
                 leftPos + CONTROL_X,
                 topPos + FIELD_Y,
@@ -100,7 +101,6 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
                 Component.translatable("gui.trading_cells.experience_amount")
         ));
         amountField.setMaxLength(10);
-        amountField.setFilter(value -> value.isEmpty() || value.chars().allMatch(Character::isDigit));
         amountField.setHint(Component.translatable("gui.trading_cells.experience_amount_hint_short"));
         amountField.setTooltip(Tooltip.create(
                 Component.translatable("gui.trading_cells.experience_amount_hint")
