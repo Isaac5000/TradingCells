@@ -18,19 +18,11 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 public final class ArcaneInfuserMenu extends AbstractContainerMenu {
-    public static final int TOGGLE_AUTOMATIC_BUTTON = 0;
-    public static final int TOP_SLOT_X = MachineMenuLayout.machineX(16);
-    public static final int TOP_SLOT_Y = 44;
-    public static final int LEFT_SLOT_X = MachineMenuLayout.machineX(-2);
-    public static final int LEFT_SLOT_Y = 63;
-    public static final int CENTER_SLOT_X = MachineMenuLayout.machineX(16);
-    public static final int CENTER_SLOT_Y = 63;
-    public static final int RIGHT_SLOT_X = MachineMenuLayout.machineX(34);
-    public static final int RIGHT_SLOT_Y = 63;
-    public static final int BOTTOM_SLOT_X = MachineMenuLayout.machineX(16);
-    public static final int BOTTOM_SLOT_Y = 82;
+    private static final int INPUT_GRID_X = MachineMenuLayout.machineX(-2);
+    private static final int INPUT_GRID_Y = 39;
+    private static final int INPUT_GRID_SPACING = 18;
     public static final int OUTPUT_SLOT_X = MachineMenuLayout.machineX(75);
-    public static final int OUTPUT_SLOT_Y = 63;
+    public static final int OUTPUT_SLOT_Y = 57;
 
     private static final int MACHINE_SLOT_COUNT = ArcaneInfuserBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
@@ -45,7 +37,7 @@ public final class ArcaneInfuserMenu extends AbstractContainerMenu {
                 containerId,
                 inventory,
                 new SimpleContainer(MACHINE_SLOT_COUNT),
-                new SimpleContainerData(6)
+                new SimpleContainerData(5)
         );
     }
 
@@ -57,15 +49,13 @@ public final class ArcaneInfuserMenu extends AbstractContainerMenu {
     ) {
         super(ArcaneInfuserRegistrationAdapter.MENU.get(), containerId);
         checkContainerSize(container, MACHINE_SLOT_COUNT);
-        checkContainerDataCount(data, 6);
+        checkContainerDataCount(data, 5);
         this.container = container;
         this.data = data;
 
-        addSlot(new Slot(container, ArcaneInfuserBlockEntity.TOP_SLOT, TOP_SLOT_X, TOP_SLOT_Y));
-        addSlot(new Slot(container, ArcaneInfuserBlockEntity.LEFT_SLOT, LEFT_SLOT_X, LEFT_SLOT_Y));
-        addSlot(new Slot(container, ArcaneInfuserBlockEntity.CENTER_SLOT, CENTER_SLOT_X, CENTER_SLOT_Y));
-        addSlot(new Slot(container, ArcaneInfuserBlockEntity.RIGHT_SLOT, RIGHT_SLOT_X, RIGHT_SLOT_Y));
-        addSlot(new Slot(container, ArcaneInfuserBlockEntity.BOTTOM_SLOT, BOTTOM_SLOT_X, BOTTOM_SLOT_Y));
+        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+            addSlot(new Slot(container, slot, inputSlotX(slot), inputSlotY(slot)));
+        }
         addSlot(new OutputSlot(
                 container,
                 ArcaneInfuserBlockEntity.OUTPUT_SLOT,
@@ -92,26 +82,18 @@ public final class ArcaneInfuserMenu extends AbstractContainerMenu {
         return ArcaneInfuserBlockEntity.EXPERIENCE_CAPACITY;
     }
 
-    public boolean automaticMode() {
-        return data.get(2) != 0;
-    }
-
     public int requiredExperience() {
-        return (data.get(3) & 0xFFFF) | ((data.get(4) & 0x7FFF) << 16);
+        return (data.get(2) & 0xFFFF) | ((data.get(3) & 0x7FFF) << 16);
     }
 
     public boolean insufficientRecipeExperience() {
-        return data.get(5) == ArcaneInfuserBlockEntity.OUTPUT_STATE_INSUFFICIENT_EXPERIENCE;
+        return data.get(4) == ArcaneInfuserBlockEntity.OUTPUT_STATE_INSUFFICIENT_EXPERIENCE;
     }
 
     private boolean resultCanBeTaken() {
-        int outputState = data.get(5);
+        int outputState = data.get(4);
         return outputState == ArcaneInfuserBlockEntity.OUTPUT_STATE_MANUAL_READY
                 || outputState == ArcaneInfuserBlockEntity.OUTPUT_STATE_PHYSICAL;
-    }
-
-    public void setClientAutomaticMode(boolean enabled) {
-        data.set(2, enabled ? 1 : 0);
     }
 
     public void handleTransfer(
@@ -125,17 +107,6 @@ public final class ArcaneInfuserMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean clickMenuButton(@NonNull Player player, int buttonId) {
-        if (buttonId != TOGGLE_AUTOMATIC_BUTTON
-                || !(container instanceof ArcaneInfuserBlockEntity infuser)
-                || !stillValid(player)) {
-            return false;
-        }
-        infuser.toggleAutomaticMode();
-        return true;
-    }
-
-    @Override
     public boolean stillValid(@NonNull Player player) {
         return container.stillValid(player);
     }
@@ -143,6 +114,14 @@ public final class ArcaneInfuserMenu extends AbstractContainerMenu {
     @Override
     public boolean canTakeItemForPickAll(ItemStack carried, Slot target) {
         return !(target instanceof OutputSlot);
+    }
+
+    public static int inputSlotX(int slot) {
+        return INPUT_GRID_X + slot % 3 * INPUT_GRID_SPACING;
+    }
+
+    public static int inputSlotY(int slot) {
+        return INPUT_GRID_Y + slot / 3 * INPUT_GRID_SPACING;
     }
 
     @Override

@@ -95,9 +95,10 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
         if (menu.kind() != BreederKind.VILLAGER) {
             return;
         }
-        variantSelector = addRenderableWidget(Button.builder(variantSelectorLabel(), button -> toggleVariantList())
-                .bounds(leftPos + VARIANT_BUTTON_X, topPos + VARIANT_BUTTON_Y, VARIANT_LIST_WIDTH, 18)
-                .build());
+        variantSelector = addRenderableWidget(new VariantSelectorButton(
+                leftPos + VARIANT_BUTTON_X,
+                topPos + VARIANT_BUTTON_Y
+        ));
     }
 
     @Override
@@ -370,7 +371,7 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
     }
 
     private Component variantSelectorLabel() {
-        return Component.translatable("button.trading_cells.villager_skin");
+        return menu.selectedVillagerVariantName();
     }
 
     private void drawFoodList(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -552,6 +553,48 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
                 );
             }
             screen.closeVariantList();
+        }
+    }
+
+    private final class VariantSelectorButton extends Button.Plain { // NOSONAR - Minecraft widget inheritance is framework-defined.
+        private static final int HEIGHT = 18;
+
+        private VariantSelectorButton(int x, int y) {
+            super(
+                    x,
+                    y,
+                    VARIANT_LIST_WIDTH,
+                    HEIGHT,
+                    variantSelectorLabel(),
+                    ignored -> toggleVariantList(),
+                    DEFAULT_NARRATION
+            );
+        }
+
+        @Override
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+            MachineScreenTheme theme = MachineScreenTheme.VILLAGER_BREEDER;
+            int x = getX();
+            int y = getY();
+            int width = getWidth();
+            int height = getHeight();
+            graphics.fill(x, y, x + width, y + height, theme.frameDark());
+            graphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, theme.frame());
+            graphics.fill(
+                    x + 2,
+                    y + 2,
+                    x + width - 2,
+                    y + height - 2,
+                    isMouseOver(mouseX, mouseY) ? theme.slotHighlight() : theme.slotInner()
+            );
+
+            Component message = getMessage();
+            float scale = Math.min(1.0F, (float) (width - 6) / Math.max(1, font.width(message)));
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(x + width / 2.0F, y + 5.0F);
+            graphics.pose().scale(scale, scale);
+            graphics.text(font, message, -font.width(message) / 2, 0, 0xFFFFFFFF, true);
+            graphics.pose().popMatrix();
         }
     }
 }

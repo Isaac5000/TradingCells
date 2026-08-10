@@ -15,6 +15,7 @@ Trading Cells turns villagers and piglins into compact, portable automation with
 
 - Manual and automatic villager trading with discounts, profession levels, persistent offers, mass trading, POIs, and stored trade XP.
 - Villager breeding, incubation, crop farming, curing, iron farming, and Overworld quarrying.
+- A configurable Skeleton Farm hunts Skeletons, Wither Skeletons, Strays, Bogged, or Parched and lets each supported reward be enabled independently.
 
 [IMAGE: Piglin machines overview]
 
@@ -37,22 +38,26 @@ Store or withdraw a chosen number of levels from a dedicated portable block; lea
 
 [IMAGE: Arcane Infuser screen with a complete recipe]
 
-The Arcane Infuser turns a plain book into Farmer's Touch or Miner's Touch using late-game ingredients. Farmer's Touch costs 15,000 XP and Miner's Touch costs 30,000 XP. Its XP tank stores up to 2,147,483,647 points. Its five cross-shaped inputs and independent output are fully automatable, while NeoForge-compatible pipes can insert or extract liquid experience. Infusions complete atomically as soon as every resource is available, with no partial consumption.
+The Arcane Infuser uses a manual 3x3 ingredient grid and stores up to 2,147,483,647 XP points. Its output behaves like a crafting table: resources are consumed atomically only when the player takes a valid result. Item hoppers and pipes cannot automate it, while NeoForge-compatible fluid pipes can still insert or extract liquid experience.
 
-- Farmer's Touch requires 16 Dragon's Breath, a Totem of Undying, a Nether Star, and a Netherite Block.
-- Miner's Touch replaces the Dragon's Breath with one Echo Shard.
-- Player-killed Wardens always add one Echo Shard to their normal loot; Looting can add between zero and its level.
+- Farmer's Touch costs 15,000 XP and combines a book with a Chorus Flower, four crops, a Totem of Undying, a Nether Star, and a Netherite Block.
+- Miner's Touch costs 30,000 XP and uses an Echo Shard, two End Stone, and two Sculk Catalysts alongside the shared late-game ingredients.
+- A third 5,000 XP recipe transforms a captured unemployed villager into a Nitwit without replacing its other saved data.
+- The Skeleton Farm costs 25,000 XP and combines materials representing all five skeleton variants around a central Nether Star.
+- Warrior's Touch costs 45,000 XP and prevents sword durability loss inside Skeleton Farms.
+- Player-killed Wardens add one Echo Shard to their normal loot. Looting can add up to its level to the shard and guarantees between one and its level of extra Sculk Catalysts.
 
 ## REI Integration
 
 [IMAGE: REI category tabs]
 
-Roughly Enough Items is optional. When installed, it displays the processes for breeders, incubators, crop farms, the converter, iron farm, both quarries, standard piglin bartering, Netherite piglin bartering, and data-driven Arcane Infusion. Normal crafting recipes remain available through REI as usual.
+Roughly Enough Items is optional. When installed, it displays the processes for breeders, incubators, crop farms, the converter, iron and skeleton farms, both quarries, standard piglin bartering, Netherite piglin bartering, and data-driven Arcane Infusion. Normal crafting recipes remain available through REI as usual.
 
 ## Small but Important Improvements
 
 - Farmer's Touch prevents hoe durability loss inside both crop farms.
 - Miner's Touch prevents pickaxe durability loss inside both quarries.
+- Warrior's Touch prevents sword durability loss inside Skeleton Farms.
 - Fortune scales machine output beyond vanilla level III where supported.
 - Fortune and Silk Touch can coexist in quarries; together they increase ore selection and ore-block yield.
 - Efficiency is capped functionally at level V in crop farms and quarries.

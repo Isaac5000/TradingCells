@@ -12,6 +12,8 @@ import com.cosmocraft.trading_cells.feature.experience.adapters.output.Experienc
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryEnchantments;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmEnchantments;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import net.minecraft.core.registries.Registries;
@@ -80,10 +82,27 @@ public final class CreativeTabRegistration {
                                 .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
                                         new EnchantmentInstance(enchantment, 1)
                                 )));
+                        parameters.holders().lookup(Registries.ENCHANTMENT)
+                                .flatMap(enchantments -> enchantments.get(SkeletonFarmEnchantments.WARRIORS_TOUCH))
+                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
+                                        new EnchantmentInstance(enchantment, 1)
+                                )));
                         output.accept(CaptureRegistrationAdapter.VILLAGER_CAPTURER_ITEM.get());
                         output.accept(CaptureRegistrationAdapter.PIGLIN_CAPTURER_ITEM.get());
                         output.accept(CaptureRegistrationAdapter.UNBREAKABLE_VILLAGER_CAPTURER_ITEM.get());
                         output.accept(CaptureRegistrationAdapter.UNBREAKABLE_PIGLIN_CAPTURER_ITEM.get());
+                    })
+                    .build());
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> FARMS_TAB =
+            Registration.CREATIVE_MODE_TABS.register("farms_tab", () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup." + TradingCells.MOD_ID + ".farms"))
+                    .icon(() -> SkeletonFarmRegistrationAdapter.ITEM.get().getDefaultInstance())
+                    .displayItems((parameters, output) -> {
+                        output.accept(FarmerRegistrationAdapter.FARMER_ITEM.get());
+                        output.accept(FarmerRegistrationAdapter.PIGLIN_FARMER_ITEM.get());
+                        output.accept(IronFarmRegistrationAdapter.IRON_FARM_ITEM.get());
+                        output.accept(SkeletonFarmRegistrationAdapter.ITEM.get());
                     })
                     .build());
 

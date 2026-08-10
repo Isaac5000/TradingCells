@@ -34,7 +34,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-/** Renders the Arcane Infuser's five stored ingredients on its physical work surface. */
+/** Renders the Arcane Infuser's nine stored ingredients on its physical work surface. */
 public final class ArcaneInfuserBlockEntityRenderer implements BlockEntityRenderer<
         ArcaneInfuserBlockEntity,
         ArcaneInfuserBlockEntityRenderer.State> {
@@ -42,16 +42,16 @@ public final class ArcaneInfuserBlockEntityRenderer implements BlockEntityRender
             TradingCells.MOD_ID,
             "arcane_infuser_table_visual"
     );
-    private static final double PEDESTAL_DISTANCE = 0.27D;
+    private static final double PEDESTAL_DISTANCE = 0.28D;
     private static final double PEDESTAL_Y = 0.10D;
-    private static final float PEDESTAL_WIDTH = 0.15F;
-    private static final float PEDESTAL_HEIGHT = 0.20F;
+    private static final float PEDESTAL_WIDTH = 0.12F;
+    private static final float PEDESTAL_HEIGHT = 0.18F;
     private static final double TABLE_ITEM_Y = 0.25D;
-    private static final float TABLE_ITEM_SCALE = 0.60F;
-    private static final double PEDESTAL_ITEM_Y = 0.37D;
-    private static final double CENTER_ITEM_Y = 0.41D;
-    private static final float ITEM_SCALE = 0.17F;
-    private static final float CENTER_ITEM_SCALE = 0.18F;
+    private static final float TABLE_ITEM_SCALE = 0.52F;
+    private static final double PEDESTAL_ITEM_Y = 0.34D;
+    private static final double CENTER_ITEM_Y = 0.38D;
+    private static final float ITEM_SCALE = 0.15F;
+    private static final float CENTER_ITEM_SCALE = 0.17F;
 
     private final BlockModelResolver blockModelResolver;
     private final ItemModelResolver itemModelResolver;
@@ -104,7 +104,6 @@ public final class ArcaneInfuserBlockEntityRenderer implements BlockEntityRender
         for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
             updateItem(state, slot, blockEntity.getItem(slot), blockEntity, level);
         }
-        state.centerItemPresent = !blockEntity.getItem(ArcaneInfuserBlockEntity.CENTER_SLOT).isEmpty();
     }
 
     @Override
@@ -114,19 +113,11 @@ public final class ArcaneInfuserBlockEntityRenderer implements BlockEntityRender
             @NonNull SubmitNodeCollector collector,
             @NonNull CameraRenderState camera
     ) {
-        double forwardX = state.facing.getStepX();
-        double forwardZ = state.facing.getStepZ();
-        double rightX = -forwardZ;
-        double rightZ = forwardX;
-        Vec3 top = position(-forwardX, -forwardZ);
-        Vec3 left = position(-rightX, -rightZ);
-        Vec3 right = position(rightX, rightZ);
-        Vec3 bottom = position(forwardX, forwardZ);
-
-        submitPedestal(state, top, poseStack, collector);
-        submitPedestal(state, left, poseStack, collector);
-        submitPedestal(state, right, poseStack, collector);
-        submitPedestal(state, bottom, poseStack, collector);
+        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+            if (slot != ArcaneInfuserBlockEntity.CENTER_SLOT) {
+                submitPedestal(state, position(slot, state.facing), poseStack, collector);
+            }
+        }
         submitItem(
                 state.enchantingTable,
                 new Vec3(0.5D, TABLE_ITEM_Y, 0.5D),
@@ -136,19 +127,14 @@ public final class ArcaneInfuserBlockEntityRenderer implements BlockEntityRender
                 collector
         );
 
-        submitItem(state.item(ArcaneInfuserBlockEntity.TOP_SLOT), top, ITEM_SCALE, state, poseStack, collector);
-        submitItem(state.item(ArcaneInfuserBlockEntity.LEFT_SLOT), left, ITEM_SCALE, state, poseStack, collector);
-        submitItem(state.item(ArcaneInfuserBlockEntity.RIGHT_SLOT), right, ITEM_SCALE, state, poseStack, collector);
-        submitItem(state.item(ArcaneInfuserBlockEntity.BOTTOM_SLOT), bottom, ITEM_SCALE, state, poseStack, collector);
-        if (state.centerItemPresent) {
-            submitItem(
-                    state.item(ArcaneInfuserBlockEntity.CENTER_SLOT),
-                    new Vec3(0.5D, CENTER_ITEM_Y, 0.5D),
-                    CENTER_ITEM_SCALE,
-                    state,
-                    poseStack,
-                    collector
-            );
+        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+            Vec3 position = slot == ArcaneInfuserBlockEntity.CENTER_SLOT
+                    ? new Vec3(0.5D, CENTER_ITEM_Y, 0.5D)
+                    : position(slot, state.facing);
+            float scale = slot == ArcaneInfuserBlockEntity.CENTER_SLOT
+                    ? CENTER_ITEM_SCALE
+                    : ITEM_SCALE;
+            submitItem(state.item(slot), position, scale, state, poseStack, collector);
         }
     }
 
@@ -201,11 +187,17 @@ public final class ArcaneInfuserBlockEntityRenderer implements BlockEntityRender
         state.cacheItem(slot, stack.copy());
     }
 
-    private static Vec3 position(double axisX, double axisZ) {
+    private static Vec3 position(int slot, Direction facing) {
+        int row = slot / 3 - 1;
+        int column = slot % 3 - 1;
+        double forwardX = facing.getStepX();
+        double forwardZ = facing.getStepZ();
+        double rightX = -forwardZ;
+        double rightZ = forwardX;
         return new Vec3(
-                0.5D + axisX * PEDESTAL_DISTANCE,
+                0.5D + (row * forwardX + column * rightX) * PEDESTAL_DISTANCE,
                 PEDESTAL_ITEM_Y,
-                0.5D + axisZ * PEDESTAL_DISTANCE
+                0.5D + (row * forwardZ + column * rightZ) * PEDESTAL_DISTANCE
         );
     }
 
@@ -278,9 +270,17 @@ public final class ArcaneInfuserBlockEntityRenderer implements BlockEntityRender
                 new ItemStackRenderState(),
                 new ItemStackRenderState(),
                 new ItemStackRenderState(),
+                new ItemStackRenderState(),
+                new ItemStackRenderState(),
+                new ItemStackRenderState(),
+                new ItemStackRenderState(),
                 new ItemStackRenderState()
         };
         private final ItemStack[] cachedItems = {
+                ItemStack.EMPTY,
+                ItemStack.EMPTY,
+                ItemStack.EMPTY,
+                ItemStack.EMPTY,
                 ItemStack.EMPTY,
                 ItemStack.EMPTY,
                 ItemStack.EMPTY,
@@ -290,7 +290,6 @@ public final class ArcaneInfuserBlockEntityRenderer implements BlockEntityRender
         private Direction facing = Direction.NORTH;
         private int lightCoords;
         private boolean modelsReady;
-        private boolean centerItemPresent;
 
         private ItemStackRenderState item(int slot) {
             return items[slot];
@@ -309,7 +308,6 @@ public final class ArcaneInfuserBlockEntityRenderer implements BlockEntityRender
                 items[slot].clear();
                 cachedItems[slot] = ItemStack.EMPTY;
             }
-            centerItemPresent = false;
         }
     }
 }

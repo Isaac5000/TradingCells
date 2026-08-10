@@ -27,9 +27,11 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BeetrootBlock;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CocoaBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.NetherWartBlock;
+import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
@@ -39,6 +41,10 @@ public final class FarmerCropStackAdapter {
             new Option(Items.CARROT, Blocks.CARROTS, FarmerCrop.CARROT),
             new Option(Items.POTATO, Blocks.POTATOES, FarmerCrop.POTATO),
             new Option(Items.BEETROOT_SEEDS, Blocks.BEETROOTS, FarmerCrop.BEETROOT),
+            new Option(Items.PUMPKIN_SEEDS, Blocks.PUMPKIN_STEM, FarmerCrop.PUMPKIN),
+            new Option(Items.MELON_SEEDS, Blocks.MELON_STEM, FarmerCrop.MELON),
+            new Option(Items.SUGAR_CANE, Blocks.SUGAR_CANE, FarmerCrop.SUGAR_CANE),
+            new Option(Items.COCOA_BEANS, Blocks.COCOA, FarmerCrop.COCOA),
             new Option(Items.TORCHFLOWER_SEEDS, Blocks.TORCHFLOWER_CROP, FarmerCrop.NONE),
             new Option(Items.PITCHER_POD, Blocks.PITCHER_CROP, FarmerCrop.NONE)
     );
@@ -86,6 +92,10 @@ public final class FarmerCropStackAdapter {
             case CARROT -> Items.CARROT;
             case POTATO -> Items.POTATO;
             case BEETROOT -> Items.BEETROOT_SEEDS;
+            case PUMPKIN -> Items.PUMPKIN_SEEDS;
+            case MELON -> Items.MELON_SEEDS;
+            case SUGAR_CANE -> Items.SUGAR_CANE;
+            case COCOA -> Items.COCOA_BEANS;
             case CRIMSON_FUNGUS -> Items.CRIMSON_FUNGUS;
             case WARPED_FUNGUS -> Items.WARPED_FUNGUS;
             case CRIMSON_ROOTS -> Items.CRIMSON_ROOTS;
@@ -110,6 +120,10 @@ public final class FarmerCropStackAdapter {
             case POTATO -> Items.POTATO;
             case BEETROOT -> Items.BEETROOT;
             case BEETROOT_SEEDS -> Items.BEETROOT_SEEDS;
+            case PUMPKIN -> Items.PUMPKIN;
+            case MELON -> Items.MELON;
+            case SUGAR_CANE -> Items.SUGAR_CANE;
+            case COCOA_BEANS -> Items.COCOA_BEANS;
             case CRIMSON_FUNGUS -> Items.CRIMSON_FUNGUS;
             case WARPED_FUNGUS -> Items.WARPED_FUNGUS;
             case CRIMSON_ROOTS -> Items.CRIMSON_ROOTS;
@@ -134,6 +148,19 @@ public final class FarmerCropStackAdapter {
             case CARROT -> Blocks.CARROTS.defaultBlockState().setValue(CropBlock.AGE, stage(clampedTicks, duration, 7));
             case POTATO -> Blocks.POTATOES.defaultBlockState().setValue(CropBlock.AGE, stage(clampedTicks, duration, 7));
             case BEETROOT -> Blocks.BEETROOTS.defaultBlockState().setValue(BeetrootBlock.AGE, stage(clampedTicks, duration, 3));
+            case PUMPKIN -> Blocks.PUMPKIN_STEM.defaultBlockState().setValue(
+                    StemBlock.AGE,
+                    stage(clampedTicks, duration, 7)
+            );
+            case MELON -> Blocks.MELON_STEM.defaultBlockState().setValue(
+                    StemBlock.AGE,
+                    stage(clampedTicks, duration, 7)
+            );
+            case SUGAR_CANE -> Blocks.SUGAR_CANE.defaultBlockState();
+            case COCOA -> Blocks.COCOA.defaultBlockState().setValue(
+                    CocoaBlock.AGE,
+                    stage(clampedTicks, duration, 2)
+            );
             case CRIMSON_FUNGUS -> Blocks.CRIMSON_FUNGUS.defaultBlockState();
             case WARPED_FUNGUS -> Blocks.WARPED_FUNGUS.defaultBlockState();
             case CRIMSON_ROOTS -> Blocks.CRIMSON_ROOTS.defaultBlockState();
@@ -200,6 +227,12 @@ public final class FarmerCropStackAdapter {
 
     public static BlockState soilState(FarmerKind kind, FarmerCrop crop) {
         if (kind == FarmerKind.VILLAGER) {
+            if (crop == FarmerCrop.SUGAR_CANE) {
+                return Blocks.SAND.defaultBlockState();
+            }
+            if (crop == FarmerCrop.COCOA) {
+                return Blocks.JUNGLE_LOG.defaultBlockState();
+            }
             return Blocks.FARMLAND.defaultBlockState().setValue(
                     FarmlandBlock.MOISTURE,
                     FarmlandBlock.MAX_MOISTURE
@@ -223,7 +256,19 @@ public final class FarmerCropStackAdapter {
         if (stack.is(Items.POTATO)) {
             return FarmerCrop.POTATO;
         }
-        return stack.is(Items.BEETROOT_SEEDS) ? FarmerCrop.BEETROOT : FarmerCrop.NONE;
+        if (stack.is(Items.BEETROOT_SEEDS)) {
+            return FarmerCrop.BEETROOT;
+        }
+        if (stack.is(Items.PUMPKIN_SEEDS)) {
+            return FarmerCrop.PUMPKIN;
+        }
+        if (stack.is(Items.MELON_SEEDS)) {
+            return FarmerCrop.MELON;
+        }
+        if (stack.is(Items.SUGAR_CANE)) {
+            return FarmerCrop.SUGAR_CANE;
+        }
+        return stack.is(Items.COCOA_BEANS) ? FarmerCrop.COCOA : FarmerCrop.NONE;
     }
 
     private static Catalog villagerCatalog() {

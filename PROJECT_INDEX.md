@@ -32,8 +32,9 @@ Lee este archivo antes de recorrer el repositorio. Excluye de las busquedas ampl
 | `quarry` | Canteras, catalogo de menas, picos, mejoras y minado profundo. |
 | `converter` | Zombificacion, curacion y conservacion de intercambios. |
 | `ironfarm` | Granja de hierro, ciclos y multiplicadores. |
+| `skeletonfarm` | Granja de esqueletos, objetivos, filtros de botin, espadas y XP. |
 | `experience` | Almacen de XP y transferencia de fluido de experiencia. |
-| `infusion` | Infusor Arcano, recetas de datos y fabricacion manual/automatica. |
+| `infusion` | Infusor Arcano, matriz 3x3 manual, recetas de datos y botin del Warden. |
 
 Cada feature usa, cuando aporta valor, `domain`, `application/port`, `application/service` y `adapters`. Las reglas exactas y excepciones estan en `ARCHITECTURE.md`.
 
@@ -61,8 +62,16 @@ Cada feature usa, cuando aporta valor, `domain`, `application/port`, `applicatio
 - Interaccion de slots: `feature/infusion/adapters/input/ArcaneInfuserMenu.java`.
 - Pantalla y boton REI: `feature/infusion/adapters/output/client/ArcaneInfuserScreen.java`.
 - Pedestales, mesa e items en el mundo: `feature/infusion/adapters/output/client/ArcaneInfuserBlockEntityRenderer.java`.
-- Codec de recetas: `feature/infusion/adapters/minecraft/ArcaneInfusionRecipe.java`.
+- Codec de recetas y resultados dinamicos: `feature/infusion/adapters/minecraft/{ArcaneInfusionRecipe,ArcaneInfusionResult}.java`.
 - Guia funcional: `docs/ARCANE_INFUSER.md`.
+
+## Granja de Esqueletos
+
+- Reglas puras de tiempo, bajas y filtros: `feature/skeletonfarm/domain/model/`.
+- Inventario, botin, XP y persistencia: `feature/skeletonfarm/adapters/input/SkeletonFarmBlockEntity.java`.
+- Menu ancho basado en Trader: `feature/skeletonfarm/adapters/input/SkeletonFarmMenu.java`.
+- Pantalla y renderizado de entidades: `feature/skeletonfarm/adapters/output/client/`.
+- Guia funcional: `docs/SKELETON_FARM.md`.
 
 ## Verificacion y mantenimiento
 

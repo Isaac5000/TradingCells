@@ -36,7 +36,9 @@ public final class MinecraftExperience {
 
     public static int totalPoints(int level, float progress) {
         float safeProgress = Math.clamp(progress, 0.0F, MAX_PROGRESS);
-        long partial = (long) Math.floor(safeProgress * pointsNeededForNextLevel(level));
+        int pointsForNextLevel = pointsNeededForNextLevel(level);
+        long roundedPartial = Math.round((double) safeProgress * pointsForNextLevel);
+        long partial = Math.clamp(roundedPartial, 0L, (long) pointsForNextLevel - 1L);
         return saturated((long) pointsAtStartOfLevel(level) + partial);
     }
 
@@ -78,7 +80,21 @@ public final class MinecraftExperience {
         return maximumAdditionalLevels(0, 0.0F, Math.max(0, points));
     }
 
+    public static ExperienceState stateForTotalPoints(int points) {
+        int safePoints = Math.max(0, points);
+        int level = levelForTotalPoints(safePoints);
+        int pointsIntoLevel = Math.clamp(
+                safePoints - pointsAtStartOfLevel(level),
+                0,
+                pointsNeededForNextLevel(level) - 1
+        );
+        return new ExperienceState(safePoints, level, pointsIntoLevel);
+    }
+
     private static int saturated(long value) {
         return (int) Math.clamp(value, 0L, Integer.MAX_VALUE);
+    }
+
+    public record ExperienceState(int totalPoints, int level, int pointsIntoLevel) {
     }
 }

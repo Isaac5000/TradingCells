@@ -20,6 +20,7 @@ La versión actual del mod es `1.0.0`.
 - **Cultivo de Aldeanos**: procesa cultivos con dieciocho salidas; el nivel de la azada, Eficiencia y Fortuna afectan al ciclo.
 - **Convertidor de Aldeanos**: zombifica y cura sin perder ofertas, y conserva los descuentos de curación.
 - **Granja de Hierro**: produce hierro con multiplicadores base `x1`, `x2` y `x3` según los aldeanos instalados.
+- **Granja de Esqueletos**: permite elegir entre esqueletos normales, Wither, de hielo, de pantano y del desierto, filtrar sus recompensas y mejorar la caza con una espada.
 - **Cantera de Aldeanos**: extrae materiales del Overworld. El pico, su nivel, Eficiencia, Fortuna y Toque de Seda afectan al resultado.
 
 ## Máquinas de piglins
@@ -46,20 +47,24 @@ El depósito expone experiencia líquida mediante la API de transferencia de Neo
 
 ## Infusor Arcano
 
-El **Infusor Arcano** fabrica los libros de Toque del Granjero y Toque del Minero. Dispone de cinco entradas en cruz, una salida independiente y un depósito de hasta `2.147.483.647` puntos de experiencia. Toque del Granjero consume `15.000` puntos y Toque del Minero `30.000`. La operación es instantánea, procesa como máximo una receta por tick y solo consume los recursos cuando la receta completa, la experiencia y el espacio de salida están disponibles.
+El **Infusor Arcano** usa nueve entradas como una mesa de trabajo, una salida de previsualización y un depósito de hasta `2.147.483.647` puntos de experiencia. No tiene modo automático ni acepta objetos mediante tolvas: solo consume los recursos de forma atómica cuando el jugador retira manualmente un resultado válido.
 
-- **Toque del Granjero**: libro en el centro, 16 alientos de dragón arriba, tótem de la inmortalidad a la izquierda, estrella del Nether a la derecha y bloque de netherita abajo.
-- **Toque del Minero**: libro en el centro, 1 fragmento de eco arriba, tótem de la inmortalidad a la izquierda, estrella del Nether a la derecha y bloque de netherita abajo.
+- **Toque del Granjero** (`15.000` XP): libro central, flor de chorus, tótem, estrella del Nether, bloque de netherita y patata, remolacha, trigo y zanahoria en las esquinas.
+- **Toque del Minero** (`30.000` XP): libro central, fragmento de eco, tótem, estrella del Nether, bloque de netherita y dos piedras del End más dos catalizadores de sculk en las esquinas.
+- **Nitwit** (`5.000` XP): transforma un aldeano capturado sin empleo, conservando todos sus demás datos y el tipo de capturador.
+- **Granja de Esqueletos** (`25.000` XP): combina símbolos de las cinco variantes de esqueletos alrededor de una estrella del Nether central.
+- **Toque del Guerrero** (`45.000` XP): crea un libro que evita el desgaste de espadas dentro de la Granja de Esqueletos.
 
-Las cinco entradas aceptan automatización desde cualquier cara y las tuberías o tolvas solo pueden extraer el resultado. El depósito admite entrada y salida de experiencia líquida, además de transferencias manuales de niveles del jugador. La máquina conserva inventario y experiencia al romperse y recolocarse.
+El depósito mantiene entrada y salida de experiencia líquida, además de transferencias manuales de niveles. Los ocho ingredientes exteriores se renderizan sobre pedestales y el central sobre la mesa de encantamientos. Con el menú abierto, REI puede mover los nueve ingredientes a su posición; la experiencia se introduce siempre por separado.
 
-El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Saqueo añade aleatoriamente entre cero y su nivel sin sustituir el botín original. Las ciudades antiguas mantienen su obtención habitual de fragmentos de eco.
+El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Saqueo puede añadir entre cero y su nivel al fragmento y garantiza entre uno y su nivel de catalizadores de sculk adicionales. Las ciudades antiguas mantienen su obtención habitual de fragmentos de eco.
 
 ## Encantamientos
 
 - **Toque del Granjero** evita el desgaste de azadas dentro de ambos Cultivos.
 - **Toque del Minero** evita el desgaste de picos dentro de ambas Canteras.
-- Los dos libros están disponibles en creativo y se pueden fabricar mediante Infusión Arcana.
+- **Toque del Guerrero** evita el desgaste de espadas dentro de la Granja de Esqueletos.
+- Los tres libros están disponibles en creativo y se pueden fabricar mediante Infusión Arcana.
 - Eficiencia se limita funcionalmente al nivel V dentro de Cultivos y Canteras.
 - Fortuna continúa escalando por encima del nivel vanilla donde la mecánica lo permite.
 - Las Canteras permiten combinar Fortuna y Toque de Seda; juntos aumentan selección y cantidad de menas.
@@ -68,7 +73,7 @@ El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Saqu
 
 ## Compatibilidad
 
-REI muestra los procesos de criaderos, incubadoras, cultivos, conversión, granja de hierro, canteras, trueques e infusión arcana, además de las recetas normales. Su integración es opcional y solo se carga en cliente.
+REI muestra los procesos de criaderos, incubadoras, cultivos, conversión, granjas de hierro y esqueletos, canteras, trueques e infusión arcana, además de las recetas normales. Su integración es opcional y solo se carga en cliente.
 
 Las listas de profesiones, POI, aspectos de bioma, cultivos, alimentos y niveles de herramienta parten de datos vanilla fijos y se amplían dinámicamente con otros mods. Un elemento externo defectuoso se descarta; si no se puede conservar la ampliación, Trading Cells vuelve a la lista vanilla. Los nombres de profesiones usan el componente registrado por cada mod, incluido More Villagers.
 

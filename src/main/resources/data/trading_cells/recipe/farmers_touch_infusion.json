@@ -1,11 +1,20 @@
 {
   "type": "trading_cells:arcane_infusion",
-  "top": {"ingredient": "minecraft:dragon_breath", "count": 16},
-  "left": {"ingredient": "minecraft:totem_of_undying", "count": 1},
-  "center": {"ingredient": "minecraft:book", "count": 1},
-  "right": {"ingredient": "minecraft:nether_star", "count": 1},
-  "bottom": {"ingredient": "minecraft:netherite_block", "count": 1},
+  "ingredients": [
+    {"ingredient": "minecraft:potato", "count": 1},
+    {"ingredient": "minecraft:chorus_flower", "count": 1},
+    {"ingredient": "minecraft:beetroot", "count": 1},
+    {"ingredient": "minecraft:totem_of_undying", "count": 1},
+    {"ingredient": "minecraft:book", "count": 1},
+    {"ingredient": "minecraft:nether_star", "count": 1},
+    {"ingredient": "minecraft:wheat", "count": 1},
+    {"ingredient": "minecraft:netherite_block", "count": 1},
+    {"ingredient": "minecraft:carrot", "count": 1}
+  ],
   "experience": 15000,
-  "enchantment": "trading_cells:farmers_touch",
-  "level": 1
+  "result": {
+    "type": "enchanted_book",
+    "enchantment": "trading_cells:farmers_touch",
+    "level": 1
+  }
 }

@@ -4,6 +4,7 @@ import com.cosmocraft.trading_cells.feature.experience.adapters.output.Experienc
 import com.cosmocraft.trading_cells.feature.experience.application.port.input.ExperienceStorageUseCase;
 import com.cosmocraft.trading_cells.feature.experience.domain.model.ExperienceTransferAction;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
+import com.cosmocraft.trading_cells.platform.neoforge.experience.PlayerExperienceTransfer;
 import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandler;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
 import com.cosmocraft.trading_cells.platform.neoforge.registration.ExperienceFluidRegistration;
@@ -119,11 +120,17 @@ public final class ExperienceStorageBlockEntity extends PortableMachineBlockEnti
         }
         if (action == ExperienceTransferAction.WITHDRAW
                 || action == ExperienceTransferAction.WITHDRAW_ALL) {
-            storedExperience = Math.max(0, storedExperience - points);
-            player.giveExperiencePoints(points);
+            int transferred = PlayerExperienceTransfer.addPoints(player, points);
+            if (transferred <= 0) {
+                return;
+            }
+            storedExperience = Math.max(0, storedExperience - transferred);
         } else {
-            storedExperience = (int) Math.min(CAPACITY, (long) storedExperience + points);
-            player.giveExperiencePoints(-points);
+            int transferred = PlayerExperienceTransfer.removePoints(player, points);
+            if (transferred <= 0) {
+                return;
+            }
+            storedExperience = (int) Math.min(CAPACITY, (long) storedExperience + transferred);
         }
         markChangedAndSync();
     }

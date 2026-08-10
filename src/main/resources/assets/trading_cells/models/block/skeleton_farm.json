@@ -1,0 +1,12 @@
+{
+  "parent": "trading_cells:block/villager_breeder",
+  "textures": {
+    "base": "minecraft:block/bone_block_side",
+    "base_left": "minecraft:block/bone_block_side",
+    "base_center": "minecraft:block/soul_sand",
+    "base_right": "minecraft:block/bone_block_side",
+    "frame": "minecraft:block/iron_block",
+    "glass": "minecraft:block/glass",
+    "particle": "minecraft:block/bone_block_side"
+  }
+}

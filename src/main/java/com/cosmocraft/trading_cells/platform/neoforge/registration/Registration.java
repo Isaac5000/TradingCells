@@ -13,6 +13,8 @@ import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfus
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmTooltipEventAdapter;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.TraderTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
@@ -76,11 +78,13 @@ public class Registration {
         ExperienceStorageRegistrationAdapter.load();
         FarmerRegistrationAdapter.load();
         IronFarmRegistrationAdapter.load();
+        SkeletonFarmRegistrationAdapter.load();
         QuarryRegistrationAdapter.load(modEventBus);
         CreativeTabRegistration.load();
         FarmerTooltipEventAdapter.register(modEventBus);
         ExperienceStorageTooltipEventAdapter.register(modEventBus);
         QuarryTooltipEventAdapter.register(modEventBus);
         TraderTooltipEventAdapter.register(modEventBus);
+        SkeletonFarmTooltipEventAdapter.register(modEventBus);
     }
 }

@@ -1,5 +1,6 @@
 package com.cosmocraft.trading_cells.feature.quarry.adapters.input;
 
+import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryFortune;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
@@ -150,7 +151,7 @@ public final class QuarryMaterialCatalog {
             ItemStack pickaxe,
             boolean deepMining
     ) {
-        return snapshot(kind, upgrade, pickaxe, deepMining, 0, false);
+        return snapshot(kind, upgrade, pickaxe, deepMining, 0);
     }
 
     public static CatalogSnapshot snapshot(
@@ -158,16 +159,15 @@ public final class QuarryMaterialCatalog {
             QuarryUpgradeTier upgrade,
             ItemStack pickaxe,
             boolean deepMining,
-            int fortuneLevel,
-            boolean silkTouch
+            int fortuneLevel
     ) {
         boolean deepActive = kind == QuarryKind.VILLAGER
                 && deepMining
                 && upgrade.supportsDeepMining();
         List<WeightedMaterial> weighted = buildWeightedMaterials(kind, upgrade, deepActive);
         applyDynamicOreLimit(weighted);
-        if (silkTouch && fortuneLevel > 0) {
-            applySilkFortuneWeightBoost(weighted, fortuneLevel);
+        if (fortuneLevel > 0) {
+            applyFortuneWeightBoost(weighted, fortuneLevel);
         }
 
         List<CatalogEntry> entries = new ArrayList<>();
@@ -227,13 +227,10 @@ public final class QuarryMaterialCatalog {
         return new CatalogSnapshot(List.copyOf(withProbabilities), deepActive, REVISION.get());
     }
 
-    private static void applySilkFortuneWeightBoost(
+    private static void applyFortuneWeightBoost(
             List<WeightedMaterial> entries,
             int fortuneLevel
     ) {
-        int level = Math.max(0, fortuneLevel);
-        long denominator = level + 2L;
-        long numerator = (level + 2L) * (level + 1L) / 2L + 1L;
         for (WeightedMaterial entry : entries) {
             QuarryMaterialDefinition definition = entry.definition();
             boolean supportedPool = definition.pool() == QuarryMaterialDefinition.Pool.NORMAL
@@ -243,8 +240,7 @@ public final class QuarryMaterialCatalog {
                     || entry.weight() <= 0) {
                 continue;
             }
-            long boosted = Math.round(entry.weight() * (double) numerator / denominator);
-            entry.setWeight((int) Math.clamp(boosted, 0L, Integer.MAX_VALUE));
+            entry.setWeight(QuarryFortune.boostSelectionWeight(entry.weight(), fortuneLevel));
         }
     }
 

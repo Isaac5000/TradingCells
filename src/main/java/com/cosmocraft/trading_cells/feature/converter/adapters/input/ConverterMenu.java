@@ -18,6 +18,8 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 public final class ConverterMenu extends AbstractContainerMenu {
+    public static final int VILLAGER_SLOT_X = 20;
+    public static final int VILLAGER_SLOT_Y = 49;
     private static final int MACHINE_SLOT_COUNT = ConverterBlockEntity.STORAGE_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
@@ -42,7 +44,12 @@ public final class ConverterMenu extends AbstractContainerMenu {
         this.container = container;
         this.data = data;
 
-        addSlot(new HiddenVillagerSlot(container, ConverterBlockEntity.VILLAGER_SLOT));
+        addSlot(new VillagerSlot(
+                container,
+                ConverterBlockEntity.VILLAGER_SLOT,
+                VILLAGER_SLOT_X,
+                VILLAGER_SLOT_Y
+        ));
         for (int index = 0; index < ConverterBlockEntity.POTION_SLOT_COUNT; index++) {
             addSlot(new PotionSlot(
                     container,
@@ -100,7 +107,7 @@ public final class ConverterMenu extends AbstractContainerMenu {
 
     @Override
     public @NonNull ItemStack quickMoveStack(@NonNull Player player, int index) {
-        if (index == ConverterBlockEntity.VILLAGER_SLOT) {
+        if (index == ConverterBlockEntity.VILLAGER_SLOT && isProcessing()) {
             return ItemStack.EMPTY;
         }
         Slot slot = slots.get(index);
@@ -125,6 +132,14 @@ public final class ConverterMenu extends AbstractContainerMenu {
         if (index < MACHINE_SLOT_COUNT) {
             return moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END, true);
         }
+        if (isAdultVillager(stack)) {
+            return moveItemStackTo(
+                    stack,
+                    ConverterBlockEntity.VILLAGER_SLOT,
+                    ConverterBlockEntity.VILLAGER_SLOT + 1,
+                    false
+            );
+        }
         if (ConverterIngredientAdapter.isWeaknessPotion(stack)) {
             return moveItemStackTo(
                     stack,
@@ -146,19 +161,29 @@ public final class ConverterMenu extends AbstractContainerMenu {
                 : moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false);
     }
 
-    private static final class HiddenVillagerSlot extends Slot {
-        private HiddenVillagerSlot(Container container, int slot) {
-            super(container, slot, -1_000, -1_000);
+    private boolean isAdultVillager(ItemStack stack) {
+        return CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)
+                && !CapturedMobStackAdapter.isBaby(CapturedMobKind.VILLAGER, stack);
+    }
+
+    private final class VillagerSlot extends Slot {
+        private VillagerSlot(Container container, int slot, int x, int y) {
+            super(container, slot, x, y);
         }
 
         @Override
         public boolean mayPlace(@NonNull ItemStack stack) {
-            return false;
+            return isAdultVillager(stack) && !isProcessing();
         }
 
         @Override
         public boolean mayPickup(@NonNull Player player) {
-            return false;
+            return !isProcessing();
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
         }
     }
 

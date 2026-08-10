@@ -25,8 +25,16 @@ import com.cosmocraft.trading_cells.feature.infusion.domain.model.ArcaneInfusion
 import com.cosmocraft.trading_cells.feature.ironfarm.domain.model.IronFarmCycle;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryBlockEntity;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryCycle;
+import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryFortune;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.VanillaPickaxeTier;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmBlockEntity;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmCycle;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmKind;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmLoot;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.VanillaSwordTier;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MinecraftExperience;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
 import com.cosmocraft.trading_cells.feature.trader.domain.model.PiglinBarterCycle;
@@ -55,6 +63,7 @@ public final class DomainRulesVerification {
         verifyFarmerRules();
         verifyConverterRules();
         verifyIronFarmRules();
+        verifySkeletonFarmRules();
         verifyQuarryRules();
         verifyPiglinBarterRules();
         verifyCapturerRules();
@@ -80,6 +89,12 @@ public final class DomainRulesVerification {
         require(infusion.evaluate(new ArcaneInfusionAttempt(true, true, 30_000, 30_000))
                         == ArcaneInfusionDecision.READY,
                 "The Miner's Touch infusion must become ready at exactly 30,000 XP");
+        require(infusion.evaluate(new ArcaneInfusionAttempt(true, true, 4_999, 5_000))
+                        == ArcaneInfusionDecision.EXPERIENCE_REQUIRED,
+                "The Nitwit infusion must remain blocked with 4,999 XP");
+        require(infusion.evaluate(new ArcaneInfusionAttempt(true, true, 5_000, 5_000))
+                        == ArcaneInfusionDecision.READY,
+                "The Nitwit infusion must become ready at exactly 5,000 XP");
         require(infusion.evaluate(new ArcaneInfusionAttempt(true, false, 15_000, 15_000))
                         == ArcaneInfusionDecision.OUTPUT_BLOCKED,
                 "An occupied result slot must block the whole atomic infusion");
@@ -96,6 +111,41 @@ public final class DomainRulesVerification {
         ExperienceStorageService storage = new ExperienceStorageService();
         require(ExperienceMath.pointsAtStartOfLevel(10) == 160,
                 "Level ten must start at the vanilla total of 160 XP points");
+        float sevenOfTwentyThree = 7.0F / 23.0F;
+        require(ExperienceMath.totalPoints(8, sevenOfTwentyThree) == 119,
+                "Float XP progress must round back to its exact integer point count");
+        require(storage.depositAll(8, sevenOfTwentyThree, 0, 1_000_000) == 119,
+                "Deposit all must not leave one point behind because of float rounding");
+        require(storage.depositLevels(8, sevenOfTwentyThree, 0, 1_000_000, 3) == 59,
+                "Storing levels with partial progress must use the exact integer XP total");
+        require(storage.withdrawLevels(5, 5.0F / 17.0F, 59, 3) == 59,
+                "Withdrawing stored levels must restore the exact previous XP total");
+        for (int total : new int[] {0, 1, 7, 119, 1_000_000, Integer.MAX_VALUE}) {
+            MinecraftExperience.ExperienceState state = MinecraftExperience.stateForTotalPoints(total);
+            float progress = (float) state.pointsIntoLevel()
+                    / MinecraftExperience.pointsNeededForNextLevel(state.level());
+            require(MinecraftExperience.totalPoints(state.level(), progress) == total,
+                    "Every normalized player XP state must preserve its exact integer total");
+        }
+        for (int level = 0; level <= 21_863; level++) {
+            int levelStart = MinecraftExperience.pointsAtStartOfLevel(level);
+            int needed = MinecraftExperience.pointsNeededForNextLevel(level);
+            int maximumPartial = (int) Math.min(
+                    (long) needed - 1L,
+                    (long) Integer.MAX_VALUE - levelStart
+            );
+            for (int partial : new int[] {
+                    0,
+                    Math.min(1, maximumPartial),
+                    maximumPartial / 3,
+                    maximumPartial / 2,
+                    maximumPartial
+            }) {
+                float progress = (float) partial / needed;
+                require(MinecraftExperience.totalPoints(level, progress) == levelStart + partial,
+                        "Sampled vanilla XP bars must reconstruct every tested integer point exactly");
+            }
+        }
         require(storage.depositLevels(10, 0.0F, 0, 1_000_000, 3) == 69,
                 "Storing three levels must transfer their exact vanilla point difference");
         require(storage.withdrawLevels(7, 0.0F, 69, 3) == 69,
@@ -412,6 +462,14 @@ public final class DomainRulesVerification {
             require(fortuneCount == baseCount + 3,
                     "Fortune III must add three items to regular Nether crop " + crop);
         }
+        require(farmerYield(FarmerCycle.harvest(FarmerCrop.PUMPKIN, 0), FarmerProduct.PUMPKIN).count() == 1,
+                "A pumpkin cycle must produce one base pumpkin");
+        require(farmerYield(FarmerCycle.harvest(FarmerCrop.MELON, 3), FarmerProduct.MELON).count() == 4,
+                "Fortune III must increase melon-block output");
+        require(farmerYield(FarmerCycle.harvest(FarmerCrop.SUGAR_CANE, 0), FarmerProduct.SUGAR_CANE).count() == 2,
+                "Sugar cane must produce two items before Fortune");
+        require(farmerYield(FarmerCycle.harvest(FarmerCrop.COCOA, 3), FarmerProduct.COCOA_BEANS).count() == 6,
+                "Fortune III must increase cocoa-bean output");
     }
 
     private static FarmerYield farmerYield(FarmerHarvest harvest, FarmerProduct product) {
@@ -471,6 +529,8 @@ public final class DomainRulesVerification {
         );
         require(cycle.multiplier(1) == 1, "One villager must use the x1 base multiplier");
         require(cycle.multiplier(3) == 3, "Three villagers must use the x3 base multiplier");
+        require(cycle.multiplier(1, 1) == 2, "One Nitwit must produce at x2");
+        require(cycle.multiplier(3, 3) == 6, "Three Nitwits must produce at x6");
         require(cycle.isGolemVisible(1_120), "The golem must appear during its attack window");
 
         int bonus = 15;
@@ -487,6 +547,35 @@ public final class DomainRulesVerification {
                 "The configured iron-farm value must be added to every base multiplier");
     }
 
+    private static void verifySkeletonFarmRules() {
+        require(SkeletonFarmMenu.WIDTH == 348 && SkeletonFarmMenu.HEIGHT == 210,
+                "The Skeleton Farm must use the Trader's 348x210 menu geometry");
+        require(SkeletonFarmBlockEntity.OUTPUT_SLOT_COUNT == 18,
+                "The Skeleton Farm must expose eighteen output slots");
+        require(SkeletonFarmCycle.effectiveCycleTicks(VanillaSwordTier.WOODEN.timingPosition(), 0) == 2_400,
+                "A wooden sword without Smite must take 120 seconds");
+        require(SkeletonFarmCycle.effectiveCycleTicks(VanillaSwordTier.NETHERITE.timingPosition(), 0) == 400,
+                "A netherite sword without Smite must take 20 seconds");
+        require(SkeletonFarmCycle.effectiveCycleTicks(VanillaSwordTier.NETHERITE.timingPosition(), 5) == 100,
+                "A netherite Smite V sword must take five seconds");
+        require(SkeletonFarmCycle.effectiveCycleTicks(VanillaSwordTier.IRON.timingPosition(), 5)
+                        == SkeletonFarmCycle.effectiveCycleTicks(VanillaSwordTier.IRON.timingPosition(), 30),
+                "Smite above level five must not further reduce cycle time");
+        require(SkeletonFarmCycle.simulatedKills(0) == 1
+                        && SkeletonFarmCycle.simulatedKills(3) == 4,
+                "Sweeping Edge must add one simulated kill per level");
+        require(SkeletonFarmKind.WITHER_SKELETON.supports(SkeletonFarmLoot.SKULLS)
+                        && SkeletonFarmKind.WITHER_SKELETON.supports(SkeletonFarmLoot.COAL)
+                        && !SkeletonFarmKind.WITHER_SKELETON.supports(SkeletonFarmLoot.ARROWS),
+                "Wither Skeleton filters must expose skulls and coal instead of arrows");
+        require(SkeletonFarmKind.STRAY.supports(SkeletonFarmLoot.ARROWS)
+                        && SkeletonFarmKind.BOGGED.supports(SkeletonFarmLoot.ARROWS)
+                        && SkeletonFarmKind.PARCHED.supports(SkeletonFarmLoot.ARROWS),
+                "Every ranged skeleton variant must expose its arrow filter");
+        require(SkeletonFarmCycle.effectiveCycleTicks(100.0D, 5) >= 20,
+                "Modded sword tiers must never make a cycle faster than one second");
+    }
+
     private static void verifyCapturerRules() {
         require(CapturerDurability.maximum(10) == 10,
                 "The default capturer durability must allow ten releases");
@@ -497,6 +586,10 @@ public final class DomainRulesVerification {
     private static void verifyQuarryRules() {
         require(QuarryBlockEntity.OUTPUT_SLOT_COUNT == 18,
                 "Both quarry variants must always expose eighteen output slots");
+        require(QuarryFortune.boostSelectionWeight(100, 0) == 100,
+                "A quarry without Fortune must keep the base material weight");
+        require(QuarryFortune.boostSelectionWeight(100, 3) == 220,
+                "Fortune III must boost ore selection independently of Silk Touch");
         require(QuarryCycle.durationTicks(VanillaPickaxeTier.WOODEN.timingPosition(), 0) == 2_400,
                 "A wooden pickaxe without Efficiency must take exactly 120 seconds");
         require(QuarryCycle.durationTicks(VanillaPickaxeTier.NETHERITE.timingPosition(), 0) == 400,

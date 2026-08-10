@@ -16,7 +16,6 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -116,57 +115,6 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
 
     public ItemStack copyDisplayVillagerStack() {
         return items.get(VILLAGER_SLOT).copy();
-    }
-
-    public InteractionResult insertVillagerFromCapturer(ItemStack stack) {
-        if (hasStoredVillager()) {
-            return InteractionResult.SUCCESS_SERVER;
-        }
-        if (!isAdultVillager(stack)) {
-            return InteractionResult.PASS;
-        }
-        items.set(VILLAGER_SLOT, stack.copyWithCount(1));
-        invalidateRuntimeInputs();
-        CapturedMobStackAdapter.clearData(CapturedMobKind.VILLAGER, stack);
-        stage = ConverterStage.IDLE;
-        stageTicks = 0;
-        curedReady = false;
-        markChangedAndSync();
-        return InteractionResult.SUCCESS_SERVER;
-    }
-
-    public InteractionResult extractVillagerToCapturer(ItemStack stack, Player player) {
-        if (isProcessing()) {
-            return InteractionResult.SUCCESS_SERVER;
-        }
-        if (!hasStoredVillager()) {
-            return InteractionResult.SUCCESS_SERVER;
-        }
-        if (CapturedMobStackAdapter.isFilledCapturer(CapturedMobKind.VILLAGER, stack)) {
-            return InteractionResult.SUCCESS_SERVER;
-        }
-        CompoundTag data = CapturedMobStackAdapter.copyData(
-                CapturedMobKind.VILLAGER,
-                items.get(VILLAGER_SLOT)
-        );
-        if (data == null) {
-            return InteractionResult.FAIL;
-        }
-        ItemStack target = stack.getCount() <= 1 ? stack : new ItemStack(stack.getItem());
-        CapturedMobStackAdapter.setData(CapturedMobKind.VILLAGER, target, data);
-        if (target != stack) {
-            stack.shrink(1);
-            if (!player.getInventory().add(target)) {
-                player.drop(target, false);
-            }
-        }
-        items.set(VILLAGER_SLOT, ItemStack.EMPTY);
-        invalidateRuntimeInputs();
-        stage = ConverterStage.IDLE;
-        stageTicks = 0;
-        curedReady = false;
-        markChangedAndSync();
-        return InteractionResult.SUCCESS_SERVER;
     }
 
     @Override

@@ -4,8 +4,6 @@ import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfus
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -39,18 +37,6 @@ public final class ArcaneInfuserBlock extends AbstractPortableMachineBlock<Arcan
             @NonNull BlockEntityType<B> type
     ) {
         return null;
-    }
-
-    @Override
-    protected void tick(
-            @NonNull BlockState state,
-            @NonNull ServerLevel level,
-            @NonNull BlockPos pos,
-            @NonNull RandomSource random
-    ) {
-        if (level.getBlockEntity(pos) instanceof ArcaneInfuserBlockEntity infuser) {
-            infuser.processTick();
-        }
     }
 
     @Override

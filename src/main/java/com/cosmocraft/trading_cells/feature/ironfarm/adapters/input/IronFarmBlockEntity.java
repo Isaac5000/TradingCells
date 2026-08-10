@@ -15,6 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
@@ -44,6 +45,7 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
     private static final String FLOWERS_ENABLED_TAG = "FlowersEnabled";
     private static final int[] VILLAGER_SLOTS = new int[]{0, 1, 2};
     private static final int[] OUTPUT_SLOTS = new int[]{3, 4, 5, 6};
+    private static final Identifier NITWIT_PROFESSION = Identifier.withDefaultNamespace("nitwit");
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private final IronFarmUseCase ironFarmService = FeatureComposition.ironFarm();
@@ -51,6 +53,7 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
     private int cycleTicks;
     private boolean flowersEnabled = true;
     private int cachedVillagerCount = -1;
+    private int cachedNitwitCount = -1;
     private int cachedOutputMultiplier = -1;
     private int cachedBaseIron = -1;
     private int cachedMaximumPoppies = -1;
@@ -66,10 +69,8 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
                 case 1 -> flowersEnabled ? 1 : 0;
                 case 2 -> villagerCount();
                 case 3 -> ironFarmService.cycle().cycleTicks();
-                case 4 -> ironFarmService.cycle().multiplier(villagerCount());
-                case 5 -> ironFarmService.cycle().multiplier(
-                        Math.min(VILLAGER_SLOT_COUNT, villagerCount() + 1)
-                );
+                case 4 -> productionMultiplier(ironFarmService.cycle());
+                case 5 -> nextProductionMultiplier(ironFarmService.cycle());
                 case 6 -> VILLAGER_SLOT_COUNT;
                 default -> 0;
             };
@@ -122,7 +123,7 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
         }
         IronFarmCycle cycle = ironFarmService.cycle();
         int villagerCount = villagerCount();
-        int multiplier = cycle.multiplier(villagerCount);
+        int multiplier = productionMultiplier(cycle);
         refreshMaximumOutputs(multiplier);
         boolean outputAvailable = multiplier > 0 && OrderedOutputInserter.canInsertAll(
                 items,
@@ -284,17 +285,44 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
     }
 
     private int villagerCount() {
-        if (cachedVillagerCount >= 0) {
-            return cachedVillagerCount;
+        refreshVillagerCounts();
+        return cachedVillagerCount;
+    }
+
+    private int nitwitCount() {
+        refreshVillagerCounts();
+        return cachedNitwitCount;
+    }
+
+    private void refreshVillagerCounts() {
+        if (cachedVillagerCount >= 0 && cachedNitwitCount >= 0) {
+            return;
         }
         int count = 0;
+        int nitwits = 0;
         for (int slot : VILLAGER_SLOTS) {
-            if (isAdultVillager(items.get(slot))) {
+            ItemStack villager = items.get(slot);
+            if (isAdultVillager(villager)) {
                 count++;
+                if (CapturedMobStackAdapter.hasVillagerProfession(villager, NITWIT_PROFESSION)) {
+                    nitwits++;
+                }
             }
         }
         cachedVillagerCount = count;
-        return cachedVillagerCount;
+        cachedNitwitCount = nitwits;
+    }
+
+    private int productionMultiplier(IronFarmCycle cycle) {
+        return cycle.multiplier(villagerCount(), nitwitCount());
+    }
+
+    private int nextProductionMultiplier(IronFarmCycle cycle) {
+        int villagers = villagerCount();
+        if (villagers >= VILLAGER_SLOT_COUNT) {
+            return productionMultiplier(cycle);
+        }
+        return cycle.multiplier(villagers + 1, nitwitCount());
     }
 
     private void applyCycleTransition(
@@ -384,12 +412,14 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
         activity.wake();
         if (isVillagerSlot(slot)) {
             cachedVillagerCount = -1;
+            cachedNitwitCount = -1;
             cachedOutputMultiplier = -1;
         }
     }
 
     private void invalidateRuntimeCaches() {
         cachedVillagerCount = -1;
+        cachedNitwitCount = -1;
         cachedOutputMultiplier = -1;
         cachedBaseIron = -1;
         cachedMaximumPoppies = -1;

@@ -1,0 +1,19 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "ingredients": [
+    {"ingredient": "minecraft:skeleton_skull", "count": 1},
+    {"ingredient": "minecraft:blue_ice", "count": 1},
+    {"ingredient": "minecraft:wither_skeleton_skull", "count": 1},
+    {"ingredient": "minecraft:bow", "count": 1},
+    {"ingredient": "minecraft:nether_star", "count": 1},
+    {"ingredient": "minecraft:poisonous_potato", "count": 1},
+    {"ingredient": "minecraft:bone_block", "count": 1},
+    {"ingredient": "minecraft:soul_sand", "count": 1},
+    {"ingredient": "minecraft:sandstone", "count": 1}
+  ],
+  "experience": 25000,
+  "result": {
+    "type": "item",
+    "item": "trading_cells:skeleton_farm"
+  }
+}

@@ -10,6 +10,7 @@ import com.cosmocraft.trading_cells.feature.incubators.adapters.output.client.In
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfuserClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client.IronFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.QuarryClientRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.SkeletonFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.VillagerTradingCellClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.client.network.TradingCellClientPayloadRegistration;
 import com.cosmocraft.trading_cells.platform.neoforge.client.ExperienceFluidClientRegistration;
@@ -53,6 +54,8 @@ public class TradingCellsClient {
             modBus.addListener(ConverterClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(QuarryClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(QuarryClientRegistrationAdapter::onRegisterRenderers);
+            modBus.addListener(SkeletonFarmClientRegistrationAdapter::onRegisterMenuScreens);
+            modBus.addListener(SkeletonFarmClientRegistrationAdapter::onRegisterRenderers);
         }
         // Rendering is handled by SpecialModelRenderers selected by JSON.
     }

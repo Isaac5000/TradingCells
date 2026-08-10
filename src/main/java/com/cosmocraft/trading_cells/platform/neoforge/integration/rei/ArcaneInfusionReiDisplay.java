@@ -21,7 +21,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 
 /** Server-safe REI representation of a data-driven Arcane Infusion recipe. */
 public final class ArcaneInfusionReiDisplay extends BasicDisplay {
-    private static final int INPUT_COUNT = 5;
+    private static final int INPUT_COUNT = 9;
     private static final Identifier SERIALIZER_ID = Identifier.fromNamespaceAndPath(
             TradingCells.MOD_ID,
             "arcane_infusion"
@@ -67,13 +67,9 @@ public final class ArcaneInfusionReiDisplay extends BasicDisplay {
     public static ArcaneInfusionReiDisplay from(RecipeHolder<ArcaneInfusionRecipe> holder) {
         ArcaneInfusionRecipeDisplay recipe = (ArcaneInfusionRecipeDisplay) holder.value().display().getFirst();
         return new ArcaneInfusionReiDisplay(
-                List.of(
-                        EntryIngredients.ofSlotDisplay(recipe.top()),
-                        EntryIngredients.ofSlotDisplay(recipe.left()),
-                        EntryIngredients.ofSlotDisplay(recipe.center()),
-                        EntryIngredients.ofSlotDisplay(recipe.right()),
-                        EntryIngredients.ofSlotDisplay(recipe.bottom())
-                ),
+                recipe.ingredients().stream()
+                        .map(EntryIngredients::ofSlotDisplay)
+                        .toList(),
                 EntryIngredients.ofSlotDisplay(recipe.result()),
                 holder.id().identifier(),
                 recipe.experience()
@@ -100,7 +96,7 @@ public final class ArcaneInfusionReiDisplay extends BasicDisplay {
 
     private static List<EntryIngredient> validateInputs(List<EntryIngredient> inputs) {
         if (inputs.size() != INPUT_COUNT) {
-            throw new IllegalArgumentException("Arcane infusion requires exactly five REI inputs");
+            throw new IllegalArgumentException("Arcane infusion requires exactly nine REI inputs");
         }
         return List.copyOf(inputs);
     }

@@ -23,8 +23,11 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -216,6 +219,12 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
                         workerStack,
                         BlockPos.ZERO
                 );
+                if (blockEntity.kind() == FarmerKind.VILLAGER
+                        && cachedWorker instanceof Villager villager) {
+                    villager.setVillagerData(villager.getVillagerData().withProfession(
+                            BuiltInRegistries.VILLAGER_PROFESSION.getOrThrow(VillagerProfession.FARMER)
+                    ));
+                }
                 cachedWorkerStack = workerStack.copy();
             }
             return cachedWorker;

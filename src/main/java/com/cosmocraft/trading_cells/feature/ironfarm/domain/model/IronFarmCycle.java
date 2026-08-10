@@ -32,6 +32,12 @@ public record IronFarmCycle(
         };
     }
 
+    public int multiplier(int villagerCount, int nitwitCount) {
+        int villagers = Math.clamp(villagerCount, 0, 3);
+        int nitwits = Math.clamp(nitwitCount, 0, villagers);
+        return multiplier(villagers) + nitwits;
+    }
+
     public boolean isGolemVisible(int currentTicks) {
         return currentTicks >= cycleTicks - golemAttackTicks;
     }

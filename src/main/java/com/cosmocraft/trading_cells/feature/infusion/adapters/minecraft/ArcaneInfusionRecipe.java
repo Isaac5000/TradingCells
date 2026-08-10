@@ -1,8 +1,11 @@
 package com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft;
 
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -19,89 +22,54 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.item.crafting.display.SlotDisplay;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 public record ArcaneInfusionRecipe(
-        SizedIngredient top,
-        SizedIngredient left,
-        SizedIngredient center,
-        SizedIngredient right,
-        SizedIngredient bottom,
+        List<SizedIngredient> ingredients,
         int experience,
-        net.minecraft.core.Holder<Enchantment> enchantment,
-        int enchantmentLevel
+        ArcaneInfusionResult result
 ) implements Recipe<ArcaneInfusionInput> {
+    private static final Codec<List<SizedIngredient>> INGREDIENTS_CODEC =
+            SizedIngredient.NESTED_CODEC.listOf().validate(ArcaneInfusionRecipe::validateIngredients);
+
     public static final MapCodec<ArcaneInfusionRecipe> MAP_CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
-                    SizedIngredient.NESTED_CODEC.fieldOf("top").forGetter(ArcaneInfusionRecipe::top),
-                    SizedIngredient.NESTED_CODEC.fieldOf("left").forGetter(ArcaneInfusionRecipe::left),
-                    SizedIngredient.NESTED_CODEC.fieldOf("center").forGetter(ArcaneInfusionRecipe::center),
-                    SizedIngredient.NESTED_CODEC.fieldOf("right").forGetter(ArcaneInfusionRecipe::right),
-                    SizedIngredient.NESTED_CODEC.fieldOf("bottom").forGetter(ArcaneInfusionRecipe::bottom),
+                    INGREDIENTS_CODEC.fieldOf("ingredients").forGetter(ArcaneInfusionRecipe::ingredients),
                     ExtraCodecs.POSITIVE_INT.fieldOf("experience").forGetter(ArcaneInfusionRecipe::experience),
-                    Enchantment.CODEC.fieldOf("enchantment").forGetter(ArcaneInfusionRecipe::enchantment),
-                    ExtraCodecs.intRange(1, Enchantment.MAX_LEVEL).optionalFieldOf("level", 1)
-                            .forGetter(ArcaneInfusionRecipe::enchantmentLevel)
+                    ArcaneInfusionResult.CODEC.fieldOf("result").forGetter(ArcaneInfusionRecipe::result)
             ).apply(instance, ArcaneInfusionRecipe::new)
     );
+
     public static final StreamCodec<RegistryFriendlyByteBuf, ArcaneInfusionRecipe> STREAM_CODEC =
-            StreamCodec.of(
-                    (buffer, recipe) -> {
-                        SizedIngredient.STREAM_CODEC.encode(buffer, recipe.top());
-                        SizedIngredient.STREAM_CODEC.encode(buffer, recipe.left());
-                        SizedIngredient.STREAM_CODEC.encode(buffer, recipe.center());
-                        SizedIngredient.STREAM_CODEC.encode(buffer, recipe.right());
-                        SizedIngredient.STREAM_CODEC.encode(buffer, recipe.bottom());
-                        buffer.writeVarInt(recipe.experience());
-                        Enchantment.STREAM_CODEC.encode(buffer, recipe.enchantment());
-                        buffer.writeVarInt(recipe.enchantmentLevel());
-                    },
-                    buffer -> new ArcaneInfusionRecipe(
-                            SizedIngredient.STREAM_CODEC.decode(buffer),
-                            SizedIngredient.STREAM_CODEC.decode(buffer),
-                            SizedIngredient.STREAM_CODEC.decode(buffer),
-                            SizedIngredient.STREAM_CODEC.decode(buffer),
-                            SizedIngredient.STREAM_CODEC.decode(buffer),
-                            buffer.readVarInt(),
-                            Enchantment.STREAM_CODEC.decode(buffer),
-                            buffer.readVarInt()
-                    )
-            );
+            StreamCodec.of(ArcaneInfusionRecipe::encode, ArcaneInfusionRecipe::decode);
     public static final RecipeSerializer<ArcaneInfusionRecipe> SERIALIZER =
             new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
 
+    public ArcaneInfusionRecipe {
+        if (ingredients.size() != ArcaneInfusionInput.SIZE) {
+            throw new IllegalArgumentException("Arcane infusion requires exactly nine ingredients");
+        }
+        ingredients = List.copyOf(ingredients);
+    }
+
     @Override
     public boolean matches(ArcaneInfusionInput input, Level level) {
-        return top.test(input.getItem(0))
-                && left.test(input.getItem(1))
-                && isPlainBook(input.getItem(2))
-                && center.test(input.getItem(2))
-                && right.test(input.getItem(3))
-                && bottom.test(input.getItem(4));
+        for (int slot = 0; slot < ArcaneInfusionInput.SIZE; slot++) {
+            if (!ingredients.get(slot).test(input.getItem(slot))) {
+                return false;
+            }
+        }
+        return result.matchesInput(input);
     }
 
     @Override
     public ItemStack assemble(ArcaneInfusionInput input) {
-        return result();
-    }
-
-    public ItemStack result() {
-        return EnchantmentHelper.createBook(new EnchantmentInstance(enchantment, enchantmentLevel));
+        return result.assemble(input);
     }
 
     public SizedIngredient ingredient(int slot) {
-        return switch (slot) {
-            case 0 -> top;
-            case 1 -> left;
-            case 2 -> center;
-            case 3 -> right;
-            case 4 -> bottom;
-            default -> throw new IndexOutOfBoundsException(slot);
-        };
+        return ingredients.get(slot);
     }
 
     public static boolean isPlainBook(ItemStack stack) {
@@ -140,13 +108,17 @@ public record ArcaneInfusionRecipe(
 
     @Override
     public List<RecipeDisplay> display() {
+        List<SlotDisplay> inputs = new ArrayList<>(ArcaneInfusionInput.SIZE);
+        for (int slot = 0; slot < ArcaneInfusionInput.SIZE; slot++) {
+            int inputSlot = slot;
+            inputs.add(result.displayInputOverride(inputSlot)
+                    .map(ArcaneInfusionRecipe::display)
+                    .orElseGet(() -> display(ingredients.get(inputSlot))));
+        }
+        ItemStack displayResult = result.displayResult();
         return List.of(new ArcaneInfusionRecipeDisplay(
-                display(top),
-                display(left),
-                display(center),
-                display(right),
-                display(bottom),
-                new SlotDisplay.ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(result())),
+                inputs,
+                new SlotDisplay.ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(displayResult)),
                 new SlotDisplay.ItemSlotDisplay(ArcaneInfuserRegistrationAdapter.ITEM.get()),
                 experience
         ));
@@ -157,6 +129,32 @@ public record ArcaneInfusionRecipe(
         return RecipeBookCategories.CRAFTING_MISC;
     }
 
+    private static void encode(RegistryFriendlyByteBuf buffer, ArcaneInfusionRecipe recipe) {
+        for (SizedIngredient ingredient : recipe.ingredients()) {
+            SizedIngredient.STREAM_CODEC.encode(buffer, ingredient);
+        }
+        buffer.writeVarInt(recipe.experience());
+        ArcaneInfusionResult.STREAM_CODEC.encode(buffer, recipe.result());
+    }
+
+    private static ArcaneInfusionRecipe decode(RegistryFriendlyByteBuf buffer) {
+        List<SizedIngredient> ingredients = new ArrayList<>(ArcaneInfusionInput.SIZE);
+        for (int slot = 0; slot < ArcaneInfusionInput.SIZE; slot++) {
+            ingredients.add(SizedIngredient.STREAM_CODEC.decode(buffer));
+        }
+        return new ArcaneInfusionRecipe(
+                ingredients,
+                buffer.readVarInt(),
+                ArcaneInfusionResult.STREAM_CODEC.decode(buffer)
+        );
+    }
+
+    private static DataResult<List<SizedIngredient>> validateIngredients(List<SizedIngredient> ingredients) {
+        return ingredients.size() == ArcaneInfusionInput.SIZE
+                ? DataResult.success(List.copyOf(ingredients))
+                : DataResult.error(() -> "Arcane infusion requires exactly nine ingredients");
+    }
+
     @SuppressWarnings("deprecation")
     private static SlotDisplay display(SizedIngredient ingredient) {
         List<SlotDisplay> displays = ingredient.ingredient().items()
@@ -165,5 +163,9 @@ public record ArcaneInfusionRecipe(
                 ))
                 .toList();
         return displays.size() == 1 ? displays.getFirst() : new SlotDisplay.Composite(displays);
+    }
+
+    private static SlotDisplay display(ItemStack stack) {
+        return new SlotDisplay.ItemStackSlotDisplay(ItemStackTemplate.fromNonEmptyStack(stack));
     }
 }

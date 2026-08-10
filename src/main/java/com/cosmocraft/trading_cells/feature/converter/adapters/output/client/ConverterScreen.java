@@ -39,6 +39,24 @@ public final class ConverterScreen extends AbstractContainerScreen<ConverterMenu
         int x = leftPos;
         int y = topPos;
         MachineScreenLayout.drawBackground(graphics, x, y, MOSSY_COBBLESTONE, THEME);
+        MachineScreenLayout.drawSlot(
+                graphics,
+                x,
+                y,
+                ConverterMenu.VILLAGER_SLOT_X,
+                ConverterMenu.VILLAGER_SLOT_Y,
+                THEME
+        );
+        if (!menu.getSlot(ConverterBlockEntity.VILLAGER_SLOT).hasItem()) {
+            MachineScreenLayout.drawEmptySlotSprite(
+                    graphics,
+                    x,
+                    y,
+                    ConverterMenu.VILLAGER_SLOT_X,
+                    ConverterMenu.VILLAGER_SLOT_Y,
+                    MachineSlotSprites.CAPTURER
+            );
+        }
         for (int index = 0; index < ConverterBlockEntity.POTION_SLOT_COUNT; index++) {
             int slotX = MachineScreenLayout.machineX(43) + index * 24;
             MachineScreenLayout.drawSlot(graphics, x, y, slotX, 35, THEME);

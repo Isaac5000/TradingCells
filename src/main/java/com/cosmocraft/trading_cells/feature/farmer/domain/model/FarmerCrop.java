@@ -8,6 +8,10 @@ public enum FarmerCrop {
     CARROT,
     POTATO,
     BEETROOT,
+    PUMPKIN,
+    MELON,
+    SUGAR_CANE,
+    COCOA,
     CRIMSON_FUNGUS,
     WARPED_FUNGUS,
     CRIMSON_ROOTS,
@@ -21,7 +25,11 @@ public enum FarmerCrop {
             WHEAT,
             CARROT,
             POTATO,
-            BEETROOT
+            BEETROOT,
+            PUMPKIN,
+            MELON,
+            SUGAR_CANE,
+            COCOA
     );
     private static final List<FarmerCrop> PIGLIN_CROPS = List.of(
             CRIMSON_FUNGUS,

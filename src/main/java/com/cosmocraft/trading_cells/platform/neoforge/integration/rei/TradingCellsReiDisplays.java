@@ -24,6 +24,10 @@ import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistr
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryCycle;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmLootAdapter;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SwordTierCatalog;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmCycle;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmKind;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.EnhancedPiglinBarterRewards;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.PiglinBarterCatalog;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
@@ -65,6 +69,7 @@ public final class TradingCellsReiDisplays {
         addFarming(displays);
         addConversion(displays);
         addIronFarm(displays);
+        addSkeletonFarm(displays);
         addPiglinBartering(displays);
         addQuarries(displays);
         return List.copyOf(displays);
@@ -411,6 +416,47 @@ public final class TradingCellsReiDisplays {
                     List.of(Component.translatable("rei.trading_cells.iron_farm_note"))
             ));
         }
+    }
+
+    private static void addSkeletonFarm(List<TradingCellsReiDisplay> displays) {
+        EntryIngredient worker = captured(CapturedMobKind.VILLAGER, false, true);
+        EntryIngredient swords = described(
+                SwordTierCatalog.itemStacks(),
+                tooltip("rei.trading_cells.skeleton_sword")
+        );
+        for (SkeletonFarmKind kind : SkeletonFarmKind.values()) {
+            EntryIngredient target = described(
+                    skeletonSpawnEgg(kind),
+                    tooltip("rei.trading_cells.skeleton_target"),
+                    tooltip("rei.trading_cells.not_consumed")
+            );
+            List<EntryIngredient> outputs = SkeletonFarmLootAdapter.previewOutputs(kind).stream()
+                    .map(stack -> described(stack, tooltip("rei.trading_cells.skeleton_drop")))
+                    .toList();
+            displays.add(display(
+                    TradingCellsReiClientPlugin.SKELETON_FARM,
+                    TradingCellsReiLayout.SKELETON_FARM,
+                    "skeleton_farm/" + kind.name().toLowerCase(Locale.ROOT),
+                    List.of(worker, swords, target),
+                    List.of(worker, swords),
+                    outputs,
+                    SkeletonFarmCycle.effectiveCycleTicks(0.0D, 0),
+                    List.of(
+                            Component.translatable("rei.trading_cells.skeleton_farm_note"),
+                            Component.translatable("rei.trading_cells.skeleton_filters_note")
+                    )
+            ));
+        }
+    }
+
+    private static ItemStack skeletonSpawnEgg(SkeletonFarmKind kind) {
+        return new ItemStack(switch (kind) {
+            case SKELETON -> Items.SKELETON_SPAWN_EGG;
+            case WITHER_SKELETON -> Items.WITHER_SKELETON_SPAWN_EGG;
+            case STRAY -> Items.STRAY_SPAWN_EGG;
+            case BOGGED -> Items.BOGGED_SPAWN_EGG;
+            case PARCHED -> Items.PARCHED_SPAWN_EGG;
+        });
     }
 
     private static void addPiglinBartering(List<TradingCellsReiDisplay> displays) {

@@ -1,0 +1,20 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "ingredients": [
+    {"ingredient": "minecraft:skeleton_skull", "count": 1},
+    {"ingredient": "minecraft:echo_shard", "count": 1},
+    {"ingredient": "minecraft:wither_skeleton_skull", "count": 1},
+    {"ingredient": "minecraft:totem_of_undying", "count": 1},
+    {"ingredient": "minecraft:book", "count": 1},
+    {"ingredient": "minecraft:nether_star", "count": 1},
+    {"ingredient": "minecraft:bone_block", "count": 1},
+    {"ingredient": "minecraft:netherite_block", "count": 1},
+    {"ingredient": "minecraft:diamond_sword", "count": 1}
+  ],
+  "experience": 45000,
+  "result": {
+    "type": "enchanted_book",
+    "enchantment": "trading_cells:warriors_touch",
+    "level": 1
+  }
+}

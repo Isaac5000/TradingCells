@@ -46,10 +46,6 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     private static final int BUTTON_HEIGHT = 15;
     private static final int DEPOSIT_BUTTON_Y = 81;
     private static final int WITHDRAW_BUTTON_Y = 98;
-    private static final int AUTOMATIC_BUTTON_X = 10;
-    private static final int AUTOMATIC_BUTTON_Y = 28;
-    private static final int AUTOMATIC_BUTTON_WIDTH = 98;
-    private static final int AUTOMATIC_BUTTON_HEIGHT = 12;
     private static final int RECIPE_EXPERIENCE_X = 10;
     public static final int RECIPE_EXPERIENCE_Y = 102;
     private static final int RECIPE_EXPERIENCE_WIDTH = 98;
@@ -67,7 +63,6 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     private static final float AMOUNT_LABEL_SCALE = 0.54F;
 
     private EditBox amountField;
-    private Button automaticButton;
     private Button depositButton;
     private Button withdrawButton;
 
@@ -81,17 +76,6 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     @Override
     protected void init() {
         super.init();
-        automaticButton = addRenderableWidget(Button.builder(
-                automaticButtonLabel(),
-                button -> toggleAutomaticMode()
-        ).bounds(
-                leftPos + AUTOMATIC_BUTTON_X,
-                topPos + AUTOMATIC_BUTTON_Y,
-                AUTOMATIC_BUTTON_WIDTH,
-                AUTOMATIC_BUTTON_HEIGHT
-        ).tooltip(Tooltip.create(Component.translatable(
-                "tooltip.trading_cells.arcane_automatic_mode"
-        ))).build());
         amountField = addRenderableWidget(new NonNegativeIntegerEditBox(
                 font,
                 leftPos + CONTROL_X,
@@ -121,9 +105,6 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     @Override
     protected void containerTick() {
         super.containerTick();
-        if (automaticButton != null) {
-            automaticButton.setMessage(automaticButtonLabel());
-        }
         updateButtonStates();
     }
 
@@ -165,11 +146,9 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     }
 
     private void drawMachineSlots(GuiGraphicsExtractor graphics, int x, int y) {
-        drawSlot(graphics, x, y, ArcaneInfuserMenu.TOP_SLOT_X, ArcaneInfuserMenu.TOP_SLOT_Y);
-        drawSlot(graphics, x, y, ArcaneInfuserMenu.LEFT_SLOT_X, ArcaneInfuserMenu.LEFT_SLOT_Y);
-        drawSlot(graphics, x, y, ArcaneInfuserMenu.CENTER_SLOT_X, ArcaneInfuserMenu.CENTER_SLOT_Y);
-        drawSlot(graphics, x, y, ArcaneInfuserMenu.RIGHT_SLOT_X, ArcaneInfuserMenu.RIGHT_SLOT_Y);
-        drawSlot(graphics, x, y, ArcaneInfuserMenu.BOTTOM_SLOT_X, ArcaneInfuserMenu.BOTTOM_SLOT_Y);
+        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+            drawSlot(graphics, x, y, ArcaneInfuserMenu.inputSlotX(slot), ArcaneInfuserMenu.inputSlotY(slot));
+        }
         drawSlot(graphics, x, y, ArcaneInfuserMenu.OUTPUT_SLOT_X, ArcaneInfuserMenu.OUTPUT_SLOT_Y);
     }
 
@@ -391,24 +370,6 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
                 storedPoints
         );
         withdrawButton.active = requestedLevels > 0 && requestedLevels <= withdrawableLevels;
-    }
-
-    private void toggleAutomaticMode() {
-        if (minecraft == null || minecraft.gameMode == null) {
-            return;
-        }
-        menu.setClientAutomaticMode(!menu.automaticMode());
-        automaticButton.setMessage(automaticButtonLabel());
-        minecraft.gameMode.handleInventoryButtonClick(
-                menu.containerId,
-                ArcaneInfuserMenu.TOGGLE_AUTOMATIC_BUTTON
-        );
-    }
-
-    private Component automaticButtonLabel() {
-        return Component.translatable(menu.automaticMode()
-                ? "button.trading_cells.arcane_automatic_on"
-                : "button.trading_cells.arcane_automatic_off");
     }
 
     private boolean isRecipeViewerHovered(int mouseX, int mouseY) {

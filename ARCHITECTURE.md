@@ -32,8 +32,9 @@ las traducciones puras de API permanecen en adaptadores.
 | `quarry` | Canteras para aldeanos y piglins, catalogos de materiales, herramientas y minado profundo. |
 | `converter` | Estados de infeccion, curacion y descuento. |
 | `ironfarm` | Produccion, multiplicadores y animacion temporal. |
+| `skeletonfarm` | Ciclos de caza, filtros de botin, tiers de espada y experiencia acumulada. |
 | `experience` | Calculo y transferencia segura de niveles para el deposito de experiencia. |
-| `infusion` | Recetas de infusion, consumo atomico, modos manual/automatico y deposito de XP. |
+| `infusion` | Recetas de infusion, consumo atomico manual y deposito de XP. |
 
 ## Trader
 

@@ -52,6 +52,12 @@ enum TradingCellsReiLayout {
             blockTexture("cobblestone"),
             0xFFD7D7D7
     ),
+    SKELETON_FARM(
+            Kind.SKELETON_FARM,
+            MachineScreenTheme.IRON_FARM,
+            blockTexture("bone_block_side"),
+            0xFF9EB7D1
+    ),
     PIGLIN_BARTERING(
             Kind.PIGLIN_BARTERING,
             MachineScreenTheme.PIGLIN_BREEDER,
@@ -126,6 +132,7 @@ enum TradingCellsReiLayout {
         FARMING,
         CONVERSION,
         IRON_FARM,
+        SKELETON_FARM,
         PIGLIN_BARTERING,
         NETHERITE_PIGLIN_BARTERING,
         QUARRY,

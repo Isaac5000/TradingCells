@@ -160,15 +160,12 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             int fortuneLevel = level == null
                     ? 0
                     : QuarryEnchantments.fortuneLevel(pickaxe, level.registryAccess());
-            boolean silkTouch = level != null
-                    && QuarryEnchantments.hasSilkTouch(pickaxe, level.registryAccess());
             cachedCatalog = QuarryMaterialCatalog.snapshot(
                     kind,
                     QuarryUpgradeItems.tier(upgrade),
                     pickaxe,
                     deepMining,
-                    fortuneLevel,
-                    silkTouch
+                    fortuneLevel
             );
             cachedCatalogPickaxe = pickaxe.copy();
             cachedCatalogUpgrade = upgrade.copy();

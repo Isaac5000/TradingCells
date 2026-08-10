@@ -5,6 +5,7 @@ import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerBlockEnt
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerMenu;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmMenu;
+import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserBlockEntity;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserMenu;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfuserScreen;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryBlockEntity;
@@ -48,6 +49,12 @@ final class TradingCellsReiMachineDisplay {
     private static final int BARTER_SLOT_Y = 51;
     private static final int NETHERITE_PIGLIN_X = 166;
     private static final int NETHERITE_PIGLIN_Y = 57;
+    private static final int SKELETON_WORKER_X = 22;
+    private static final int SKELETON_SWORD_X = 49;
+    private static final int SKELETON_TARGET_X = 76;
+    private static final int SKELETON_INPUT_Y = 48;
+    private static final int SKELETON_OUTPUT_X = 142;
+    private static final int SKELETON_OUTPUT_Y = 35;
 
     private TradingCellsReiMachineDisplay() {
     }
@@ -68,6 +75,7 @@ final class TradingCellsReiMachineDisplay {
             case FARMING -> addFarming(widgets, display, bounds);
             case CONVERSION -> addConversion(widgets, display, bounds);
             case IRON_FARM -> addIronFarm(widgets, display, bounds);
+            case SKELETON_FARM -> addSkeletonFarm(widgets, display, bounds);
             case PIGLIN_BARTERING -> addPiglinBartering(widgets, display, bounds);
             case NETHERITE_PIGLIN_BARTERING -> addNetheritePiglinBartering(widgets, display, bounds);
             case QUARRY -> addQuarry(widgets, display, bounds);
@@ -182,6 +190,20 @@ final class TradingCellsReiMachineDisplay {
                     );
                 }
             }
+            case SKELETON_FARM -> {
+                drawSlot(graphics, bounds, SKELETON_WORKER_X, SKELETON_INPUT_Y, display);
+                drawSlot(graphics, bounds, SKELETON_SWORD_X, SKELETON_INPUT_Y, display);
+                drawSlot(graphics, bounds, SKELETON_TARGET_X, SKELETON_INPUT_Y, display);
+                for (int index = 0; index < display.getOutputEntries().size(); index++) {
+                    drawSlot(
+                            graphics,
+                            bounds,
+                            SKELETON_OUTPUT_X + index % 2 * 24,
+                            SKELETON_OUTPUT_Y + index / 2 * 28,
+                            display
+                    );
+                }
+            }
             case PIGLIN_BARTERING -> {
                 drawSlot(graphics, bounds, BARTER_PIGLIN_X, BARTER_SLOT_Y, display);
                 drawSlot(graphics, bounds, BARTER_GOLD_X, BARTER_SLOT_Y, display);
@@ -242,11 +264,15 @@ final class TradingCellsReiMachineDisplay {
                 }
             }
             case ARCANE_INFUSION -> {
-                drawSlot(graphics, bounds, ArcaneInfuserMenu.TOP_SLOT_X, ArcaneInfuserMenu.TOP_SLOT_Y, display);
-                drawSlot(graphics, bounds, ArcaneInfuserMenu.LEFT_SLOT_X, ArcaneInfuserMenu.LEFT_SLOT_Y, display);
-                drawSlot(graphics, bounds, ArcaneInfuserMenu.CENTER_SLOT_X, ArcaneInfuserMenu.CENTER_SLOT_Y, display);
-                drawSlot(graphics, bounds, ArcaneInfuserMenu.RIGHT_SLOT_X, ArcaneInfuserMenu.RIGHT_SLOT_Y, display);
-                drawSlot(graphics, bounds, ArcaneInfuserMenu.BOTTOM_SLOT_X, ArcaneInfuserMenu.BOTTOM_SLOT_Y, display);
+                for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+                    drawSlot(
+                            graphics,
+                            bounds,
+                            ArcaneInfuserMenu.inputSlotX(slot),
+                            ArcaneInfuserMenu.inputSlotY(slot),
+                            display
+                    );
+                }
                 drawSlot(graphics, bounds, ArcaneInfuserMenu.OUTPUT_SLOT_X, ArcaneInfuserMenu.OUTPUT_SLOT_Y, display);
             }
         }
@@ -480,6 +506,25 @@ final class TradingCellsReiMachineDisplay {
         }
     }
 
+    private static void addSkeletonFarm(
+            List<Widget> widgets,
+            TradingCellsReiDisplay display,
+            Rectangle bounds
+    ) {
+        addInput(widgets, bounds, SKELETON_WORKER_X, SKELETON_INPUT_Y, input(display, 0));
+        addInput(widgets, bounds, SKELETON_SWORD_X, SKELETON_INPUT_Y, input(display, 1));
+        addPreview(widgets, bounds, SKELETON_TARGET_X, SKELETON_INPUT_Y, input(display, 2));
+        for (int index = 0; index < display.getOutputEntries().size(); index++) {
+            addOutput(
+                    widgets,
+                    bounds,
+                    SKELETON_OUTPUT_X + index % 2 * 24,
+                    SKELETON_OUTPUT_Y + index / 2 * 28,
+                    output(display, index)
+            );
+        }
+    }
+
     private static void addPiglinBartering(
             List<Widget> widgets,
             TradingCellsReiDisplay display,
@@ -552,11 +597,15 @@ final class TradingCellsReiMachineDisplay {
             TradingCellsReiDisplay display,
             Rectangle bounds
     ) {
-        addInput(widgets, bounds, ArcaneInfuserMenu.TOP_SLOT_X, ArcaneInfuserMenu.TOP_SLOT_Y, input(display, 0));
-        addInput(widgets, bounds, ArcaneInfuserMenu.LEFT_SLOT_X, ArcaneInfuserMenu.LEFT_SLOT_Y, input(display, 1));
-        addInput(widgets, bounds, ArcaneInfuserMenu.CENTER_SLOT_X, ArcaneInfuserMenu.CENTER_SLOT_Y, input(display, 2));
-        addInput(widgets, bounds, ArcaneInfuserMenu.RIGHT_SLOT_X, ArcaneInfuserMenu.RIGHT_SLOT_Y, input(display, 3));
-        addInput(widgets, bounds, ArcaneInfuserMenu.BOTTOM_SLOT_X, ArcaneInfuserMenu.BOTTOM_SLOT_Y, input(display, 4));
+        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+            addInput(
+                    widgets,
+                    bounds,
+                    ArcaneInfuserMenu.inputSlotX(slot),
+                    ArcaneInfuserMenu.inputSlotY(slot),
+                    input(display, slot)
+            );
+        }
         addOutput(widgets, bounds, ArcaneInfuserMenu.OUTPUT_SLOT_X, ArcaneInfuserMenu.OUTPUT_SLOT_Y, output(display, 0));
     }
 
@@ -634,6 +683,7 @@ final class TradingCellsReiMachineDisplay {
             case FARMING -> new Point(MachineScreenLayout.machineX(54), 66);
             case CONVERSION -> new Point(MachineScreenLayout.machineX(54), 95);
             case IRON_FARM -> new Point(MachineScreenLayout.machineX(54), 47);
+            case SKELETON_FARM -> new Point(91, 78);
             case PIGLIN_BARTERING -> new Point(88, 53);
             case NETHERITE_PIGLIN_BARTERING -> new Point(88, 58);
             case QUARRY -> new Point(

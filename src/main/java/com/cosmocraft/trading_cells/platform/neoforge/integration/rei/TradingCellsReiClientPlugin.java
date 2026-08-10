@@ -18,6 +18,8 @@ import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client.Iron
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.QuarryScreen;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.SkeletonFarmScreen;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
@@ -30,6 +32,7 @@ import me.shedaniel.rei.api.client.registry.display.DisplayRegistry;
 import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
 import me.shedaniel.rei.api.client.registry.screen.ClickArea;
 import me.shedaniel.rei.api.client.registry.screen.ScreenRegistry;
+import me.shedaniel.rei.api.client.registry.transfer.TransferHandlerRegistry;
 import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import me.shedaniel.rei.forge.REIPluginClient;
@@ -54,6 +57,8 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
             category("conversion");
     public static final CategoryIdentifier<TradingCellsReiDisplay> IRON_FARM =
             category("iron_farm");
+    public static final CategoryIdentifier<TradingCellsReiDisplay> SKELETON_FARM =
+            category("skeleton_farm");
     public static final CategoryIdentifier<TradingCellsReiDisplay> PIGLIN_BARTERING =
             category("piglin_bartering");
     public static final CategoryIdentifier<TradingCellsReiDisplay> NETHERITE_PIGLIN_BARTERING =
@@ -109,6 +114,11 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         IronFarmRegistrationAdapter.IRON_FARM_ITEM.get()
                 ),
                 new TradingCellsReiCategory(
+                        SKELETON_FARM,
+                        "category.trading_cells.skeleton_farm",
+                        SkeletonFarmRegistrationAdapter.ITEM.get()
+                ),
+                new TradingCellsReiCategory(
                         PIGLIN_BARTERING,
                         "category.trading_cells.piglin_bartering",
                         TraderRegistrationAdapter.PIGLIN_BARTERING_CELL_ITEM.get()
@@ -154,6 +164,7 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         );
         registry.addWorkstations(CONVERSION, EntryStacks.of(ConverterRegistrationAdapter.CONVERTER_ITEM.get()));
         registry.addWorkstations(IRON_FARM, EntryStacks.of(IronFarmRegistrationAdapter.IRON_FARM_ITEM.get()));
+        registry.addWorkstations(SKELETON_FARM, EntryStacks.of(SkeletonFarmRegistrationAdapter.ITEM.get()));
         registry.addWorkstations(
                 PIGLIN_BARTERING,
                 EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTERING_CELL_ITEM.get())
@@ -192,6 +203,7 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.configure(PIGLIN_FARMING, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(CONVERSION, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(IRON_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(SKELETON_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(PIGLIN_BARTERING, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(
                 NETHERITE_PIGLIN_BARTERING,
@@ -199,7 +211,7 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         );
         registry.configure(QUARRY, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(PIGLIN_QUARRY, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
-        registry.configure(ARCANE_INFUSION, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(ARCANE_INFUSION, configuration -> configuration.setQuickCraftingEnabledByDefault(true));
     }
 
     @Override
@@ -251,6 +263,16 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                 IronFarmScreen.class,
                 IRON_FARM
         );
+        registry.registerContainerClickArea(
+                new Rectangle(
+                        SkeletonFarmScreen.RECIPE_VIEWER_X,
+                        SkeletonFarmScreen.RECIPE_VIEWER_Y,
+                        SkeletonFarmScreen.RECIPE_VIEWER_WIDTH,
+                        SkeletonFarmScreen.RECIPE_VIEWER_HEIGHT
+                ),
+                SkeletonFarmScreen.class,
+                SKELETON_FARM
+        );
         registerMachineClickArea(
                 registry,
                 new Rectangle(
@@ -281,6 +303,11 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.removeEntry(EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTER_QUALITY_UPGRADE_ITEM.get()));
         registry.removeEntry(EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTER_YIELD_UPGRADE_ITEM.get()));
         registry.removeEntry(EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTER_HYBRID_UPGRADE_ITEM.get()));
+    }
+
+    @Override
+    public void registerTransferHandlers(TransferHandlerRegistry registry) {
+        registry.register(new ArcaneInfusionTransferHandler());
     }
 
     private static CategoryIdentifier<TradingCellsReiDisplay> category(String path) {

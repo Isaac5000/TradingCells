@@ -6,6 +6,7 @@ import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKin
 import com.cosmocraft.trading_cells.feature.captures.adapters.output.CaptureRegistrationAdapter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -15,10 +16,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.IntUnaryOperator;
 
 public final class CapturedMobStackAdapter {
     private static final String NEOFORGE_DATA_TAG = "NeoForgeData";
+    private static final String VILLAGER_DATA_TAG = "VillagerData";
+    private static final String VILLAGER_PROFESSION_TAG = "profession";
 
     private CapturedMobStackAdapter() {
     }
@@ -138,6 +143,39 @@ public final class CapturedMobStackAdapter {
         } else {
             PiglinCapturerItem.setCapturedPiglinData(stack, data);
         }
+    }
+
+    public static Optional<Identifier> villagerProfession(ItemStack stack) {
+        CompoundTag entityData = copyData(CapturedMobKind.VILLAGER, stack);
+        if (entityData == null) {
+            return Optional.empty();
+        }
+        return entityData.getCompound(VILLAGER_DATA_TAG)
+                .flatMap(data -> data.getString(VILLAGER_PROFESSION_TAG))
+                .map(Identifier::tryParse)
+                .filter(Objects::nonNull);
+    }
+
+    public static boolean hasVillagerProfession(ItemStack stack, Identifier profession) {
+        return villagerProfession(stack).filter(profession::equals).isPresent();
+    }
+
+    public static ItemStack withVillagerProfession(ItemStack source, Identifier profession) {
+        CompoundTag entityData = copyData(CapturedMobKind.VILLAGER, source);
+        if (entityData == null) {
+            return ItemStack.EMPTY;
+        }
+        Optional<CompoundTag> villagerData = entityData.getCompound(VILLAGER_DATA_TAG);
+        if (villagerData.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+
+        CompoundTag updatedVillagerData = villagerData.get().copy();
+        updatedVillagerData.putString(VILLAGER_PROFESSION_TAG, profession.toString());
+        entityData.put(VILLAGER_DATA_TAG, updatedVillagerData);
+        ItemStack result = source.copyWithCount(1);
+        setData(CapturedMobKind.VILLAGER, result, entityData);
+        return result;
     }
 
     public static boolean updatePersistentInt(
