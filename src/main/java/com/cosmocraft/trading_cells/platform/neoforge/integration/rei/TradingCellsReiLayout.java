@@ -58,6 +58,18 @@ enum TradingCellsReiLayout {
             blockTexture("bone_block_side"),
             0xFF9EB7D1
     ),
+    ZOMBIE_FARM(
+            Kind.ZOMBIE_FARM,
+            MachineScreenTheme.IRON_FARM,
+            blockTexture("mossy_stone_bricks"),
+            0xFF7F9B72
+    ),
+    DECAPITATION_SMITHING(
+            Kind.DECAPITATION_SMITHING,
+            MachineScreenTheme.IRON_FARM,
+            blockTexture("smithing_table_top"),
+            0xFF7E7E86
+    ),
     PIGLIN_BARTERING(
             Kind.PIGLIN_BARTERING,
             MachineScreenTheme.PIGLIN_BREEDER,
@@ -133,6 +145,8 @@ enum TradingCellsReiLayout {
         CONVERSION,
         IRON_FARM,
         SKELETON_FARM,
+        ZOMBIE_FARM,
+        DECAPITATION_SMITHING,
         PIGLIN_BARTERING,
         NETHERITE_PIGLIN_BARTERING,
         QUARRY,

@@ -51,6 +51,11 @@ public final class FarmerService implements FarmerUseCase {
     }
 
     @Override
+    public FarmerHarvest harvest(FarmerCrop crop, int fortuneLevel, boolean silkTouch) {
+        return FarmerCycle.harvest(crop, fortuneLevel, silkTouch);
+    }
+
+    @Override
     public TimedProcess.Step advance(
             int ticks,
             int durationTicks,

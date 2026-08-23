@@ -70,7 +70,7 @@ public final class ExperienceStorageBlockEntityRenderer implements BlockEntityRe
                 storedExperience
         ).withStyle(ChatFormatting.GREEN);
         state.hoverLevelsText = Component.translatable(
-                "gui.trading_cells.levels_value",
+                "gui.trading_cells.level_equivalent",
                 ExperienceMath.levelForTotalPoints(storedExperience)
         ).withStyle(ChatFormatting.GREEN);
 

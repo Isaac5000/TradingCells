@@ -6,12 +6,12 @@
     "O": "minecraft:gold_ingot",
     "H": "minecraft:iron_ingot",
     "P": "minecraft:ender_pearl",
-    "B": "minecraft:blackstone"
+    "G": "minecraft:glass"
   },
   "pattern": [
     "OHO",
-    "BPB",
-    "HHH"
+    "GPG",
+    "OHO"
   ],
   "result": {
     "count": 1,

@@ -28,6 +28,10 @@ public final class FarmerCycle {
     }
 
     public static FarmerHarvest harvest(FarmerCrop crop, int fortuneLevel) {
+        return harvest(crop, fortuneLevel, false);
+    }
+
+    public static FarmerHarvest harvest(FarmerCrop crop, int fortuneLevel, boolean silkTouch) {
         int fortune = Math.max(0, fortuneLevel);
         return switch (crop) {
             case WHEAT -> FarmerHarvest.of(
@@ -41,9 +45,20 @@ public final class FarmerCycle {
                     FarmerYield.guaranteed(FarmerProduct.BEETROOT_SEEDS, 1 + fortune)
             );
             case PUMPKIN -> single(FarmerProduct.PUMPKIN, 1 + fortune);
-            case MELON -> single(FarmerProduct.MELON, 1 + fortune);
+            case MELON -> single(
+                    silkTouch ? FarmerProduct.MELON : FarmerProduct.MELON_SLICE,
+                    silkTouch ? 1 + fortune : 3 + fortune
+            );
             case SUGAR_CANE -> single(FarmerProduct.SUGAR_CANE, 2 + fortune);
             case COCOA -> single(FarmerProduct.COCOA_BEANS, 3 + fortune);
+            case TORCHFLOWER -> FarmerHarvest.of(
+                    FarmerYield.guaranteed(FarmerProduct.TORCHFLOWER, 1),
+                    FarmerYield.guaranteed(FarmerProduct.TORCHFLOWER_SEEDS, 1 + fortune)
+            );
+            case PITCHER_PLANT -> FarmerHarvest.of(
+                    FarmerYield.guaranteed(FarmerProduct.PITCHER_PLANT, 1),
+                    FarmerYield.guaranteed(FarmerProduct.PITCHER_POD, 1 + fortune)
+            );
             case CRIMSON_FUNGUS -> fungusHarvest(
                     FarmerProduct.CRIMSON_FUNGUS,
                     FarmerProduct.CRIMSON_STEM,

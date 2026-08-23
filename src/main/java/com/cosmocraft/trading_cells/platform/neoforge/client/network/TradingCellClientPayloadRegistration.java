@@ -3,10 +3,13 @@ package com.cosmocraft.trading_cells.platform.neoforge.client.network;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.VillagerTradingCellMenu;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.AutotraderMenu;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
+import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellExperiencePayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.AutotraderMenuSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellMenuSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.QuarryCatalogSyncPayload;
+import com.cosmocraft.trading_cells.platform.neoforge.network.MobFarmCatalogSyncPayload;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 
 public final class TradingCellClientPayloadRegistration {
@@ -58,6 +61,15 @@ public final class TradingCellClientPayloadRegistration {
         });
         event.register(QuarryCatalogSyncPayload.PAYLOAD_TYPE, (payload, context) -> {
             if (context.player().containerMenu instanceof QuarryMenu menu
+                    && menu.containerId == payload.containerId()) {
+                menu.applyCatalogSnapshot(payload);
+            }
+        });
+        event.register(MobFarmCatalogSyncPayload.PAYLOAD_TYPE, (payload, context) -> {
+            if (context.player().containerMenu instanceof SkeletonFarmMenu menu
+                    && menu.containerId == payload.containerId()) {
+                menu.applyCatalogSnapshot(payload);
+            } else if (context.player().containerMenu instanceof ZombieFarmMenu menu
                     && menu.containerId == payload.containerId()) {
                 menu.applyCatalogSnapshot(payload);
             }

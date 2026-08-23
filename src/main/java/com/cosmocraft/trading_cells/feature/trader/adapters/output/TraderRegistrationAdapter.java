@@ -135,8 +135,16 @@ public final class TraderRegistrationAdapter {
     ) {
         return Registration.ITEMS.register(
                 id,
-                () -> new PiglinBarterUpgradeItem(tier, itemProperties(id).stacksTo(64))
+                () -> new PiglinBarterUpgradeItem(tier, upgradeProperties(id, tier))
         );
+    }
+
+    private static Item.Properties upgradeProperties(String id, PiglinBarterUpgradeItem.Tier tier) {
+        Item.Properties properties = itemProperties(id).stacksTo(64);
+        if (tier == PiglinBarterUpgradeItem.Tier.NETHERITE) {
+            properties.fireResistant();
+        }
+        return properties;
     }
 
     private static Item.Properties itemProperties(String id) {

@@ -33,6 +33,7 @@ Lee este archivo antes de recorrer el repositorio. Excluye de las busquedas ampl
 | `converter` | Zombificacion, curacion y conservacion de intercambios. |
 | `ironfarm` | Granja de hierro, ciclos y multiplicadores. |
 | `skeletonfarm` | Granja de esqueletos, objetivos, filtros de botin, espadas y XP. |
+| `zombiefarm` | Granja de zombis, seis objetivos, botin dinamico, espadas y XP. |
 | `experience` | Almacen de XP y transferencia de fluido de experiencia. |
 | `infusion` | Infusor Arcano, matriz 3x3 manual, recetas de datos y botin del Warden. |
 
@@ -44,6 +45,7 @@ Cada feature usa, cuando aporta valor, `domain`, `application/port`, `applicatio
 - Menus y coordenadas comunes: `platform/neoforge/menu/` y `platform/neoforge/client/screen/`.
 - Campo numerico compartido para XP: `platform/neoforge/client/screen/NonNegativeIntegerEditBox.java`.
 - Catalogos dinamicos tolerantes a fallos: `platform/neoforge/catalog/`.
+- Catalogo de objetivos y botin de granjas de criaturas: `platform/neoforge/mobfarm/`; usa tags de entidad y referencias ligeras de tablas de botin.
 - Fluido de XP: `platform/neoforge/fluid/` y registros `ExperienceFluid*`.
 - REI: `platform/neoforge/integration/rei/`.
 - Reglas puras compartidas: `shared/machines/domain/model/`.
@@ -52,6 +54,7 @@ Cada feature usa, cuando aporta valor, `domain`, `application/port`, `applicatio
 
 - Idiomas: `src/main/resources/assets/trading_cells/lang/{en_us,es_es}.json`.
 - Bloques/items/modelos/texturas: `src/main/resources/assets/trading_cells/`.
+- Bases compartidas de mejoras: `assets/trading_cells/textures/item/upgrades/`; los distintivos de Cantera y Trocador se componen con `platform/neoforge/client/render/UpgradeBadgeItemRenderSupport.java`.
 - Recetas y datos: `src/main/resources/data/trading_cells/`.
 - Tags vanilla ampliados: `src/main/resources/data/minecraft/tags/`.
 - Metadatos del mod: `src/main/resources/META-INF/neoforge.mods.toml`.
@@ -63,15 +66,28 @@ Cada feature usa, cuando aporta valor, `domain`, `application/port`, `applicatio
 - Pantalla y boton REI: `feature/infusion/adapters/output/client/ArcaneInfuserScreen.java`.
 - Pedestales, mesa e items en el mundo: `feature/infusion/adapters/output/client/ArcaneInfuserBlockEntityRenderer.java`.
 - Codec de recetas y resultados dinamicos: `feature/infusion/adapters/minecraft/{ArcaneInfusionRecipe,ArcaneInfusionResult}.java`.
+- Huevos normales ampliables para infusiones: `data/trading_cells/tags/item/arcane_infusion_eggs.json`.
 - Guia funcional: `docs/ARCANE_INFUSER.md`.
 
 ## Granja de Esqueletos
 
 - Reglas puras de tiempo, bajas y filtros: `feature/skeletonfarm/domain/model/`.
+- Probabilidades compartidas de Decapitación y fragmentos: `feature/skeletonfarm/domain/model/{DecapitationRules,StormShardDropRules}.java`.
+- Botín de Fragmentos de la Tormenta y cabezas: `feature/skeletonfarm/adapters/input/{ChargedCreeperLootAdapter,DecapitationLootAdapter}.java`.
+- Mejora de libros y armas con Decapitación mediante herrería: `feature/skeletonfarm/adapters/minecraft/DecapitationSmithingRecipe.java`.
 - Inventario, botin, XP y persistencia: `feature/skeletonfarm/adapters/input/SkeletonFarmBlockEntity.java`.
 - Menu ancho basado en Trader: `feature/skeletonfarm/adapters/input/SkeletonFarmMenu.java`.
 - Pantalla y renderizado de entidades: `feature/skeletonfarm/adapters/output/client/`.
+- Fondo, medidas y paleta de la pantalla: copias independientes dentro de `feature/skeletonfarm`; no dependen de la interfaz del Trader.
 - Guia funcional: `docs/SKELETON_FARM.md`.
+
+## Granja de Zombis
+
+- Reglas puras de tiempo, bajas, filtros y probabilidades: `feature/zombiefarm/domain/model/`.
+- Ejecucion de tablas de botin cargadas y fallback vanilla: `feature/zombiefarm/adapters/input/ZombieFarmLootAdapter.java`.
+- Inventario, botin, XP, pausa y persistencia: `feature/zombiefarm/adapters/input/ZombieFarmBlockEntity.java`.
+- Menu, pantalla y renderizado independientes: `feature/zombiefarm/adapters/{input,output/client}/`.
+- Guia funcional: `docs/ZOMBIE_FARM.md`.
 
 ## Verificacion y mantenimiento
 

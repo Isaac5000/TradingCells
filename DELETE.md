@@ -13,6 +13,13 @@ Estas rutas no contienen fuentes ni recursos publicados y se pueden regenerar. N
 - `run-server/.cache/`: cache del servidor de desarrollo.
 - `run-server/logs/`: registros del servidor de desarrollo.
 
+## Eliminar tras revisar las mejoras compartidas
+
+Estas carpetas solo conservan las texturas anteriores para comparacion visual. Los modelos ya usan las bases de `textures/item/upgrades/` y los distintivos se componen durante el renderizado.
+
+- `src/main/resources/assets/trading_cells/textures/item/upgrades_piglin_netherite_trader/`
+- `src/main/resources/assets/trading_cells/textures/item/upgrades_quarry/`
+
 ## Conservar salvo decision manual
 
 - `run/saves/`, `run/world/` y `run-server/world/`: contienen mundos de prueba y datos utiles para regresiones.

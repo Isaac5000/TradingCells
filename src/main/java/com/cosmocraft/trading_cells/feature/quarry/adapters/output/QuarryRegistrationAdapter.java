@@ -58,7 +58,7 @@ public final class QuarryRegistrationAdapter {
     public static final DeferredItem<Item> QUARRY_IRON_UPGRADE_ITEM = upgrade(IRON_UPGRADE_ID);
     public static final DeferredItem<Item> QUARRY_GOLD_UPGRADE_ITEM = upgrade(GOLD_UPGRADE_ID);
     public static final DeferredItem<Item> QUARRY_DIAMOND_UPGRADE_ITEM = upgrade(DIAMOND_UPGRADE_ID);
-    public static final DeferredItem<Item> QUARRY_NETHERITE_UPGRADE_ITEM = upgrade(NETHERITE_UPGRADE_ID);
+    public static final DeferredItem<Item> QUARRY_NETHERITE_UPGRADE_ITEM = upgrade(NETHERITE_UPGRADE_ID, true);
     public static final DeferredHolder<MenuType<?>, MenuType<QuarryMenu>> QUARRY_MENU =
             Registration.MENU_TYPES.register(QUARRY_ID, () ->
                     new MenuType<>(QuarryMenu::villager, FeatureFlags.VANILLA_SET)
@@ -89,7 +89,17 @@ public final class QuarryRegistrationAdapter {
     }
 
     private static DeferredItem<Item> upgrade(String id) {
-        return Registration.ITEMS.register(id, () -> new Item(itemProperties(id)));
+        return upgrade(id, false);
+    }
+
+    private static DeferredItem<Item> upgrade(String id, boolean fireResistant) {
+        return Registration.ITEMS.register(id, () -> {
+            Item.Properties properties = itemProperties(id);
+            if (fireResistant) {
+                properties.fireResistant();
+            }
+            return new Item(properties);
+        });
     }
 
     private static Item.Properties itemProperties(String id) {

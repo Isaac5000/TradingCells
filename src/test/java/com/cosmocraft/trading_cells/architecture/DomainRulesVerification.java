@@ -30,10 +30,21 @@ import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTie
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.VanillaPickaxeTier;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenuLayout;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.DecapitationRules;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmDropRules;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmCycle;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmKind;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmLoot;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.StormShardDropRules;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.VanillaSwordTier;
+import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmBlockEntity;
+import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenu;
+import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenuLayout;
+import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmCycle;
+import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmDropRules;
+import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmKind;
+import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmLoot;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MinecraftExperience;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
@@ -64,6 +75,7 @@ public final class DomainRulesVerification {
         verifyConverterRules();
         verifyIronFarmRules();
         verifySkeletonFarmRules();
+        verifyZombieFarmRules();
         verifyQuarryRules();
         verifyPiglinBarterRules();
         verifyCapturerRules();
@@ -464,12 +476,22 @@ public final class DomainRulesVerification {
         }
         require(farmerYield(FarmerCycle.harvest(FarmerCrop.PUMPKIN, 0), FarmerProduct.PUMPKIN).count() == 1,
                 "A pumpkin cycle must produce one base pumpkin");
-        require(farmerYield(FarmerCycle.harvest(FarmerCrop.MELON, 3), FarmerProduct.MELON).count() == 4,
-                "Fortune III must increase melon-block output");
+        require(farmerYield(FarmerCycle.harvest(FarmerCrop.MELON, 3), FarmerProduct.MELON_SLICE).count() == 6,
+                "Fortune III must increase melon-slice output without Silk Touch");
+        require(farmerYield(FarmerCycle.harvest(FarmerCrop.MELON, 3, true), FarmerProduct.MELON).count() == 4,
+                "Fortune III must increase melon-block output with Silk Touch");
         require(farmerYield(FarmerCycle.harvest(FarmerCrop.SUGAR_CANE, 0), FarmerProduct.SUGAR_CANE).count() == 2,
                 "Sugar cane must produce two items before Fortune");
         require(farmerYield(FarmerCycle.harvest(FarmerCrop.COCOA, 3), FarmerProduct.COCOA_BEANS).count() == 6,
                 "Fortune III must increase cocoa-bean output");
+        FarmerHarvest torchflower = FarmerCycle.harvest(FarmerCrop.TORCHFLOWER, 3);
+        require(farmerYield(torchflower, FarmerProduct.TORCHFLOWER).count() == 1
+                        && farmerYield(torchflower, FarmerProduct.TORCHFLOWER_SEEDS).count() == 4,
+                "Torchflowers must return their flower and Fortune-scaled seeds");
+        FarmerHarvest pitcherPlant = FarmerCycle.harvest(FarmerCrop.PITCHER_PLANT, 3);
+        require(farmerYield(pitcherPlant, FarmerProduct.PITCHER_PLANT).count() == 1
+                        && farmerYield(pitcherPlant, FarmerProduct.PITCHER_POD).count() == 4,
+                "Pitcher plants must return their plant and Fortune-scaled pods");
     }
 
     private static FarmerYield farmerYield(FarmerHarvest harvest, FarmerProduct product) {
@@ -550,6 +572,12 @@ public final class DomainRulesVerification {
     private static void verifySkeletonFarmRules() {
         require(SkeletonFarmMenu.WIDTH == 348 && SkeletonFarmMenu.HEIGHT == 210,
                 "The Skeleton Farm must use the Trader's 348x210 menu geometry");
+        int inventoryGroupLeft = SkeletonFarmMenuLayout.EQUIPMENT_X;
+        int inventoryGroupRight = SkeletonFarmMenuLayout.PLAYER_INVENTORY_X + 9 * 18;
+        int inventoryPanelLeft = 123;
+        int inventoryPanelRight = 343;
+        require(inventoryGroupLeft - inventoryPanelLeft == inventoryPanelRight - inventoryGroupRight,
+                "The Skeleton Farm inventory and equipment slots must be horizontally centered");
         require(SkeletonFarmBlockEntity.OUTPUT_SLOT_COUNT == 18,
                 "The Skeleton Farm must expose eighteen output slots");
         require(SkeletonFarmCycle.effectiveCycleTicks(VanillaSwordTier.WOODEN.timingPosition(), 0) == 2_400,
@@ -558,6 +586,12 @@ public final class DomainRulesVerification {
                 "A netherite sword without Smite must take 20 seconds");
         require(SkeletonFarmCycle.effectiveCycleTicks(VanillaSwordTier.NETHERITE.timingPosition(), 5) == 100,
                 "A netherite Smite V sword must take five seconds");
+        int sharpnessFiveEquivalent = SkeletonFarmCycle.effectiveCycleTicks(
+                VanillaSwordTier.NETHERITE.timingPosition(),
+                1.2D
+        );
+        require(sharpnessFiveEquivalent < 400 && sharpnessFiveEquivalent > 100,
+                "Sharpness V must improve speed without matching Smite V against undead targets");
         require(SkeletonFarmCycle.effectiveCycleTicks(VanillaSwordTier.IRON.timingPosition(), 5)
                         == SkeletonFarmCycle.effectiveCycleTicks(VanillaSwordTier.IRON.timingPosition(), 30),
                 "Smite above level five must not further reduce cycle time");
@@ -572,8 +606,243 @@ public final class DomainRulesVerification {
                         && SkeletonFarmKind.BOGGED.supports(SkeletonFarmLoot.ARROWS)
                         && SkeletonFarmKind.PARCHED.supports(SkeletonFarmLoot.ARROWS),
                 "Every ranged skeleton variant must expose its arrow filter");
+        require(!SkeletonFarmCycle.hasEnabledLoot(0, SkeletonFarmKind.SKELETON),
+                "An empty Skeleton Farm filter must be recognized as an XP-only cycle");
+        require(SkeletonFarmKind.SKELETON.supports(SkeletonFarmLoot.SKULLS),
+                "Regular Skeletons must expose their Decapitation head filter");
+        require(!SkeletonFarmKind.SKELETON.availableLoot(false).contains(SkeletonFarmLoot.SKULLS)
+                        && SkeletonFarmKind.SKELETON.availableLoot(true).contains(SkeletonFarmLoot.SKULLS)
+                        && SkeletonFarmKind.WITHER_SKELETON.availableLoot(false).contains(SkeletonFarmLoot.SKULLS),
+                "Head filters must require Decapitation except for native Wither Skeleton skulls");
+        require(SkeletonFarmCycle.hasEnabledLoot(SkeletonFarmLoot.SKULLS.bit(), SkeletonFarmKind.WITHER_SKELETON),
+                "Supported selected loot must activate the Skeleton Farm");
+        verifySkeletonFarmPreview(
+                SkeletonFarmKind.SKELETON,
+                SkeletonFarmLoot.WEAPONS,
+                85_000,
+                1,
+                1
+        );
+        verifySkeletonFarmPreview(
+                SkeletonFarmKind.SKELETON,
+                SkeletonFarmLoot.BONES,
+                666_667,
+                1,
+                2
+        );
+        verifySkeletonFarmPreview(
+                SkeletonFarmKind.SKELETON,
+                SkeletonFarmLoot.ARROWS,
+                666_667,
+                1,
+                2
+        );
+        verifySkeletonFarmPreview(
+                SkeletonFarmKind.SKELETON,
+                SkeletonFarmLoot.SKULLS,
+                35_000,
+                1,
+                1
+        );
+        verifySkeletonFarmPreview(
+                SkeletonFarmKind.WITHER_SKELETON,
+                SkeletonFarmLoot.SKULLS,
+                25_000,
+                1,
+                1
+        );
+        verifySkeletonFarmPreview(
+                SkeletonFarmKind.WITHER_SKELETON,
+                SkeletonFarmLoot.COAL,
+                500_000,
+                1,
+                1
+        );
+        SkeletonFarmDropRules.BaseDrop lootingCycle = SkeletonFarmDropRules.cycleDrop(
+                SkeletonFarmLoot.BONES,
+                3,
+                4
+        );
+        require(lootingCycle.probabilityPartsPerMillion() == 999_228
+                        && lootingCycle.minimumAmount() == 1
+                        && lootingCycle.maximumAmount() == 20,
+                "Skeleton Farm help must combine Looting III and four simulated kills without changing generation");
+        SkeletonFarmDropRules.BaseDrop lootingThreeWitherSkull = SkeletonFarmDropRules.headCycleDrop(
+                SkeletonFarmKind.WITHER_SKELETON,
+                3,
+                4,
+                0
+        );
+        require(lootingThreeWitherSkull.probabilityPartsPerMillion() == 202_506,
+                "Skeleton Farm help must show the accumulated 20.25 percent Wither skull chance for four Looting III kills");
+        require(DecapitationRules.vanillaHeadChance(0) == 0.025D
+                        && DecapitationRules.vanillaHeadChance(3) == 0.055D,
+                "Wither Skeleton skulls must retain the vanilla Looting curve");
+        require(Math.abs(DecapitationRules.decapitationHeadChance(1) - 0.035D) < 1.0E-12D
+                        && Math.abs(DecapitationRules.decapitationHeadChance(6) - 0.085D) < 1.0E-12D
+                        && Math.abs(DecapitationRules.decapitationHeadChance(30) - 0.325D) < 1.0E-12D
+                        && DecapitationRules.decapitationHeadChance(255) == 1.0D,
+                "Decapitation must preserve command levels while normal acquisition stops at level six");
+        require(DecapitationRules.farmHeadChance(30, false, 0) == 0.0D
+                        && Math.abs(DecapitationRules.farmHeadChance(0, false, 3) - 0.055D) < 1.0E-12D
+                        && Math.abs(DecapitationRules.farmHeadChance(30, false, 3) - 0.055D) < 1.0E-12D
+                        && DecapitationRules.farmHeadChance(0, false, 255) == 1.0D,
+                "Non-native heads must depend only on Decapitation, never Looting");
+        require(Math.abs(DecapitationRules.farmHeadChance(3, true, 6) - 0.115D) < 1.0E-12D,
+                "Wither skull chance must add Looting III and Decapitation VI once");
+        double vanillaFailure = 1.0D - DecapitationRules.vanillaHeadChance(3);
+        double combinedChance = 1.0D - vanillaFailure
+                * (1.0D - DecapitationRules.supplementalNativeHeadChance(3, 6));
+        require(Math.abs(combinedChance - 0.115D) < 1.0E-12D,
+                "The supplemental world roll must reach 11.5 percent without duplicate heads");
+        require(StormShardDropRules.maximumAmount(0) == 1
+                        && StormShardDropRules.maximumAmount(3) == 4,
+                "Charged Creepers must drop one Storm Shard plus up to one bonus per Looting level");
         require(SkeletonFarmCycle.effectiveCycleTicks(100.0D, 5) >= 20,
                 "Modded sword tiers must never make a cycle faster than one second");
+    }
+
+    private static void verifySkeletonFarmPreview(
+            SkeletonFarmKind kind,
+            SkeletonFarmLoot loot,
+            int probabilityPartsPerMillion,
+            int minimumAmount,
+            int maximumAmount
+    ) {
+        require(kind.supports(loot), "Skeleton Farm preview references an unavailable filter for " + kind + '/' + loot);
+        SkeletonFarmDropRules.BaseDrop preview = loot == SkeletonFarmLoot.SKULLS
+                ? SkeletonFarmDropRules.headCycleDrop(
+                        kind,
+                        0,
+                        1,
+                        kind == SkeletonFarmKind.WITHER_SKELETON ? 0 : 1
+                )
+                : SkeletonFarmDropRules.baseDrop(loot);
+        require(preview.probabilityPartsPerMillion() == probabilityPartsPerMillion,
+                "Skeleton Farm REI probability changed for " + kind + '/' + loot);
+        require(preview.minimumAmount() == minimumAmount && preview.maximumAmount() == maximumAmount,
+                "Skeleton Farm REI amount changed for " + kind + '/' + loot);
+    }
+
+    private static void verifyZombieFarmRules() {
+        require(ZombieFarmMenu.WIDTH == 348 && ZombieFarmMenu.HEIGHT == 210,
+                "The Zombie Farm must retain its independent 348x210 menu geometry");
+        int inventoryGroupLeft = ZombieFarmMenuLayout.EQUIPMENT_X;
+        int inventoryGroupRight = ZombieFarmMenuLayout.PLAYER_INVENTORY_X + 9 * 18;
+        require(inventoryGroupLeft - 123 == 343 - inventoryGroupRight,
+                "The Zombie Farm inventory and equipment slots must be horizontally centered");
+        require(ZombieFarmBlockEntity.OUTPUT_SLOT_COUNT == 18,
+                "The Zombie Farm must expose eighteen output slots");
+        require(ZombieFarmCycle.effectiveCycleTicks(
+                        com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.VanillaSwordTier.WOODEN
+                                .timingPosition(),
+                        0
+                ) == 2_400,
+                "A wooden sword must take 120 seconds in the Zombie Farm");
+        require(ZombieFarmCycle.effectiveCycleTicks(
+                        com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.VanillaSwordTier.NETHERITE
+                                .timingPosition(),
+                        5
+                ) == 100,
+                "A netherite Smite V sword must take five seconds in the Zombie Farm");
+        require(ZombieFarmKind.DROWNED.supports(ZombieFarmLoot.COPPER_INGOTS)
+                        && ZombieFarmKind.DROWNED.supports(ZombieFarmLoot.NAUTILUS_SHELLS),
+                "Drowned filters must expose copper, nautilus shells and their equipment");
+        require(ZombieFarmKind.ZOMBIFIED_PIGLIN.supports(ZombieFarmLoot.GOLD_NUGGETS)
+                        && ZombieFarmKind.ZOMBIFIED_PIGLIN.supports(ZombieFarmLoot.GOLD_INGOTS)
+                        && ZombieFarmKind.ZOMBIFIED_PIGLIN.supports(ZombieFarmLoot.WEAPONS),
+                "Zombified Piglins must expose both gold drops and their golden sword");
+        require(ZombieFarmKind.ZOGLIN.supports(ZombieFarmLoot.ROTTEN_FLESH)
+                        && !ZombieFarmKind.ZOGLIN.supports(ZombieFarmLoot.WEAPONS)
+                        && !ZombieFarmKind.ZOGLIN.supports(ZombieFarmLoot.HEADS),
+                "Zoglins must remain a flesh-only vanilla target without an invented head");
+        require(ZombieFarmKind.values().length == 6,
+                "The Zombie Farm selector must expose all six supported zombie-family targets");
+        verifyZombieFarmPreview(
+                ZombieFarmKind.DROWNED,
+                ZombieFarmLoot.COPPER_INGOTS,
+                110_000,
+                1,
+                1
+        );
+        verifyZombieFarmPreview(
+                ZombieFarmKind.DROWNED,
+                ZombieFarmLoot.NAUTILUS_SHELLS,
+                30_000,
+                1,
+                1
+        );
+        verifyZombieFarmPreview(
+                ZombieFarmKind.ZOMBIFIED_PIGLIN,
+                ZombieFarmLoot.GOLD_NUGGETS,
+                500_000,
+                1,
+                1
+        );
+        verifyZombieFarmPreview(
+                ZombieFarmKind.ZOMBIFIED_PIGLIN,
+                ZombieFarmLoot.GOLD_INGOTS,
+                25_000,
+                1,
+                1
+        );
+        verifyZombieFarmPreview(
+                ZombieFarmKind.ZOMBIFIED_PIGLIN,
+                ZombieFarmLoot.WEAPONS,
+                80_750,
+                1,
+                1
+        );
+        verifyZombieFarmPreview(
+                ZombieFarmKind.ZOGLIN,
+                ZombieFarmLoot.ROTTEN_FLESH,
+                1_000_000,
+                1,
+                3
+        );
+        require(ZombieFarmDropRules.zombifiedPiglinStackMaximumPerKill(3) == 4
+                        && ZombieFarmDropRules.zoglinFleshMaximumPerKill(3) == 6,
+                "Looting must scale Zombified Piglin and Zoglin stack maxima exactly like vanilla");
+        require(ZombieFarmDropRules.zombieWeaponChance(0, true)
+                        == ZombieFarmDropRules.zombieWeaponChance(0) * 5.0D,
+                "Hard difficulty must preserve vanilla's fivefold Zombie weapon spawn chance");
+    }
+
+    private static void verifyZombieFarmPreview(
+            ZombieFarmKind kind,
+            ZombieFarmLoot loot,
+            int probabilityPartsPerMillion,
+            int minimumAmount,
+            int maximumAmount
+    ) {
+        ZombieFarmDropRules.BaseDrop preview = switch (loot) {
+            case ROTTEN_FLESH -> kind == ZombieFarmKind.ZOGLIN
+                    ? ZombieFarmDropRules.zoglinFleshCycleDrop(0, 1)
+                    : ZombieFarmDropRules.zombifiedPiglinStackCycleDrop(0, 1);
+            case GOLD_NUGGETS -> ZombieFarmDropRules.zombifiedPiglinStackCycleDrop(0, 1);
+            case GOLD_INGOTS -> ZombieFarmDropRules.binaryCycleDrop(
+                    ZombieFarmDropRules.rarePoolChance(0),
+                    1
+            );
+            case WEAPONS -> ZombieFarmDropRules.binaryCycleDrop(
+                    ZombieFarmDropRules.zombifiedPiglinSwordChance(0),
+                    1
+            );
+            case COPPER_INGOTS -> ZombieFarmDropRules.binaryCycleDrop(
+                    ZombieFarmDropRules.copperChance(0),
+                    1
+            );
+            case NAUTILUS_SHELLS -> ZombieFarmDropRules.binaryCycleDrop(
+                    ZombieFarmDropRules.drownedNautilusChance(),
+                    1
+            );
+            default -> throw new IllegalArgumentException("Unsupported Zombie Farm preview assertion: " + loot);
+        };
+        require(kind.supports(loot), "Zombie Farm preview references an unavailable filter for " + kind + '/' + loot);
+        require(preview.probabilityPartsPerMillion() == probabilityPartsPerMillion,
+                "Zombie Farm REI probability changed for " + kind + '/' + loot);
+        require(preview.minimumAmount() == minimumAmount && preview.maximumAmount() == maximumAmount,
+                "Zombie Farm REI amount changed for " + kind + '/' + loot);
     }
 
     private static void verifyCapturerRules() {

@@ -1,6 +1,5 @@
 package com.cosmocraft.trading_cells.platform.neoforge.machine;
 
-import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
@@ -73,6 +72,20 @@ public final class OrderedOutputInserter {
         return true;
     }
 
+    public static boolean hasAnyCapacity(
+            NonNullList<ItemStack> inventory,
+            int firstSlot,
+            int slotCount
+    ) {
+        for (int slot = firstSlot; slot < firstSlot + slotCount; slot++) {
+            ItemStack output = inventory.get(slot);
+            if (output.isEmpty() || output.getCount() < output.getMaxStackSize()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void insertAllValidated(
             NonNullList<ItemStack> inventory,
             int firstSlot,
@@ -86,54 +99,18 @@ public final class OrderedOutputInserter {
         }
     }
 
-    /**
-     * Inserts a strict prefix of the supplied outputs and returns the untouched remainder.
-     * This is used only when a generated batch can never fit in the machine at once.
-     */
-    public static PartialInsert insertAvailable(
+    /** Inserts every output that fits and deliberately discards each remainder. */
+    public static void insertAllAvailable(
             NonNullList<ItemStack> inventory,
             int firstSlot,
             int slotCount,
             List<ItemStack> sources
     ) {
-        List<ItemStack> remainingSources = new ArrayList<>();
-        boolean insertedAny = false;
-        boolean capacityExhausted = false;
         for (ItemStack source : sources) {
-            if (source.isEmpty()) {
-                continue;
-            }
-            if (capacityExhausted) {
-                remainingSources.add(source);
-                continue;
-            }
-
-            int remaining = insertAvailableCount(inventory, firstSlot, slotCount, source);
-            insertedAny |= remaining < source.getCount();
-            if (remaining > 0) {
-                remainingSources.add(source.copyWithCount(remaining));
-                capacityExhausted = true;
+            if (!source.isEmpty()) {
+                insertAvailableCount(inventory, firstSlot, slotCount, source);
             }
         }
-        return new PartialInsert(List.copyOf(remainingSources), insertedAny);
-    }
-
-    public static boolean canFitInEmptySlots(int slotCount, List<ItemStack> sources) {
-        int requiredSlots = 0;
-        for (int sourceIndex = 0; sourceIndex < sources.size(); sourceIndex++) {
-            ItemStack source = sources.get(sourceIndex);
-            if (source.isEmpty() || appearedEarlier(sources, sourceIndex, source)) {
-                continue;
-            }
-            requiredSlots += divideRoundUp(
-                    combinedCount(sources, sourceIndex, source),
-                    source.getMaxStackSize()
-            );
-            if (requiredSlots > slotCount) {
-                return false;
-            }
-        }
-        return true;
     }
 
     public static boolean insert(
@@ -216,8 +193,5 @@ public final class OrderedOutputInserter {
 
     private static int divideRoundUp(long value, int divisor) {
         return Math.toIntExact((value + divisor - 1L) / divisor);
-    }
-
-    public record PartialInsert(List<ItemStack> remaining, boolean insertedAny) {
     }
 }

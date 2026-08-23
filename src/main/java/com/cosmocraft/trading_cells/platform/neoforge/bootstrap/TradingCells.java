@@ -1,5 +1,6 @@
 package com.cosmocraft.trading_cells.platform.neoforge.bootstrap;
 
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.DecapitationLootAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.config.FeatureSettingsProvider;
 import com.cosmocraft.trading_cells.platform.neoforge.config.NeoForgeFeatureSettingsAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellPayloadRegistration;
@@ -24,6 +25,7 @@ public class TradingCells {
 
         // 1. Initialize Registries (Output Adapters to Minecraft)
         Registration.init(modEventBus);
+        DecapitationLootAdapter.register();
 
         // 2. Register the configuration
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);

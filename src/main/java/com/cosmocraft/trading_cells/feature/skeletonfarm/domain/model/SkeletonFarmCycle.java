@@ -4,7 +4,7 @@ import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 
 /** Pure timing, filtering and simulated-kill rules for the Skeleton Farm. */
 public final class SkeletonFarmCycle {
-    public static final int MAX_EFFECTIVE_SMITE_LEVEL = 5;
+    public static final double MAX_EFFECTIVE_DAMAGE_LEVEL = 5.0D;
     public static final int TICKS_PER_SECOND = 20;
     private static final double WOODEN_BASE_SECONDS = 120.0D;
     private static final double WOODEN_MAX_SMITE_SECONDS = 30.0D;
@@ -21,12 +21,14 @@ public final class SkeletonFarmCycle {
     private SkeletonFarmCycle() {
     }
 
-    public static int effectiveCycleTicks(double tierPosition, int smiteLevel) {
-        int smite = Math.clamp(smiteLevel, 0, MAX_EFFECTIVE_SMITE_LEVEL);
+    public static int effectiveCycleTicks(double tierPosition, double effectiveDamageLevel) {
+        double damage = Double.isFinite(effectiveDamageLevel)
+                ? Math.clamp(effectiveDamageLevel, 0.0D, MAX_EFFECTIVE_DAMAGE_LEVEL)
+                : 0.0D;
         double position = Double.isFinite(tierPosition) ? Math.max(0.0D, tierPosition) : 0.0D;
         double startingDuration = startingDuration(position);
         double maximumSmiteDuration = maximumSmiteDuration(position);
-        double progress = smite / (double) MAX_EFFECTIVE_SMITE_LEVEL;
+        double progress = damage / MAX_EFFECTIVE_DAMAGE_LEVEL;
         double startingDistance = Math.max(Double.MIN_NORMAL, startingDuration - MINIMUM_DURATION_SECONDS);
         double endingDistance = Math.max(
                 Double.MIN_NORMAL,
@@ -44,6 +46,15 @@ public final class SkeletonFarmCycle {
 
     public static boolean isEnabled(int mask, SkeletonFarmKind kind, SkeletonFarmLoot loot) {
         return kind.supports(loot) && (mask & loot.bit()) != 0;
+    }
+
+    public static boolean hasEnabledLoot(int mask, SkeletonFarmKind kind) {
+        for (SkeletonFarmLoot loot : kind.availableLoot()) {
+            if ((mask & loot.bit()) != 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static int toggle(int mask, SkeletonFarmLoot loot) {

@@ -41,4 +41,5 @@ public final class AnvilEnchantmentPreservationEvent {
             event.setOutput(output);
         }
     }
+
 }

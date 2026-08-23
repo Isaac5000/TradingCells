@@ -19,7 +19,7 @@ public final class QuarryTooltipEventAdapter {
 
     private static void onRegisterTooltipAppenders(RegisterTooltipAppendersEvent event) {
         event.registerAppender(
-                TooltipLocation.POST_CUSTOM,
+                TooltipLocation.PRE_ITEM_INFO,
                 (stack, context, display, player, flag, builder) -> appendDescription(stack, context, builder)
         );
     }
@@ -31,12 +31,18 @@ public final class QuarryTooltipEventAdapter {
     ) {
         if (QuarryEnchantments.isStoredOnBook(stack, context.registries())) {
             builder.accept(Component.translatable(
-                    "enchantment.trading_cells.miners_touch.description"
+                    "enchantment.trading_cells.miners_touch.description.1"
+            ).withStyle(ChatFormatting.DARK_GREEN));
+            builder.accept(Component.translatable(
+                    "enchantment.trading_cells.miners_touch.description.2"
             ).withStyle(ChatFormatting.DARK_GREEN));
         }
         if (QuarryEnchantments.isFortuneStoredOnBook(stack, context.registries())) {
             builder.accept(Component.translatable(
-                    "tooltip.trading_cells.quarry_fortune_silk_description"
+                    "tooltip.trading_cells.quarry_fortune_silk_description.1"
+            ).withStyle(ChatFormatting.DARK_GREEN));
+            builder.accept(Component.translatable(
+                    "tooltip.trading_cells.quarry_fortune_silk_description.2"
             ).withStyle(ChatFormatting.DARK_GREEN));
         }
     }

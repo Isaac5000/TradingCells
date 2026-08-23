@@ -8,8 +8,8 @@ import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 
 public final class SkeletonFarmService implements SkeletonFarmUseCase {
     @Override
-    public int effectiveCycleTicks(double tierPosition, int smiteLevel) {
-        return SkeletonFarmCycle.effectiveCycleTicks(tierPosition, smiteLevel);
+    public int effectiveCycleTicks(double tierPosition, double effectiveDamageLevel) {
+        return SkeletonFarmCycle.effectiveCycleTicks(tierPosition, effectiveDamageLevel);
     }
 
     @Override
@@ -20,6 +20,11 @@ public final class SkeletonFarmService implements SkeletonFarmUseCase {
     @Override
     public boolean isEnabled(int mask, SkeletonFarmKind kind, SkeletonFarmLoot loot) {
         return SkeletonFarmCycle.isEnabled(mask, kind, loot);
+    }
+
+    @Override
+    public boolean hasEnabledLoot(int mask, SkeletonFarmKind kind) {
+        return SkeletonFarmCycle.hasEnabledLoot(mask, kind);
     }
 
     @Override

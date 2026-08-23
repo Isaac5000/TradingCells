@@ -16,6 +16,7 @@ Trading Cells turns villagers and piglins into compact, portable automation with
 - Manual and automatic villager trading with discounts, profession levels, persistent offers, mass trading, POIs, and stored trade XP.
 - Villager breeding, incubation, crop farming, curing, iron farming, and Overworld quarrying.
 - A configurable Skeleton Farm hunts Skeletons, Wither Skeletons, Strays, Bogged, or Parched and lets each supported reward be enabled independently.
+- A separate Zombie Farm supports Zombies, Zombie Villagers, Husks, Drowned, Zombified Piglins, and Zoglins while honoring loaded loot-table additions.
 
 [IMAGE: Piglin machines overview]
 
@@ -43,8 +44,12 @@ The Arcane Infuser uses a manual 3x3 ingredient grid and stores up to 2,147,483,
 - Farmer's Touch costs 15,000 XP and combines a book with a Chorus Flower, four crops, a Totem of Undying, a Nether Star, and a Netherite Block.
 - Miner's Touch costs 30,000 XP and uses an Echo Shard, two End Stone, and two Sculk Catalysts alongside the shared late-game ingredients.
 - A third 5,000 XP recipe transforms a captured unemployed villager into a Nitwit without replacing its other saved data.
-- The Skeleton Farm costs 25,000 XP and combines materials representing all five skeleton variants around a central Nether Star.
-- Warrior's Touch costs 45,000 XP and prevents sword durability loss inside Skeleton Farms.
+- The Skeleton Farm costs 25,000 XP and combines its five required skeleton Spawn Eggs around a central Spawner; Skeleton Horses remain selectable without entering the block recipe.
+- The Zombie Farm costs 25,000 XP and combines five Zombie-family Spawn Eggs around a central Spawner; Zoglins remain selectable without being required by the block recipe.
+- Warrior's Touch costs 45,000 XP and prevents sword durability loss inside every Trading Cells mob farm.
+- Decapitation costs 25,000 XP and uses one Storm Shard in each corner to create a level-I book for swords or axes.
+- Six compact recipes turn a tagged normal egg, including Turtle and Sniffer Eggs, into a Skeleton, Stray, Bogged, Parched, Wither Skeleton, or Skeleton Horse Spawn Egg. Costs range from 55 XP to 160 XP, so the rarest conversion never exceeds ten vanilla levels.
+- A renewable late-game Spawner recipe uses Iron Bars, Obsidian, one Dragon's Breath, and a Nether Star.
 - Player-killed Wardens add one Echo Shard to their normal loot. Looting can add up to its level to the shard and guarantees between one and its level of extra Sculk Catalysts.
 
 ## REI Integration
@@ -57,7 +62,10 @@ Roughly Enough Items is optional. When installed, it displays the processes for 
 
 - Farmer's Touch prevents hoe durability loss inside both crop farms.
 - Miner's Touch prevents pickaxe durability loss inside both quarries.
-- Warrior's Touch prevents sword durability loss inside Skeleton Farms.
+- Warrior's Touch prevents sword durability loss inside every Trading Cells mob farm.
+- Decapitation has six levels and raises head chances independently from Looting. On Wither Skeletons both levels contribute to one roll with at most one skull.
+- Decapitation combines normally or gains exactly one level in a Smithing Table by combining an enchanted book or weapon with one Storm Shard, up to level VI.
+- Conventionally named external heads in `#minecraft:skulls` are detected dynamically across mod namespaces.
 - Fortune scales machine output beyond vanilla level III where supported.
 - Fortune and Silk Touch can coexist in quarries; together they increase ore selection and ore-block yield.
 - Efficiency is capped functionally at level V in crop farms and quarries.
@@ -66,6 +74,7 @@ Roughly Enough Items is optional. When installed, it displays the processes for 
 - Over-limit enchantment names use a dynamic blue-to-green-to-magenta color range.
 - External villager professions use their registered translated names instead of raw identifiers.
 - External professions, POIs, crops, foods, biome skins, and tool tiers are discovered dynamically with a vanilla fallback if third-party data is invalid.
+- External monsters tagged in `#minecraft:skeletons` or `#minecraft:zombies` join their farm selector, with one filter per enumerable loot-table item and fixed targets retained as a safe fallback.
 
 ## Configuration
 

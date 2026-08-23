@@ -1,0 +1,19 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "ingredients": [
+    {"ingredient": "minecraft:prismarine_shard", "count": 1},
+    {"ingredient": "minecraft:trident", "count": 1},
+    {"ingredient": "minecraft:prismarine_shard", "count": 1},
+    {"ingredient": "minecraft:copper_ingot", "count": 1},
+    {"ingredient": "#trading_cells:arcane_infusion_eggs", "count": 1},
+    {"ingredient": "minecraft:nautilus_shell", "count": 1},
+    {"ingredient": "minecraft:kelp", "count": 1},
+    {"ingredient": "minecraft:fishing_rod", "count": 1},
+    {"ingredient": "minecraft:kelp", "count": 1}
+  ],
+  "experience": 160,
+  "result": {
+    "type": "item",
+    "item": "minecraft:drowned_spawn_egg"
+  }
+}

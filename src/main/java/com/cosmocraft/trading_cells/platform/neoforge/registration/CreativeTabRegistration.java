@@ -14,6 +14,7 @@ import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryEnchantm
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmEnchantments;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import net.minecraft.core.registries.Registries;
@@ -62,6 +63,7 @@ public final class CreativeTabRegistration {
                     .displayItems((parameters, output) -> {
                         output.accept(ExperienceStorageRegistrationAdapter.ITEM.get());
                         output.accept(ArcaneInfuserRegistrationAdapter.ITEM.get());
+                        output.accept(SkeletonFarmRegistrationAdapter.STORM_SHARD_ITEM.get());
                         output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_COPPER_UPGRADE_ITEM.get());
                         output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_IRON_UPGRADE_ITEM.get());
                         output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_GOLD_UPGRADE_ITEM.get());
@@ -87,6 +89,11 @@ public final class CreativeTabRegistration {
                                 .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
                                         new EnchantmentInstance(enchantment, 1)
                                 )));
+                        parameters.holders().lookup(Registries.ENCHANTMENT)
+                                .flatMap(enchantments -> enchantments.get(SkeletonFarmEnchantments.DECAPITATION))
+                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
+                                        new EnchantmentInstance(enchantment, 1)
+                                )));
                         output.accept(CaptureRegistrationAdapter.VILLAGER_CAPTURER_ITEM.get());
                         output.accept(CaptureRegistrationAdapter.PIGLIN_CAPTURER_ITEM.get());
                         output.accept(CaptureRegistrationAdapter.UNBREAKABLE_VILLAGER_CAPTURER_ITEM.get());
@@ -99,10 +106,8 @@ public final class CreativeTabRegistration {
                     .title(Component.translatable("itemGroup." + TradingCells.MOD_ID + ".farms"))
                     .icon(() -> SkeletonFarmRegistrationAdapter.ITEM.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
-                        output.accept(FarmerRegistrationAdapter.FARMER_ITEM.get());
-                        output.accept(FarmerRegistrationAdapter.PIGLIN_FARMER_ITEM.get());
-                        output.accept(IronFarmRegistrationAdapter.IRON_FARM_ITEM.get());
                         output.accept(SkeletonFarmRegistrationAdapter.ITEM.get());
+                        output.accept(ZombieFarmRegistrationAdapter.ITEM.get());
                     })
                     .build());
 

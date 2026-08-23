@@ -31,6 +31,7 @@ import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CocoaBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -40,6 +41,11 @@ import org.jspecify.annotations.Nullable;
 public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<FarmerBlockEntity, FarmerBlockEntityRenderer.State> {
     private static final float ENTITY_SCALE = 0.30F;
     private static final float PLOT_SCALE = 0.30F;
+    private static final float COCOA_SUPPORT_WIDTH = PLOT_SCALE * 6.0F / 16.0F;
+    private static final float COCOA_SUPPORT_HEIGHT = PLOT_SCALE * 1.4F;
+    private static final double COCOA_SUPPORT_BACK_OFFSET = PLOT_SCALE * 0.20D;
+    private static final double COCOA_OFFSET = PLOT_SCALE * 0.50D;
+    private static final double COCOA_HEIGHT = 0.10D;
     private static final double ENTITY_OFFSET = 0.20D;
     private static final double PLOT_OFFSET = 0.20D;
     private final EntityRenderDispatcher entityRenderer;
@@ -75,6 +81,8 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
         state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(level, blockEntity.getBlockPos());
 
         FarmerCrop crop = blockEntity.crop();
+        state.cropKind = crop;
+        state.cropScale = cropScale(crop, blockEntity.growthTicks(), blockEntity.growthDurationTicks());
         BlockState soil = FarmerCropStackAdapter.soilState(blockEntity.kind(), crop);
         state.cachedSoil = updateBlockState(state.soil, soil, state.cachedSoil);
         BlockState cropState = FarmerCropStackAdapter.cropState(
@@ -83,6 +91,9 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
                 blockEntity.growthTicks(),
                 blockEntity.growthDurationTicks()
         );
+        if (crop == FarmerCrop.COCOA && cropState.hasProperty(CocoaBlock.FACING)) {
+            cropState = cropState.setValue(CocoaBlock.FACING, state.facing.getOpposite());
+        }
         state.cachedCrop = updateBlockState(state.crop, cropState, state.cachedCrop);
 
         Entity entity = state.getOrCreateWorker(blockEntity, level);
@@ -120,18 +131,35 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
     ) {
         double plotX = 0.5D + state.facing.getStepX() * PLOT_OFFSET;
         double plotZ = 0.5D + state.facing.getStepZ() * PLOT_OFFSET;
-        submitBlock(
-                state.soil,
-                new Vec3(plotX, 0.02D, plotZ),
-                PLOT_SCALE,
-                state.lightCoords,
-                poseStack,
-                submitNodeCollector
-        );
+        if (state.cropKind == FarmerCrop.COCOA) {
+            submitBlock(
+                    state.soil,
+                    new Vec3(
+                            plotX - state.facing.getStepX() * COCOA_SUPPORT_BACK_OFFSET,
+                            0.02D,
+                            plotZ - state.facing.getStepZ() * COCOA_SUPPORT_BACK_OFFSET
+                    ),
+                    COCOA_SUPPORT_WIDTH,
+                    COCOA_SUPPORT_HEIGHT,
+                    COCOA_SUPPORT_WIDTH,
+                    state.lightCoords,
+                    poseStack,
+                    submitNodeCollector
+            );
+        } else {
+            submitBlock(
+                    state.soil,
+                    new Vec3(plotX, 0.02D, plotZ),
+                    PLOT_SCALE,
+                    state.lightCoords,
+                    poseStack,
+                    submitNodeCollector
+            );
+        }
         submitBlock(
                 state.crop,
-                new Vec3(plotX, 0.29D, plotZ),
-                PLOT_SCALE,
+                cropPosition(state, plotX, plotZ),
+                state.cropScale,
                 state.lightCoords,
                 poseStack,
                 submitNodeCollector
@@ -151,10 +179,44 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
         }
     }
 
+    private static Vec3 cropPosition(State state, double plotX, double plotZ) {
+        if (state.cropKind == FarmerCrop.COCOA) {
+            return new Vec3(
+                    plotX + state.facing.getStepX() * COCOA_OFFSET,
+                    COCOA_HEIGHT,
+                    plotZ + state.facing.getStepZ() * COCOA_OFFSET
+            );
+        }
+        return new Vec3(plotX, 0.29D, plotZ);
+    }
+
+    private static float cropScale(FarmerCrop crop, int growthTicks, int durationTicks) {
+        if (crop != FarmerCrop.PUMPKIN && crop != FarmerCrop.MELON) {
+            return PLOT_SCALE;
+        }
+        float progress = durationTicks <= 0
+                ? 1.0F
+                : Math.clamp(growthTicks / (float) durationTicks, 0.0F, 1.0F);
+        return PLOT_SCALE * (0.20F + 0.80F * progress);
+    }
+
     private static void submitBlock(
             BlockModelRenderState state,
             Vec3 position,
             float scale,
+            int lightCoords,
+            PoseStack poseStack,
+            SubmitNodeCollector collector
+    ) {
+        submitBlock(state, position, scale, scale, scale, lightCoords, poseStack, collector);
+    }
+
+    private static void submitBlock(
+            BlockModelRenderState state,
+            Vec3 position,
+            float scaleX,
+            float scaleY,
+            float scaleZ,
             int lightCoords,
             PoseStack poseStack,
             SubmitNodeCollector collector
@@ -164,11 +226,11 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
         }
         poseStack.pushPose();
         poseStack.translate(
-                position.x() - scale * 0.5D,
+                position.x() - scaleX * 0.5D,
                 position.y(),
-                position.z() - scale * 0.5D
+                position.z() - scaleZ * 0.5D
         );
-        poseStack.scale(scale, scale, scale);
+        poseStack.scale(scaleX, scaleY, scaleZ);
         state.submit(poseStack, collector, lightCoords, OverlayTexture.NO_OVERLAY, EntityRenderState.NO_OUTLINE);
         poseStack.popPose();
     }
@@ -197,6 +259,8 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
         public final BlockModelRenderState crop = new BlockModelRenderState();
         public @Nullable EntityRenderState worker;
         public Direction facing = Direction.NORTH;
+        public FarmerCrop cropKind = FarmerCrop.NONE;
+        public float cropScale = PLOT_SCALE;
         private BlockState cachedSoil = Blocks.AIR.defaultBlockState();
         private BlockState cachedCrop = Blocks.AIR.defaultBlockState();
         private ItemStack cachedWorkerStack = ItemStack.EMPTY;
@@ -235,6 +299,8 @@ public final class FarmerBlockEntityRenderer implements BlockEntityRenderer<Farm
             crop.clear();
             cachedSoil = Blocks.AIR.defaultBlockState();
             cachedCrop = Blocks.AIR.defaultBlockState();
+            cropKind = FarmerCrop.NONE;
+            cropScale = PLOT_SCALE;
             cachedWorkerStack = ItemStack.EMPTY;
             cachedWorker = null;
         }

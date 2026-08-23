@@ -73,11 +73,13 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
     private double cachedHoeTierPosition;
     private int cachedEfficiencyLevel;
     private int cachedFortuneLevel;
+    private boolean cachedSilkTouch;
     private boolean hoeCacheInitialized;
     private FarmerHarvest cachedHarvest = FarmerHarvest.of();
     private List<ItemStack> cachedMaximumHarvest = List.of();
     private FarmerCrop cachedHarvestCrop = FarmerCrop.NONE;
     private int cachedHarvestFortune = Integer.MIN_VALUE;
+    private boolean cachedHarvestSilkTouch;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -338,8 +340,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
     public boolean canPlaceItem(int slot, @NonNull ItemStack stack) {
         return switch (slot) {
             case WORKER_SLOT -> isAdultWorkerUncached(stack);
-            case CROP_SLOT -> FarmerCropStackAdapter.isSupported(kind, stack)
-                    && items.get(CROP_SLOT).isEmpty();
+            case CROP_SLOT -> FarmerCropStackAdapter.isSupported(kind, stack);
             case HOE_SLOT -> HoeTierCatalog.isSupported(stack);
             default -> false;
         };
@@ -570,6 +571,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
         cachedHoeTierPosition = HoeTierCatalog.timingPosition(hoe);
         cachedEfficiencyLevel = enchantmentLevel(hoe, Enchantments.EFFICIENCY);
         cachedFortuneLevel = enchantmentLevel(hoe, Enchantments.FORTUNE);
+        cachedSilkTouch = enchantmentLevel(hoe, Enchantments.SILK_TOUCH) > 0;
         hoeCacheInitialized = true;
     }
 
@@ -582,15 +584,18 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
     }
 
     private void refreshHarvestCache() {
-        if (cachedHarvestCrop == cachedCrop && cachedHarvestFortune == cachedFortuneLevel) {
+        if (cachedHarvestCrop == cachedCrop
+                && cachedHarvestFortune == cachedFortuneLevel
+                && cachedHarvestSilkTouch == cachedSilkTouch) {
             return;
         }
-        cachedHarvest = farmerService.harvest(cachedCrop, cachedFortuneLevel);
+        cachedHarvest = farmerService.harvest(cachedCrop, cachedFortuneLevel, cachedSilkTouch);
         cachedMaximumHarvest = cachedHarvest.yields().stream()
                 .map(FarmerCropStackAdapter::output)
                 .toList();
         cachedHarvestCrop = cachedCrop;
         cachedHarvestFortune = cachedFortuneLevel;
+        cachedHarvestSilkTouch = cachedSilkTouch;
     }
 
     private void invalidateCache(int slot) {
@@ -608,6 +613,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
     private void invalidateHoeCache() {
         hoeCacheInitialized = false;
         cachedHarvestFortune = Integer.MIN_VALUE;
+        cachedHarvestSilkTouch = !cachedSilkTouch;
     }
 
     private void invalidateRuntimeCaches() {

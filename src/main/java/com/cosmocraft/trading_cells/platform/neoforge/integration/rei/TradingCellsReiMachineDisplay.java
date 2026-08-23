@@ -49,12 +49,19 @@ final class TradingCellsReiMachineDisplay {
     private static final int BARTER_SLOT_Y = 51;
     private static final int NETHERITE_PIGLIN_X = 166;
     private static final int NETHERITE_PIGLIN_Y = 57;
-    private static final int SKELETON_WORKER_X = 22;
-    private static final int SKELETON_SWORD_X = 49;
-    private static final int SKELETON_TARGET_X = 76;
-    private static final int SKELETON_INPUT_Y = 48;
-    private static final int SKELETON_OUTPUT_X = 142;
-    private static final int SKELETON_OUTPUT_Y = 35;
+    private static final int SKELETON_INPUT_X = 38;
+    private static final int SKELETON_WORKER_Y = 32;
+    private static final int SKELETON_SWORD_Y = 53;
+    private static final int SKELETON_TARGET_Y = 74;
+    private static final int SKELETON_PROGRESS_X = 68;
+    private static final int SKELETON_PROGRESS_Y = 53;
+    private static final int SKELETON_OUTPUT_X = 148;
+    private static final int SKELETON_OUTPUT_Y = SKELETON_PROGRESS_Y;
+    private static final int SMITHING_BASE_X = 39;
+    private static final int SMITHING_ADDITION_X = 72;
+    private static final int SMITHING_OUTPUT_X = 146;
+    private static final int SMITHING_SLOT_Y = 55;
+    private static final int SMITHING_ARROW_X = 105;
 
     private TradingCellsReiMachineDisplay() {
     }
@@ -68,20 +75,21 @@ final class TradingCellsReiMachineDisplay {
         );
         List<Widget> widgets = new ArrayList<>();
         widgets.add(createBackground(display, bounds));
-
         switch (display.layout().kind()) {
             case BREEDING -> addBreeding(widgets, display, bounds);
             case INCUBATION -> addIncubation(widgets, display, bounds);
             case FARMING -> addFarming(widgets, display, bounds);
             case CONVERSION -> addConversion(widgets, display, bounds);
             case IRON_FARM -> addIronFarm(widgets, display, bounds);
-            case SKELETON_FARM -> addSkeletonFarm(widgets, display, bounds);
+            case SKELETON_FARM, ZOMBIE_FARM -> addSkeletonFarm(widgets, display, bounds);
+            case DECAPITATION_SMITHING -> addDecapitationSmithing(widgets, display, bounds);
             case PIGLIN_BARTERING -> addPiglinBartering(widgets, display, bounds);
             case NETHERITE_PIGLIN_BARTERING -> addNetheritePiglinBartering(widgets, display, bounds);
             case QUARRY -> addQuarry(widgets, display, bounds);
             case ARCANE_INFUSION -> addArcaneInfusion(widgets, display, bounds);
         }
-        if (display.layout().kind() == TradingCellsReiLayout.Kind.ARCANE_INFUSION) {
+        if (display.layout().kind() == TradingCellsReiLayout.Kind.ARCANE_INFUSION
+                || display.layout().kind() == TradingCellsReiLayout.Kind.DECAPITATION_SMITHING) {
             return widgets;
         } else if (isInstantBartering(display)) {
             addOutputAmountTooltip(widgets, display, bounds);
@@ -118,6 +126,8 @@ final class TradingCellsReiMachineDisplay {
             drawSlotFrames(graphics, display, bounds);
             if (layout.kind() == TradingCellsReiLayout.Kind.ARCANE_INFUSION) {
                 drawArcaneInfusionInfo(graphics, display, bounds);
+            } else if (layout.kind() == TradingCellsReiLayout.Kind.DECAPITATION_SMITHING) {
+                drawDecapitationSmithingInfo(graphics, bounds);
             } else if (isInstantBartering(display)) {
                 drawOutputAmount(graphics, display, bounds);
             } else {
@@ -190,19 +200,18 @@ final class TradingCellsReiMachineDisplay {
                     );
                 }
             }
-            case SKELETON_FARM -> {
-                drawSlot(graphics, bounds, SKELETON_WORKER_X, SKELETON_INPUT_Y, display);
-                drawSlot(graphics, bounds, SKELETON_SWORD_X, SKELETON_INPUT_Y, display);
-                drawSlot(graphics, bounds, SKELETON_TARGET_X, SKELETON_INPUT_Y, display);
-                for (int index = 0; index < display.getOutputEntries().size(); index++) {
-                    drawSlot(
-                            graphics,
-                            bounds,
-                            SKELETON_OUTPUT_X + index % 2 * 24,
-                            SKELETON_OUTPUT_Y + index / 2 * 28,
-                            display
-                    );
+            case SKELETON_FARM, ZOMBIE_FARM -> {
+                drawSlot(graphics, bounds, SKELETON_INPUT_X, SKELETON_WORKER_Y, display);
+                drawSlot(graphics, bounds, SKELETON_INPUT_X, SKELETON_SWORD_Y, display);
+                drawSlot(graphics, bounds, SKELETON_INPUT_X, SKELETON_TARGET_Y, display);
+                if (!display.getOutputEntries().isEmpty()) {
+                    drawSlot(graphics, bounds, SKELETON_OUTPUT_X, SKELETON_OUTPUT_Y, display);
                 }
+            }
+            case DECAPITATION_SMITHING -> {
+                drawSlot(graphics, bounds, SMITHING_BASE_X, SMITHING_SLOT_Y, display);
+                drawSlot(graphics, bounds, SMITHING_ADDITION_X, SMITHING_SLOT_Y, display);
+                drawSlot(graphics, bounds, SMITHING_OUTPUT_X, SMITHING_SLOT_Y, display);
             }
             case PIGLIN_BARTERING -> {
                 drawSlot(graphics, bounds, BARTER_PIGLIN_X, BARTER_SLOT_Y, display);
@@ -400,6 +409,25 @@ final class TradingCellsReiMachineDisplay {
         }
     }
 
+    private static void drawDecapitationSmithingInfo(
+            me.shedaniel.rei.api.client.gui.compat.GuiGraphics graphics,
+            Rectangle bounds
+    ) {
+        graphics.centeredText(
+                Minecraft.getInstance().font,
+                Component.literal("+"),
+                screenX(bounds) + 65,
+                screenY(bounds) + SMITHING_SLOT_Y + 5,
+                0xFFFFFFFF
+        );
+        VillagerTradeScreenCommon.drawTradeArrow(
+                graphics,
+                screenX(bounds) + SMITHING_ARROW_X,
+                screenY(bounds) + SMITHING_SLOT_Y + 1,
+                VillagerTradeSprites.State.NORMAL
+        );
+    }
+
     private static void addBreeding(
             List<Widget> widgets,
             TradingCellsReiDisplay display,
@@ -511,18 +539,22 @@ final class TradingCellsReiMachineDisplay {
             TradingCellsReiDisplay display,
             Rectangle bounds
     ) {
-        addInput(widgets, bounds, SKELETON_WORKER_X, SKELETON_INPUT_Y, input(display, 0));
-        addInput(widgets, bounds, SKELETON_SWORD_X, SKELETON_INPUT_Y, input(display, 1));
-        addPreview(widgets, bounds, SKELETON_TARGET_X, SKELETON_INPUT_Y, input(display, 2));
-        for (int index = 0; index < display.getOutputEntries().size(); index++) {
-            addOutput(
-                    widgets,
-                    bounds,
-                    SKELETON_OUTPUT_X + index % 2 * 24,
-                    SKELETON_OUTPUT_Y + index / 2 * 28,
-                    output(display, index)
-            );
+        addInput(widgets, bounds, SKELETON_INPUT_X, SKELETON_WORKER_Y, input(display, 0));
+        addInput(widgets, bounds, SKELETON_INPUT_X, SKELETON_SWORD_Y, input(display, 1));
+        addPreview(widgets, bounds, SKELETON_INPUT_X, SKELETON_TARGET_Y, input(display, 2));
+        if (!display.getOutputEntries().isEmpty()) {
+            addOutput(widgets, bounds, SKELETON_OUTPUT_X, SKELETON_OUTPUT_Y, output(display, 0));
         }
+    }
+
+    private static void addDecapitationSmithing(
+            List<Widget> widgets,
+            TradingCellsReiDisplay display,
+            Rectangle bounds
+    ) {
+        addInput(widgets, bounds, SMITHING_BASE_X, SMITHING_SLOT_Y, input(display, 0));
+        addInput(widgets, bounds, SMITHING_ADDITION_X, SMITHING_SLOT_Y, input(display, 1));
+        addOutput(widgets, bounds, SMITHING_OUTPUT_X, SMITHING_SLOT_Y, output(display, 0));
     }
 
     private static void addPiglinBartering(
@@ -683,7 +715,8 @@ final class TradingCellsReiMachineDisplay {
             case FARMING -> new Point(MachineScreenLayout.machineX(54), 66);
             case CONVERSION -> new Point(MachineScreenLayout.machineX(54), 95);
             case IRON_FARM -> new Point(MachineScreenLayout.machineX(54), 47);
-            case SKELETON_FARM -> new Point(91, 78);
+            case SKELETON_FARM, ZOMBIE_FARM -> new Point(SKELETON_PROGRESS_X, SKELETON_PROGRESS_Y);
+            case DECAPITATION_SMITHING -> new Point(SMITHING_ARROW_X, SMITHING_SLOT_Y);
             case PIGLIN_BARTERING -> new Point(88, 53);
             case NETHERITE_PIGLIN_BARTERING -> new Point(88, 58);
             case QUARRY -> new Point(

@@ -21,6 +21,7 @@ La versión actual del mod es `1.0.0`.
 - **Convertidor de Aldeanos**: zombifica y cura sin perder ofertas, y conserva los descuentos de curación.
 - **Granja de Hierro**: produce hierro con multiplicadores base `x1`, `x2` y `x3` según los aldeanos instalados.
 - **Granja de Esqueletos**: permite elegir entre esqueletos normales, Wither, de hielo, de pantano y del desierto, filtrar sus recompensas y mejorar la caza con una espada.
+- **Granja de Zombis**: permite cazar zombis, aldeanos zombis, momificados, ahogados, piglins zombificados y zoglins con filtros de botín independientes.
 - **Cantera de Aldeanos**: extrae materiales del Overworld. El pico, su nivel, Eficiencia, Fortuna y Toque de Seda afectan al resultado.
 
 ## Máquinas de piglins
@@ -52,19 +53,28 @@ El **Infusor Arcano** usa nueve entradas como una mesa de trabajo, una salida de
 - **Toque del Granjero** (`15.000` XP): libro central, flor de chorus, tótem, estrella del Nether, bloque de netherita y patata, remolacha, trigo y zanahoria en las esquinas.
 - **Toque del Minero** (`30.000` XP): libro central, fragmento de eco, tótem, estrella del Nether, bloque de netherita y dos piedras del End más dos catalizadores de sculk en las esquinas.
 - **Nitwit** (`5.000` XP): transforma un aldeano capturado sin empleo, conservando todos sus demás datos y el tipo de capturador.
-- **Granja de Esqueletos** (`25.000` XP): combina símbolos de las cinco variantes de esqueletos alrededor de una estrella del Nether central.
-- **Toque del Guerrero** (`45.000` XP): crea un libro que evita el desgaste de espadas dentro de la Granja de Esqueletos.
+- **Granja de Esqueletos** (`25.000` XP): combina los huevos generadores de cinco variantes alrededor de un spawner central; el caballo esqueleto se selecciona por separado y su base usa musgo pálido.
+- **Granja de Zombis** (`25.000` XP): combina los huevos de cinco variantes alrededor de un spawner; el zoglin se selecciona en la máquina, pero no encarece su receta. Su base usa musgo pálido.
+- **Toque del Guerrero** (`45.000` XP): crea un libro que evita el desgaste de espadas dentro de todas las granjas de criaturas del mod.
+- **Decapitación** (`25.000` XP): usa un Fragmento de la Tormenta en cada esquina para crear un libro aplicable a espadas y hachas.
+- **Huevos de esqueletos** (`55-160` XP): transforma un huevo normal, incluidos los huevos de tortuga y sniffer, en el huevo generador de esqueleto, esqueleto de hielo, pantano, desierto o Wither. El más caro cuesta exactamente la experiencia total del nivel 10.
+- **Huevos de zombis** (`55-160` XP): crea los huevos de zombi, aldeano zombi, momificado, ahogado, piglin zombificado y zoglin a partir de cualquier huevo normal admitido.
+
+El spawner es renovable mediante una receta tardía con barrotes de hierro, obsidiana, un aliento de dragón y una estrella del Nether. La Granja de Esqueletos usa ese bloque en su propia infusión y muestra el objetivo seleccionado inmóvil sobre un spawner interior.
 
 El depósito mantiene entrada y salida de experiencia líquida, además de transferencias manuales de niveles. Los ocho ingredientes exteriores se renderizan sobre pedestales y el central sobre la mesa de encantamientos. Con el menú abierto, REI puede mover los nueve ingredientes a su posición; la experiencia se introduce siempre por separado.
 
-El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Saqueo puede añadir entre cero y su nivel al fragmento y garantiza entre uno y su nivel de catalizadores de sculk adicionales. Las ciudades antiguas mantienen su obtención habitual de fragmentos de eco.
+El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Botín puede añadir entre cero y su nivel al fragmento y garantiza entre uno y su nivel de catalizadores de sculk adicionales. Las ciudades antiguas mantienen su obtención habitual de fragmentos de eco.
 
 ## Encantamientos
 
 - **Toque del Granjero** evita el desgaste de azadas dentro de ambos Cultivos.
 - **Toque del Minero** evita el desgaste de picos dentro de ambas Canteras.
-- **Toque del Guerrero** evita el desgaste de espadas dentro de la Granja de Esqueletos.
-- Los tres libros están disponibles en creativo y se pueden fabricar mediante Infusión Arcana.
+- **Toque del Guerrero** evita el desgaste de espadas dentro de todas las granjas de criaturas del mod.
+- **Decapitación I-VI** permite obtener cabezas existentes y aumenta su probabilidad sin depender de Botín. En esqueletos Wither, ambos niveles se suman en una única tirada.
+- Decapitación puede combinarse normalmente o subir exactamente un nivel en la mesa de herrería usando el libro o arma encantada y un Fragmento de la Tormenta, hasta nivel VI.
+- Decapitación detecta cabezas externas con identificadores convencionales y el tag `#minecraft:skulls` sin inventar resultados inexistentes.
+- Los cuatro libros están disponibles en creativo y se pueden fabricar mediante Infusión Arcana.
 - Eficiencia se limita funcionalmente al nivel V dentro de Cultivos y Canteras.
 - Fortuna continúa escalando por encima del nivel vanilla donde la mecánica lo permite.
 - Las Canteras permiten combinar Fortuna y Toque de Seda; juntos aumentan selección y cantidad de menas.
@@ -73,9 +83,11 @@ El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Saqu
 
 ## Compatibilidad
 
-REI muestra los procesos de criaderos, incubadoras, cultivos, conversión, granjas de hierro y esqueletos, canteras, trueques e infusión arcana, además de las recetas normales. Su integración es opcional y solo se carga en cliente.
+REI muestra los procesos de criaderos, incubadoras, cultivos, conversión, granjas de hierro, esqueletos y zombis, canteras, trueques e infusión arcana, además de las recetas normales. Su integración es opcional y solo se carga en cliente.
 
 Las listas de profesiones, POI, aspectos de bioma, cultivos, alimentos y niveles de herramienta parten de datos vanilla fijos y se amplían dinámicamente con otros mods. Un elemento externo defectuoso se descarta; si no se puede conservar la ampliación, Trading Cells vuelve a la lista vanilla. Los nombres de profesiones usan el componente registrado por cada mod, incluido More Villagers.
+
+Las granjas de criaturas amplían sus selectores con las entidades monstruosas de `#minecraft:skeletons` y `#minecraft:zombies`. Los objetos enumerables de sus tablas cargadas reciben filtros individuales; una tabla externa inválida no elimina las variantes fijas.
 
 ### Vulkan y OpenGL
 

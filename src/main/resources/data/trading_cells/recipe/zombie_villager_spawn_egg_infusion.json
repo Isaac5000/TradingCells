@@ -1,0 +1,19 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "ingredients": [
+    {"ingredient": "minecraft:rotten_flesh", "count": 1},
+    {"ingredient": "minecraft:emerald", "count": 1},
+    {"ingredient": "minecraft:rotten_flesh", "count": 1},
+    {"ingredient": "minecraft:golden_apple", "count": 1},
+    {"ingredient": "#trading_cells:arcane_infusion_eggs", "count": 1},
+    {"ingredient": "minecraft:fermented_spider_eye", "count": 1},
+    {"ingredient": "minecraft:rotten_flesh", "count": 1},
+    {"ingredient": "minecraft:bell", "count": 1},
+    {"ingredient": "minecraft:rotten_flesh", "count": 1}
+  ],
+  "experience": 91,
+  "result": {
+    "type": "item",
+    "item": "minecraft:zombie_villager_spawn_egg"
+  }
+}

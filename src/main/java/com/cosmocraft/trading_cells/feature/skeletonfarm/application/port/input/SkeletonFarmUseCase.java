@@ -5,11 +5,13 @@ import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFa
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 
 public interface SkeletonFarmUseCase {
-    int effectiveCycleTicks(double tierPosition, int smiteLevel);
+    int effectiveCycleTicks(double tierPosition, double effectiveDamageLevel);
 
     int simulatedKills(int sweepingEdgeLevel);
 
     boolean isEnabled(int mask, SkeletonFarmKind kind, SkeletonFarmLoot loot);
+
+    boolean hasEnabledLoot(int mask, SkeletonFarmKind kind);
 
     int toggle(int mask, SkeletonFarmLoot loot);
 

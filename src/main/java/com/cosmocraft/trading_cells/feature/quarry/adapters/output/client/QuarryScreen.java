@@ -56,7 +56,7 @@ public final class QuarryScreen extends AbstractContainerScreen<QuarryMenu> {
     private static final int CATALOG_WIDTH = MachineScreenLayout.WIDTH + 46;
     private static final int CATALOG_HEADER_HEIGHT = 16;
     private static final int CATALOG_ROW_HEIGHT = 23;
-    private static final int CATALOG_VISIBLE_ROWS = 4;
+    private static final int CATALOG_VISIBLE_ROWS = 6;
     private static final int OFFSCREEN_MOUSE_COORDINATE = -10_000;
 
     private Button catalogButton;

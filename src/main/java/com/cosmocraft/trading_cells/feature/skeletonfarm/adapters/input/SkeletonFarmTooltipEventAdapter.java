@@ -19,7 +19,7 @@ public final class SkeletonFarmTooltipEventAdapter {
 
     private static void onRegisterTooltipAppenders(RegisterTooltipAppendersEvent event) {
         event.registerAppender(
-                TooltipLocation.POST_CUSTOM,
+                TooltipLocation.PRE_ITEM_INFO,
                 (stack, context, display, player, flag, builder) -> appendDescription(stack, context, builder)
         );
     }
@@ -31,7 +31,21 @@ public final class SkeletonFarmTooltipEventAdapter {
     ) {
         if (SkeletonFarmEnchantments.isStoredOnBook(stack, context.registries())) {
             builder.accept(Component.translatable(
-                    "enchantment.trading_cells.warriors_touch.description"
+                    "enchantment.trading_cells.warriors_touch.description.1"
+            ).withStyle(ChatFormatting.DARK_GREEN));
+            builder.accept(Component.translatable(
+                    "enchantment.trading_cells.warriors_touch.description.2"
+            ).withStyle(ChatFormatting.DARK_GREEN));
+        }
+        if (SkeletonFarmEnchantments.isDecapitationStoredOnBook(stack, context.registries())) {
+            builder.accept(Component.translatable(
+                    "enchantment.trading_cells.decapitation.description.1"
+            ).withStyle(ChatFormatting.DARK_GREEN));
+            builder.accept(Component.translatable(
+                    "enchantment.trading_cells.decapitation.description.2"
+            ).withStyle(ChatFormatting.DARK_GREEN));
+            builder.accept(Component.translatable(
+                    "enchantment.trading_cells.decapitation.description.3"
             ).withStyle(ChatFormatting.DARK_GREEN));
         }
     }

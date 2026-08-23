@@ -26,8 +26,14 @@ import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmLootAdapter;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SwordTierCatalog;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmEnchantments;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.DecapitationRules;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmCycle;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmKind;
+import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmLootAdapter;
+import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmCycle;
+import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmKind;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.EnhancedPiglinBarterRewards;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.PiglinBarterCatalog;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
@@ -46,19 +52,31 @@ import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.api.common.entry.EntryStack;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.ItemLike;
 
 /** Builds client-side displays from the same domain rules used by the machines. */
 public final class TradingCellsReiDisplays {
+    private static final TagKey<Item> DECAPITATION_SMITHING_BASES = TagKey.create(
+            Registries.ITEM,
+            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "decapitation_smithing_bases")
+    );
+
     private TradingCellsReiDisplays() {
     }
 
@@ -70,9 +88,61 @@ public final class TradingCellsReiDisplays {
         addConversion(displays);
         addIronFarm(displays);
         addSkeletonFarm(displays);
+        addZombieFarm(displays);
+        addDecapitationSmithing(displays);
         addPiglinBartering(displays);
         addQuarries(displays);
         return List.copyOf(displays);
+    }
+
+    private static void addDecapitationSmithing(List<TradingCellsReiDisplay> displays) {
+        Holder<Enchantment> decapitation = BasicDisplay.registryAccess()
+                .lookup(Registries.ENCHANTMENT)
+                .flatMap(enchantments -> enchantments.get(SkeletonFarmEnchantments.DECAPITATION))
+                .orElse(null);
+        if (decapitation == null) {
+            return;
+        }
+
+        EntryIngredient shard = described(SkeletonFarmRegistrationAdapter.STORM_SHARD_ITEM.get(), 1);
+        for (int level = 1; level < DecapitationRules.MAX_DECAPITATION_LEVEL; level++) {
+            EntryIngredient bases = described(decapitationStacks(decapitation, level));
+            EntryIngredient results = described(decapitationStacks(decapitation, level + 1));
+            if (bases.isEmpty() || results.isEmpty()) {
+                continue;
+            }
+            displays.add(display(
+                    TradingCellsReiClientPlugin.DECAPITATION_SMITHING,
+                    TradingCellsReiLayout.DECAPITATION_SMITHING,
+                    "decapitation_smithing/" + level,
+                    List.of(bases, shard),
+                    List.of(bases, shard),
+                    List.of(results),
+                    0,
+                    List.of()
+            ));
+        }
+    }
+
+    private static List<ItemStack> decapitationStacks(Holder<Enchantment> enchantment, int level) {
+        var items = BasicDisplay.registryAccess().lookup(Registries.ITEM).orElse(null);
+        if (items == null) {
+            return List.of();
+        }
+
+        List<ItemStack> stacks = new ArrayList<>();
+        for (Holder<Item> holder : items.getTagOrEmpty(DECAPITATION_SMITHING_BASES)) {
+            if (holder.value() == Items.ENCHANTED_BOOK) {
+                stacks.add(EnchantmentHelper.createBook(new EnchantmentInstance(enchantment, level)));
+                continue;
+            }
+            ItemStack stack = new ItemStack(holder.value());
+            ItemEnchantments.Mutable enchantments = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+            enchantments.set(enchantment, level);
+            EnchantmentHelper.setEnchantments(stack, enchantments.toImmutable());
+            stacks.add(stack);
+        }
+        return List.copyOf(stacks);
     }
 
     private static void addQuarries(List<TradingCellsReiDisplay> displays) {
@@ -425,28 +495,68 @@ public final class TradingCellsReiDisplays {
                 tooltip("rei.trading_cells.skeleton_sword")
         );
         for (SkeletonFarmKind kind : SkeletonFarmKind.values()) {
+            List<SkeletonFarmLootAdapter.PreviewOutput> previews =
+                    SkeletonFarmLootAdapter.previewOutputChances(kind);
             EntryIngredient target = described(
                     skeletonSpawnEgg(kind),
                     tooltip("rei.trading_cells.skeleton_target"),
                     tooltip("rei.trading_cells.not_consumed")
             );
-            List<EntryIngredient> outputs = SkeletonFarmLootAdapter.previewOutputs(kind).stream()
-                    .map(stack -> described(stack, tooltip("rei.trading_cells.skeleton_drop")))
-                    .toList();
+            EntryIngredient outputs = skeletonOutputs(kind, previews);
             displays.add(display(
                     TradingCellsReiClientPlugin.SKELETON_FARM,
                     TradingCellsReiLayout.SKELETON_FARM,
                     "skeleton_farm/" + kind.name().toLowerCase(Locale.ROOT),
                     List.of(worker, swords, target),
                     List.of(worker, swords),
-                    outputs,
+                    List.of(outputs),
                     SkeletonFarmCycle.effectiveCycleTicks(0.0D, 0),
                     List.of(
                             Component.translatable("rei.trading_cells.skeleton_farm_note"),
-                            Component.translatable("rei.trading_cells.skeleton_filters_note")
+                            Component.translatable("rei.trading_cells.skeleton_filters_note"),
+                            Component.translatable("rei.trading_cells.skeleton_decapitation_note")
                     )
             ));
         }
+    }
+
+    private static EntryIngredient skeletonOutputs(
+            SkeletonFarmKind kind,
+            List<SkeletonFarmLootAdapter.PreviewOutput> outputs
+    ) {
+        return EntryIngredient.of(outputs.stream().map(output -> {
+            EntryStack<ItemStack> entry = EntryStacks.of(output.stack());
+            Component amount = output.minimumAmount() == output.maximumAmount()
+                    ? tooltip("rei.trading_cells.skeleton_base_amount_exact", output.maximumAmount())
+                    : tooltip(
+                            "rei.trading_cells.skeleton_base_amount_range",
+                            output.minimumAmount(),
+                            output.maximumAmount()
+                    );
+            List<Component> tooltip = new ArrayList<>(List.of(
+                    tooltip("rei.trading_cells.skeleton_drop"),
+                    tooltip(
+                            "rei.trading_cells.skeleton_base_probability",
+                            percentage(output.probabilityPartsPerMillion())
+                    ),
+                    amount
+            ));
+            if (output.loot() == com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model
+                    .SkeletonFarmLoot.SKULLS && kind != SkeletonFarmKind.WITHER_SKELETON) {
+                tooltip.add(Component.translatable("rei.trading_cells.requires_decapitation")
+                        .withStyle(ChatFormatting.LIGHT_PURPLE));
+            }
+            return entry.tooltip(List.copyOf(tooltip));
+        }).toList());
+    }
+
+    private static Component percentage(int partsPerMillion) {
+        int hundredths = (int) Math.round(partsPerMillion / 100.0D);
+        return Component.translatable(
+                "rei.trading_cells.percentage",
+                hundredths / 100,
+                String.format(Locale.ROOT, "%02d", hundredths % 100)
+        );
     }
 
     private static ItemStack skeletonSpawnEgg(SkeletonFarmKind kind) {
@@ -456,6 +566,79 @@ public final class TradingCellsReiDisplays {
             case STRAY -> Items.STRAY_SPAWN_EGG;
             case BOGGED -> Items.BOGGED_SPAWN_EGG;
             case PARCHED -> Items.PARCHED_SPAWN_EGG;
+            case SKELETON_HORSE -> Items.SKELETON_HORSE_SPAWN_EGG;
+        });
+    }
+
+    private static void addZombieFarm(List<TradingCellsReiDisplay> displays) {
+        EntryIngredient worker = captured(CapturedMobKind.VILLAGER, false, true);
+        EntryIngredient swords = described(
+                com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.SwordTierCatalog.itemStacks(),
+                tooltip("rei.trading_cells.zombie_sword")
+        );
+        for (ZombieFarmKind kind : ZombieFarmKind.values()) {
+            List<ZombieFarmLootAdapter.PreviewOutput> previews =
+                    ZombieFarmLootAdapter.previewOutputChances(kind);
+            EntryIngredient target = described(
+                    zombieSpawnEgg(kind),
+                    tooltip("rei.trading_cells.zombie_target"),
+                    tooltip("rei.trading_cells.not_consumed")
+            );
+            EntryIngredient outputs = zombieOutputs(previews);
+            displays.add(display(
+                    TradingCellsReiClientPlugin.ZOMBIE_FARM,
+                    TradingCellsReiLayout.ZOMBIE_FARM,
+                    "zombie_farm/" + kind.name().toLowerCase(Locale.ROOT),
+                    List.of(worker, swords, target),
+                    List.of(worker, swords),
+                    List.of(outputs),
+                    ZombieFarmCycle.effectiveCycleTicks(0.0D, 0),
+                    List.of(
+                            Component.translatable("rei.trading_cells.zombie_farm_note"),
+                            Component.translatable("rei.trading_cells.zombie_filters_note"),
+                            Component.translatable("rei.trading_cells.zombie_decapitation_note")
+                    )
+            ));
+        }
+    }
+
+    private static EntryIngredient zombieOutputs(
+            List<ZombieFarmLootAdapter.PreviewOutput> outputs
+    ) {
+        return EntryIngredient.of(outputs.stream().map(output -> {
+            EntryStack<ItemStack> entry = EntryStacks.of(output.stack());
+            Component amount = output.minimumAmount() == output.maximumAmount()
+                    ? tooltip("rei.trading_cells.zombie_base_amount_exact", output.maximumAmount())
+                    : tooltip(
+                            "rei.trading_cells.zombie_base_amount_range",
+                            output.minimumAmount(),
+                            output.maximumAmount()
+                    );
+            List<Component> tooltip = new ArrayList<>(List.of(
+                    tooltip("rei.trading_cells.zombie_drop"),
+                    tooltip(
+                            "rei.trading_cells.zombie_base_probability",
+                            percentage(output.probabilityPartsPerMillion())
+                    ),
+                    amount
+            ));
+            if (output.loot() == com.cosmocraft.trading_cells.feature.zombiefarm.domain.model
+                    .ZombieFarmLoot.HEADS) {
+                tooltip.add(Component.translatable("rei.trading_cells.requires_decapitation")
+                        .withStyle(ChatFormatting.LIGHT_PURPLE));
+            }
+            return entry.tooltip(List.copyOf(tooltip));
+        }).toList());
+    }
+
+    private static ItemStack zombieSpawnEgg(ZombieFarmKind kind) {
+        return new ItemStack(switch (kind) {
+            case ZOMBIE -> Items.ZOMBIE_SPAWN_EGG;
+            case ZOMBIE_VILLAGER -> Items.ZOMBIE_VILLAGER_SPAWN_EGG;
+            case HUSK -> Items.HUSK_SPAWN_EGG;
+            case DROWNED -> Items.DROWNED_SPAWN_EGG;
+            case ZOMBIFIED_PIGLIN -> Items.ZOMBIFIED_PIGLIN_SPAWN_EGG;
+            case ZOGLIN -> Items.ZOGLIN_SPAWN_EGG;
         });
     }
 

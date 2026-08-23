@@ -31,7 +31,6 @@ import net.minecraft.world.level.block.CocoaBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.NetherWartBlock;
-import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
@@ -45,8 +44,8 @@ public final class FarmerCropStackAdapter {
             new Option(Items.MELON_SEEDS, Blocks.MELON_STEM, FarmerCrop.MELON),
             new Option(Items.SUGAR_CANE, Blocks.SUGAR_CANE, FarmerCrop.SUGAR_CANE),
             new Option(Items.COCOA_BEANS, Blocks.COCOA, FarmerCrop.COCOA),
-            new Option(Items.TORCHFLOWER_SEEDS, Blocks.TORCHFLOWER_CROP, FarmerCrop.NONE),
-            new Option(Items.PITCHER_POD, Blocks.PITCHER_CROP, FarmerCrop.NONE)
+            new Option(Items.TORCHFLOWER_SEEDS, Blocks.TORCHFLOWER_CROP, FarmerCrop.TORCHFLOWER),
+            new Option(Items.PITCHER_POD, Blocks.PITCHER_CROP, FarmerCrop.PITCHER_PLANT)
     );
     private static final Catalog VANILLA_VILLAGER_CATALOG = Catalog.create(VANILLA_VILLAGER_OPTIONS);
     private static final AtomicReference<Catalog> VILLAGER_CATALOG = new AtomicReference<>();
@@ -96,6 +95,8 @@ public final class FarmerCropStackAdapter {
             case MELON -> Items.MELON_SEEDS;
             case SUGAR_CANE -> Items.SUGAR_CANE;
             case COCOA -> Items.COCOA_BEANS;
+            case TORCHFLOWER -> Items.TORCHFLOWER_SEEDS;
+            case PITCHER_PLANT -> Items.PITCHER_POD;
             case CRIMSON_FUNGUS -> Items.CRIMSON_FUNGUS;
             case WARPED_FUNGUS -> Items.WARPED_FUNGUS;
             case CRIMSON_ROOTS -> Items.CRIMSON_ROOTS;
@@ -122,8 +123,13 @@ public final class FarmerCropStackAdapter {
             case BEETROOT_SEEDS -> Items.BEETROOT_SEEDS;
             case PUMPKIN -> Items.PUMPKIN;
             case MELON -> Items.MELON;
+            case MELON_SLICE -> Items.MELON_SLICE;
             case SUGAR_CANE -> Items.SUGAR_CANE;
             case COCOA_BEANS -> Items.COCOA_BEANS;
+            case TORCHFLOWER -> Items.TORCHFLOWER;
+            case TORCHFLOWER_SEEDS -> Items.TORCHFLOWER_SEEDS;
+            case PITCHER_PLANT -> Items.PITCHER_PLANT;
+            case PITCHER_POD -> Items.PITCHER_POD;
             case CRIMSON_FUNGUS -> Items.CRIMSON_FUNGUS;
             case WARPED_FUNGUS -> Items.WARPED_FUNGUS;
             case CRIMSON_ROOTS -> Items.CRIMSON_ROOTS;
@@ -148,19 +154,15 @@ public final class FarmerCropStackAdapter {
             case CARROT -> Blocks.CARROTS.defaultBlockState().setValue(CropBlock.AGE, stage(clampedTicks, duration, 7));
             case POTATO -> Blocks.POTATOES.defaultBlockState().setValue(CropBlock.AGE, stage(clampedTicks, duration, 7));
             case BEETROOT -> Blocks.BEETROOTS.defaultBlockState().setValue(BeetrootBlock.AGE, stage(clampedTicks, duration, 3));
-            case PUMPKIN -> Blocks.PUMPKIN_STEM.defaultBlockState().setValue(
-                    StemBlock.AGE,
-                    stage(clampedTicks, duration, 7)
-            );
-            case MELON -> Blocks.MELON_STEM.defaultBlockState().setValue(
-                    StemBlock.AGE,
-                    stage(clampedTicks, duration, 7)
-            );
+            case PUMPKIN -> Blocks.PUMPKIN.defaultBlockState();
+            case MELON -> Blocks.MELON.defaultBlockState();
             case SUGAR_CANE -> Blocks.SUGAR_CANE.defaultBlockState();
             case COCOA -> Blocks.COCOA.defaultBlockState().setValue(
                     CocoaBlock.AGE,
                     stage(clampedTicks, duration, 2)
             );
+            case TORCHFLOWER -> stateAtProgress(Blocks.TORCHFLOWER_CROP, clampedTicks, duration);
+            case PITCHER_PLANT -> stateAtProgress(Blocks.PITCHER_CROP, clampedTicks, duration);
             case CRIMSON_FUNGUS -> Blocks.CRIMSON_FUNGUS.defaultBlockState();
             case WARPED_FUNGUS -> Blocks.WARPED_FUNGUS.defaultBlockState();
             case CRIMSON_ROOTS -> Blocks.CRIMSON_ROOTS.defaultBlockState();
@@ -268,7 +270,13 @@ public final class FarmerCropStackAdapter {
         if (stack.is(Items.SUGAR_CANE)) {
             return FarmerCrop.SUGAR_CANE;
         }
-        return stack.is(Items.COCOA_BEANS) ? FarmerCrop.COCOA : FarmerCrop.NONE;
+        if (stack.is(Items.COCOA_BEANS)) {
+            return FarmerCrop.COCOA;
+        }
+        if (stack.is(Items.TORCHFLOWER_SEEDS)) {
+            return FarmerCrop.TORCHFLOWER;
+        }
+        return stack.is(Items.PITCHER_POD) ? FarmerCrop.PITCHER_PLANT : FarmerCrop.NONE;
     }
 
     private static Catalog villagerCatalog() {

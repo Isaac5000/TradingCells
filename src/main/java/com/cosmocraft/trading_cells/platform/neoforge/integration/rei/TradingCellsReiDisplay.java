@@ -85,4 +85,5 @@ public final class TradingCellsReiDisplay extends BasicDisplay {
             return minimum == maximum ? "x" + maximum : minimum + "-" + maximum;
         }
     }
+
 }

@@ -7,8 +7,10 @@ import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.Piglin
 import com.cosmocraft.trading_cells.feature.captures.adapters.output.client.PiglinCapturerItemRenderSupport;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.TradingCellBlockEntityRenderer;
 import com.cosmocraft.trading_cells.feature.captures.adapters.output.client.VillagerCapturerItemRenderSupport;
+import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.StormShardItemRenderSupport;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.BlockEntityItemRenderSupport;
+import com.cosmocraft.trading_cells.platform.neoforge.client.render.UpgradeBadgeItemRenderSupport;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
@@ -34,6 +36,8 @@ public final class CapturerClientEvent {
         register(event, "piglin_capturer_third_person", PiglinCapturerItemRenderSupport.ThirdPerson.Unbaked.MAP_CODEC);
         register(event, "piglin_capturer_first_person", PiglinCapturerItemRenderSupport.FirstPerson.Unbaked.MAP_CODEC);
         register(event, "block_entity_item", BlockEntityItemRenderSupport.Unbaked.MAP_CODEC);
+        register(event, "storm_shard_charge", StormShardItemRenderSupport.Unbaked.MAP_CODEC);
+        register(event, "upgrade_badge", UpgradeBadgeItemRenderSupport.Unbaked.MAP_CODEC);
     }
 
     public static void onRegisterBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {

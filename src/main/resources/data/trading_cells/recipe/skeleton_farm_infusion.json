@@ -1,15 +1,15 @@
 {
   "type": "trading_cells:arcane_infusion",
   "ingredients": [
-    {"ingredient": "minecraft:skeleton_skull", "count": 1},
-    {"ingredient": "minecraft:blue_ice", "count": 1},
-    {"ingredient": "minecraft:wither_skeleton_skull", "count": 1},
-    {"ingredient": "minecraft:bow", "count": 1},
-    {"ingredient": "minecraft:nether_star", "count": 1},
-    {"ingredient": "minecraft:poisonous_potato", "count": 1},
-    {"ingredient": "minecraft:bone_block", "count": 1},
-    {"ingredient": "minecraft:soul_sand", "count": 1},
-    {"ingredient": "minecraft:sandstone", "count": 1}
+    {"ingredient": "minecraft:skeleton_spawn_egg", "count": 1},
+    {"ingredient": "minecraft:parched_spawn_egg", "count": 1},
+    {"ingredient": "minecraft:wither_skeleton_spawn_egg", "count": 1},
+    {"ingredient": "minecraft:stray_spawn_egg", "count": 1},
+    {"ingredient": "minecraft:spawner", "count": 1},
+    {"ingredient": "minecraft:bogged_spawn_egg", "count": 1},
+    {"ingredient": "minecraft:iron_ingot", "count": 1},
+    {"ingredient": "minecraft:pale_moss_block", "count": 1},
+    {"ingredient": "minecraft:iron_ingot", "count": 1}
   ],
   "experience": 25000,
   "result": {

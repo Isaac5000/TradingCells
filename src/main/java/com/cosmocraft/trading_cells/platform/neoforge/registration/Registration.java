@@ -15,6 +15,7 @@ import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryTooltipE
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.TraderTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
@@ -79,6 +80,7 @@ public class Registration {
         FarmerRegistrationAdapter.load();
         IronFarmRegistrationAdapter.load();
         SkeletonFarmRegistrationAdapter.load();
+        ZombieFarmRegistrationAdapter.load();
         QuarryRegistrationAdapter.load(modEventBus);
         CreativeTabRegistration.load();
         FarmerTooltipEventAdapter.register(modEventBus);

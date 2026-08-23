@@ -35,6 +35,11 @@ public final class TradingCellPayloadRegistration {
                 RequestQuarryCatalogPayload::handle
         );
         registrar.playToServer(
+                RequestMobFarmCatalogPayload.PAYLOAD_TYPE,
+                RequestMobFarmCatalogPayload.STREAM_CODEC,
+                RequestMobFarmCatalogPayload::handle
+        );
+        registrar.playToServer(
                 ExperienceStorageTransferPayload.PAYLOAD_TYPE,
                 ExperienceStorageTransferPayload.STREAM_CODEC,
                 ExperienceStorageTransferPayload::handle
@@ -48,5 +53,6 @@ public final class TradingCellPayloadRegistration {
         registrar.playToClient(TradingCellMenuSyncPayload.PAYLOAD_TYPE, TradingCellMenuSyncPayload.STREAM_CODEC);
         registrar.playToClient(AutotraderMenuSyncPayload.PAYLOAD_TYPE, AutotraderMenuSyncPayload.STREAM_CODEC);
         registrar.playToClient(QuarryCatalogSyncPayload.PAYLOAD_TYPE, QuarryCatalogSyncPayload.STREAM_CODEC);
+        registrar.playToClient(MobFarmCatalogSyncPayload.PAYLOAD_TYPE, MobFarmCatalogSyncPayload.STREAM_CODEC);
     }
 }

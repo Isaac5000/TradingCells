@@ -17,6 +17,10 @@ public interface FarmerUseCase {
 
     FarmerHarvest harvest(FarmerCrop crop, int fortuneLevel);
 
+    default FarmerHarvest harvest(FarmerCrop crop, int fortuneLevel, boolean silkTouch) {
+        return harvest(crop, fortuneLevel);
+    }
+
     TimedProcess.Step advance(int ticks, int durationTicks, boolean canCultivate, boolean outputAvailable);
 
     int rescaleProgress(int ticks, int previousMaximum, int newMaximum);

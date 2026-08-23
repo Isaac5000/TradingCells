@@ -62,6 +62,8 @@ public final class CaptureRegistrationAdapter {
     }
 
     private static Item.Properties unbreakableCapturerProperties(String id) {
-        return capturerProperties(id).component(DataComponents.UNBREAKABLE, Unit.INSTANCE);
+        return capturerProperties(id)
+                .fireResistant()
+                .component(DataComponents.UNBREAKABLE, Unit.INSTANCE);
     }
 }

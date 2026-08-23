@@ -12,12 +12,16 @@ import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlo
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -47,12 +51,16 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
     private static final String CYCLE_TICKS_TAG = "CycleTicks";
     private static final String CYCLE_DURATION_TAG = "CycleDurationTicks";
     private static final String KIND_TAG = "SkeletonKind";
+    private static final String TARGET_TAG = "SkeletonTarget";
     private static final String LOOT_MASK_TAG = "EnabledLootMask";
+    private static final String DISABLED_DYNAMIC_LOOT_COUNT_TAG = "DisabledDynamicLootCount";
+    private static final String DISABLED_DYNAMIC_LOOT_TAG_PREFIX = "DisabledDynamicLoot";
     private static final String STORED_EXPERIENCE_TAG = "StoredExperience";
     private static final String PENDING_COUNT_TAG = "PendingLootCount";
     private static final String PENDING_READY_TAG = "PendingLootReady";
     private static final String PENDING_BATCH_STARTED_TAG = "PendingBatchStarted";
     private static final String PENDING_TAG_PREFIX = "PendingLoot";
+    private static final String ENABLED_TAG = "Enabled";
     private static final int MAX_PERSISTED_PENDING_STACKS = 1_024;
     private static final int[] INPUT_SLOTS = new int[]{WORKER_SLOT, SWORD_SLOT};
     private static final int[] OUTPUT_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, CONTAINER_SIZE).toArray();
@@ -61,10 +69,13 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
     private final SkeletonFarmUseCase rules = FeatureComposition.skeletonFarm();
     private final MachineActivityController activity = new MachineActivityController();
     private SkeletonFarmKind kind = SkeletonFarmKind.SKELETON;
+    private Identifier targetId = SkeletonFarmTargetCatalog.id(SkeletonFarmKind.SKELETON);
     private int enabledLootMask = SkeletonFarmLoot.allEnabledMask();
+    private final Set<Identifier> disabledDynamicLoot = new HashSet<>();
     private int cycleTicks;
     private int cycleDurationTicks = rules.effectiveCycleTicks(0.0D, 0);
     private int storedExperience;
+    private boolean enabled = true;
     private boolean hunting;
     private List<ItemStack> pendingLoot = List.of();
     private boolean pendingLootReady;
@@ -73,10 +84,11 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
     private boolean workerCacheInitialized;
     private boolean cachedSupportedSword;
     private double cachedTierPosition;
-    private int cachedSmite;
+    private double cachedDamageLevel;
     private int cachedLooting;
     private int cachedSweeping;
     private boolean cachedWarriorsTouch;
+    private int cachedDecapitationLevel;
     private boolean swordCacheInitialized;
 
     private final ContainerData dataAccess = new ContainerData() {
@@ -91,6 +103,7 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
                 case 5 -> hunting ? 1 : 0;
                 case 6 -> rules.simulatedKills(cachedSweeping);
                 case 7 -> pendingBatchStarted ? 1 : 0;
+                case 8 -> enabled ? 1 : 0;
                 default -> 0;
             };
         }
@@ -109,7 +122,7 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
 
         @Override
         public int getCount() {
-            return 8;
+            return 9;
         }
     };
 
@@ -123,6 +136,14 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
 
     public SkeletonFarmKind selectedKind() {
         return kind;
+    }
+
+    public Identifier selectedTargetId() {
+        return targetId;
+    }
+
+    public Set<Identifier> disabledDynamicLoot() {
+        return Set.copyOf(disabledDynamicLoot);
     }
 
     public int cycleTicks() {
@@ -143,9 +164,28 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         markChangedAndSync();
     }
 
+    public void toggleEnabled() {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+        enabled = !enabled;
+        if (enabled) {
+            activity.wake();
+        } else {
+            setHunting(false);
+            activity.transition(MachineActivityController.Activity.INACTIVE);
+        }
+        markChangedAndSync();
+    }
+
     @Override
     public void processTick() {
         if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        if (!enabled) {
+            setHunting(false);
+            activity.transition(MachineActivityController.Activity.INACTIVE);
             return;
         }
         if (activity.remainsInactive() || activity.remainsBlocked()) {
@@ -155,15 +195,28 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         refreshInputCaches(serverLevel);
         int duration = updateCycleDuration();
         boolean canHunt = cachedAdultWorker && cachedSupportedSword;
+        boolean hasEnabledLoot = hasGeneratableLoot();
         boolean completingCycle = cycleTicks >= duration - 1;
+        boolean outputHasCapacity = OrderedOutputInserter.hasAnyCapacity(
+                items,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT
+        );
         if (!canHunt) {
             clearPendingLoot();
-        } else if (completingCycle && !pendingLootReady) {
+        } else if (completingCycle
+                && !pendingLootReady
+                && (!hasEnabledLoot || outputHasCapacity)) {
             pendingLoot = SkeletonFarmLootAdapter.generate(
+                    targetId,
                     kind,
                     enabledLootMask,
+                    disabledDynamicLoot,
                     rules.simulatedKills(cachedSweeping),
                     cachedLooting,
+                    cachedDecapitationLevel,
+                    serverLevel,
+                    items.get(SWORD_SLOT),
                     serverLevel.getRandom(),
                     rules
             );
@@ -171,19 +224,11 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
             setChanged();
         }
 
-        if (completingCycle
-                && pendingLootReady
-                && !OrderedOutputInserter.canFitInEmptySlots(OUTPUT_SLOT_COUNT, pendingLoot)) {
-            deliverOversizedBatch(serverLevel);
-            return;
-        }
-
-        boolean outputAvailable = !completingCycle || OrderedOutputInserter.canInsertAll(
-                items,
-                FIRST_OUTPUT_SLOT,
-                OUTPUT_SLOT_COUNT,
-                pendingLoot
-        );
+        // A pending result can only come from an older save. Complete it once and discard
+        // any overflow instead of preserving invisible loot that blocks later cycles.
+        boolean outputAvailable = !hasEnabledLoot
+                || outputHasCapacity
+                || completingCycle && pendingLootReady;
         activity.transition(!canHunt
                 ? MachineActivityController.Activity.INACTIVE
                 : outputAvailable
@@ -330,8 +375,21 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
             items.set(slot, input.read(SLOT_TAG_PREFIX + slot, ItemStack.CODEC).orElse(ItemStack.EMPTY));
         }
         kind = SkeletonFarmKind.fromId(input.getIntOr(KIND_TAG, 0));
+        targetId = loadTargetId(input.getStringOr(TARGET_TAG, ""), kind);
+        kind = SkeletonFarmTargetCatalog.staticKind(targetId);
         enabledLootMask = input.getIntOr(LOOT_MASK_TAG, SkeletonFarmLoot.allEnabledMask())
                 & SkeletonFarmLoot.allEnabledMask();
+        disabledDynamicLoot.clear();
+        int disabledCount = Math.clamp(input.getIntOr(DISABLED_DYNAMIC_LOOT_COUNT_TAG, 0), 0, 2_048);
+        for (int index = 0; index < disabledCount; index++) {
+            Identifier itemId = Identifier.tryParse(input.getStringOr(
+                    DISABLED_DYNAMIC_LOOT_TAG_PREFIX + index,
+                    ""
+            ));
+            if (itemId != null) {
+                disabledDynamicLoot.add(itemId);
+            }
+        }
         cycleDurationTicks = Math.max(1, input.getIntOr(
                 CYCLE_DURATION_TAG,
                 rules.effectiveCycleTicks(0.0D, 0)
@@ -349,9 +407,19 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         pendingLoot = List.copyOf(loadedPending);
         pendingLootReady = input.getBooleanOr(PENDING_READY_TAG, pendingCount > 0);
         pendingBatchStarted = input.getBooleanOr(PENDING_BATCH_STARTED_TAG, false);
+        enabled = input.getBooleanOr(ENABLED_TAG, true);
         hunting = false;
         invalidateInputCaches();
         activity.reset();
+    }
+
+    private static Identifier loadTargetId(String storedTarget, SkeletonFarmKind fallbackKind) {
+        Identifier fallback = SkeletonFarmTargetCatalog.id(fallbackKind);
+        if (storedTarget.isBlank()) {
+            return fallback;
+        }
+        Identifier parsed = Identifier.tryParse(storedTarget);
+        return parsed != null && BuiltInRegistries.ENTITY_TYPE.containsKey(parsed) ? parsed : fallback;
     }
 
     @Override
@@ -369,8 +437,18 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         if (kind != SkeletonFarmKind.SKELETON) {
             output.putInt(KIND_TAG, kind.ordinal());
         }
+        if (!targetId.equals(SkeletonFarmTargetCatalog.id(kind))) {
+            output.putString(TARGET_TAG, targetId.toString());
+        }
         if (enabledLootMask != SkeletonFarmLoot.allEnabledMask()) {
             output.putInt(LOOT_MASK_TAG, enabledLootMask);
+        }
+        if (!disabledDynamicLoot.isEmpty()) {
+            List<Identifier> sortedDisabled = disabledDynamicLoot.stream().sorted().toList();
+            output.putInt(DISABLED_DYNAMIC_LOOT_COUNT_TAG, sortedDisabled.size());
+            for (int index = 0; index < sortedDisabled.size(); index++) {
+                output.putString(DISABLED_DYNAMIC_LOOT_TAG_PREFIX + index, sortedDisabled.get(index).toString());
+            }
         }
         if (storedExperience > 0) {
             output.putInt(STORED_EXPERIENCE_TAG, storedExperience);
@@ -385,6 +463,9 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         if (pendingBatchStarted) {
             output.putBoolean(PENDING_BATCH_STARTED_TAG, true);
         }
+        if (!enabled) {
+            output.putBoolean(ENABLED_TAG, false);
+        }
     }
 
     @Override
@@ -394,6 +475,10 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         }
         cycleTicks = 0;
         storedExperience = 0;
+        enabled = true;
+        targetId = SkeletonFarmTargetCatalog.id(SkeletonFarmKind.SKELETON);
+        kind = SkeletonFarmKind.SKELETON;
+        disabledDynamicLoot.clear();
         hunting = false;
         clearPendingLoot();
         invalidateInputCaches();
@@ -402,7 +487,7 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
     }
 
     private void completeCycle(ServerLevel serverLevel) {
-        OrderedOutputInserter.insertAllValidated(
+        OrderedOutputInserter.insertAllAvailable(
                 items,
                 FIRST_OUTPUT_SLOT,
                 OUTPUT_SLOT_COUNT,
@@ -425,27 +510,6 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         markChangedAndSync();
     }
 
-    private void deliverOversizedBatch(ServerLevel serverLevel) {
-        OrderedOutputInserter.PartialInsert insertion = OrderedOutputInserter.insertAvailable(
-                items,
-                FIRST_OUTPUT_SLOT,
-                OUTPUT_SLOT_COUNT,
-                pendingLoot
-        );
-        pendingLoot = insertion.remaining();
-        pendingBatchStarted |= insertion.insertedAny();
-        if (pendingLoot.isEmpty()) {
-            cycleTicks = 0;
-            completeCycle(serverLevel);
-            return;
-        }
-        activity.transition(MachineActivityController.Activity.BLOCKED);
-        setHunting(false);
-        if (insertion.insertedAny()) {
-            markChangedAndSync();
-        }
-    }
-
     private void damageSword(ServerLevel serverLevel) {
         ItemStack sword = items.get(SWORD_SLOT);
         if (sword.isEmpty() || cachedWarriorsTouch) {
@@ -462,12 +526,23 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
     }
 
     private void selectKind(SkeletonFarmKind selected) {
-        if (kind == selected || pendingBatchStarted) {
+        selectTarget(SkeletonFarmTargetCatalog.id(selected));
+    }
+
+    public void selectTarget(Identifier selectedTargetId) {
+        if (targetId.equals(selectedTargetId)
+                || pendingBatchStarted
+                || !com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmCatalog.contains(
+                        com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmCatalog.Family.SKELETON,
+                        selectedTargetId
+                )) {
             return;
         }
-        kind = selected;
+        targetId = selectedTargetId;
+        kind = SkeletonFarmTargetCatalog.staticKind(selectedTargetId);
         cycleTicks = 0;
         clearPendingLoot();
+        swordCacheInitialized = false;
         activity.wake();
         markChangedAndSync();
     }
@@ -478,6 +553,21 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
             return;
         }
         enabledLootMask = sanitized;
+        clearPendingLoot();
+        activity.wake();
+        markChangedAndSync();
+    }
+
+    public void toggleDynamicLoot(Identifier itemId) {
+        if (pendingBatchStarted || !SkeletonFarmTargetCatalog.dynamicLoot(targetId).stream()
+                .anyMatch(stack -> itemId.equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(
+                        stack.getItem()
+                )))) {
+            return;
+        }
+        if (!disabledDynamicLoot.remove(itemId)) {
+            disabledDynamicLoot.add(itemId);
+        }
         clearPendingLoot();
         activity.wake();
         markChangedAndSync();
@@ -501,7 +591,7 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         if (level instanceof ServerLevel serverLevel) {
             refreshInputCaches(serverLevel);
         }
-        int duration = rules.effectiveCycleTicks(cachedTierPosition, cachedSmite);
+        int duration = rules.effectiveCycleTicks(cachedTierPosition, cachedDamageLevel);
         if (cycleDurationTicks != duration) {
             cycleTicks = rules.rescaleProgress(cycleTicks, cycleDurationTicks, duration);
             cycleDurationTicks = duration;
@@ -519,12 +609,36 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
             ItemStack sword = items.get(SWORD_SLOT);
             cachedSupportedSword = SwordTierCatalog.isSupported(sword);
             cachedTierPosition = SwordTierCatalog.timingPosition(sword);
-            cachedSmite = SkeletonFarmEnchantments.smiteLevel(sword, serverLevel.registryAccess());
+            cachedDamageLevel = SkeletonFarmEnchantments.effectiveDamageLevel(sword, serverLevel, kind);
             cachedLooting = SkeletonFarmEnchantments.lootingLevel(sword, serverLevel.registryAccess());
             cachedSweeping = SkeletonFarmEnchantments.sweepingEdgeLevel(sword, serverLevel.registryAccess());
             cachedWarriorsTouch = SkeletonFarmEnchantments.protectsSword(sword, serverLevel.registryAccess());
+            cachedDecapitationLevel = SkeletonFarmEnchantments.decapitationLevel(
+                    sword,
+                    serverLevel.registryAccess()
+            );
             swordCacheInitialized = true;
         }
+    }
+
+    private boolean hasGeneratableLoot() {
+        for (SkeletonFarmLoot loot : SkeletonFarmTargetCatalog.availableCategories(
+                targetId,
+                cachedDecapitationLevel > 0
+        )) {
+            if (!rules.isEnabled(enabledLootMask, kind, loot)) {
+                continue;
+            }
+            if (loot != SkeletonFarmLoot.SKULLS
+                    || kind == SkeletonFarmKind.WITHER_SKELETON
+                    || cachedDecapitationLevel > 0) {
+                return true;
+            }
+        }
+        return SkeletonFarmTargetCatalog.dynamicLoot(targetId).stream().anyMatch(stack -> {
+            Identifier itemId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
+            return itemId != null && !disabledDynamicLoot.contains(itemId);
+        });
     }
 
     private void invalidateInputCaches() {

@@ -20,6 +20,8 @@ import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.Quarry
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.SkeletonFarmScreen;
+import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.client.ZombieFarmScreen;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
@@ -38,6 +40,7 @@ import me.shedaniel.rei.api.common.util.EntryStacks;
 import me.shedaniel.rei.forge.REIPluginClient;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.Items;
 
 @REIPluginClient
 public final class TradingCellsReiClientPlugin implements REIClientPlugin {
@@ -59,6 +62,10 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
             category("iron_farm");
     public static final CategoryIdentifier<TradingCellsReiDisplay> SKELETON_FARM =
             category("skeleton_farm");
+    public static final CategoryIdentifier<TradingCellsReiDisplay> ZOMBIE_FARM =
+            category("zombie_farm");
+    public static final CategoryIdentifier<TradingCellsReiDisplay> DECAPITATION_SMITHING =
+            category("decapitation_smithing");
     public static final CategoryIdentifier<TradingCellsReiDisplay> PIGLIN_BARTERING =
             category("piglin_bartering");
     public static final CategoryIdentifier<TradingCellsReiDisplay> NETHERITE_PIGLIN_BARTERING =
@@ -119,6 +126,16 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         SkeletonFarmRegistrationAdapter.ITEM.get()
                 ),
                 new TradingCellsReiCategory(
+                        ZOMBIE_FARM,
+                        "category.trading_cells.zombie_farm",
+                        ZombieFarmRegistrationAdapter.ITEM.get()
+                ),
+                new TradingCellsReiCategory(
+                        DECAPITATION_SMITHING,
+                        "category.trading_cells.decapitation_smithing",
+                        Items.SMITHING_TABLE
+                ),
+                new TradingCellsReiCategory(
                         PIGLIN_BARTERING,
                         "category.trading_cells.piglin_bartering",
                         TraderRegistrationAdapter.PIGLIN_BARTERING_CELL_ITEM.get()
@@ -165,6 +182,8 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.addWorkstations(CONVERSION, EntryStacks.of(ConverterRegistrationAdapter.CONVERTER_ITEM.get()));
         registry.addWorkstations(IRON_FARM, EntryStacks.of(IronFarmRegistrationAdapter.IRON_FARM_ITEM.get()));
         registry.addWorkstations(SKELETON_FARM, EntryStacks.of(SkeletonFarmRegistrationAdapter.ITEM.get()));
+        registry.addWorkstations(ZOMBIE_FARM, EntryStacks.of(ZombieFarmRegistrationAdapter.ITEM.get()));
+        registry.addWorkstations(DECAPITATION_SMITHING, EntryStacks.of(Items.SMITHING_TABLE));
         registry.addWorkstations(
                 PIGLIN_BARTERING,
                 EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTERING_CELL_ITEM.get())
@@ -204,6 +223,11 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.configure(CONVERSION, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(IRON_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(SKELETON_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(ZOMBIE_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(
+                DECAPITATION_SMITHING,
+                configuration -> configuration.setQuickCraftingEnabledByDefault(false)
+        );
         registry.configure(PIGLIN_BARTERING, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(
                 NETHERITE_PIGLIN_BARTERING,
@@ -272,6 +296,16 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                 ),
                 SkeletonFarmScreen.class,
                 SKELETON_FARM
+        );
+        registry.registerContainerClickArea(
+                new Rectangle(
+                        ZombieFarmScreen.RECIPE_VIEWER_X,
+                        ZombieFarmScreen.RECIPE_VIEWER_Y,
+                        ZombieFarmScreen.RECIPE_VIEWER_WIDTH,
+                        ZombieFarmScreen.RECIPE_VIEWER_HEIGHT
+                ),
+                ZombieFarmScreen.class,
+                ZOMBIE_FARM
         );
         registerMachineClickArea(
                 registry,

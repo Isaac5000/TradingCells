@@ -26,6 +26,8 @@ import com.cosmocraft.trading_cells.feature.quarry.application.port.input.Quarry
 import com.cosmocraft.trading_cells.feature.quarry.application.service.QuarryService;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.application.port.input.SkeletonFarmUseCase;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.application.service.SkeletonFarmService;
+import com.cosmocraft.trading_cells.feature.zombiefarm.application.port.input.ZombieFarmUseCase;
+import com.cosmocraft.trading_cells.feature.zombiefarm.application.service.ZombieFarmService;
 import com.cosmocraft.trading_cells.platform.neoforge.config.FeatureSettingsProvider;
 
 /** NeoForge composition root for feature use cases. */
@@ -36,6 +38,7 @@ public final class FeatureComposition {
     private static final ExperienceStorageUseCase EXPERIENCE_STORAGE = new ExperienceStorageService();
     private static final ArcaneInfusionUseCase ARCANE_INFUSION = new ArcaneInfusionService();
     private static final SkeletonFarmUseCase SKELETON_FARM = new SkeletonFarmService();
+    private static final ZombieFarmUseCase ZOMBIE_FARM = new ZombieFarmService();
 
     private FeatureComposition() {
     }
@@ -82,6 +85,10 @@ public final class FeatureComposition {
 
     public static SkeletonFarmUseCase skeletonFarm() {
         return SKELETON_FARM;
+    }
+
+    public static ZombieFarmUseCase zombieFarm() {
+        return ZOMBIE_FARM;
     }
 
     public static VillagerTraderUseCase villagerTrader() {
