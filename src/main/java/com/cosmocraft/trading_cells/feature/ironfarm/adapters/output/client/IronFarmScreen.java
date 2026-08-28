@@ -94,7 +94,7 @@ public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> 
                     graphics,
                     x,
                     y,
-                    IronFarmMenu.OUTPUT_ROW_X + index * 24,
+                    IronFarmMenu.outputSlotX(index),
                     IronFarmMenu.OUTPUT_ROW_Y,
                     THEME
             );

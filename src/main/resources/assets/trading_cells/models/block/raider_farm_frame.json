@@ -1,0 +1,11 @@
+{
+  "parent": "trading_cells:block/machine_cage_frame",
+  "textures": {
+    "base": "minecraft:block/dark_oak_planks",
+    "base_left": "minecraft:block/dark_oak_planks",
+    "base_center": "minecraft:block/dark_oak_planks",
+    "base_right": "minecraft:block/dark_oak_planks",
+    "frame": "minecraft:block/iron_block",
+    "particle": "minecraft:block/dark_oak_planks"
+  }
+}

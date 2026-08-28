@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.core.Holder;
@@ -22,20 +22,29 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 
-/** Server-authoritative, tag-backed target and loot catalog shared by mob farms. */
+/** Server-authoritative immutable snapshot of targets and filterable loot for registered mob farms. */
 public final class MobFarmCatalog {
+    public static final int SCHEMA_VERSION = MobFarmTargetReloadListener.SCHEMA_VERSION;
+    private static final int DYNAMIC_ORDER = 1_000_000;
     private static final List<Identifier> SKELETON_BASE = ids(
             "skeleton", "wither_skeleton", "stray", "bogged", "parched", "skeleton_horse"
     );
     private static final List<Identifier> ZOMBIE_BASE = ids(
             "zombie", "zombie_villager", "husk", "drowned", "zombified_piglin", "zoglin"
     );
+    private static final List<Identifier> RAIDER_BASE = ids(
+            "pillager", "evoker", "ravager", "witch"
+    );
+    private static final List<Identifier> CREEPER_BASE = ids("creeper");
     private static final Map<Family, List<Identifier>> BASE_IDS = Map.of(
             Family.SKELETON, SKELETON_BASE,
-            Family.ZOMBIE, ZOMBIE_BASE
+            Family.ZOMBIE, ZOMBIE_BASE,
+            Family.RAIDER, RAIDER_BASE,
+            Family.CREEPER, CREEPER_BASE
     );
     private static final AtomicReference<Map<Family, List<Target>>> TARGETS =
             new AtomicReference<>(fallbackTargets());
@@ -88,37 +97,125 @@ public final class MobFarmCatalog {
             Family family
     ) {
         LinkedHashMap<Identifier, Target> discovered = new LinkedHashMap<>();
-        for (Identifier baseId : BASE_IDS.get(family)) {
-            addTarget(entityTypes, items, family, baseId, discovered);
+        Map<Identifier, Integer> order = new LinkedHashMap<>();
+        List<Identifier> baseIds = BASE_IDS.get(family);
+        for (int index = 0; index < baseIds.size(); index++) {
+            Identifier baseId = baseIds.get(index);
+            addDiscoveredTarget(entityTypes, items, family, baseId, discovered);
+            order.put(baseId, index);
         }
         for (Holder<EntityType<?>> holder : entityTypes.getTagOrEmpty(family.tag())) {
             EntityType<?> type = holder.value();
             Identifier id = entityTypes.getKey(type);
-            if (type.getCategory() != MobCategory.MONSTER
-                    && !BASE_IDS.get(family).contains(id)) {
+            if (id == null || discovered.containsKey(id)) {
                 continue;
             }
-            if (id != null && !discovered.containsKey(id)) {
-                addTarget(entityTypes, items, family, id, discovered);
+            if (type.getCategory() != MobCategory.MONSTER && !baseIds.contains(id)) {
+                continue;
             }
+            addDiscoveredTarget(entityTypes, items, family, id, discovered);
+            order.putIfAbsent(id, DYNAMIC_ORDER);
         }
+        applyDefinitions(entityTypes, items, family, discovered, order);
 
-        Map<Identifier, Integer> fixedOrder = new LinkedHashMap<>();
-        List<Identifier> baseIds = BASE_IDS.get(family);
-        for (int index = 0; index < baseIds.size(); index++) {
-            fixedOrder.put(baseIds.get(index), index);
-        }
         List<Target> result = new ArrayList<>(discovered.values());
         result.sort(Comparator
-                .comparingInt((Target target) -> fixedOrder.getOrDefault(
-                        target.entityTypeId(),
-                        Integer.MAX_VALUE
-                ))
+                .comparingInt((Target target) -> order.getOrDefault(target.entityTypeId(), DYNAMIC_ORDER))
                 .thenComparing(target -> target.entityTypeId().toString()));
         return List.copyOf(result);
     }
 
-    private static void addTarget(
+    private static void applyDefinitions(
+            Registry<EntityType<?>> entityTypes,
+            Registry<Item> items,
+            Family family,
+            Map<Identifier, Target> targets,
+            Map<Identifier, Integer> order
+    ) {
+        Map<Identifier, MobFarmTargetReloadListener.Definition> definitions = new LinkedHashMap<>();
+        for (MobFarmTargetReloadListener.Definition definition
+                : MobFarmTargetReloadListener.definitions(family)) {
+            MobFarmTargetReloadListener.Definition previous = definitions.putIfAbsent(
+                    definition.entityTypeId(),
+                    definition
+            );
+            if (previous != null) {
+                TradingCells.LOGGER.warn(
+                        "Mob-farm descriptors '{}' and '{}' target the same entity '{}'; '{}' wins by ID order.",
+                        previous.sourceId(),
+                        definition.sourceId(),
+                        definition.entityTypeId(),
+                        previous.sourceId()
+                );
+            }
+        }
+        for (MobFarmTargetReloadListener.Definition definition : definitions.values()) {
+            try {
+                applyDefinition(entityTypes, items, definition, targets, order);
+            } catch (RuntimeException | LinkageError exception) {
+                TradingCells.LOGGER.warn(
+                        "Discarding mob-farm target descriptor '{}': {}",
+                        definition.sourceId(),
+                        exception.getMessage()
+                );
+            }
+        }
+    }
+
+    private static void applyDefinition(
+            Registry<EntityType<?>> entityTypes,
+            Registry<Item> items,
+            MobFarmTargetReloadListener.Definition definition,
+            Map<Identifier, Target> targets,
+            Map<Identifier, Integer> order
+    ) {
+        EntityType<?> type = entityTypes.getOptional(definition.entityTypeId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "unknown entity_type " + definition.entityTypeId()
+                ));
+        if (!items.containsKey(definition.generatorItemId())) {
+            throw new IllegalArgumentException("unknown generator_item " + definition.generatorItemId());
+        }
+
+        Target current = targets.get(definition.entityTypeId());
+        LinkedHashSet<Identifier> loot = new LinkedHashSet<>(current == null
+                ? lootItems(items, type, definition.entityTypeId())
+                : current.lootItemIds());
+        loot.addAll(resolveReferences(items, definition.includedLoot()));
+        loot.removeAll(resolveReferences(items, definition.excludedLoot()));
+        targets.put(definition.entityTypeId(), new Target(
+                definition.entityTypeId(),
+                definition.generatorItemId(),
+                List.copyOf(loot)
+        ));
+        order.put(definition.entityTypeId(), definition.order());
+    }
+
+    private static List<Identifier> resolveReferences(
+            Registry<Item> items,
+            List<MobFarmTargetReloadListener.ItemReference> references
+    ) {
+        LinkedHashSet<Identifier> resolved = new LinkedHashSet<>();
+        for (MobFarmTargetReloadListener.ItemReference reference : references) {
+            if (reference.tag()) {
+                TagKey<Item> tag = TagKey.create(Registries.ITEM, reference.id());
+                for (Holder<Item> holder : items.getTagOrEmpty(tag)) {
+                    Identifier itemId = items.getKey(holder.value());
+                    if (itemId != null) {
+                        resolved.add(itemId);
+                    }
+                }
+            } else {
+                if (!items.containsKey(reference.id())) {
+                    throw new IllegalArgumentException("unknown loot item " + reference.id());
+                }
+                resolved.add(reference.id());
+            }
+        }
+        return List.copyOf(resolved);
+    }
+
+    private static void addDiscoveredTarget(
             Registry<EntityType<?>> entityTypes,
             Registry<Item> items,
             Family family,
@@ -131,16 +228,23 @@ public final class MobFarmCatalog {
                     && !BASE_IDS.get(family).contains(id)) {
                 return;
             }
-            List<Identifier> loot = lootItems(items, type, id);
-            targetMap.put(id, new Target(id, loot));
+            targetMap.put(id, new Target(id, defaultGeneratorItem(items, id), lootItems(items, type, id)));
         } catch (RuntimeException | LinkageError exception) {
             TradingCells.LOGGER.warn(
                     "Discarding invalid {} mob-farm target '{}'.",
-                    family.name().toLowerCase(java.util.Locale.ROOT),
+                    family.id(),
                     id,
                     exception
             );
         }
+    }
+
+    private static Identifier defaultGeneratorItem(Registry<Item> items, Identifier entityTypeId) {
+        Identifier spawnEgg = Identifier.fromNamespaceAndPath(
+                entityTypeId.getNamespace(),
+                entityTypeId.getPath() + "_spawn_egg"
+        );
+        return items.containsKey(spawnEgg) ? spawnEgg : items.getKey(Items.SPAWNER);
     }
 
     private static List<Identifier> lootItems(
@@ -152,7 +256,7 @@ public final class MobFarmCatalog {
         if (lootTableKey.isEmpty()) {
             return List.of();
         }
-        LinkedHashMap<Identifier, Boolean> result = new LinkedHashMap<>();
+        LinkedHashSet<Identifier> result = new LinkedHashSet<>();
         for (MobFarmLootTableReloadListener.LootReference reference
                 : MobFarmLootTableReloadListener.references(lootTableKey.orElseThrow().identifier())) {
             if (reference.tag()) {
@@ -160,15 +264,15 @@ public final class MobFarmCatalog {
                 for (Holder<Item> holder : items.getTagOrEmpty(tag)) {
                     Identifier itemId = items.getKey(holder.value());
                     if (itemId != null) {
-                        result.put(itemId, Boolean.TRUE);
+                        result.add(itemId);
                     }
                 }
             } else if (items.containsKey(reference.id())
                     && !isImpossibleFarmDrop(entityTypeId, reference.id())) {
-                result.put(reference.id(), Boolean.TRUE);
+                result.add(reference.id());
             }
         }
-        return List.copyOf(result.keySet());
+        return List.copyOf(result);
     }
 
     private static boolean isImpossibleFarmDrop(Identifier entityTypeId, Identifier itemId) {
@@ -185,34 +289,60 @@ public final class MobFarmCatalog {
         for (Family family : Family.values()) {
             fallback.put(family, BASE_IDS.get(family).stream()
                     .filter(BuiltInRegistries.ENTITY_TYPE::containsKey)
-                    .map(id -> new Target(id, List.of()))
+                    .map(id -> new Target(id, defaultGeneratorItem(BuiltInRegistries.ITEM, id), List.of()))
                     .toList());
         }
         return Map.copyOf(fallback);
     }
 
     private static List<Identifier> ids(String... paths) {
-        return java.util.Arrays.stream(paths)
-                .map(path -> Identifier.withDefaultNamespace(path))
-                .toList();
+        return java.util.Arrays.stream(paths).map(Identifier::withDefaultNamespace).toList();
     }
 
     public enum Family {
-        SKELETON(EntityTypeTags.SKELETONS),
-        ZOMBIE(EntityTypeTags.ZOMBIES);
+        SKELETON("skeleton", EntityTypeTags.SKELETONS),
+        ZOMBIE("zombie", EntityTypeTags.ZOMBIES),
+        RAIDER("raider", customFamilyTag("raider_farm_targets")),
+        CREEPER("creeper", customFamilyTag("creeper_farm_targets"));
 
+        private final Identifier id;
         private final TagKey<EntityType<?>> tag;
 
-        Family(TagKey<EntityType<?>> tag) {
+        Family(String path, TagKey<EntityType<?>> tag) {
+            this.id = Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, path);
             this.tag = tag;
+        }
+
+        public Identifier id() {
+            return id;
         }
 
         public TagKey<EntityType<?>> tag() {
             return tag;
         }
+
+        public static Optional<Family> fromId(Identifier id) {
+            for (Family family : values()) {
+                if (family.id.equals(id)) {
+                    return Optional.of(family);
+                }
+            }
+            return Optional.empty();
+        }
+
+        private static TagKey<EntityType<?>> customFamilyTag(String path) {
+            return TagKey.create(
+                    Registries.ENTITY_TYPE,
+                    Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, path)
+            );
+        }
     }
 
-    public record Target(Identifier entityTypeId, List<Identifier> lootItemIds) {
+    public record Target(
+            Identifier entityTypeId,
+            Identifier generatorItemId,
+            List<Identifier> lootItemIds
+    ) {
         public Target {
             lootItemIds = List.copyOf(lootItemIds);
         }

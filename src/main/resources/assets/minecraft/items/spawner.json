@@ -1,0 +1,18 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "minecraft:block/spawner"
+      },
+      {
+        "type": "minecraft:special",
+        "base": "minecraft:block/spawner",
+        "model": {
+          "type": "trading_cells:preserved_spawner_entity"
+        }
+      }
+    ]
+  }
+}

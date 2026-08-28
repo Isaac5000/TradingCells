@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 from pathlib import Path
 import statistics
 
@@ -19,6 +20,34 @@ LOWER_IS_BETTER = (
     "chunks_written",
 )
 PRIMARY_METRICS = ("mean_mspt", "p95_mspt")
+METADATA_KEYS = (
+    "minecraft_version",
+    "neo_version",
+    "scenario",
+    "runs",
+    "warmup_seconds",
+    "measure_seconds",
+    "template_fingerprint",
+)
+
+
+def result_directory(path: Path) -> Path:
+    return path if path.is_dir() else path.parent
+
+
+def validate_metadata(baseline: Path, candidate: Path) -> None:
+    before = json.loads(
+        (result_directory(baseline) / "metadata.json").read_text(encoding="utf-8")
+    )
+    after = json.loads(
+        (result_directory(candidate) / "metadata.json").read_text(encoding="utf-8")
+    )
+    differences = [key for key in METADATA_KEYS if before.get(key) != after.get(key)]
+    if differences:
+        details = ", ".join(
+            f"{key}={before.get(key)!r}/{after.get(key)!r}" for key in differences
+        )
+        raise ValueError(f"Benchmark metadata differs: {details}")
 
 
 def read_medians(path: Path) -> dict[str, float]:
@@ -53,6 +82,7 @@ def main() -> None:
         else (3.0 if args.risk == "local" else 10.0)
     )
 
+    validate_metadata(args.baseline, args.candidate)
     baseline = read_medians(args.baseline)
     candidate = read_medians(args.candidate)
     print("metric,baseline,candidate,improvement_percent,status")

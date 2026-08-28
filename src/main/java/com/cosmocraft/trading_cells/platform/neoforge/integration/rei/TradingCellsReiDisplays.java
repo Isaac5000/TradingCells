@@ -25,15 +25,21 @@ import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryCycle;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmLootAdapter;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SwordTierCatalog;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmEnchantments;
+import com.cosmocraft.trading_cells.feature.combat.adapters.api.CombatEnchantments;
+import com.cosmocraft.trading_cells.feature.combat.adapters.output.CombatRegistrationAdapter;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmSwordTierCatalog;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.DecapitationRules;
+import com.cosmocraft.trading_cells.feature.combat.domain.model.DecapitationRules;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmCycle;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmKind;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmLootAdapter;
 import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmCycle;
 import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmKind;
+import com.cosmocraft.trading_cells.feature.raiderfarm.domain.model.RaiderFarmCycle;
+import com.cosmocraft.trading_cells.feature.raiderfarm.domain.model.RaiderFarmKind;
+import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFarmLootAdapter;
+import com.cosmocraft.trading_cells.feature.creeperfarm.domain.model.CreeperFarmCycle;
+import com.cosmocraft.trading_cells.feature.creeperfarm.domain.model.CreeperFarmKind;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.EnhancedPiglinBarterRewards;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.PiglinBarterCatalog;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
@@ -89,22 +95,59 @@ public final class TradingCellsReiDisplays {
         addIronFarm(displays);
         addSkeletonFarm(displays);
         addZombieFarm(displays);
+        addRaiderFarm(displays);
+        addCreeperFarm(displays);
         addDecapitationSmithing(displays);
         addPiglinBartering(displays);
         addQuarries(displays);
+        addSpawnerRedstoneControl(displays);
         return List.copyOf(displays);
+    }
+
+    private static void addSpawnerRedstoneControl(List<TradingCellsReiDisplay> displays) {
+        addSpawnerRedstoneControl(displays, Items.SPAWNER, "spawner", false);
+        addSpawnerRedstoneControl(displays, Items.TRIAL_SPAWNER, "trial_spawner", true);
+    }
+
+    private static void addSpawnerRedstoneControl(
+            List<TradingCellsReiDisplay> displays,
+            ItemLike spawner,
+            String path,
+            boolean trialSpawner
+    ) {
+        EntryIngredient spawnerEntry = described(spawner, 1);
+        EntryIngredient comparator = described(Items.COMPARATOR, 1);
+        List<Component> notes = new ArrayList<>();
+        notes.add(Component.translatable("rei.trading_cells.spawner_redstone_control.install"));
+        notes.add(Component.translatable("rei.trading_cells.spawner_redstone_control.consumed"));
+        notes.add(Component.translatable(trialSpawner
+                ? "rei.trading_cells.spawner_redstone_control.trial"
+                : "rei.trading_cells.spawner_redstone_control.standard"));
+        if (trialSpawner) {
+            notes.add(Component.translatable("rei.trading_cells.spawner_redstone_control.active_trial"));
+        }
+        displays.add(display(
+                TradingCellsReiClientPlugin.SPAWNER_REDSTONE_CONTROL,
+                TradingCellsReiLayout.SPAWNER_REDSTONE_CONTROL,
+                "spawner_redstone_control/" + path,
+                List.of(spawnerEntry, comparator),
+                List.of(spawnerEntry, comparator),
+                List.of(spawnerEntry),
+                0,
+                notes
+        ));
     }
 
     private static void addDecapitationSmithing(List<TradingCellsReiDisplay> displays) {
         Holder<Enchantment> decapitation = BasicDisplay.registryAccess()
                 .lookup(Registries.ENCHANTMENT)
-                .flatMap(enchantments -> enchantments.get(SkeletonFarmEnchantments.DECAPITATION))
+                .flatMap(enchantments -> enchantments.get(CombatEnchantments.DECAPITATION))
                 .orElse(null);
         if (decapitation == null) {
             return;
         }
 
-        EntryIngredient shard = described(SkeletonFarmRegistrationAdapter.STORM_SHARD_ITEM.get(), 1);
+        EntryIngredient shard = described(CombatRegistrationAdapter.STORM_SHARD_ITEM.get(), 1);
         for (int level = 1; level < DecapitationRules.MAX_DECAPITATION_LEVEL; level++) {
             EntryIngredient bases = described(decapitationStacks(decapitation, level));
             EntryIngredient results = described(decapitationStacks(decapitation, level + 1));
@@ -377,10 +420,16 @@ public final class TradingCellsReiDisplays {
         for (FarmerCropStackAdapter.Option option : FarmerCropStackAdapter.villagerOptions()) {
             List<EntryIngredient> outputs;
             if (option.crop() == FarmerCrop.NONE) {
-                outputs = List.of(described(
-                        FarmerCropStackAdapter.previewOutput(option),
-                        tooltip("rei.trading_cells.dynamic_crop_output")
-                ));
+                List<FarmerCropStackAdapter.PreviewYield> previewYields =
+                        FarmerCropStackAdapter.previewYields(option);
+                outputs = previewYields.isEmpty()
+                        ? List.of(described(
+                                FarmerCropStackAdapter.previewOutput(option),
+                                tooltip("rei.trading_cells.dynamic_crop_output")
+                        ))
+                        : previewYields.stream()
+                                .map(TradingCellsReiDisplays::farmerOutput)
+                                .toList();
             } else {
                 outputs = farmer.harvest(option.crop(), 0).yields().stream()
                         .map(TradingCellsReiDisplays::farmerOutput)
@@ -491,7 +540,7 @@ public final class TradingCellsReiDisplays {
     private static void addSkeletonFarm(List<TradingCellsReiDisplay> displays) {
         EntryIngredient worker = captured(CapturedMobKind.VILLAGER, false, true);
         EntryIngredient swords = described(
-                SwordTierCatalog.itemStacks(),
+                MobFarmSwordTierCatalog.itemStacks(),
                 tooltip("rei.trading_cells.skeleton_sword")
         );
         for (SkeletonFarmKind kind : SkeletonFarmKind.values()) {
@@ -573,7 +622,7 @@ public final class TradingCellsReiDisplays {
     private static void addZombieFarm(List<TradingCellsReiDisplay> displays) {
         EntryIngredient worker = captured(CapturedMobKind.VILLAGER, false, true);
         EntryIngredient swords = described(
-                com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.SwordTierCatalog.itemStacks(),
+                MobFarmSwordTierCatalog.itemStacks(),
                 tooltip("rei.trading_cells.zombie_sword")
         );
         for (ZombieFarmKind kind : ZombieFarmKind.values()) {
@@ -640,6 +689,134 @@ public final class TradingCellsReiDisplays {
             case ZOMBIFIED_PIGLIN -> Items.ZOMBIFIED_PIGLIN_SPAWN_EGG;
             case ZOGLIN -> Items.ZOGLIN_SPAWN_EGG;
         });
+    }
+
+    private static void addRaiderFarm(List<TradingCellsReiDisplay> displays) {
+        EntryIngredient worker = captured(CapturedMobKind.VILLAGER, false, true);
+        EntryIngredient swords = described(
+                MobFarmSwordTierCatalog.itemStacks(),
+                tooltip("rei.trading_cells.raider_sword")
+        );
+        for (RaiderFarmKind kind : RaiderFarmKind.selectableValues()) {
+            ItemStack targetStack = raiderTarget(kind);
+            EntryIngredient target = described(
+                    targetStack,
+                    tooltip("rei.trading_cells.raider_target"),
+                    tooltip("rei.trading_cells.not_consumed")
+            );
+            displays.add(display(
+                    TradingCellsReiClientPlugin.RAIDER_FARM,
+                    TradingCellsReiLayout.RAIDER_FARM,
+                    "raider_farm/" + kind.name().toLowerCase(Locale.ROOT),
+                    List.of(worker, swords, target),
+                    List.of(worker, swords),
+                    List.of(raiderOutputs(kind)),
+                    RaiderFarmCycle.effectiveCycleTicks(0.0D, 0),
+                    List.of(
+                            Component.translatable("rei.trading_cells.raider_farm_note"),
+                            Component.translatable("rei.trading_cells.raider_filters_note")
+                    )
+            ));
+        }
+    }
+
+    private static EntryIngredient raiderOutputs(RaiderFarmKind kind) {
+        List<ItemStack> outputs = switch (kind) {
+            case PILLAGER -> List.of(
+                    new ItemStack(Items.CROSSBOW),
+                    new ItemStack(BuiltInRegistries.ITEM.getOptional(
+                            Identifier.withDefaultNamespace("white_banner")
+                    ).orElseThrow())
+            );
+            case EVOKER -> List.of(new ItemStack(Items.TOTEM_OF_UNDYING), new ItemStack(Items.EMERALD));
+            case RAVAGER -> List.of(new ItemStack(Items.SADDLE));
+            case WITCH -> List.of(
+                    new ItemStack(Items.REDSTONE),
+                    new ItemStack(Items.GLOWSTONE_DUST),
+                    new ItemStack(Items.SUGAR),
+                    new ItemStack(Items.SPIDER_EYE),
+                    new ItemStack(Items.GLASS_BOTTLE),
+                    new ItemStack(Items.GUNPOWDER),
+                    new ItemStack(Items.STICK)
+            );
+        };
+        return EntryIngredient.of(outputs.stream()
+                .map(stack -> EntryStacks.of(stack).tooltip(
+                        tooltip("rei.trading_cells.dynamic_drop")
+                ))
+                .toList());
+    }
+
+    private static ItemStack raiderTarget(RaiderFarmKind kind) {
+        return new ItemStack(switch (kind) {
+            case PILLAGER -> Items.PILLAGER_SPAWN_EGG;
+            case EVOKER -> Items.EVOKER_SPAWN_EGG;
+            case RAVAGER -> Items.RAVAGER_SPAWN_EGG;
+            case WITCH -> Items.WITCH_SPAWN_EGG;
+        });
+    }
+
+    private static void addCreeperFarm(List<TradingCellsReiDisplay> displays) {
+        EntryIngredient worker = captured(CapturedMobKind.VILLAGER, false, true);
+        EntryIngredient swords = described(
+                MobFarmSwordTierCatalog.itemStacks(),
+                tooltip("rei.trading_cells.creeper_sword")
+        );
+        for (CreeperFarmKind kind : CreeperFarmKind.values()) {
+            EntryIngredient target = described(
+                    creeperTarget(kind),
+                    tooltip("rei.trading_cells.creeper_target"),
+                    tooltip("rei.trading_cells.not_consumed")
+            );
+            EntryIngredient outputs = creeperOutputs(CreeperFarmLootAdapter.previewOutputChances(kind));
+            displays.add(display(
+                    TradingCellsReiClientPlugin.CREEPER_FARM,
+                    TradingCellsReiLayout.CREEPER_FARM,
+                    "creeper_farm/" + kind.name().toLowerCase(Locale.ROOT),
+                    List.of(worker, swords, target),
+                    List.of(worker, swords),
+                    List.of(outputs),
+                    CreeperFarmCycle.effectiveCycleTicks(0.0D, 0),
+                    List.of(
+                            Component.translatable("rei.trading_cells.creeper_farm_note"),
+                            Component.translatable("rei.trading_cells.creeper_filters_note"),
+                            Component.translatable("rei.trading_cells.creeper_decapitation_note")
+                    )
+            ));
+        }
+    }
+
+    private static EntryIngredient creeperOutputs(List<CreeperFarmLootAdapter.PreviewOutput> outputs) {
+        return EntryIngredient.of(outputs.stream().map(output -> {
+            EntryStack<ItemStack> entry = EntryStacks.of(output.stack());
+            Component amount = output.minimumAmount() == output.maximumAmount()
+                    ? tooltip("rei.trading_cells.creeper_base_amount_exact", output.maximumAmount())
+                    : tooltip(
+                            "rei.trading_cells.creeper_base_amount_range",
+                            output.minimumAmount(),
+                            output.maximumAmount()
+                    );
+            List<Component> lines = new ArrayList<>(List.of(
+                    tooltip("rei.trading_cells.creeper_drop"),
+                    tooltip(
+                            "rei.trading_cells.creeper_base_probability",
+                            percentage(output.probabilityPartsPerMillion())
+                    ),
+                    amount
+            ));
+            if (output.loot() == com.cosmocraft.trading_cells.feature.creeperfarm.domain.model
+                    .CreeperFarmLoot.HEADS) {
+                lines.add(Component.translatable("rei.trading_cells.requires_decapitation")
+                        .withStyle(ChatFormatting.LIGHT_PURPLE));
+            }
+            return entry.tooltip(List.copyOf(lines));
+        }).toList());
+    }
+
+    private static ItemStack creeperTarget(CreeperFarmKind kind) {
+        return kind == CreeperFarmKind.CHARGED_CREEPER
+                ? new ItemStack(CombatRegistrationAdapter.STORM_SHARD_ITEM.get())
+                : new ItemStack(Items.CREEPER_SPAWN_EGG);
     }
 
     private static void addPiglinBartering(List<TradingCellsReiDisplay> displays) {
@@ -798,6 +975,20 @@ public final class TradingCellsReiDisplays {
                         chancePercentage(yield.chanceBasisPoints())
                 )
         );
+    }
+
+    private static EntryIngredient farmerOutput(FarmerCropStackAdapter.PreviewYield yield) {
+        List<Component> tooltips = new ArrayList<>(2);
+        if (!yield.isGuaranteed()) {
+            tooltips.add(tooltip(
+                    "rei.trading_cells.base_chance",
+                    chancePercentage(yield.chanceBasisPoints())
+            ));
+        }
+        if (yield.requiresSilkTouch()) {
+            tooltips.add(tooltip("rei.trading_cells.requires_silk_touch"));
+        }
+        return described(yield.stack(), tooltips.toArray(Component[]::new));
     }
 
     private static String chancePercentage(int chanceBasisPoints) {

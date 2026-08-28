@@ -2,10 +2,13 @@ package com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
+import com.cosmocraft.trading_cells.feature.combat.adapters.api.CombatEnchantments;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmKind;
 import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmLoot;
 import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmCatalog;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmSwordTierCatalog;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmEquipmentSlots;
 import com.cosmocraft.trading_cells.platform.neoforge.network.MobFarmCatalogSyncPayload;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MinecraftExperience;
 import java.util.HashSet;
@@ -97,7 +100,7 @@ public final class ZombieFarmMenu extends AbstractContainerMenu {
             ));
         }
         addStandardInventorySlots(inventory, PLAYER_INVENTORY_X, PLAYER_INVENTORY_Y);
-        for (Slot equipmentSlot : ZombieFarmEquipmentSlots.create(inventory)) {
+        for (Slot equipmentSlot : MobFarmEquipmentSlots.create(inventory)) {
             addSlot(equipmentSlot);
         }
         addDataSlots(data);
@@ -124,11 +127,15 @@ public final class ZombieFarmMenu extends AbstractContainerMenu {
     }
 
     public void applyCatalogSnapshot(MobFarmCatalogSyncPayload payload) {
-        if (payload.family() != MobFarmCatalog.Family.ZOMBIE) {
+        if (!payload.familyId().equals(MobFarmCatalog.Family.ZOMBIE.id())) {
             return;
         }
         catalogTargets = payload.targets().stream()
-                .map(entry -> new MobFarmCatalog.Target(entry.entityTypeId(), entry.lootItemIds()))
+                .map(entry -> new MobFarmCatalog.Target(
+                        entry.entityTypeId(),
+                        entry.generatorItemId(),
+                        entry.lootItemIds()
+                ))
                 .toList();
         selectedTargetId = payload.selectedTargetId();
         disabledDynamicLoot.clear();
@@ -216,7 +223,7 @@ public final class ZombieFarmMenu extends AbstractContainerMenu {
     }
 
     public int lootingLevel() {
-        return ZombieFarmEnchantments.lootingLevel(
+        return CombatEnchantments.lootingLevel(
                 getSlot(ZombieFarmBlockEntity.SWORD_SLOT).getItem(),
                 registries
         );
@@ -227,7 +234,7 @@ public final class ZombieFarmMenu extends AbstractContainerMenu {
     }
 
     public int decapitationLevel() {
-        return ZombieFarmEnchantments.decapitationLevel(
+        return CombatEnchantments.decapitationLevel(
                 getSlot(ZombieFarmBlockEntity.SWORD_SLOT).getItem(),
                 registries
         );
@@ -301,7 +308,11 @@ public final class ZombieFarmMenu extends AbstractContainerMenu {
         return catalogTargets.stream()
                 .filter(target -> target.entityTypeId().equals(selectedTargetId))
                 .findFirst()
-                .orElseGet(() -> new MobFarmCatalog.Target(selectedTargetId, List.of()));
+                .orElseGet(() -> new MobFarmCatalog.Target(
+                        selectedTargetId,
+                        Identifier.withDefaultNamespace("spawner"),
+                        List.of()
+                ));
     }
 
     private boolean isTargetButton(int buttonId) {
@@ -337,7 +348,7 @@ public final class ZombieFarmMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stack, ZombieFarmBlockEntity.WORKER_SLOT, ZombieFarmBlockEntity.WORKER_SLOT + 1, false)) {
                 return ItemStack.EMPTY;
             }
-        } else if (SwordTierCatalog.isSupported(stack)) {
+        } else if (MobFarmSwordTierCatalog.isSupported(stack)) {
             if (!moveItemStackTo(stack, ZombieFarmBlockEntity.SWORD_SLOT, ZombieFarmBlockEntity.SWORD_SLOT + 1, false)) {
                 return ItemStack.EMPTY;
             }
@@ -385,7 +396,7 @@ public final class ZombieFarmMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(@NonNull ItemStack stack) {
-            return SwordTierCatalog.isSupported(stack);
+            return MobFarmSwordTierCatalog.isSupported(stack);
         }
 
         @Override

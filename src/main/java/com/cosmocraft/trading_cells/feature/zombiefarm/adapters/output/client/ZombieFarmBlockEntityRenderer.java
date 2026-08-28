@@ -7,6 +7,8 @@ import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmKi
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.BlockModelResolver;
@@ -53,6 +55,9 @@ public final class ZombieFarmBlockEntityRenderer implements BlockEntityRenderer<
     private static final double SIDE_OFFSET = 0.18D;
     private final EntityRenderDispatcher entityRenderer;
     private final BlockModelResolver blockModelResolver;
+    private final BlockModelRenderState spawner = new BlockModelRenderState();
+    private final Map<ZombieFarmBlockEntity, EntityCache> entityCaches = new WeakHashMap<>();
+    private boolean spawnerReady;
 
     public ZombieFarmBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         entityRenderer = context.entityRenderer();
@@ -79,31 +84,30 @@ public final class ZombieFarmBlockEntityRenderer implements BlockEntityRenderer<
 
         Level level = blockEntity.getLevel();
         if (level == null) {
-            state.clearCaches();
+            entityCaches.remove(blockEntity);
             return;
         }
+        EntityCache entityCache = entityCaches.computeIfAbsent(blockEntity, ignored -> new EntityCache());
         state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(level, blockEntity.getBlockPos());
-        if (!state.spawnerReady) {
+        if (!spawnerReady) {
             blockModelResolver.update(
-                    state.spawner,
+                    spawner,
                     Blocks.SPAWNER.defaultBlockState(),
                     BlockDisplayContext.create()
             );
-            state.spawner.tintLayers().clear();
-            state.spawnerReady = true;
+            spawner.tintLayers().clear();
+            spawnerReady = true;
         }
         Direction side = state.facing.getClockWise();
 
-        Entity worker = state.getOrCreateWorker(blockEntity, level);
+        Entity worker = entityCache.getOrCreateWorker(blockEntity, level);
         if (worker != null) {
-            orient(worker, side.toYRot());
-            state.worker = extractEntity(worker, partialTicks, state.lightCoords);
+            state.worker = entityCache.getOrCreateWorkerRenderState(worker, side.toYRot());
         }
 
-        Entity zombie = state.getOrCreateZombie(level, blockEntity.selectedTargetId());
+        Entity zombie = entityCache.getOrCreateZombie(level, blockEntity.selectedTargetId());
         if (zombie != null) {
-            orient(zombie, side.getOpposite().toYRot());
-            state.zombie = extractEntity(zombie, partialTicks, state.lightCoords);
+            state.zombie = entityCache.getOrCreateZombieRenderState(zombie, side.getOpposite().toYRot());
         }
     }
 
@@ -117,22 +121,23 @@ public final class ZombieFarmBlockEntityRenderer implements BlockEntityRenderer<
         Direction side = state.facing.getClockWise();
         submitEntity(
                 state.worker,
-                new Vec3(0.5D - side.getStepX() * SIDE_OFFSET, 0.11D, 0.5D - side.getStepZ() * SIDE_OFFSET),
+                0.5D - side.getStepX() * SIDE_OFFSET,
+                0.11D,
+                0.5D - side.getStepZ() * SIDE_OFFSET,
                 WORKER_SCALE,
                 state,
                 poseStack,
                 collector,
                 camera
         );
-        Vec3 spawnerPosition = new Vec3(
-                0.5D + side.getStepX() * SIDE_OFFSET,
-                SPAWNER_Y,
-                0.5D + side.getStepZ() * SIDE_OFFSET
-        );
-        submitSpawner(state, spawnerPosition, poseStack, collector);
+        double spawnerX = 0.5D + side.getStepX() * SIDE_OFFSET;
+        double spawnerZ = 0.5D + side.getStepZ() * SIDE_OFFSET;
+        submitSpawner(state, spawner, spawnerX, SPAWNER_Y, spawnerZ, poseStack, collector);
         submitEntity(
                 state.zombie,
-                new Vec3(spawnerPosition.x(), SPAWNER_ENTITY_Y, spawnerPosition.z()),
+                spawnerX,
+                SPAWNER_ENTITY_Y,
+                spawnerZ,
                 SPAWNER_ENTITY_SCALE,
                 state,
                 poseStack,
@@ -141,17 +146,18 @@ public final class ZombieFarmBlockEntityRenderer implements BlockEntityRenderer<
         );
     }
 
-    private EntityRenderState extractEntity(Entity entity, float partialTicks, int lightCoords) {
+    private EntityRenderState extractEntity(Entity entity) {
         PreviewEntityRenderUtil.prepare(entity);
-        EntityRenderState renderState = entityRenderer.extractEntity(entity, partialTicks);
-        PreviewEntityRenderUtil.applyLight(renderState, lightCoords);
+        EntityRenderState renderState = entityRenderer.extractEntity(entity, 0.0F);
         PreviewEntityRenderUtil.suppressWorldEffects(renderState);
         return renderState;
     }
 
     private void submitEntity(
             @Nullable EntityRenderState entity,
-            Vec3 position,
+            double x,
+            double y,
+            double z,
             float scale,
             State state,
             PoseStack poseStack,
@@ -163,7 +169,7 @@ public final class ZombieFarmBlockEntityRenderer implements BlockEntityRenderer<
         }
         PreviewEntityRenderUtil.applyLight(entity, state.lightCoords);
         poseStack.pushPose();
-        poseStack.translate(position.x(), position.y(), position.z());
+        poseStack.translate(x, y, z);
         poseStack.scale(scale, scale, scale);
         entityRenderer.submit(entity, camera, 0.0D, 0.0D, 0.0D, poseStack, collector);
         poseStack.popPose();
@@ -171,21 +177,24 @@ public final class ZombieFarmBlockEntityRenderer implements BlockEntityRenderer<
 
     private static void submitSpawner(
             State state,
-            Vec3 position,
+            BlockModelRenderState spawner,
+            double x,
+            double y,
+            double z,
             PoseStack poseStack,
             SubmitNodeCollector collector
     ) {
-        if (state.spawner.isEmpty()) {
+        if (spawner.isEmpty()) {
             return;
         }
         poseStack.pushPose();
         poseStack.translate(
-                position.x() - SPAWNER_SCALE * 0.5D,
-                position.y(),
-                position.z() - SPAWNER_SCALE * 0.5D
+                x - SPAWNER_SCALE * 0.5D,
+                y,
+                z - SPAWNER_SCALE * 0.5D
         );
         poseStack.scale(SPAWNER_SCALE, SPAWNER_SCALE, SPAWNER_SCALE);
-        state.spawner.submit(
+        spawner.submit(
                 poseStack,
                 collector,
                 state.lightCoords,
@@ -218,18 +227,24 @@ public final class ZombieFarmBlockEntityRenderer implements BlockEntityRenderer<
         public @Nullable EntityRenderState worker;
         public @Nullable EntityRenderState zombie;
         public Direction facing = Direction.NORTH;
-        private final BlockModelRenderState spawner = new BlockModelRenderState();
+    }
+
+    private final class EntityCache {
         private ItemStack cachedWorkerStack = ItemStack.EMPTY;
         private @Nullable Entity cachedWorker;
         private @Nullable Entity cachedZombie;
+        private @Nullable EntityRenderState cachedWorkerRenderState;
+        private @Nullable EntityRenderState cachedZombieRenderState;
+        private float cachedWorkerYaw = Float.NaN;
+        private float cachedZombieYaw = Float.NaN;
         private Identifier cachedTargetId = Identifier.withDefaultNamespace("zombie");
-        private boolean spawnerReady;
 
         private @Nullable Entity getOrCreateWorker(ZombieFarmBlockEntity blockEntity, Level level) {
             ItemStack workerStack = blockEntity.getItem(ZombieFarmBlockEntity.WORKER_SLOT);
             if (workerStack.isEmpty()) {
                 cachedWorkerStack = ItemStack.EMPTY;
                 cachedWorker = null;
+                cachedWorkerRenderState = null;
                 return null;
             }
             if (cachedWorker == null || !ItemStack.isSameItemSameComponents(cachedWorkerStack, workerStack)) {
@@ -245,8 +260,18 @@ public final class ZombieFarmBlockEntityRenderer implements BlockEntityRenderer<
                     ));
                 }
                 cachedWorkerStack = workerStack.copy();
+                cachedWorkerRenderState = null;
             }
             return cachedWorker;
+        }
+
+        private EntityRenderState getOrCreateWorkerRenderState(Entity worker, float yaw) {
+            if (cachedWorkerRenderState == null || cachedWorkerYaw != yaw) {
+                orient(worker, yaw);
+                cachedWorkerRenderState = extractEntity(worker);
+                cachedWorkerYaw = yaw;
+            }
+            return cachedWorkerRenderState;
         }
 
         private @Nullable Entity getOrCreateZombie(Level level, Identifier targetId) {
@@ -274,15 +299,19 @@ public final class ZombieFarmBlockEntityRenderer implements BlockEntityRenderer<
                     living.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
                 }
                 cachedTargetId = targetId;
+                cachedZombieRenderState = null;
             }
             return cachedZombie;
         }
 
-        private void clearCaches() {
-            cachedWorkerStack = ItemStack.EMPTY;
-            cachedWorker = null;
-            cachedZombie = null;
-            cachedTargetId = Identifier.withDefaultNamespace("zombie");
+        private EntityRenderState getOrCreateZombieRenderState(Entity zombie, float yaw) {
+            if (cachedZombieRenderState == null || cachedZombieYaw != yaw) {
+                orient(zombie, yaw);
+                cachedZombieRenderState = extractEntity(zombie);
+                cachedZombieYaw = yaw;
+            }
+            return cachedZombieRenderState;
         }
+
     }
 }

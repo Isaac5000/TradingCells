@@ -36,22 +36,45 @@
       "id": "automation",
       "template_required": true,
       "notes": "Exercise hoppers plus item and liquid-experience capabilities."
+    },
+    {
+      "id": "mob-farms",
+      "machines": 256,
+      "families": ["skeleton", "zombie"],
+      "states": ["active", "paused", "partial_output", "full_output", "xp_only"],
+      "template_required": true,
+      "notes": "Keep targets, filters, swords, loot-table revision and RNG seed identical."
+    },
+    {
+      "id": "machine-grid-405",
+      "machines": 405,
+      "template_required": true,
+      "notes": "The same 9x9x5 real-machine matrix used by the client benchmark."
     }
   ],
   "client": [
     {
       "id": "vanilla-control",
       "visible_machines": 0,
-      "variants": ["with_trading_cells", "without_trading_cells"]
+      "variants": ["with_trading_cells", "without_trading_cells"],
+      "template_required": true
     },
     {
       "id": "visible-machines",
       "visible_machines": 64,
+      "template_required": true,
       "notes": "Use the same fixed camera and machine state for OpenGL and Vulkan."
     },
     {
       "id": "menus-and-rei",
+      "template_required": true,
       "notes": "Capture every machine screen and REI category with a fixed GUI scale."
+    },
+    {
+      "id": "machine-grid-405",
+      "machines": 405,
+      "template_required": true,
+      "notes": "A 9x9x5 matrix cloned from configured machines in a real world."
     }
   ],
   "backend_matrix": [

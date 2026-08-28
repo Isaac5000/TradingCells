@@ -29,6 +29,10 @@ public record ExperienceStorageTransferPayload(int containerId, byte actionId, i
                     )
             );
 
+    public ExperienceStorageTransferPayload {
+        requestedLevels = Math.max(0, requestedLevels);
+    }
+
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return PAYLOAD_TYPE;
@@ -38,7 +42,8 @@ public record ExperienceStorageTransferPayload(int containerId, byte actionId, i
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)
                     || !(player.containerMenu instanceof ExperienceStorageMenu menu)
-                    || menu.containerId != payload.containerId()) {
+                    || menu.containerId != payload.containerId()
+                    || !menu.stillValid(player)) {
                 return;
             }
             ExperienceTransferAction.fromId(payload.actionId()).ifPresent(action ->

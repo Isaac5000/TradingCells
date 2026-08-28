@@ -86,6 +86,28 @@ public final class OrderedOutputInserter {
         return false;
     }
 
+    public static boolean hasAnyCapacityFor(
+            NonNullList<ItemStack> inventory,
+            int firstSlot,
+            int slotCount,
+            List<ItemStack> sources
+    ) {
+        for (ItemStack source : sources) {
+            if (source.isEmpty()) {
+                continue;
+            }
+            for (int slot = firstSlot; slot < firstSlot + slotCount; slot++) {
+                ItemStack output = inventory.get(slot);
+                if (output.isEmpty()
+                        || (ItemStack.isSameItemSameComponents(output, source)
+                        && output.getCount() < output.getMaxStackSize())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public static void insertAllValidated(
             NonNullList<ItemStack> inventory,
             int firstSlot,

@@ -5,6 +5,8 @@ import com.cosmocraft.trading_cells.feature.trader.adapters.input.VillagerTradin
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.MachineEntityRenderScales;
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.BlockModelResolver;
@@ -43,6 +45,7 @@ public final class TradingCellBlockEntityRenderer implements BlockEntityRenderer
 
     private final EntityRenderDispatcher entityRenderer;
     private final BlockModelResolver blockModelResolver;
+    private final Map<VillagerTradingCellBlockEntity, EntityCache> entityCaches = new WeakHashMap<>();
 
     public TradingCellBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         this.entityRenderer = context.entityRenderer();
@@ -81,11 +84,12 @@ public final class TradingCellBlockEntityRenderer implements BlockEntityRenderer
         CompoundTag entityData = blockEntity.copyStoredEntityData();
         String entityKindId = blockEntity.getStoredEntityKindId();
         if (entityData == null || entityKindId == null) {
-            state.clearCachedEntity();
+            entityCaches.remove(blockEntity);
             return;
         }
+        EntityCache entityCache = entityCaches.computeIfAbsent(blockEntity, ignored -> new EntityCache());
 
-        Entity entity = state.getOrCreateEntity(blockEntity, entityData, entityKindId);
+        Entity entity = entityCache.getOrCreateEntity(blockEntity, entityData, entityKindId);
         if (entity == null) {
             return;
         }
@@ -170,6 +174,9 @@ public final class TradingCellBlockEntityRenderer implements BlockEntityRenderer
         public float scale = ADULT_DISPLAY_SCALE;
         public Direction facing = Direction.NORTH;
         public final BlockModelRenderState poiState = new BlockModelRenderState();
+    }
+
+    private static final class EntityCache {
         private @Nullable CompoundTag cachedEntityData;
         private @Nullable String cachedEntityKindId;
         private @Nullable Entity cachedEntity;
@@ -187,10 +194,5 @@ public final class TradingCellBlockEntityRenderer implements BlockEntityRenderer
             return cachedEntity;
         }
 
-        private void clearCachedEntity() {
-            cachedEntity = null;
-            cachedEntityData = null;
-            cachedEntityKindId = null;
-        }
     }
 }

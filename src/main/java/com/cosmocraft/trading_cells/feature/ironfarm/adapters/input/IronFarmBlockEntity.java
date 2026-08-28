@@ -16,6 +16,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
@@ -37,14 +38,18 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
     public static final int FIRST_VILLAGER_SLOT = 0;
     public static final int VILLAGER_SLOT_COUNT = 3;
     public static final int FIRST_OUTPUT_SLOT = FIRST_VILLAGER_SLOT + VILLAGER_SLOT_COUNT;
-    public static final int OUTPUT_SLOT_COUNT = 4;
+    public static final int OUTPUT_SLOT_COUNT = 8;
     public static final int CONTAINER_SIZE = FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT;
 
     private static final String SLOT_TAG_PREFIX = "Slot";
     private static final String CYCLE_TICKS_TAG = "CycleTicks";
     private static final String FLOWERS_ENABLED_TAG = "FlowersEnabled";
+    private static final SoundEvent IRON_GOLEM_DEATH_SOUND = SoundEvent.createFixedRangeEvent(
+            SoundEvents.IRON_GOLEM_DEATH.location(),
+            8.0F
+    );
     private static final int[] VILLAGER_SLOTS = new int[]{0, 1, 2};
-    private static final int[] OUTPUT_SLOTS = new int[]{3, 4, 5, 6};
+    private static final int[] OUTPUT_SLOTS = new int[]{3, 4, 5, 6, 7, 8, 9, 10};
     private static final Identifier NITWIT_PROFESSION = Identifier.withDefaultNamespace("nitwit");
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
@@ -125,7 +130,7 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
         int villagerCount = villagerCount();
         int multiplier = productionMultiplier(cycle);
         refreshMaximumOutputs(multiplier);
-        boolean outputAvailable = multiplier > 0 && OrderedOutputInserter.canInsertAll(
+        boolean outputAvailable = multiplier > 0 && OrderedOutputInserter.hasAnyCapacityFor(
                 items,
                 FIRST_OUTPUT_SLOT,
                 OUTPUT_SLOT_COUNT,
@@ -369,9 +374,9 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
         level.playSound(
                 null,
                 worldPosition,
-                SoundEvents.IRON_GOLEM_DEATH,
+                IRON_GOLEM_DEATH_SOUND,
                 SoundSource.BLOCKS,
-                1.0F,
+                0.5F,
                 1.0F
         );
         storeOutput(iron);

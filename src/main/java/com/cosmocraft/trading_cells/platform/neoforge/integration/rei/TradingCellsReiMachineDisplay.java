@@ -2,14 +2,12 @@ package com.cosmocraft.trading_cells.platform.neoforge.integration.rei;
 
 import com.cosmocraft.trading_cells.feature.breeders.adapters.input.BreederMenu;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerBlockEntity;
-import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerMenu;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmMenu;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserBlockEntity;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserMenu;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfuserScreen;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryBlockEntity;
-import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.NetheritePiglinBarteringCellBlockEntity;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.NetheritePiglinBarteringCellMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
@@ -49,6 +47,20 @@ final class TradingCellsReiMachineDisplay {
     private static final int BARTER_SLOT_Y = 51;
     private static final int NETHERITE_PIGLIN_X = 166;
     private static final int NETHERITE_PIGLIN_Y = 57;
+    private static final int FARMER_WORKER_X = 64;
+    private static final int FARMER_HOE_X = 94;
+    private static final int FARMER_CROP_X = 124;
+    private static final int FARMER_INPUT_Y = 30;
+    private static final int FARMER_OUTPUT_FIRST_X = 22;
+    private static final int FARMER_OUTPUT_FIRST_Y = 82;
+    private static final int QUARRY_WORKER_X = 58;
+    private static final int QUARRY_PICKAXE_X = 94;
+    private static final int QUARRY_UPGRADE_X = 130;
+    private static final int QUARRY_INPUT_Y = 24;
+    private static final int QUARRY_OUTPUT_FIRST_X = 22;
+    private static final int QUARRY_OUTPUT_FIRST_Y = 81;
+    private static final int COMPACT_OUTPUT_COLUMN_COUNT = 9;
+    private static final int COMPACT_OUTPUT_SLOT_SPACING = 18;
     private static final int SKELETON_INPUT_X = 38;
     private static final int SKELETON_WORKER_Y = 32;
     private static final int SKELETON_SWORD_Y = 53;
@@ -62,6 +74,11 @@ final class TradingCellsReiMachineDisplay {
     private static final int SMITHING_OUTPUT_X = 146;
     private static final int SMITHING_SLOT_Y = 55;
     private static final int SMITHING_ARROW_X = 105;
+    private static final int REDSTONE_SPAWNER_X = 31;
+    private static final int REDSTONE_COMPARATOR_X = 78;
+    private static final int REDSTONE_OUTPUT_X = 145;
+    private static final int REDSTONE_SLOT_Y = 39;
+    private static final int REDSTONE_ARROW_X = 112;
 
     private TradingCellsReiMachineDisplay() {
     }
@@ -87,9 +104,11 @@ final class TradingCellsReiMachineDisplay {
             case NETHERITE_PIGLIN_BARTERING -> addNetheritePiglinBartering(widgets, display, bounds);
             case QUARRY -> addQuarry(widgets, display, bounds);
             case ARCANE_INFUSION -> addArcaneInfusion(widgets, display, bounds);
+            case SPAWNER_REDSTONE_CONTROL -> addSpawnerRedstoneControl(widgets, display, bounds);
         }
         if (display.layout().kind() == TradingCellsReiLayout.Kind.ARCANE_INFUSION
-                || display.layout().kind() == TradingCellsReiLayout.Kind.DECAPITATION_SMITHING) {
+                || display.layout().kind() == TradingCellsReiLayout.Kind.DECAPITATION_SMITHING
+                || display.layout().kind() == TradingCellsReiLayout.Kind.SPAWNER_REDSTONE_CONTROL) {
             return widgets;
         } else if (isInstantBartering(display)) {
             addOutputAmountTooltip(widgets, display, bounds);
@@ -128,6 +147,8 @@ final class TradingCellsReiMachineDisplay {
                 drawArcaneInfusionInfo(graphics, display, bounds);
             } else if (layout.kind() == TradingCellsReiLayout.Kind.DECAPITATION_SMITHING) {
                 drawDecapitationSmithingInfo(graphics, bounds);
+            } else if (layout.kind() == TradingCellsReiLayout.Kind.SPAWNER_REDSTONE_CONTROL) {
+                drawSpawnerRedstoneControlInfo(graphics, display, bounds);
             } else if (isInstantBartering(display)) {
                 drawOutputAmount(graphics, display, bounds);
             } else {
@@ -158,15 +179,15 @@ final class TradingCellsReiMachineDisplay {
                 drawSlot(graphics, bounds, MachineScreenLayout.machineX(115), 48, display);
             }
             case FARMING -> {
-                drawSlot(graphics, bounds, FarmerMenu.WORKER_SLOT_X, FarmerMenu.INPUT_SLOT_Y, display);
-                drawSlot(graphics, bounds, FarmerMenu.HOE_SLOT_X, FarmerMenu.INPUT_SLOT_Y, display);
-                drawSlot(graphics, bounds, FarmerMenu.CROP_SLOT_X, FarmerMenu.INPUT_SLOT_Y, display);
+                drawSlot(graphics, bounds, FARMER_WORKER_X, FARMER_INPUT_Y, display);
+                drawSlot(graphics, bounds, FARMER_HOE_X, FARMER_INPUT_Y, display);
+                drawSlot(graphics, bounds, FARMER_CROP_X, FARMER_INPUT_Y, display);
                 for (int index = 0; index < FarmerBlockEntity.OUTPUT_SLOT_COUNT; index++) {
                     drawSlot(
                             graphics,
                             bounds,
-                            FarmerMenu.outputSlotX(index),
-                            FarmerMenu.outputSlotY(index),
+                            farmerOutputSlotX(index),
+                            farmerOutputSlotY(index),
                             display
                     );
                 }
@@ -194,7 +215,7 @@ final class TradingCellsReiMachineDisplay {
                     drawSlot(
                             graphics,
                             bounds,
-                            IronFarmMenu.OUTPUT_ROW_X + index * 24,
+                            IronFarmMenu.outputSlotX(index),
                             IronFarmMenu.OUTPUT_ROW_Y,
                             display
                     );
@@ -259,15 +280,15 @@ final class TradingCellsReiMachineDisplay {
                 drawSlot(graphics, bounds, NETHERITE_PIGLIN_X, NETHERITE_PIGLIN_Y, display);
             }
             case QUARRY -> {
-                drawSlot(graphics, bounds, QuarryMenu.WORKER_SLOT_X, QuarryMenu.INPUT_SLOT_Y, display);
-                drawSlot(graphics, bounds, QuarryMenu.PICKAXE_SLOT_X, QuarryMenu.INPUT_SLOT_Y, display);
-                drawSlot(graphics, bounds, QuarryMenu.UPGRADE_SLOT_X, QuarryMenu.INPUT_SLOT_Y, display);
+                drawSlot(graphics, bounds, QUARRY_WORKER_X, QUARRY_INPUT_Y, display);
+                drawSlot(graphics, bounds, QUARRY_PICKAXE_X, QUARRY_INPUT_Y, display);
+                drawSlot(graphics, bounds, QUARRY_UPGRADE_X, QUARRY_INPUT_Y, display);
                 for (int index = 0; index < QuarryBlockEntity.OUTPUT_SLOT_COUNT; index++) {
                     drawSlot(
                             graphics,
                             bounds,
-                            QuarryMenu.outputSlotX(index),
-                            QuarryMenu.outputSlotY(index),
+                            quarryOutputSlotX(index),
+                            quarryOutputSlotY(index),
                             display
                     );
                 }
@@ -283,6 +304,11 @@ final class TradingCellsReiMachineDisplay {
                     );
                 }
                 drawSlot(graphics, bounds, ArcaneInfuserMenu.OUTPUT_SLOT_X, ArcaneInfuserMenu.OUTPUT_SLOT_Y, display);
+            }
+            case SPAWNER_REDSTONE_CONTROL -> {
+                drawSlot(graphics, bounds, REDSTONE_SPAWNER_X, REDSTONE_SLOT_Y, display);
+                drawSlot(graphics, bounds, REDSTONE_COMPARATOR_X, REDSTONE_SLOT_Y, display);
+                drawSlot(graphics, bounds, REDSTONE_OUTPUT_X, REDSTONE_SLOT_Y, display);
             }
         }
     }
@@ -428,6 +454,37 @@ final class TradingCellsReiMachineDisplay {
         );
     }
 
+    private static void drawSpawnerRedstoneControlInfo(
+            me.shedaniel.rei.api.client.gui.compat.GuiGraphics graphics,
+            TradingCellsReiDisplay display,
+            Rectangle bounds
+    ) {
+        graphics.centeredText(
+                Minecraft.getInstance().font,
+                Component.literal("+"),
+                screenX(bounds) + 64,
+                screenY(bounds) + REDSTONE_SLOT_Y + 5,
+                0xFFFFFFFF
+        );
+        VillagerTradeScreenCommon.drawTradeArrow(
+                graphics,
+                screenX(bounds) + REDSTONE_ARROW_X,
+                screenY(bounds) + REDSTONE_SLOT_Y + 1,
+                VillagerTradeSprites.State.NORMAL
+        );
+        int y = screenY(bounds) + 72;
+        for (Component note : display.notes()) {
+            graphics.centeredText(
+                    Minecraft.getInstance().font,
+                    note,
+                    bounds.getCenterX(),
+                    y,
+                    display.layout().theme().titleText()
+            );
+            y += 9;
+        }
+    }
+
     private static void addBreeding(
             List<Widget> widgets,
             TradingCellsReiDisplay display,
@@ -484,15 +541,15 @@ final class TradingCellsReiMachineDisplay {
             TradingCellsReiDisplay display,
             Rectangle bounds
     ) {
-        addInput(widgets, bounds, FarmerMenu.WORKER_SLOT_X, FarmerMenu.INPUT_SLOT_Y, input(display, 0));
-        addInput(widgets, bounds, FarmerMenu.HOE_SLOT_X, FarmerMenu.INPUT_SLOT_Y, input(display, 2));
-        addInput(widgets, bounds, FarmerMenu.CROP_SLOT_X, FarmerMenu.INPUT_SLOT_Y, input(display, 1));
+        addInput(widgets, bounds, FARMER_WORKER_X, FARMER_INPUT_Y, input(display, 0));
+        addInput(widgets, bounds, FARMER_HOE_X, FARMER_INPUT_Y, input(display, 2));
+        addInput(widgets, bounds, FARMER_CROP_X, FARMER_INPUT_Y, input(display, 1));
         for (int index = 0; index < display.getOutputEntries().size(); index++) {
             addOutput(
                     widgets,
                     bounds,
-                    FarmerMenu.outputSlotX(index),
-                    FarmerMenu.outputSlotY(index),
+                    farmerOutputSlotX(index),
+                    farmerOutputSlotY(index),
                     output(display, index)
             );
         }
@@ -527,7 +584,7 @@ final class TradingCellsReiMachineDisplay {
             addOutput(
                     widgets,
                     bounds,
-                    IronFarmMenu.OUTPUT_ROW_X + index * 24,
+                    IronFarmMenu.outputSlotX(index),
                     IronFarmMenu.OUTPUT_ROW_Y,
                     output(display, index)
             );
@@ -555,6 +612,16 @@ final class TradingCellsReiMachineDisplay {
         addInput(widgets, bounds, SMITHING_BASE_X, SMITHING_SLOT_Y, input(display, 0));
         addInput(widgets, bounds, SMITHING_ADDITION_X, SMITHING_SLOT_Y, input(display, 1));
         addOutput(widgets, bounds, SMITHING_OUTPUT_X, SMITHING_SLOT_Y, output(display, 0));
+    }
+
+    private static void addSpawnerRedstoneControl(
+            List<Widget> widgets,
+            TradingCellsReiDisplay display,
+            Rectangle bounds
+    ) {
+        addInput(widgets, bounds, REDSTONE_SPAWNER_X, REDSTONE_SLOT_Y, input(display, 0));
+        addInput(widgets, bounds, REDSTONE_COMPARATOR_X, REDSTONE_SLOT_Y, input(display, 1));
+        addOutput(widgets, bounds, REDSTONE_OUTPUT_X, REDSTONE_SLOT_Y, output(display, 0));
     }
 
     private static void addPiglinBartering(
@@ -608,17 +675,17 @@ final class TradingCellsReiMachineDisplay {
             TradingCellsReiDisplay display,
             Rectangle bounds
     ) {
-        addInput(widgets, bounds, QuarryMenu.WORKER_SLOT_X, QuarryMenu.INPUT_SLOT_Y, input(display, 0));
-        addInput(widgets, bounds, QuarryMenu.PICKAXE_SLOT_X, QuarryMenu.INPUT_SLOT_Y, input(display, 1));
+        addInput(widgets, bounds, QUARRY_WORKER_X, QUARRY_INPUT_Y, input(display, 0));
+        addInput(widgets, bounds, QUARRY_PICKAXE_X, QUARRY_INPUT_Y, input(display, 1));
         if (display.getInputEntries().size() > 2 && !input(display, 2).isEmpty()) {
-            addInput(widgets, bounds, QuarryMenu.UPGRADE_SLOT_X, QuarryMenu.INPUT_SLOT_Y, input(display, 2));
+            addInput(widgets, bounds, QUARRY_UPGRADE_X, QUARRY_INPUT_Y, input(display, 2));
         }
         if (!display.getOutputEntries().isEmpty()) {
             addOutput(
                     widgets,
                     bounds,
-                    QuarryMenu.outputSlotX(0),
-                    QuarryMenu.outputSlotY(0),
+                    quarryOutputSlotX(0),
+                    quarryOutputSlotY(0),
                     output(display, 0)
             );
         }
@@ -708,6 +775,26 @@ final class TradingCellsReiMachineDisplay {
         };
     }
 
+    private static int farmerOutputSlotX(int index) {
+        return FARMER_OUTPUT_FIRST_X
+                + index % COMPACT_OUTPUT_COLUMN_COUNT * COMPACT_OUTPUT_SLOT_SPACING;
+    }
+
+    private static int farmerOutputSlotY(int index) {
+        return FARMER_OUTPUT_FIRST_Y
+                + index / COMPACT_OUTPUT_COLUMN_COUNT * COMPACT_OUTPUT_SLOT_SPACING;
+    }
+
+    private static int quarryOutputSlotX(int index) {
+        return QUARRY_OUTPUT_FIRST_X
+                + index % COMPACT_OUTPUT_COLUMN_COUNT * COMPACT_OUTPUT_SLOT_SPACING;
+    }
+
+    private static int quarryOutputSlotY(int index) {
+        return QUARRY_OUTPUT_FIRST_Y
+                + index / COMPACT_OUTPUT_COLUMN_COUNT * COMPACT_OUTPUT_SLOT_SPACING;
+    }
+
     private static Point progressPoint(TradingCellsReiDisplay display) {
         return switch (display.layout().kind()) {
             case BREEDING -> new Point(MachineScreenLayout.machineX(54), 65);
@@ -724,6 +811,7 @@ final class TradingCellsReiMachineDisplay {
                     64
             );
             case ARCANE_INFUSION -> new Point(MachineScreenLayout.machineX(54), 77);
+            case SPAWNER_REDSTONE_CONTROL -> new Point(REDSTONE_ARROW_X, REDSTONE_SLOT_Y);
         };
     }
 

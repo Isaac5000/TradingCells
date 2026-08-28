@@ -1,7 +1,7 @@
 package com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.zombiefarm.application.port.input.ZombieFarmUseCase;
-import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.DecapitationRules;
+import com.cosmocraft.trading_cells.feature.combat.domain.model.DecapitationRules;
 import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmDropRules;
 import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmKind;
 import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmLoot;

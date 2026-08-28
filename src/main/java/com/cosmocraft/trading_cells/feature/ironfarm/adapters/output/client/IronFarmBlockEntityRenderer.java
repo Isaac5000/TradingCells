@@ -6,6 +6,8 @@ import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmBloc
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -33,6 +35,7 @@ public final class IronFarmBlockEntityRenderer implements BlockEntityRenderer<Ir
     private static final float ZOMBIE_SCALE = 0.24F;
     private static final float GOLEM_SCALE = 0.22F;
     private final EntityRenderDispatcher entityRenderer;
+    private final Map<IronFarmBlockEntity, EntityCache> entityCaches = new WeakHashMap<>();
 
     public IronFarmBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         entityRenderer = context.entityRenderer();
@@ -61,29 +64,30 @@ public final class IronFarmBlockEntityRenderer implements BlockEntityRenderer<Ir
 
         Level level = blockEntity.getLevel();
         if (level == null) {
-            state.clearEntityCaches();
+            entityCaches.remove(blockEntity);
             return;
         }
+        EntityCache entityCache = entityCaches.computeIfAbsent(blockEntity, ignored -> new EntityCache());
         state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(level, blockEntity.getBlockPos());
 
         Direction side = state.facing.getClockWise();
         for (int index = 0; index < IronFarmBlockEntity.VILLAGER_SLOT_COUNT; index++) {
             ItemStack stack = blockEntity.getItem(IronFarmBlockEntity.FIRST_VILLAGER_SLOT + index);
-            Entity villager = state.getOrCreateVillager(index, blockEntity, stack);
+            Entity villager = entityCache.getOrCreateVillager(index, blockEntity, stack);
             if (villager != null) {
                 orient(villager, side.getOpposite().toYRot());
                 state.villagers[index] = extractEntity(villager, partialTicks, state.lightCoords);
             }
         }
 
-        Entity zombie = state.getOrCreateZombie(level);
+        Entity zombie = entityCache.getOrCreateZombie(level);
         if (zombie != null) {
             orient(zombie, side.toYRot());
             state.zombie = extractEntity(zombie, partialTicks, state.lightCoords);
         }
 
         if (blockEntity.isGolemVisible()) {
-            Entity golem = state.getOrCreateGolem(level);
+            Entity golem = entityCache.getOrCreateGolem(level);
             if (golem != null) {
                 orient(golem, side.getOpposite().toYRot());
                 state.golem = extractEntity(golem, partialTicks, state.lightCoords);
@@ -185,6 +189,9 @@ public final class IronFarmBlockEntityRenderer implements BlockEntityRenderer<Ir
         public @Nullable EntityRenderState zombie;
         public @Nullable EntityRenderState golem;
         public Direction facing = Direction.NORTH;
+    }
+
+    private static final class EntityCache {
         private final ItemStack[] cachedVillagerStacks = new ItemStack[]{ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
         private final Entity[] cachedVillagers = new Entity[IronFarmBlockEntity.VILLAGER_SLOT_COUNT];
         private @Nullable Entity cachedZombie;
@@ -220,15 +227,6 @@ public final class IronFarmBlockEntityRenderer implements BlockEntityRenderer<Ir
                 cachedGolem = EntityTypes.IRON_GOLEM.create(level, EntitySpawnReason.LOAD);
             }
             return cachedGolem;
-        }
-
-        private void clearEntityCaches() {
-            for (int index = 0; index < cachedVillagers.length; index++) {
-                cachedVillagerStacks[index] = ItemStack.EMPTY;
-                cachedVillagers[index] = null;
-            }
-            cachedZombie = null;
-            cachedGolem = null;
         }
     }
 

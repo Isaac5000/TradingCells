@@ -219,7 +219,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             }
             prepared = true;
         }
-        if (!canStoreStacks(pendingResult)) {
+        if (!canStoreAny(pendingResult)) {
             activity.transition(MachineActivityController.Activity.BLOCKED);
             pause(QuarryStatus.INVENTORY_FULL, prepared);
             return;
@@ -680,8 +680,8 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
         return false;
     }
 
-    private boolean canStoreStacks(List<ItemStack> stacks) {
-        return OrderedOutputInserter.canInsertAll(
+    private boolean canStoreAny(List<ItemStack> stacks) {
+        return OrderedOutputInserter.hasAnyCapacityFor(
                 items,
                 FIRST_OUTPUT_SLOT,
                 OUTPUT_SLOT_COUNT,
@@ -690,7 +690,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
     }
 
     private void storeStacks(List<ItemStack> stacks) {
-        OrderedOutputInserter.insertAllValidated(
+        OrderedOutputInserter.insertAllAvailable(
                 items,
                 FIRST_OUTPUT_SLOT,
                 OUTPUT_SLOT_COUNT,

@@ -1,0 +1,7 @@
+{
+  "schema_version": 999,
+  "family": "trading_cells:skeleton",
+  "entity_type": "example_mod:broken_skeleton",
+  "generator_item": "example_mod:broken_spawn_egg",
+  "order": 0
+}

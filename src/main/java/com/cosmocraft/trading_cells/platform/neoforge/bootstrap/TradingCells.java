@@ -1,6 +1,6 @@
 package com.cosmocraft.trading_cells.platform.neoforge.bootstrap;
 
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.DecapitationLootAdapter;
+import com.cosmocraft.trading_cells.feature.combat.adapters.input.DecapitationLootAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.config.FeatureSettingsProvider;
 import com.cosmocraft.trading_cells.platform.neoforge.config.NeoForgeFeatureSettingsAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellPayloadRegistration;

@@ -2,6 +2,7 @@ package com.cosmocraft.trading_cells.architecture;
 
 import com.cosmocraft.trading_cells.feature.trader.domain.model.AutotraderOfferLifecycle;
 import com.cosmocraft.trading_cells.feature.trader.domain.model.AutotraderOfferSelection;
+import com.cosmocraft.trading_cells.feature.trader.domain.model.AutotraderPolicy;
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederFood;
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederKind;
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederRecipe;
@@ -16,6 +17,8 @@ import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerHarvest;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerProduct;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerYield;
 import com.cosmocraft.trading_cells.feature.farmer.domain.model.VanillaHoeTier;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.input.PiglinFarmerMenuLayout;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.input.VillagerFarmerMenuLayout;
 import com.cosmocraft.trading_cells.feature.experience.application.service.ExperienceStorageService;
 import com.cosmocraft.trading_cells.feature.experience.domain.model.ExperienceMath;
 import com.cosmocraft.trading_cells.feature.incubators.domain.model.IncubationCycle;
@@ -24,6 +27,8 @@ import com.cosmocraft.trading_cells.feature.infusion.domain.model.ArcaneInfusion
 import com.cosmocraft.trading_cells.feature.infusion.domain.model.ArcaneInfusionDecision;
 import com.cosmocraft.trading_cells.feature.ironfarm.domain.model.IronFarmCycle;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryBlockEntity;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.input.PiglinQuarryMenuLayout;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.input.VillagerQuarryMenuLayout;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryCycle;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryFortune;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
@@ -31,13 +36,14 @@ import com.cosmocraft.trading_cells.feature.quarry.domain.model.VanillaPickaxeTi
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenuLayout;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.DecapitationRules;
+import com.cosmocraft.trading_cells.feature.combat.domain.model.DecapitationRules;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmDropRules;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmCycle;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmKind;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmLoot;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.StormShardDropRules;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.VanillaSwordTier;
+import com.cosmocraft.trading_cells.feature.combat.domain.model.StormShardDropRules;
+import com.cosmocraft.trading_cells.shared.mobfarm.domain.model.VanillaSwordTier;
+import com.cosmocraft.trading_cells.shared.mobfarm.domain.model.MobFarmCycleRules;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenu;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenuLayout;
@@ -74,6 +80,7 @@ public final class DomainRulesVerification {
         verifyFarmerRules();
         verifyConverterRules();
         verifyIronFarmRules();
+        verifyMobFarmCycleOracle();
         verifySkeletonFarmRules();
         verifyZombieFarmRules();
         verifyQuarryRules();
@@ -81,10 +88,92 @@ public final class DomainRulesVerification {
         verifyCapturerRules();
         verifyCapturedEntityGuiCenter();
         verifyDurationFormatting();
+        verifyWideMachineMenuGeometry();
         verifyVillagerTradeGeometry();
         verifyExperienceStorage();
         verifyArcaneInfusion();
         verifyHighLevelEnchantmentColors();
+    }
+
+    private static void verifyMobFarmCycleOracle() {
+        double[] positions = {-1.0D, 0.0D, 1.0D, 3.5D, 6.0D, 7.0D, 100.0D, Double.NaN};
+        double[] damageLevels = {-1.0D, 0.0D, 1.2D, 5.0D, 30.0D, Double.NaN};
+        for (double position : positions) {
+            for (double damage : damageLevels) {
+                int expected = legacyMobFarmCycleTicks(position, damage);
+                require(MobFarmCycleRules.effectiveCycleTicks(position, damage) == expected,
+                        "Shared mob-farm timing changed the pre-refactor oracle");
+                require(SkeletonFarmCycle.effectiveCycleTicks(position, damage) == expected,
+                        "Skeleton Farm timing diverged from its pre-refactor oracle");
+                require(ZombieFarmCycle.effectiveCycleTicks(position, damage) == expected,
+                        "Zombie Farm timing diverged from its pre-refactor oracle");
+            }
+        }
+        for (int sweeping : new int[]{-1, 0, 1, 3, 30, 255}) {
+            int expected = Math.max(1, 1 + Math.max(0, sweeping));
+            require(SkeletonFarmCycle.simulatedKills(sweeping) == expected
+                            && ZombieFarmCycle.simulatedKills(sweeping) == expected,
+                    "Shared simulated-kill rules changed their pre-refactor result");
+        }
+        for (int ticks : new int[]{0, 1, 19, 100, 2_400}) {
+            int expected = legacyRescaleProgress(ticks, 2_400, 100);
+            require(SkeletonFarmCycle.rescaleProgress(ticks, 2_400, 100) == expected
+                            && ZombieFarmCycle.rescaleProgress(ticks, 2_400, 100) == expected,
+                    "Shared mob-farm progress rescaling changed its pre-refactor result");
+        }
+        for (int mask : new int[]{0, 1, 3, 15, 255}) {
+            for (SkeletonFarmKind kind : SkeletonFarmKind.values()) {
+                for (SkeletonFarmLoot loot : SkeletonFarmLoot.values()) {
+                    boolean expected = kind.supports(loot) && (mask & loot.bit()) != 0;
+                    require(SkeletonFarmCycle.isEnabled(mask, kind, loot) == expected,
+                            "Skeleton Farm filter rules diverged from their pre-refactor oracle");
+                }
+            }
+            for (ZombieFarmKind kind : ZombieFarmKind.values()) {
+                for (ZombieFarmLoot loot : ZombieFarmLoot.values()) {
+                    boolean expected = kind.supports(loot) && (mask & loot.bit()) != 0;
+                    require(ZombieFarmCycle.isEnabled(mask, kind, loot) == expected,
+                            "Zombie Farm filter rules diverged from their pre-refactor oracle");
+                }
+            }
+        }
+        require(SkeletonFarmCycle.toggle(5, SkeletonFarmLoot.BONES) == (5 ^ SkeletonFarmLoot.BONES.bit())
+                        && ZombieFarmCycle.toggle(5, ZombieFarmLoot.ROTTEN_FLESH)
+                        == (5 ^ ZombieFarmLoot.ROTTEN_FLESH.bit()),
+                "Shared mob-farm filter toggling changed its pre-refactor result");
+    }
+
+    private static int legacyMobFarmCycleTicks(double tierPosition, double effectiveDamageLevel) {
+        double damage = Double.isFinite(effectiveDamageLevel)
+                ? Math.clamp(effectiveDamageLevel, 0.0D, 5.0D)
+                : 0.0D;
+        double position = Double.isFinite(tierPosition) ? Math.max(0.0D, tierPosition) : 0.0D;
+        double ratio = Math.pow(20.0D / 120.0D, 1.0D / 6.0D);
+        double starting = position <= 6.0D
+                ? 120.0D * Math.pow(ratio, position)
+                : 1.0D + 19.0D * Math.pow(ratio, position - 6.0D);
+        double maximumDamage = position <= 6.0D
+                ? 30.0D * Math.pow(ratio, position)
+                : 1.0D + 4.0D * Math.pow(ratio, position - 6.0D);
+        double progress = damage / 5.0D;
+        double startingDistance = Math.max(Double.MIN_NORMAL, starting - 1.0D);
+        double endingDistance = Math.max(
+                Double.MIN_NORMAL,
+                Math.min(startingDistance, maximumDamage - 1.0D)
+        );
+        double duration = 1.0D
+                + startingDistance * Math.pow(endingDistance / startingDistance, progress);
+        return Math.max(1, (int) Math.floor(duration + 1.0E-9D)) * 20;
+    }
+
+    private static int legacyRescaleProgress(int ticks, int previousMaximum, int newMaximum) {
+        if (ticks <= 0) {
+            return 0;
+        }
+        int previous = Math.max(1, previousMaximum);
+        int next = Math.max(1, newMaximum);
+        long scaled = ((long) ticks * next + previous - 1L) / previous;
+        return (int) Math.clamp(scaled, 1L, next);
     }
 
     private static void verifyArcaneInfusion() {
@@ -172,6 +261,12 @@ public final class DomainRulesVerification {
                 "XP totals above the int range must saturate without overflowing");
         require(ExperienceMath.levelForTotalPoints(Integer.MAX_VALUE) == 21_863,
                 "The full int capacity must report the highest complete representable level");
+        require(ExperienceMath.levelForTotalPointsRoundedUp(160) == 10,
+                "An exact level boundary must not be rounded to the following level");
+        require(ExperienceMath.levelForTotalPointsRoundedUp(161) == 11,
+                "A partial level must round up for the XP conversion display");
+        require(ExperienceMath.levelForTotalPointsRoundedUp(Integer.MAX_VALUE) == 21_863,
+                "The rounded conversion must remain inside the representable int XP range");
         require(storage.depositAll(30, 0.5F, Integer.MAX_VALUE - 3, Integer.MAX_VALUE) == 3,
                 "Depositing at int capacity must transfer only the remaining safe points");
         require(storage.withdrawAll(21_863, 0.0F, 100_000) == 75_704,
@@ -190,10 +285,152 @@ public final class DomainRulesVerification {
     }
 
     private static void verifyDurationFormatting() {
-        require("1:56".equals(MachineScreenUtil.formatDuration(2_334)),
-                "Machine and REI durations must floor 116.7 seconds to 1:56");
-        require("0:05".equals(MachineScreenUtil.formatDuration(100)),
-                "Durations below one minute must retain the mm:ss format");
+        require("1m 56s".equals(MachineScreenUtil.formatDuration(2_334)),
+                "Machine and REI durations must floor 116.7 seconds to 1m 56s");
+        require("5s".equals(MachineScreenUtil.formatDuration(100)),
+                "Durations below one minute must use the compact seconds format");
+    }
+
+    private static void verifyWideMachineMenuGeometry() {
+        verifyWideLayout(
+                "Villager Farmer",
+                VillagerFarmerMenuLayout.WIDTH,
+                VillagerFarmerMenuLayout.HEIGHT,
+                new int[] {
+                        VillagerFarmerMenuLayout.WORKER_SLOT_X,
+                        VillagerFarmerMenuLayout.HOE_SLOT_X,
+                        VillagerFarmerMenuLayout.CROP_SLOT_X
+                },
+                new int[] {
+                        VillagerFarmerMenuLayout.WORKER_SLOT_Y,
+                        VillagerFarmerMenuLayout.HOE_SLOT_Y,
+                        VillagerFarmerMenuLayout.CROP_SLOT_Y
+                },
+                VillagerFarmerMenuLayout.OUTPUT_FIRST_X,
+                VillagerFarmerMenuLayout.OUTPUT_FIRST_Y,
+                VillagerFarmerMenuLayout.OUTPUT_COLUMNS,
+                VillagerFarmerMenuLayout.OUTPUT_SPACING,
+                VillagerFarmerMenuLayout.PLAYER_INVENTORY_X,
+                VillagerFarmerMenuLayout.PLAYER_INVENTORY_Y,
+                VillagerFarmerMenuLayout.PLAYER_HOTBAR_Y,
+                VillagerFarmerMenuLayout.EQUIPMENT_X,
+                VillagerFarmerMenuLayout.EQUIPMENT_OFFHAND_Y
+        );
+        verifyWideLayout(
+                "Piglin Farmer",
+                PiglinFarmerMenuLayout.WIDTH,
+                PiglinFarmerMenuLayout.HEIGHT,
+                new int[] {
+                        PiglinFarmerMenuLayout.WORKER_SLOT_X,
+                        PiglinFarmerMenuLayout.HOE_SLOT_X,
+                        PiglinFarmerMenuLayout.CROP_SLOT_X
+                },
+                new int[] {
+                        PiglinFarmerMenuLayout.WORKER_SLOT_Y,
+                        PiglinFarmerMenuLayout.HOE_SLOT_Y,
+                        PiglinFarmerMenuLayout.CROP_SLOT_Y
+                },
+                PiglinFarmerMenuLayout.OUTPUT_FIRST_X,
+                PiglinFarmerMenuLayout.OUTPUT_FIRST_Y,
+                PiglinFarmerMenuLayout.OUTPUT_COLUMNS,
+                PiglinFarmerMenuLayout.OUTPUT_SPACING,
+                PiglinFarmerMenuLayout.PLAYER_INVENTORY_X,
+                PiglinFarmerMenuLayout.PLAYER_INVENTORY_Y,
+                PiglinFarmerMenuLayout.PLAYER_HOTBAR_Y,
+                PiglinFarmerMenuLayout.EQUIPMENT_X,
+                PiglinFarmerMenuLayout.EQUIPMENT_OFFHAND_Y
+        );
+        verifyWideLayout(
+                "Villager Quarry",
+                VillagerQuarryMenuLayout.WIDTH,
+                VillagerQuarryMenuLayout.HEIGHT,
+                new int[] {
+                        VillagerQuarryMenuLayout.WORKER_SLOT_X,
+                        VillagerQuarryMenuLayout.PICKAXE_SLOT_X,
+                        VillagerQuarryMenuLayout.UPGRADE_SLOT_X
+                },
+                new int[] {
+                        VillagerQuarryMenuLayout.WORKER_SLOT_Y,
+                        VillagerQuarryMenuLayout.PICKAXE_SLOT_Y,
+                        VillagerQuarryMenuLayout.UPGRADE_SLOT_Y
+                },
+                VillagerQuarryMenuLayout.OUTPUT_FIRST_X,
+                VillagerQuarryMenuLayout.OUTPUT_FIRST_Y,
+                VillagerQuarryMenuLayout.OUTPUT_COLUMNS,
+                VillagerQuarryMenuLayout.OUTPUT_SPACING,
+                VillagerQuarryMenuLayout.PLAYER_INVENTORY_X,
+                VillagerQuarryMenuLayout.PLAYER_INVENTORY_Y,
+                VillagerQuarryMenuLayout.PLAYER_HOTBAR_Y,
+                VillagerQuarryMenuLayout.EQUIPMENT_X,
+                VillagerQuarryMenuLayout.EQUIPMENT_OFFHAND_Y
+        );
+        verifyWideLayout(
+                "Piglin Quarry",
+                PiglinQuarryMenuLayout.WIDTH,
+                PiglinQuarryMenuLayout.HEIGHT,
+                new int[] {
+                        PiglinQuarryMenuLayout.WORKER_SLOT_X,
+                        PiglinQuarryMenuLayout.PICKAXE_SLOT_X,
+                        PiglinQuarryMenuLayout.UPGRADE_SLOT_X
+                },
+                new int[] {
+                        PiglinQuarryMenuLayout.WORKER_SLOT_Y,
+                        PiglinQuarryMenuLayout.PICKAXE_SLOT_Y,
+                        PiglinQuarryMenuLayout.UPGRADE_SLOT_Y
+                },
+                PiglinQuarryMenuLayout.OUTPUT_FIRST_X,
+                PiglinQuarryMenuLayout.OUTPUT_FIRST_Y,
+                PiglinQuarryMenuLayout.OUTPUT_COLUMNS,
+                PiglinQuarryMenuLayout.OUTPUT_SPACING,
+                PiglinQuarryMenuLayout.PLAYER_INVENTORY_X,
+                PiglinQuarryMenuLayout.PLAYER_INVENTORY_Y,
+                PiglinQuarryMenuLayout.PLAYER_HOTBAR_Y,
+                PiglinQuarryMenuLayout.EQUIPMENT_X,
+                PiglinQuarryMenuLayout.EQUIPMENT_OFFHAND_Y
+        );
+    }
+
+    private static void verifyWideLayout(
+            String name,
+            int width,
+            int height,
+            int[] inputX,
+            int[] inputY,
+            int outputFirstX,
+            int outputFirstY,
+            int outputColumns,
+            int outputSpacing,
+            int inventoryX,
+            int inventoryY,
+            int hotbarY,
+            int equipmentX,
+            int equipmentOffhandY
+    ) {
+        int slotSize = 16;
+        require(width == 348 && height == 210, name + " must retain the 348x210 menu format");
+        require(inputX.length == 3 && inputY.length == 3, name + " must expose exactly three inputs");
+        for (int index = 0; index < inputX.length; index++) {
+            require(inputX[index] >= 7 && inputX[index] + slotSize <= 116,
+                    name + " input left the left panel horizontally");
+            require(inputY[index] >= 27 && inputY[index] + slotSize <= 204,
+                    name + " input left the left panel vertically");
+        }
+        int outputLastX = outputFirstX + (outputColumns - 1) * outputSpacing;
+        int outputLastY = outputFirstY + outputSpacing;
+        require(outputColumns == 9 && outputFirstX >= 124 && outputLastX + slotSize <= 342,
+                name + " output matrix left the machine panel horizontally");
+        require(outputFirstY >= 27 && outputLastY + slotSize <= 102,
+                name + " output matrix left the machine panel vertically");
+        require(inventoryX >= 124 && inventoryX + 8 * 18 + slotSize <= 342,
+                name + " inventory left the lower panel horizontally");
+        require(inventoryY >= 104 && inventoryY + 2 * 18 + slotSize <= 204,
+                name + " inventory left the lower panel vertically");
+        require(hotbarY >= inventoryY + 3 * 18 && hotbarY + slotSize <= 204,
+                name + " hotbar overlaps the inventory or leaves the panel");
+        require(equipmentX >= 124 && equipmentX + slotSize < inventoryX,
+                name + " equipment column overlaps the inventory");
+        require(equipmentOffhandY + slotSize <= 204,
+                name + " equipment column leaves the lower panel");
     }
 
     private static void verifyOfferLifecycle() {
@@ -441,8 +678,8 @@ public final class DomainRulesVerification {
                         && farmerYield(baseFungus, FarmerProduct.CRIMSON_STEM).isGuaranteed(),
                 "A crimson fungus cycle must always produce four stems");
         require(farmerYield(baseFungus, FarmerProduct.NETHER_WART_BLOCK).count() == 2
-                        && farmerYield(baseFungus, FarmerProduct.NETHER_WART_BLOCK).isGuaranteed(),
-                "A crimson fungus cycle must always produce two base wart blocks");
+                        && farmerYield(baseFungus, FarmerProduct.NETHER_WART_BLOCK).chanceBasisPoints() == 6_500,
+                "A crimson fungus cycle must offer two wart blocks at a 65 percent base chance");
         require(farmerYield(baseFungus, FarmerProduct.CRIMSON_FUNGUS).chanceBasisPoints() == 3_500,
                 "The base fungus return chance must remain balanced at 35 percent");
         require(farmerYield(baseFungus, FarmerProduct.SHROOMLIGHT).chanceBasisPoints() == 2_000,
@@ -455,12 +692,14 @@ public final class DomainRulesVerification {
                 "Fortune III must raise shroomlight chance to 42.5 percent");
         require(farmerYield(fortuneThree, FarmerProduct.WARPED_STEM).count() == 7,
                 "Fortune III must increase guaranteed stem yield");
-        require(farmerYield(fortuneThree, FarmerProduct.WARPED_WART_BLOCK).count() == 5,
-                "Fortune III must increase guaranteed wart block yield");
+        require(farmerYield(fortuneThree, FarmerProduct.WARPED_WART_BLOCK).count() == 5
+                        && farmerYield(fortuneThree, FarmerProduct.WARPED_WART_BLOCK).chanceBasisPoints() == 8_000,
+                "Fortune III must increase wart block amount and chance");
         FarmerHarvest fortuneSeven = FarmerCycle.harvest(FarmerCrop.WARPED_FUNGUS, 7);
         require(farmerYield(fortuneSeven, FarmerProduct.WARPED_STEM).count() == 11
-                        && farmerYield(fortuneSeven, FarmerProduct.WARPED_WART_BLOCK).count() == 9,
-                "Fortune VII must continue increasing guaranteed fungus harvests");
+                        && farmerYield(fortuneSeven, FarmerProduct.WARPED_WART_BLOCK).count() == 9
+                        && farmerYield(fortuneSeven, FarmerProduct.WARPED_WART_BLOCK).chanceBasisPoints() == 9_000,
+                "Fortune VII must continue increasing stems and cap wart block chance at 90 percent");
         for (FarmerCrop crop : List.of(
                 FarmerCrop.CRIMSON_ROOTS,
                 FarmerCrop.NETHER_WART,
@@ -484,14 +723,59 @@ public final class DomainRulesVerification {
                 "Sugar cane must produce two items before Fortune");
         require(farmerYield(FarmerCycle.harvest(FarmerCrop.COCOA, 3), FarmerProduct.COCOA_BEANS).count() == 6,
                 "Fortune III must increase cocoa-bean output");
+        FarmerHarvest wheat = FarmerCycle.harvest(FarmerCrop.WHEAT, 3);
+        require(farmerYield(wheat, FarmerProduct.WHEAT).count() == 4
+                        && farmerYield(wheat, FarmerProduct.WHEAT_SEEDS).count() == 4,
+                "Fortune III must increase both wheat and seed output");
+        FarmerHarvest beetroot = FarmerCycle.harvest(FarmerCrop.BEETROOT, 3);
+        require(farmerYield(beetroot, FarmerProduct.BEETROOT).count() == 4
+                        && farmerYield(beetroot, FarmerProduct.BEETROOT_SEEDS).count() == 4,
+                "Fortune III must increase both beetroot and seed output");
         FarmerHarvest torchflower = FarmerCycle.harvest(FarmerCrop.TORCHFLOWER, 3);
-        require(farmerYield(torchflower, FarmerProduct.TORCHFLOWER).count() == 1
+        require(farmerYield(torchflower, FarmerProduct.TORCHFLOWER).count() == 4
                         && farmerYield(torchflower, FarmerProduct.TORCHFLOWER_SEEDS).count() == 4,
-                "Torchflowers must return their flower and Fortune-scaled seeds");
+                "Fortune III must increase both torchflower and seed output");
         FarmerHarvest pitcherPlant = FarmerCycle.harvest(FarmerCrop.PITCHER_PLANT, 3);
-        require(farmerYield(pitcherPlant, FarmerProduct.PITCHER_PLANT).count() == 1
+        require(farmerYield(pitcherPlant, FarmerProduct.PITCHER_PLANT).count() == 4
                         && farmerYield(pitcherPlant, FarmerProduct.PITCHER_POD).count() == 4,
-                "Pitcher plants must return their plant and Fortune-scaled pods");
+                "Fortune III must increase both pitcher plant and pod output");
+        FarmerHarvest extremeTorchflower = FarmerCycle.harvest(FarmerCrop.TORCHFLOWER, 255);
+        require(farmerYield(extremeTorchflower, FarmerProduct.TORCHFLOWER).count() == 256
+                        && farmerYield(extremeTorchflower, FarmerProduct.TORCHFLOWER_SEEDS).count() == 256,
+                "Fortune 255 must scale torchflowers and their seeds equally");
+        FarmerHarvest extremePitcherPlant = FarmerCycle.harvest(FarmerCrop.PITCHER_PLANT, 255);
+        require(farmerYield(extremePitcherPlant, FarmerProduct.PITCHER_PLANT).count() == 256
+                        && farmerYield(extremePitcherPlant, FarmerProduct.PITCHER_POD).count() == 256,
+                "Fortune 255 must scale pitcher plants and their pods equally");
+
+        List<FarmerCrop> pairedCrops = List.of(
+                FarmerCrop.WHEAT,
+                FarmerCrop.BEETROOT,
+                FarmerCrop.TORCHFLOWER,
+                FarmerCrop.PITCHER_PLANT
+        );
+        List<FarmerProduct> pairedProducts = List.of(
+                FarmerProduct.WHEAT,
+                FarmerProduct.BEETROOT,
+                FarmerProduct.TORCHFLOWER,
+                FarmerProduct.PITCHER_PLANT
+        );
+        List<FarmerProduct> pairedSeeds = List.of(
+                FarmerProduct.WHEAT_SEEDS,
+                FarmerProduct.BEETROOT_SEEDS,
+                FarmerProduct.TORCHFLOWER_SEEDS,
+                FarmerProduct.PITCHER_POD
+        );
+        for (int index = 0; index < pairedCrops.size(); index++) {
+            for (int fortune : new int[]{0, 3, 7, 255}) {
+                FarmerHarvest harvest = FarmerCycle.harvest(pairedCrops.get(index), fortune);
+                int expected = fortune + 1;
+                require(farmerYield(harvest, pairedProducts.get(index)).count() == expected,
+                        pairedCrops.get(index) + " product must scale at Fortune " + fortune);
+                require(farmerYield(harvest, pairedSeeds.get(index)).count() == expected,
+                        pairedCrops.get(index) + " seed must scale at Fortune " + fortune);
+            }
+        }
     }
 
     private static FarmerYield farmerYield(FarmerHarvest harvest, FarmerProduct product) {
@@ -734,13 +1018,13 @@ public final class DomainRulesVerification {
         require(ZombieFarmBlockEntity.OUTPUT_SLOT_COUNT == 18,
                 "The Zombie Farm must expose eighteen output slots");
         require(ZombieFarmCycle.effectiveCycleTicks(
-                        com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.VanillaSwordTier.WOODEN
+                        com.cosmocraft.trading_cells.shared.mobfarm.domain.model.VanillaSwordTier.WOODEN
                                 .timingPosition(),
                         0
                 ) == 2_400,
                 "A wooden sword must take 120 seconds in the Zombie Farm");
         require(ZombieFarmCycle.effectiveCycleTicks(
-                        com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.VanillaSwordTier.NETHERITE
+                        com.cosmocraft.trading_cells.shared.mobfarm.domain.model.VanillaSwordTier.NETHERITE
                                 .timingPosition(),
                         5
                 ) == 100,
@@ -950,15 +1234,26 @@ public final class DomainRulesVerification {
         );
         require(
                 VillagerTradeScreenLayout.MANUAL_SCROLL_X
-                        >= VillagerTradeScreenLayout.MANUAL_ROW_X
-                        + VillagerTradeScreenLayout.MANUAL_ROW_WIDTH + 2,
-                "Trader scrollbar must keep two pixels of separation from offer rows"
+                        == VillagerTradeScreenLayout.MANUAL_ROW_X
+                        + VillagerTradeScreenLayout.MANUAL_ROW_WIDTH - 1,
+                "Trader scrollbar must join the offer rows at their right border"
         );
         require(
-                VillagerTradeMenuLayout.AUTOTRADER_OUTPUT_Y + SlotRenderer.FRAME_SIZE
+                VillagerTradeMenuLayout.autotraderOutputFrameY(AutotraderPolicy.OUTPUT_SLOTS - 1)
+                        + SlotRenderer.FRAME_SIZE
                         <= VillagerTradeMenuLayout.AUTOTRADER_OUTPUT_PANEL_Y
-                        + VillagerTradeMenuLayout.AUTOTRADER_PANEL_HEIGHT,
+                        + VillagerTradeMenuLayout.AUTOTRADER_OUTPUT_PANEL_HEIGHT,
                 "Autotrader output slots must remain inside their visual panel"
+        );
+        require(
+                AutotraderPolicy.OUTPUT_SLOTS == 8
+                        && VillagerTradeMenuLayout.AUTOTRADER_INPUT_B_PANEL_Y
+                        == VillagerTradeMenuLayout.AUTOTRADER_INPUT_A_PANEL_Y
+                        + VillagerTradeMenuLayout.AUTOTRADER_PANEL_HEIGHT
+                        && VillagerTradeMenuLayout.AUTOTRADER_OUTPUT_PANEL_Y
+                        == VillagerTradeMenuLayout.AUTOTRADER_INPUT_B_PANEL_Y
+                        + VillagerTradeMenuLayout.AUTOTRADER_PANEL_HEIGHT,
+                "Autotrader buffers must use eight outputs and contiguous panels"
         );
         require(
                 VillagerTradeScreenLayout.DROPDOWN_VISIBLE_ROWS == 8

@@ -2,6 +2,10 @@
 
 ## 1.0.0 - Unreleased
 
+- Added vanilla Silk Touch II through Arcane Infusion, including protected tool-specific mining speed, collection of otherwise unobtainable blocks, preserved cake portions and archaeology contents, repeatable distance-activated Trial Spawners, and reusable Vaults without permanent player UUIDs.
+- Added a persistent Comparator-installed redstone controller for normal and Trial Spawners, including frozen previews, state preservation and an optional REI interaction display.
+- Added trusted preserved-Spawner previews and non-duplicating Spawn Egg conversion, including static entity rendering, concise modified-entity tooltips and hierarchy restoration.
+- Added optional Jade support for compact machine status, Silk Touch II requirements and configured Spawner entities without making Jade a runtime requirement.
 - Added portable villager and piglin trading, breeding, incubation, farming and quarry machines.
 - Added villager conversion, automatic trading and iron production.
 - Added durable and unbreakable villager and piglin capturers.
@@ -17,5 +21,22 @@
 - Refined the Skeleton Farm with direct Spawn Egg ingredients, persistent pause control, Sharpness-compatible timing, adaptive translated text, contextual live-loot help, a rotating REI output and corrected in-world previews.
 - Standardized stored experience displays on the singular `Level` / `Nivel` label for every stored value.
 - Added the Zombie Farm with six selectable targets, per-reward filters, loaded loot-table integration, Zombie-family Spawn Egg infusions and full REI support.
-- Added tag-backed Skeleton and Zombie Farm target discovery, individual filters for external loot-table items and safe vanilla fallbacks for invalid third-party data.
+- Added Raider and Creeper Farms with loaded loot-table integration, a charged Creeper variant, Pillager Ominous Banner filtering, Arcane Infusion recipes, REI support and dynamic external targets.
+- Fixed Raider and Creeper Farm target/filter synchronization across menu reopenings, removed Creeper music-disc production and stabilized cached entity previews.
+- Added tag-backed Skeleton, Zombie, Raider and Creeper Farm target discovery, individual filters for external loot-table items and safe vanilla fallbacks for invalid third-party data.
+- Added the public schema-v1 `mob_farm_target` datapack format for extending all four registered mob-farm families, including item-tag expansion, per-file rejection and a vanilla fallback.
+- Versioned the existing mob-farm catalog payload before publication and synchronized stable family, generator and concrete loot identifiers.
+- Extracted combat ownership and a pure composition-based mob-farm cycle core while preserving existing block IDs, NBT, timing, random rolls and family-specific loot rules.
 - Added one-level Decapitation upgrades for enchanted books and weapons in the Smithing Table using one Storm Shard, while retaining conventional combining through level VI.
+- Added release resource validation for JSON, translations, models, textures, recipes and obsolete data paths.
+- Added feature-oriented isolated server GameTests for Block Entity persistence, XP capabilities, Infuser automation boundaries, every public network codec and preserved Spawner behavior.
+- Expanded release GameTests to cover all portable-machine drop round trips, sided capabilities, partial outputs and Fortune levels 0, 3, 7 and 255.
+- Hardened server payload handlers against negative, stale, unsupported and out-of-range requests without changing valid packet IDs or formats.
+- Added a frozen 1.0.0 compatibility manifest for public payload IDs, persistent NBT keys, the canonical 59-recipe catalog and mob-farm schema/protocol versions.
+- Added a non-destructive release audit and a single-artifact check for reproducible publication evidence.
+- Added release JAR inspection so tests, tools and obsolete resources cannot enter the published artifact.
+- Added reproducible server/client benchmark template manifests and fingerprints, preventing comparisons between different worlds or machine states.
+- Unified fitted one-line text rendering used by Skeleton and Zombie Farm interfaces without changing their layout.
+- Expanded the Villager Farm with balanced tree, moss, aquatic plant, live coral and End chorus profiles while excluding bonemeal substrates and duplicate plant forms.
+- Allowed Villager and Piglin Farms to finish partially fitting harvests until no compatible output capacity remains.
+- Removed obsolete duplicate block loot tables left under the pre-26.2 plural data directory.

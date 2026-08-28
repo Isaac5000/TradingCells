@@ -2,7 +2,9 @@ package com.cosmocraft.trading_cells.platform.neoforge.event;
 
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -34,6 +36,19 @@ public final class AnvilEnchantmentPreservationEvent {
                 continue;
             }
             merged.set(entry.getKey(), originalLevel);
+            changed = true;
+        }
+        ItemEnchantments storedOnRight = event.getRight().getOrDefault(
+                DataComponents.STORED_ENCHANTMENTS,
+                ItemEnchantments.EMPTY
+        );
+        for (var entry : storedOnRight.entrySet()) {
+            if (!entry.getKey().is(Enchantments.SILK_TOUCH)
+                    || entry.getIntValue() < 2
+                    || merged.getLevel(entry.getKey()) >= entry.getIntValue()) {
+                continue;
+            }
+            merged.set(entry.getKey(), entry.getIntValue());
             changed = true;
         }
         if (changed) {

@@ -1,0 +1,16 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "ingredients": [
+    {"ingredient": "minecraft:redstone", "count": 1},
+    {"ingredient": "minecraft:glass_bottle", "count": 1},
+    {"ingredient": "minecraft:glowstone_dust", "count": 1},
+    {"ingredient": "minecraft:spider_eye", "count": 1},
+    {"ingredient": "#trading_cells:arcane_infusion_eggs", "count": 1},
+    {"ingredient": "minecraft:sugar", "count": 1},
+    {"ingredient": "minecraft:gunpowder", "count": 1},
+    {"ingredient": "minecraft:brewing_stand", "count": 1},
+    {"ingredient": "minecraft:stick", "count": 1}
+  ],
+  "experience": 100,
+  "result": {"type": "item", "item": "minecraft:witch_spawn_egg"}
+}

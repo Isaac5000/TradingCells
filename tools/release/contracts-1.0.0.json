@@ -1,0 +1,151 @@
+{
+  "mod_version": "1.0.0",
+  "network_registration_version": "2",
+  "mob_farm_target_schema_version": 1,
+  "mob_farm_catalog_protocol_version": 1,
+  "recipe_catalog_count": 59,
+  "recipe_catalog_sha256": "6535CC2DC65F702E2680EE8AF3AB0D76D408E0382A2AFBBB8E573F9DC6E221DF",
+  "payload_ids": {
+    "ArcaneInfuserTransferPayload": "arcane_infuser_transfer",
+    "AutotraderMenuSyncPayload": "autotrader_menu_sync",
+    "ExperienceStorageTransferPayload": "experience_storage_transfer",
+    "ExtractTradingCellExperiencePayload": "extract_trading_cell_experience",
+    "MobFarmCatalogSyncPayload": "mob_farm_catalog_sync",
+    "QuarryCatalogSyncPayload": "quarry_catalog_sync",
+    "RequestMobFarmCatalogPayload": "request_mob_farm_catalog",
+    "RequestQuarryCatalogPayload": "request_quarry_catalog",
+    "ResetTradesPayload": "reset_trades",
+    "SelectAutotraderOfferPayload": "select_autotrader_offer",
+    "SelectTradingCellOfferPayload": "select_trading_cell_offer",
+    "TradingCellExperiencePayload": "trading_cell_experience",
+    "TradingCellMenuSyncPayload": "trading_cell_menu_sync"
+  },
+  "persistent_nbt_keys": {
+    "feature/breeders/adapters/input/BreederBlockEntity.java": [
+      "BreedTicks",
+      "PendingBabies",
+      "BabyTemplate",
+      "VillagerVariant",
+      "VillagerVariantId",
+      "ActiveFood"
+    ],
+    "feature/converter/adapters/input/ConverterBlockEntity.java": [
+      "Stage",
+      "StageTicks",
+      "CuredReady",
+      "TradingCellsCureDiscount"
+    ],
+    "feature/experience/adapters/input/ExperienceStorageBlockEntity.java": [
+      "StoredExperience"
+    ],
+    "feature/farmer/adapters/input/FarmerBlockEntity.java": [
+      "GrowthTicks",
+      "GrowthDurationTicks"
+    ],
+    "feature/incubators/adapters/input/IncubatorBlockEntity.java": [
+      "Input",
+      "Output",
+      "IncubationTicks"
+    ],
+    "feature/infusion/adapters/input/ArcaneInfuserBlockEntity.java": [
+      "StoredExperience",
+      "InventoryVersion"
+    ],
+    "feature/ironfarm/adapters/input/IronFarmBlockEntity.java": [
+      "CycleTicks",
+      "FlowersEnabled"
+    ],
+    "feature/quarry/adapters/input/QuarryBlockEntity.java": [
+      "QuarryDataVersion",
+      "CycleTicks",
+      "CycleDurationTicks",
+      "DeepMining",
+      "LastResult",
+      "PendingResultCount",
+      "PendingMaterial",
+      "PendingPreview"
+    ],
+    "feature/creeperfarm/adapters/input/CreeperFarmBlockEntity.java": [
+      "CycleTicks",
+      "CycleDurationTicks",
+      "CreeperKind",
+      "CreeperTarget",
+      "EnabledLootMask",
+      "DisabledDynamicLootCount",
+      "StoredExperience",
+      "PendingLootCount",
+      "PendingLootReady",
+      "PendingBatchStarted",
+      "Enabled"
+    ],
+    "feature/raiderfarm/adapters/input/RaiderFarmBlockEntity.java": [
+      "CycleTicks",
+      "CycleDurationTicks",
+      "RaiderKind",
+      "RaiderTarget",
+      "EnabledLootMask",
+      "DisabledDynamicLootCount",
+      "StoredExperience",
+      "PendingLootCount",
+      "PendingLootReady",
+      "PendingBatchStarted",
+      "Enabled"
+    ],
+    "feature/skeletonfarm/adapters/input/SkeletonFarmBlockEntity.java": [
+      "CycleTicks",
+      "CycleDurationTicks",
+      "SkeletonKind",
+      "SkeletonTarget",
+      "EnabledLootMask",
+      "DisabledDynamicLootCount",
+      "StoredExperience",
+      "PendingLootCount",
+      "PendingLootReady",
+      "PendingBatchStarted",
+      "Enabled"
+    ],
+    "feature/trader/adapters/input/AutotraderBlockEntity.java": [
+      "SelectedOffer",
+      "StoredPoi",
+      "StoredExperience",
+      "OfferAgeTicks",
+      "RestockCheckTicks",
+      "TradingCellsCureDiscount"
+    ],
+    "feature/trader/adapters/input/NetheritePiglinBarteringCellBlockEntity.java": [
+      "StoredPiglin",
+      "PendingReward",
+      "BarterTicksRemaining",
+      "NextGoldSlot",
+      "LayoutVersion"
+    ],
+    "feature/trader/adapters/input/PiglinBarteringCellBlockEntity.java": [
+      "StoredPiglin",
+      "GoldBuffer",
+      "OutputBuffer",
+      "BarterTicksRemaining"
+    ],
+    "feature/trader/adapters/input/VillagerTradingCellBlockEntity.java": [
+      "StoredVillager",
+      "StoredEntityKind",
+      "StoredEntity",
+      "StoredPoi",
+      "TradeRefreshTicks",
+      "StoredExperience",
+      "TradingCellsCureDiscount"
+    ],
+    "feature/zombiefarm/adapters/input/ZombieFarmBlockEntity.java": [
+      "CycleTicks",
+      "CycleDurationTicks",
+      "ZombieKind",
+      "ZombieTarget",
+      "EnabledLootMask",
+      "DisabledDynamicLootCount",
+      "StoredExperience",
+      "PendingLootCount",
+      "PendingLootReady",
+      "PendingBatchStarted",
+      "Enabled"
+    ]
+  }
+}

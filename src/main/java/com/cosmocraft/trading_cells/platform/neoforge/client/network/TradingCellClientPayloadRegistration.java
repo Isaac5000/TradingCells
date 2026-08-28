@@ -3,6 +3,8 @@ package com.cosmocraft.trading_cells.platform.neoforge.client.network;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.VillagerTradingCellMenu;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.AutotraderMenu;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu;
+import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFarmMenu;
+import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarmMenu;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellExperiencePayload;
@@ -70,6 +72,12 @@ public final class TradingCellClientPayloadRegistration {
                     && menu.containerId == payload.containerId()) {
                 menu.applyCatalogSnapshot(payload);
             } else if (context.player().containerMenu instanceof ZombieFarmMenu menu
+                    && menu.containerId == payload.containerId()) {
+                menu.applyCatalogSnapshot(payload);
+            } else if (context.player().containerMenu instanceof RaiderFarmMenu menu
+                    && menu.containerId == payload.containerId()) {
+                menu.applyCatalogSnapshot(payload);
+            } else if (context.player().containerMenu instanceof CreeperFarmMenu menu
                     && menu.containerId == payload.containerId()) {
                 menu.applyCatalogSnapshot(payload);
             }

@@ -8,6 +8,8 @@ import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKin
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.MachineEntityRenderScales;
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.BlockModelResolver;
@@ -45,6 +47,7 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
     private static final double BED_SCALE = 0.26D;
     private final EntityRenderDispatcher entityRenderer;
     private final BlockModelResolver blockModelResolver;
+    private final Map<BreederBlockEntity, EntityCache> entityCaches = new WeakHashMap<>();
 
     public BreederBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         this.entityRenderer = context.entityRenderer();
@@ -72,9 +75,10 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
 
         Level level = blockEntity.getLevel();
         if (level == null) {
-            state.clearCaches();
+            entityCaches.remove(blockEntity);
             return;
         }
+        EntityCache entityCache = entityCaches.computeIfAbsent(blockEntity, ignored -> new EntityCache());
         state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(level, blockEntity.getBlockPos());
 
         Direction bedFacing = state.facing.getOpposite();
@@ -93,8 +97,8 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
             state.cachedBedHead = bedHead;
         }
 
-        Entity parentA = state.getOrCreateParent(0, blockEntity, level);
-        Entity parentB = state.getOrCreateParent(1, blockEntity, level);
+        Entity parentA = entityCache.getOrCreateParent(0, blockEntity, level);
+        Entity parentB = entityCache.getOrCreateParent(1, blockEntity, level);
         state.parentA = extractParent(parentA, state.facing.getClockWise(), partialTicks, state.lightCoords);
         state.parentB = extractParent(parentB, state.facing.getCounterClockWise(), partialTicks, state.lightCoords);
     }
@@ -243,6 +247,9 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
         public BreederKind kind = BreederKind.VILLAGER;
         private BlockState cachedBedFoot = Blocks.AIR.defaultBlockState();
         private BlockState cachedBedHead = Blocks.AIR.defaultBlockState();
+    }
+
+    private static final class EntityCache {
         private final ItemStack[] cachedParentStacks = {ItemStack.EMPTY, ItemStack.EMPTY};
         private final Entity[] cachedParents = new Entity[2];
         private final BreederKind[] cachedParentKinds = {BreederKind.VILLAGER, BreederKind.VILLAGER};
@@ -275,17 +282,6 @@ public final class BreederBlockEntityRenderer implements BlockEntityRenderer<Bre
                 cachedParentKinds[index] = blockEntity.kind();
             }
             return cachedParents[index];
-        }
-
-        private void clearCaches() {
-            bedFoot.clear();
-            bedHead.clear();
-            cachedBedFoot = Blocks.AIR.defaultBlockState();
-            cachedBedHead = Blocks.AIR.defaultBlockState();
-            for (int index = 0; index < cachedParents.length; index++) {
-                cachedParentStacks[index] = ItemStack.EMPTY;
-                cachedParents[index] = null;
-            }
         }
     }
 }

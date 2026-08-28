@@ -6,6 +6,8 @@ import com.cosmocraft.trading_cells.feature.incubators.adapters.input.IncubatorB
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -30,6 +32,7 @@ public final class IncubatorBlockEntityRenderer implements BlockEntityRenderer<I
     private static final double ENTITY_Y = 0.12D;
 
     private final EntityRenderDispatcher entityRenderer;
+    private final Map<IncubatorBlockEntity, EntityCache> entityCaches = new WeakHashMap<>();
 
     public IncubatorBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         this.entityRenderer = context.entityRenderer();
@@ -54,9 +57,10 @@ public final class IncubatorBlockEntityRenderer implements BlockEntityRenderer<I
         state.displayEntity = null;
 
         if (blockEntity.getLevel() == null) {
-            state.clearCachedEntity();
+            entityCaches.remove(blockEntity);
             return;
         }
+        EntityCache entityCache = entityCaches.computeIfAbsent(blockEntity, ignored -> new EntityCache());
         state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(
                 blockEntity.getLevel(),
                 blockEntity.getBlockPos()
@@ -64,11 +68,11 @@ public final class IncubatorBlockEntityRenderer implements BlockEntityRenderer<I
 
         ItemStack displayStack = blockEntity.copyDisplayStack();
         if (displayStack.isEmpty()) {
-            state.clearCachedEntity();
+            entityCache.clear();
             return;
         }
 
-        Entity entity = state.getOrCreateEntity(blockEntity, displayStack);
+        Entity entity = entityCache.getOrCreateEntity(blockEntity, displayStack);
         if (entity == null) {
             return;
         }
@@ -130,11 +134,17 @@ public final class IncubatorBlockEntityRenderer implements BlockEntityRenderer<I
         public float scale = BABY_SCALE;
         public Direction facing = Direction.NORTH;
         public CapturedMobKind kind = CapturedMobKind.VILLAGER;
+    }
+
+    private static final class EntityCache {
         private ItemStack cachedStack = ItemStack.EMPTY;
         private @Nullable Entity cachedEntity;
+        private CapturedMobKind cachedKind = CapturedMobKind.VILLAGER;
 
         private @Nullable Entity getOrCreateEntity(IncubatorBlockEntity blockEntity, ItemStack stack) {
-            if (cachedEntity == null || !ItemStack.isSameItemSameComponents(cachedStack, stack)) {
+            if (cachedEntity == null
+                    || cachedKind != blockEntity.kind()
+                    || !ItemStack.isSameItemSameComponents(cachedStack, stack)) {
                 cachedEntity = CapturedMobStackAdapter.createEntity(
                         blockEntity.kind(),
                         blockEntity.getLevel(),
@@ -142,11 +152,12 @@ public final class IncubatorBlockEntityRenderer implements BlockEntityRenderer<I
                         blockEntity.getBlockPos()
                 );
                 cachedStack = stack.copy();
+                cachedKind = blockEntity.kind();
             }
             return cachedEntity;
         }
 
-        private void clearCachedEntity() {
+        private void clear() {
             cachedEntity = null;
             cachedStack = ItemStack.EMPTY;
         }

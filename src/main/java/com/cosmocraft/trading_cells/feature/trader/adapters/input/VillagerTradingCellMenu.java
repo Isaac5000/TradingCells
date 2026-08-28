@@ -5,9 +5,7 @@ import com.cosmocraft.trading_cells.platform.neoforge.menu.VillagerTradeEquipmen
 import com.cosmocraft.trading_cells.platform.neoforge.menu.VillagerTradeMenuLayout;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.ClientSideMerchant;
 import net.minecraft.world.entity.npc.villager.VillagerData;
@@ -252,9 +250,6 @@ public final class VillagerTradingCellMenu extends AbstractContainerMenu {
         }
         if (slotIndex == RESULT_SLOT) {
             slot.onQuickCraft(stack, clicked);
-            if (!batchingResultQuickMove) {
-                playTradeSound();
-            }
         }
 
         if (stack.isEmpty()) {
@@ -289,12 +284,8 @@ public final class VillagerTradingCellMenu extends AbstractContainerMenu {
                 batchMerchant.endTradeBatch();
             }
         } finally {
-            boolean playBatchedSound = completedBatchedTrade;
             batchingResultQuickMove = false;
             completedBatchedTrade = false;
-            if (playBatchedSound) {
-                playTradeSound();
-            }
         }
     }
 
@@ -575,18 +566,4 @@ public final class VillagerTradingCellMenu extends AbstractContainerMenu {
     ) {
     }
 
-    private void playTradeSound() {
-        if (!trader.isClientSide() && trader instanceof Entity entity) {
-            entity.level().playLocalSound(
-                    entity.getX(),
-                    entity.getY(),
-                    entity.getZ(),
-                    trader.getNotifyTradeSound(),
-                    SoundSource.NEUTRAL,
-                    1.0F,
-                    1.0F,
-                    false
-            );
-        }
-    }
 }

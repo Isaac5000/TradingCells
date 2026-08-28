@@ -1,0 +1,14 @@
+date,scenario,family,variant,backend,runs,machines,with_rei,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,allocation_bytes_per_second,resident_bytes,packets_sent_30s,packet_bytes_sent_30s,mean_mspt,p95_mspt,ticks_per_second,chunks_written
+2026-08-28,machine-grid-405,entity-farms,retained,vulkan,3,405,true,16.098930,15.612900,18.260000,22.796300,59.281869,268219433.630,1791592448,2717,862433,,,,
+2026-08-28,machine-grid-405,entity-farms,retained,opengl,3,405,true,14.908999,14.331600,18.750900,24.397300,65.150345,341292915.815,1860892672,2687,862946,,,,
+2026-08-28,machine-grid-405,villager-machines,retained,vulkan,3,405,true,14.865387,14.409000,17.323500,21.603800,64.198024,400671186.355,1957939200,2438,405030,,,,
+2026-08-28,machine-grid-405,villager-machines,retained,opengl,3,405,true,13.483297,12.867600,16.679900,22.593699,72.022386,393038582.093,2150516736,2451,404643,,,,
+2026-08-28,machine-grid-405,piglin-machines,retained,vulkan,3,405,true,20.325939,19.821900,22.672700,27.376200,47.306035,634783115.290,1994682368,2320,259779,,,,
+2026-08-28,machine-grid-405,piglin-machines,retained,opengl,3,405,true,22.315737,21.141100,27.244500,34.902900,43.514073,361654590.869,1708740608,2419,260661,,,,
+2026-08-28,machine-grid-405,all-machines-opaque-shell,baseline,vulkan,3,405,true,17.165856,16.662300,19.692700,24.724400,55.660838,495136397.609,1845293056,2588,451782,,,,
+2026-08-28,machine-grid-405,all-machines-opaque-shell,rejected-uncached-occlusion,vulkan,3,405,true,17.032962,16.552400,19.233700,23.743600,56.409625,365797594.131,1741244416,2507,450902,,,,
+2026-08-28,machine-grid-405,piglin-machines,rejected-uncached-occlusion,vulkan,3,405,true,22.543693,21.748900,25.980900,32.074000,42.622474,578944881.209,1812781056,2372,260161,,,,
+2026-08-28,machine-grid-405,piglin-machines,rejected-per-tick-occlusion,vulkan,3,405,true,21.392876,20.850900,24.349300,31.355100,44.843303,364087451.792,1801506816,2387,259934,,,,
+2026-08-28,machine-grid-405,entity-farms,retained,dedicated-server,3,405,false,,,,,,,,,,,1.933302,2.805669,20.019987,15
+2026-08-28,machine-grid-405,villager-machines,retained,dedicated-server,3,405,false,,,,,,,,,,,1.387473,1.916112,20.026658,10
+2026-08-28,machine-grid-405,piglin-machines,retained,dedicated-server,3,405,false,,,,,,,,,,,1.421500,2.305432,20.019987,15

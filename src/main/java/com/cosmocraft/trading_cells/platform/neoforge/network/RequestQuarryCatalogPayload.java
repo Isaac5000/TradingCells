@@ -29,7 +29,8 @@ public record RequestQuarryCatalogPayload(int containerId) implements CustomPack
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer serverPlayer)
                     || !(serverPlayer.containerMenu instanceof QuarryMenu menu)
-                    || menu.containerId != payload.containerId()) {
+                    || menu.containerId != payload.containerId()
+                    || !menu.stillValid(serverPlayer)) {
                 return;
             }
             PacketDistributor.sendToPlayer(serverPlayer, QuarryCatalogSyncPayload.from(menu));

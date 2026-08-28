@@ -1,0 +1,5 @@
+date,scenario,variant,backend,runs,machines,with_rei,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,allocation_bytes_per_second,resident_bytes,packets_sent_30s,packet_bytes_sent_30s,mean_mspt,p95_mspt,ticks_per_second
+2026-08-28,zombie-farm-405,baseline,vulkan,3,405,true,54.023527,52.802000,60.478600,64.782000,17.964815,1764776835.401,2041278464,12652,14477657,,,
+2026-08-28,zombie-farm-405,candidate,vulkan,3,405,true,21.141492,20.694500,23.487600,28.792200,45.338454,244782393.733,1859682304,3643,1044092,,,
+2026-08-28,zombie-farm-405,candidate,opengl,3,405,true,19.645718,19.209300,21.744700,25.854201,49.550985,255473406.831,1905897472,3562,1037872,,,
+2026-08-28,zombie-farm-405,candidate,dedicated-server,3,405,false,,,,,,,,,,,2.474609,3.640878,20.013342

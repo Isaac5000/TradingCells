@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model;
 
+import com.cosmocraft.trading_cells.feature.combat.domain.model.DecapitationRules;
+
 /** Shared drop math used by both server generation and client previews. */
 public final class SkeletonFarmDropRules {
     public static final int PROBABILITY_PARTS_PER_MILLION = 1_000_000;

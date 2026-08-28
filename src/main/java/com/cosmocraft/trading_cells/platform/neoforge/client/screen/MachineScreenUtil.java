@@ -14,7 +14,9 @@ public final class MachineScreenUtil {
 
     public static String formatDuration(int ticks) {
         int totalSeconds = Math.max(0, ticks) / 20;
-        return "%d:%02d".formatted(totalSeconds / 60, totalSeconds % 60);
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return minutes > 0 ? minutes + "m " + seconds + "s" : seconds + "s";
     }
 
     public static void drawCenteredCountdown(

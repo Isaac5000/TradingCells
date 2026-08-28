@@ -3,6 +3,7 @@ package com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenuLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRenderer;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmKind;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmLoot;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
@@ -29,21 +30,17 @@ public final class SkeletonFarmScreen extends AbstractContainerScreen<SkeletonFa
     public static final int RECIPE_VIEWER_WIDTH = 64;
     public static final int RECIPE_VIEWER_HEIGHT = 13;
     private static final SkeletonFarmGuiThemeColors COLORS = SkeletonFarmGuiThemeColors.resolve();
-    private static final int MACHINE_PANEL_X = 123;
-    private static final int MACHINE_PANEL_Y = 26;
-    private static final int MACHINE_PANEL_WIDTH = 220;
-    private static final int MACHINE_PANEL_HEIGHT = 77;
     private static final int SELECTOR_X = 10;
-    private static final int SELECTOR_Y = 29;
-    private static final int SELECTOR_WIDTH = 103;
+    private static final int SELECTOR_Y = 28;
+    private static final int SELECTOR_WIDTH = 104;
     private static final int SELECTOR_HEIGHT = 18;
     private static final int KIND_LIST_X = SELECTOR_X;
     private static final int KIND_LIST_Y = SELECTOR_Y + SELECTOR_HEIGHT + 1;
     private static final int KIND_ROW_HEIGHT = 18;
-    private static final int VISIBLE_KINDS = 8;
-    private static final int FILTER_X = 10;
+    private static final int VISIBLE_KINDS = 7;
+    private static final int FILTER_X = 11;
     private static final int FILTER_Y = 64;
-    private static final int FILTER_WIDTH = 103;
+    private static final int FILTER_WIDTH = 102;
     private static final int FILTER_ROW_HEIGHT = 20;
     private static final int VISIBLE_FILTERS = 6;
     private static final int PROGRESS_X = RECIPE_VIEWER_X;
@@ -58,9 +55,9 @@ public final class SkeletonFarmScreen extends AbstractContainerScreen<SkeletonFa
     private static final int XP_BUTTON_Y = 42;
     private static final int XP_BUTTON_WIDTH = PROGRESS_WIDTH;
     private static final int XP_BUTTON_HEIGHT = 12;
-    private static final int POWER_X = FILTER_X;
-    private static final int POWER_Y = 186;
-    private static final int POWER_WIDTH = FILTER_WIDTH;
+    private static final int POWER_X = 10;
+    private static final int POWER_Y = 185;
+    private static final int POWER_WIDTH = 104;
     private static final int POWER_HEIGHT = 17;
     private static final int TEXT_WHITE = 0xFFFFFFFF;
     private static final int TEXT_DARK = 0xFF3A3A3A;
@@ -118,7 +115,6 @@ public final class SkeletonFarmScreen extends AbstractContainerScreen<SkeletonFa
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         SkeletonFarmScreenLayout.drawBackground(graphics, leftPos, topPos);
-        drawMachinePanel(graphics);
         drawInventorySlots(graphics);
         drawInputPanel(graphics);
         drawMachineSlots(graphics);
@@ -181,7 +177,7 @@ public final class SkeletonFarmScreen extends AbstractContainerScreen<SkeletonFa
                 Component.translatable("gui.trading_cells.skeleton_outputs"),
                 SkeletonFarmMenu.OUTPUT_FIRST_X - 1,
                 SkeletonFarmMenu.OUTPUT_FIRST_X + SkeletonFarmMenu.OUTPUT_COLUMNS * 18,
-                SkeletonFarmMenu.OUTPUT_FIRST_Y - 13,
+                SkeletonFarmMenu.OUTPUT_FIRST_Y - 11,
                 12,
                 TEXT_DARK,
                 false
@@ -298,13 +294,6 @@ public final class SkeletonFarmScreen extends AbstractContainerScreen<SkeletonFa
             return true;
         }
         return super.mouseClicked(event, doubleClick);
-    }
-
-    private void drawMachinePanel(GuiGraphicsExtractor graphics) {
-        int x = leftPos + MACHINE_PANEL_X;
-        int y = topPos + MACHINE_PANEL_Y;
-        graphics.fill(x, y, x + MACHINE_PANEL_WIDTH, y + MACHINE_PANEL_HEIGHT, 0xFF4A4E50);
-        graphics.fill(x + 1, y + 1, x + MACHINE_PANEL_WIDTH - 1, y + MACHINE_PANEL_HEIGHT - 1, 0xFFC3C7C8);
     }
 
     private void drawInputPanel(GuiGraphicsExtractor graphics) {
@@ -466,7 +455,7 @@ public final class SkeletonFarmScreen extends AbstractContainerScreen<SkeletonFa
                 Component.translatable("button.trading_cells.skeleton_withdraw_xp"),
                 leftPos + XP_BUTTON_X + 2,
                 leftPos + XP_BUTTON_X + XP_BUTTON_WIDTH - 2,
-                topPos + XP_BUTTON_Y + 1,
+                topPos + XP_BUTTON_Y + 2,
                 XP_BUTTON_HEIGHT - 2,
                 active ? TEXT_DARK : 0xFFE0E0E0,
                 false
@@ -522,15 +511,18 @@ public final class SkeletonFarmScreen extends AbstractContainerScreen<SkeletonFa
             int width,
             int height
     ) {
-        int availableWidth = Math.max(1, width);
-        float scale = Math.min(XP_TEXT_SCALE, availableWidth / (float) Math.max(1, font.width(text)));
-        float textX = x + (width - font.width(text) * scale) / 2.0F;
-        float textY = y + (height - font.lineHeight * scale) / 2.0F;
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(textX, textY);
-        graphics.pose().scale(scale, scale);
-        graphics.text(font, text, 0, 0, TEXT_XP, true);
-        graphics.pose().popMatrix();
+        FittedTextRenderer.centeredAtMost(
+                graphics,
+                font,
+                text,
+                x,
+                x + width,
+                y,
+                height,
+                TEXT_XP,
+                true,
+                XP_TEXT_SCALE
+        );
     }
 
     private static void drawBeveledButton(

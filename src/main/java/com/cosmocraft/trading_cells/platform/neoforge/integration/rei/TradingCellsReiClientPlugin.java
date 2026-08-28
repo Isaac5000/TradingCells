@@ -7,8 +7,8 @@ import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKin
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.ConverterRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.converter.adapters.output.client.ConverterScreen;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.output.FarmerRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.farmer.adapters.output.client.FarmerScreen;
-import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerKind;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.output.client.PiglinFarmerScreen;
+import com.cosmocraft.trading_cells.feature.farmer.adapters.output.client.VillagerFarmerScreen;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.output.IncubatorRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.incubators.adapters.output.client.IncubatorScreen;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
@@ -16,10 +16,14 @@ import com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.Arca
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client.IronFarmScreen;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.QuarryScreen;
-import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.PiglinQuarryScreen;
+import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.VillagerQuarryScreen;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.SkeletonFarmScreen;
+import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.RaiderFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.client.RaiderFarmScreen;
+import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.CreeperFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.client.CreeperFarmScreen;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.client.ZombieFarmScreen;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
@@ -64,6 +68,10 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
             category("skeleton_farm");
     public static final CategoryIdentifier<TradingCellsReiDisplay> ZOMBIE_FARM =
             category("zombie_farm");
+    public static final CategoryIdentifier<TradingCellsReiDisplay> RAIDER_FARM =
+            category("raider_farm");
+    public static final CategoryIdentifier<TradingCellsReiDisplay> CREEPER_FARM =
+            category("creeper_farm");
     public static final CategoryIdentifier<TradingCellsReiDisplay> DECAPITATION_SMITHING =
             category("decapitation_smithing");
     public static final CategoryIdentifier<TradingCellsReiDisplay> PIGLIN_BARTERING =
@@ -74,6 +82,8 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
             category("quarry");
     public static final CategoryIdentifier<TradingCellsReiDisplay> PIGLIN_QUARRY =
             category("piglin_quarry");
+    public static final CategoryIdentifier<TradingCellsReiDisplay> SPAWNER_REDSTONE_CONTROL =
+            category("spawner_redstone_control");
     public static final CategoryIdentifier<ArcaneInfusionReiDisplay> ARCANE_INFUSION =
             ArcaneInfusionReiDisplay.CATEGORY;
 
@@ -131,6 +141,16 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         ZombieFarmRegistrationAdapter.ITEM.get()
                 ),
                 new TradingCellsReiCategory(
+                        RAIDER_FARM,
+                        "category.trading_cells.raider_farm",
+                        RaiderFarmRegistrationAdapter.ITEM.get()
+                ),
+                new TradingCellsReiCategory(
+                        CREEPER_FARM,
+                        "category.trading_cells.creeper_farm",
+                        CreeperFarmRegistrationAdapter.ITEM.get()
+                ),
+                new TradingCellsReiCategory(
                         DECAPITATION_SMITHING,
                         "category.trading_cells.decapitation_smithing",
                         Items.SMITHING_TABLE
@@ -154,6 +174,11 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         PIGLIN_QUARRY,
                         "category.trading_cells.piglin_quarry",
                         QuarryRegistrationAdapter.PIGLIN_QUARRY_ITEM.get()
+                ),
+                new TradingCellsReiCategory(
+                        SPAWNER_REDSTONE_CONTROL,
+                        "category.trading_cells.spawner_redstone_control",
+                        Items.SPAWNER
                 ),
                 new ArcaneInfusionReiCategory()
         ));
@@ -183,6 +208,8 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.addWorkstations(IRON_FARM, EntryStacks.of(IronFarmRegistrationAdapter.IRON_FARM_ITEM.get()));
         registry.addWorkstations(SKELETON_FARM, EntryStacks.of(SkeletonFarmRegistrationAdapter.ITEM.get()));
         registry.addWorkstations(ZOMBIE_FARM, EntryStacks.of(ZombieFarmRegistrationAdapter.ITEM.get()));
+        registry.addWorkstations(RAIDER_FARM, EntryStacks.of(RaiderFarmRegistrationAdapter.ITEM.get()));
+        registry.addWorkstations(CREEPER_FARM, EntryStacks.of(CreeperFarmRegistrationAdapter.ITEM.get()));
         registry.addWorkstations(DECAPITATION_SMITHING, EntryStacks.of(Items.SMITHING_TABLE));
         registry.addWorkstations(
                 PIGLIN_BARTERING,
@@ -196,6 +223,11 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.addWorkstations(
                 PIGLIN_QUARRY,
                 EntryStacks.of(QuarryRegistrationAdapter.PIGLIN_QUARRY_ITEM.get())
+        );
+        registry.addWorkstations(
+                SPAWNER_REDSTONE_CONTROL,
+                EntryStacks.of(Items.SPAWNER),
+                EntryStacks.of(Items.TRIAL_SPAWNER)
         );
         registry.addWorkstations(
                 ARCANE_INFUSION,
@@ -224,6 +256,8 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.configure(IRON_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(SKELETON_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(ZOMBIE_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(RAIDER_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(CREEPER_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(
                 DECAPITATION_SMITHING,
                 configuration -> configuration.setQuickCraftingEnabledByDefault(false)
@@ -235,6 +269,10 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         );
         registry.configure(QUARRY, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(PIGLIN_QUARRY, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(
+                SPAWNER_REDSTONE_CONTROL,
+                configuration -> configuration.setQuickCraftingEnabledByDefault(false)
+        );
         registry.configure(ARCANE_INFUSION, configuration -> configuration.setQuickCraftingEnabledByDefault(true));
     }
 
@@ -269,13 +307,25 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         ? VILLAGER_INCUBATION
                         : PIGLIN_INCUBATION
         );
-        registerMachineClickArea(
-                registry,
-                new Rectangle(progressArea.x, 66, progressArea.width, progressArea.height),
-                FarmerScreen.class,
-                screen -> screen.getMenu().kind() == FarmerKind.VILLAGER
-                        ? FARMING
-                        : PIGLIN_FARMING
+        registry.registerContainerClickArea(
+                new Rectangle(
+                        VillagerFarmerScreen.RECIPE_VIEWER_X,
+                        VillagerFarmerScreen.RECIPE_VIEWER_Y,
+                        VillagerFarmerScreen.RECIPE_VIEWER_WIDTH,
+                        VillagerFarmerScreen.RECIPE_VIEWER_HEIGHT
+                ),
+                VillagerFarmerScreen.class,
+                FARMING
+        );
+        registry.registerContainerClickArea(
+                new Rectangle(
+                        PiglinFarmerScreen.RECIPE_VIEWER_X,
+                        PiglinFarmerScreen.RECIPE_VIEWER_Y,
+                        PiglinFarmerScreen.RECIPE_VIEWER_WIDTH,
+                        PiglinFarmerScreen.RECIPE_VIEWER_HEIGHT
+                ),
+                PiglinFarmerScreen.class,
+                PIGLIN_FARMING
         );
         registry.registerContainerClickArea(
                 new Rectangle(progressArea.x, 95, progressArea.width, progressArea.height),
@@ -307,18 +357,45 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                 ZombieFarmScreen.class,
                 ZOMBIE_FARM
         );
-        registerMachineClickArea(
-                registry,
+        registry.registerContainerClickArea(
                 new Rectangle(
-                        (MachineScreenLayout.WIDTH - MachineScreenLayout.PROGRESS_FRAME_WIDTH) / 2,
-                        64,
-                        progressArea.width,
-                        progressArea.height
+                        RaiderFarmScreen.RECIPE_VIEWER_X,
+                        RaiderFarmScreen.RECIPE_VIEWER_Y,
+                        RaiderFarmScreen.RECIPE_VIEWER_WIDTH,
+                        RaiderFarmScreen.RECIPE_VIEWER_HEIGHT
                 ),
-                QuarryScreen.class,
-                screen -> screen.getMenu().kind() == QuarryKind.VILLAGER
-                        ? QUARRY
-                        : PIGLIN_QUARRY
+                RaiderFarmScreen.class,
+                RAIDER_FARM
+        );
+        registry.registerContainerClickArea(
+                new Rectangle(
+                        CreeperFarmScreen.RECIPE_VIEWER_X,
+                        CreeperFarmScreen.RECIPE_VIEWER_Y,
+                        CreeperFarmScreen.RECIPE_VIEWER_WIDTH,
+                        CreeperFarmScreen.RECIPE_VIEWER_HEIGHT
+                ),
+                CreeperFarmScreen.class,
+                CREEPER_FARM
+        );
+        registry.registerContainerClickArea(
+                new Rectangle(
+                        VillagerQuarryScreen.RECIPE_VIEWER_X,
+                        VillagerQuarryScreen.RECIPE_VIEWER_Y,
+                        VillagerQuarryScreen.RECIPE_VIEWER_WIDTH,
+                        VillagerQuarryScreen.RECIPE_VIEWER_HEIGHT
+                ),
+                VillagerQuarryScreen.class,
+                QUARRY
+        );
+        registry.registerContainerClickArea(
+                new Rectangle(
+                        PiglinQuarryScreen.RECIPE_VIEWER_X,
+                        PiglinQuarryScreen.RECIPE_VIEWER_Y,
+                        PiglinQuarryScreen.RECIPE_VIEWER_WIDTH,
+                        PiglinQuarryScreen.RECIPE_VIEWER_HEIGHT
+                ),
+                PiglinQuarryScreen.class,
+                PIGLIN_QUARRY
         );
         registry.registerContainerClickArea(
                 new Rectangle(

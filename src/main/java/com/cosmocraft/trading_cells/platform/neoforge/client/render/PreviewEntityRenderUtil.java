@@ -9,16 +9,15 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public final class PreviewEntityRenderUtil {
-    private static final AtomicInteger NEXT_PREVIEW_ENTITY_ID = new AtomicInteger(-1_000_000);
+    private static final int PREVIEW_ENTITY_ID_BASE = -1_000_000;
 
     private PreviewEntityRenderUtil() {
     }
 
     public static void prepare(Entity entity) {
-        entity.setId(NEXT_PREVIEW_ENTITY_ID.getAndDecrement());
+        int identity = System.identityHashCode(entity) & 0x3FFF_FFFF;
+        entity.setId(PREVIEW_ENTITY_ID_BASE - identity);
         entity.setNoGravity(true);
         entity.clearFire();
         entity.setSilent(true);

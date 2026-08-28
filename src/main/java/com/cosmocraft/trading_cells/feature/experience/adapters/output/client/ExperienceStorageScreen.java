@@ -6,10 +6,12 @@ import com.cosmocraft.trading_cells.feature.experience.domain.model.ExperienceTr
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.NonNegativeIntegerEditBox;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRenderer;
 import com.cosmocraft.trading_cells.platform.neoforge.network.ExperienceStorageTransferPayload;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -31,13 +33,27 @@ public final class ExperienceStorageScreen extends AbstractContainerScreen<Exper
     private static final int FIELD_HEIGHT = 18;
     private static final int BUTTON_Y = 95;
     private static final int BUTTON_WIDTH = 72;
+    private static final int CONVERTER_BUTTON_X = 180;
+    private static final int CONVERTER_PANEL_X = 8;
+    private static final int CONVERTER_PANEL_Y = 28;
+    private static final int CONVERTER_PANEL_WIDTH = 188;
+    private static final int CONVERTER_PANEL_HEIGHT = 87;
+    private static final int CONVERTER_FIELD_X = 18;
+    private static final int CONVERTER_FIELD_WIDTH = 78;
+    private static final int CONVERTER_RESULT_MIN_X = 102;
+    private static final int CONVERTER_RESULT_MAX_X = 190;
     private static final int DETAIL_TEXT_COLOR = 0xFF80FF20;
     private static final float DETAIL_TEXT_SCALE = 0.78F;
     private static final int PANEL_INTERIOR = 0xED202628;
 
     private EditBox amountField;
+    private EditBox levelConversionField;
+    private EditBox experienceConversionField;
     private Button depositButton;
     private Button withdrawButton;
+    private Button conversionButton;
+    private Button closeConversionButton;
+    private boolean converterOpen;
 
     public ExperienceStorageScreen(ExperienceStorageMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, MachineScreenLayout.WIDTH, MachineScreenLayout.HEIGHT);
@@ -69,6 +85,42 @@ public final class ExperienceStorageScreen extends AbstractContainerScreen<Exper
                 Component.translatable("button.trading_cells.withdraw_xp"),
                 button -> send(false)
         ).bounds(leftPos + FIELD_X + BUTTON_WIDTH + 4, topPos + BUTTON_Y, BUTTON_WIDTH, 18).build());
+
+        conversionButton = addRenderableWidget(Button.builder(
+                Component.literal("XP"),
+                button -> setConverterOpen(true)
+        ).bounds(leftPos + CONVERTER_BUTTON_X, topPos + BUTTON_Y, 16, 18).build());
+        conversionButton.setTooltip(Tooltip.create(
+                Component.translatable("button.trading_cells.experience_converter")
+        ));
+
+        levelConversionField = addRenderableWidget(new NonNegativeIntegerEditBox(
+                font,
+                leftPos + CONVERTER_FIELD_X,
+                topPos + 48,
+                CONVERTER_FIELD_WIDTH,
+                FIELD_HEIGHT,
+                Component.translatable("gui.trading_cells.converter_level_hint")
+        ));
+        levelConversionField.setMaxLength(10);
+        levelConversionField.setHint(Component.translatable("gui.trading_cells.converter_level_hint"));
+
+        experienceConversionField = addRenderableWidget(new NonNegativeIntegerEditBox(
+                font,
+                leftPos + CONVERTER_FIELD_X,
+                topPos + 78,
+                CONVERTER_FIELD_WIDTH,
+                FIELD_HEIGHT,
+                Component.translatable("gui.trading_cells.converter_xp_hint")
+        ));
+        experienceConversionField.setMaxLength(10);
+        experienceConversionField.setHint(Component.translatable("gui.trading_cells.converter_xp_hint"));
+
+        closeConversionButton = addRenderableWidget(Button.builder(
+                Component.literal("X"),
+                button -> setConverterOpen(false)
+        ).bounds(leftPos + 178, topPos + 31, 14, 14).build());
+        setConverterOpen(false);
         updateButtonStates();
     }
 
@@ -84,7 +136,11 @@ public final class ExperienceStorageScreen extends AbstractContainerScreen<Exper
         int x = leftPos;
         int y = topPos;
         MachineScreenLayout.drawBackground(graphics, x, y, SURFACE, THEME);
-        drawExperienceSummaries(graphics, x, y);
+        if (converterOpen) {
+            drawExperienceConverter(graphics, x, y);
+        } else {
+            drawExperienceSummaries(graphics, x, y);
+        }
     }
 
     @Override
@@ -111,6 +167,107 @@ public final class ExperienceStorageScreen extends AbstractContainerScreen<Exper
                 playerPoints,
                 playerLevel()
         );
+    }
+
+    private void drawExperienceConverter(GuiGraphicsExtractor graphics, int x, int y) {
+        int panelX = x + CONVERTER_PANEL_X;
+        int panelY = y + CONVERTER_PANEL_Y;
+        graphics.fill(
+                panelX,
+                panelY,
+                panelX + CONVERTER_PANEL_WIDTH,
+                panelY + CONVERTER_PANEL_HEIGHT,
+                THEME.frameDark()
+        );
+        graphics.fill(
+                panelX + 1,
+                panelY + 1,
+                panelX + CONVERTER_PANEL_WIDTH - 1,
+                panelY + CONVERTER_PANEL_HEIGHT - 1,
+                THEME.frameLight()
+        );
+        graphics.fill(
+                panelX + 2,
+                panelY + 2,
+                panelX + CONVERTER_PANEL_WIDTH - 2,
+                panelY + CONVERTER_PANEL_HEIGHT - 2,
+                PANEL_INTERIOR
+        );
+        FittedTextRenderer.centered(
+                graphics,
+                font,
+                Component.translatable("gui.trading_cells.experience_converter"),
+                x + 20,
+                x + 176,
+                y + 31,
+                14,
+                THEME.titleText(),
+                true
+        );
+        drawConversionResult(
+                graphics,
+                Component.translatable(
+                        "gui.trading_cells.converter_xp_result",
+                        ExperienceMath.pointsAtStartOfLevel(conversionValue(levelConversionField))
+                ),
+                x,
+                y + 50,
+                levelConversionField
+        );
+        drawConversionResult(
+                graphics,
+                Component.translatable(
+                        "gui.trading_cells.converter_level_result",
+                        ExperienceMath.levelForTotalPointsRoundedUp(conversionValue(experienceConversionField))
+                ),
+                x,
+                y + 80,
+                experienceConversionField
+        );
+    }
+
+    private void drawConversionResult(
+            GuiGraphicsExtractor graphics,
+            Component result,
+            int x,
+            int y,
+            EditBox source
+    ) {
+        Component displayed = source.getValue().isEmpty() ? Component.literal("-") : result;
+        FittedTextRenderer.centeredAtMost(
+                graphics,
+                font,
+                displayed,
+                x + CONVERTER_RESULT_MIN_X,
+                x + CONVERTER_RESULT_MAX_X,
+                y,
+                14,
+                DETAIL_TEXT_COLOR,
+                true,
+                DETAIL_TEXT_SCALE
+        );
+    }
+
+    private static int conversionValue(EditBox field) {
+        if (field == null || field.getValue().isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(field.getValue());
+        } catch (NumberFormatException ignored) {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+    private void setConverterOpen(boolean open) {
+        converterOpen = open;
+        amountField.visible = !open;
+        depositButton.visible = !open;
+        withdrawButton.visible = !open;
+        conversionButton.visible = !open;
+        levelConversionField.visible = open;
+        experienceConversionField.visible = open;
+        closeConversionButton.visible = open;
     }
 
     private void drawSummaryBox(

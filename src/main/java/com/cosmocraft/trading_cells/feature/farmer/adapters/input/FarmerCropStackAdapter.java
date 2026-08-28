@@ -17,25 +17,50 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BeetrootBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CocoaBlock;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmlandBlock;
+import net.minecraft.world.level.block.MultifaceBlock;
 import net.minecraft.world.level.block.NetherWartBlock;
+import net.minecraft.world.level.block.VineBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class FarmerCropStackAdapter {
-    private static final List<Option> VANILLA_VILLAGER_OPTIONS = List.of(
+    private static final TagKey<Item> VILLAGER_FARMER_PLANTS = TagKey.create(
+            Registries.ITEM,
+            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "villager_farmer_plants")
+    );
+    private static final TagKey<Item> FARMER_WALL_PLANTS = farmerPlantTag("farmer_wall_plants");
+    private static final TagKey<Item> FARMER_WATER_PLANTS = farmerPlantTag("farmer_water_plants");
+    private static final TagKey<Item> FARMER_CEILING_PLANTS = farmerPlantTag("farmer_ceiling_plants");
+    private static final TagKey<Item> FARMER_JUNGLE_SUPPORT = farmerPlantTag("farmer_jungle_support");
+    private static final TagKey<Item> FARMER_ROOTED_DIRT_SUPPORT = farmerPlantTag("farmer_rooted_dirt_support");
+    private static final TagKey<Item> FARMER_PALE_MOSS_SUPPORT = farmerPlantTag("farmer_pale_moss_support");
+    private static final int VISUAL_GROWTH_STAGES = 8;
+    private static final int PIGLIN_VISUAL_GROWTH_STAGES = 4;
+    private static final List<Option> BASE_VILLAGER_OPTIONS = List.of(
             new Option(Items.WHEAT_SEEDS, Blocks.WHEAT, FarmerCrop.WHEAT),
             new Option(Items.CARROT, Blocks.CARROTS, FarmerCrop.CARROT),
             new Option(Items.POTATO, Blocks.POTATOES, FarmerCrop.POTATO),
@@ -47,6 +72,7 @@ public final class FarmerCropStackAdapter {
             new Option(Items.TORCHFLOWER_SEEDS, Blocks.TORCHFLOWER_CROP, FarmerCrop.TORCHFLOWER),
             new Option(Items.PITCHER_POD, Blocks.PITCHER_CROP, FarmerCrop.PITCHER_PLANT)
     );
+    private static final List<Option> VANILLA_VILLAGER_OPTIONS = createVanillaVillagerOptions();
     private static final Catalog VANILLA_VILLAGER_CATALOG = Catalog.create(VANILLA_VILLAGER_OPTIONS);
     private static final AtomicReference<Catalog> VILLAGER_CATALOG = new AtomicReference<>();
     private static final Set<Item> REPORTED_HARVEST_FAILURES = ConcurrentHashMap.newKeySet();
@@ -83,6 +109,43 @@ public final class FarmerCropStackAdapter {
             return new ItemStack(Items.PITCHER_PLANT);
         }
         return new ItemStack(option.item());
+    }
+
+    public static List<PreviewYield> previewYields(Option option) {
+        if (option.harvestRules().isEmpty()) {
+            return List.of();
+        }
+        return option.harvestRules().stream()
+                .map(rule -> new PreviewYield(
+                        new ItemStack(rule.item(), rule.count(0)),
+                        rule.chance(0),
+                        rule.requirement() == ToolRequirement.SILK_TOUCH
+                ))
+                .toList();
+    }
+
+    public static float visualGrowthScale(
+            FarmerKind kind,
+            ItemStack cropStack,
+            int growthTicks,
+            int maxGrowthTicks
+    ) {
+        FarmerCrop crop = from(kind, cropStack);
+        if (crop == FarmerCrop.PUMPKIN || crop == FarmerCrop.MELON) {
+            return continuousGrowthScale(growthTicks, maxGrowthTicks);
+        }
+        if (kind == FarmerKind.PIGLIN && crop != FarmerCrop.NONE && crop != FarmerCrop.NETHER_WART) {
+            return stagedGrowthScale(
+                    growthTicks,
+                    maxGrowthTicks,
+                    PIGLIN_VISUAL_GROWTH_STAGES
+            );
+        }
+        Option option = kind == FarmerKind.VILLAGER ? villagerOption(cropStack) : null;
+        if (option == null || option.growthStyle() != GrowthStyle.SCALED) {
+            return 1.0F;
+        }
+        return stagedGrowthScale(growthTicks, maxGrowthTicks, VISUAL_GROWTH_STAGES);
     }
 
     public static ItemStack input(FarmerCrop crop) {
@@ -199,11 +262,15 @@ public final class FarmerCropStackAdapter {
             BlockPos pos,
             ItemStack cropStack,
             ItemStack hoe,
-            int fortuneLevel
+            int fortuneLevel,
+            boolean silkTouch
     ) {
         Option option = villagerOption(cropStack);
         if (option == null || option.crop() != FarmerCrop.NONE) {
             return List.of();
+        }
+        if (!option.harvestRules().isEmpty()) {
+            return customVillagerHarvest(level, option, fortuneLevel, silkTouch);
         }
         try {
             List<ItemStack> drops = Block.getDrops(
@@ -227,6 +294,179 @@ public final class FarmerCropStackAdapter {
         }
     }
 
+    public static BlockState soilState(FarmerKind kind, ItemStack cropStack) {
+        FarmerCrop crop = from(kind, cropStack);
+        if (kind == FarmerKind.VILLAGER && crop == FarmerCrop.NONE) {
+            Option option = villagerOption(cropStack);
+            if (option != null) {
+                return option.soil().state();
+            }
+        }
+        return soilState(kind, crop);
+    }
+
+    public static RenderSupport renderSupport(FarmerKind kind, ItemStack cropStack) {
+        if (cropStack.isEmpty()) {
+            return RenderSupport.FLOOR;
+        }
+        if (cropStack.is(FARMER_WATER_PLANTS) || hasFluidMedium(kind, cropStack)) {
+            return RenderSupport.WATER;
+        }
+        if (cropStack.is(FARMER_WALL_PLANTS)) {
+            return RenderSupport.WALL;
+        }
+        if (cropStack.is(FARMER_CEILING_PLANTS)) {
+            return RenderSupport.CEILING;
+        }
+        Option option = kind == FarmerKind.VILLAGER ? villagerOption(cropStack) : null;
+        if (option != null && option.wallSupported()) {
+            return RenderSupport.WALL;
+        }
+        String path = BuiltInRegistries.ITEM.getKey(cropStack.getItem()).getPath();
+        if (path.endsWith("_coral_block")
+                || path.endsWith("_coral")
+                || path.endsWith("_coral_fan")
+                || path.equals("kelp")
+                || path.equals("seagrass")
+                || path.equals("sea_pickle")
+                || path.equals("lily_pad")
+                || path.equals("small_dripleaf")) {
+            return RenderSupport.WATER;
+        }
+        if (path.equals("vine") || path.equals("glow_lichen")) {
+            return RenderSupport.WALL;
+        }
+        if (path.equals("glow_berries")
+                || path.equals("hanging_roots")
+                || path.equals("pale_hanging_moss")
+                || path.equals("spore_blossom")) {
+            return RenderSupport.CEILING;
+        }
+        return RenderSupport.FLOOR;
+    }
+
+    private static boolean inferWallSupport(Block block) {
+        BlockState state = block.defaultBlockState();
+        if (block instanceof VineBlock || block instanceof MultifaceBlock) {
+            return true;
+        }
+
+        Direction facing;
+        if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+            facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
+        } else if (state.hasProperty(BlockStateProperties.FACING)) {
+            facing = state.getValue(BlockStateProperties.FACING);
+        } else {
+            return false;
+        }
+        if (facing.getAxis() == Direction.Axis.Y) {
+            return false;
+        }
+
+        try {
+            VoxelShape shape = state.getShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
+            if (shape.isEmpty()) {
+                return true;
+            }
+            Direction.Axis axis = facing.getAxis();
+            return shape.max(axis) - shape.min(axis) < 0.75D;
+        } catch (RuntimeException | LinkageError ignored) {
+            return true;
+        }
+    }
+
+    public static BlockState renderSupportState(
+            FarmerKind kind,
+            ItemStack cropStack,
+            RenderSupport support
+    ) {
+        if (support == RenderSupport.WALL) {
+            return cropStack.is(FARMER_JUNGLE_SUPPORT)
+                    ? Blocks.JUNGLE_LOG.defaultBlockState()
+                    : Blocks.OAK_LOG.defaultBlockState();
+        }
+        if (support == RenderSupport.CEILING) {
+            if (kind == FarmerKind.PIGLIN) {
+                return Blocks.CRIMSON_NYLIUM.defaultBlockState();
+            }
+            if (cropStack.is(FARMER_ROOTED_DIRT_SUPPORT)) {
+                return Blocks.ROOTED_DIRT.defaultBlockState();
+            }
+            return cropStack.is(FARMER_PALE_MOSS_SUPPORT)
+                    ? Blocks.PALE_MOSS_BLOCK.defaultBlockState()
+                    : Blocks.OAK_LOG.defaultBlockState();
+        }
+        return soilState(kind, cropStack);
+    }
+
+    public static BlockState renderFluidVisualState(
+            FarmerKind kind,
+            ItemStack cropStack,
+            RenderSupport support
+    ) {
+        if (support != RenderSupport.WATER) {
+            return Blocks.AIR.defaultBlockState();
+        }
+        FluidState fluidState = cropFluidState(kind, cropStack);
+        if (fluidState.isEmpty()) {
+            fluidState = Fluids.WATER.defaultFluidState();
+        }
+        if (fluidState.is(FluidTags.WATER)) {
+            return Blocks.STAINED_GLASS.pick(DyeColor.LIGHT_BLUE).defaultBlockState();
+        }
+        if (fluidState.is(FluidTags.LAVA)) {
+            return Blocks.STAINED_GLASS.pick(DyeColor.ORANGE).defaultBlockState();
+        }
+        DyeColor nearestColor = nearestDyeColor(
+                fluidState.createLegacyBlock().getBlock().defaultMapColor().col
+        );
+        return Blocks.STAINED_GLASS.pick(nearestColor).defaultBlockState();
+    }
+
+    private static boolean hasFluidMedium(FarmerKind kind, ItemStack cropStack) {
+        return !cropFluidState(kind, cropStack).isEmpty();
+    }
+
+    private static FluidState cropFluidState(FarmerKind kind, ItemStack cropStack) {
+        FarmerCrop crop = from(kind, cropStack);
+        if (crop != FarmerCrop.NONE) {
+            return cropState(crop, 0, 1).getFluidState();
+        }
+        Option option = kind == FarmerKind.VILLAGER ? villagerOption(cropStack) : null;
+        return option == null
+                ? Fluids.EMPTY.defaultFluidState()
+                : option.block().defaultBlockState().getFluidState();
+    }
+
+    private static DyeColor nearestDyeColor(int rgb) {
+        int red = rgb >> 16 & 255;
+        int green = rgb >> 8 & 255;
+        int blue = rgb & 255;
+        DyeColor nearest = DyeColor.LIGHT_BLUE;
+        int nearestDistance = Integer.MAX_VALUE;
+        for (DyeColor color : DyeColor.values()) {
+            int candidate = color.getTextureDiffuseColor();
+            int redDifference = red - (candidate >> 16 & 255);
+            int greenDifference = green - (candidate >> 8 & 255);
+            int blueDifference = blue - (candidate & 255);
+            int distance = redDifference * redDifference
+                    + greenDifference * greenDifference
+                    + blueDifference * blueDifference;
+            if (distance < nearestDistance) {
+                nearest = color;
+                nearestDistance = distance;
+            }
+        }
+        return nearest;
+    }
+
+    private static TagKey<Item> farmerPlantTag(String path) {
+        return TagKey.create(
+                Registries.ITEM,
+                Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, path)
+        );
+    }
+
     public static BlockState soilState(FarmerKind kind, FarmerCrop crop) {
         if (kind == FarmerKind.VILLAGER) {
             if (crop == FarmerCrop.SUGAR_CANE) {
@@ -246,6 +486,27 @@ public final class FarmerCropStackAdapter {
             case NETHER_WART -> Blocks.SOUL_SAND.defaultBlockState();
             default -> Blocks.CRIMSON_NYLIUM.defaultBlockState();
         };
+    }
+
+    private static List<ItemStack> customVillagerHarvest(
+            ServerLevel level,
+            Option option,
+            int fortuneLevel,
+            boolean silkTouch
+    ) {
+        int fortune = Math.max(0, fortuneLevel);
+        ArrayList<ItemStack> drops = new ArrayList<>(option.harvestRules().size());
+        for (HarvestRule rule : option.harvestRules()) {
+            if (!rule.requirement().allows(silkTouch)) {
+                continue;
+            }
+            int chance = rule.chance(fortune);
+            if (chance == FarmerYield.CHANCE_SCALE
+                    || level.getRandom().nextInt(FarmerYield.CHANCE_SCALE) < chance) {
+                drops.add(new ItemStack(rule.item(), rule.count(fortune)));
+            }
+        }
+        return List.copyOf(drops);
     }
 
     private static FarmerCrop villagerCrop(ItemStack stack) {
@@ -277,6 +538,356 @@ public final class FarmerCropStackAdapter {
             return FarmerCrop.TORCHFLOWER;
         }
         return stack.is(Items.PITCHER_POD) ? FarmerCrop.PITCHER_PLANT : FarmerCrop.NONE;
+    }
+
+    private static List<Option> createVanillaVillagerOptions() {
+        ArrayList<Option> options = new ArrayList<>(BASE_VILLAGER_OPTIONS);
+        addPoisonousPotato(options);
+
+        addTree(options, "oak_sapling", "oak_log", "oak_leaves", true);
+        addTree(options, "spruce_sapling", "spruce_log", "spruce_leaves", false);
+        addTree(options, "birch_sapling", "birch_log", "birch_leaves", false);
+        addTree(options, "jungle_sapling", "jungle_log", "jungle_leaves", false);
+        addTree(options, "acacia_sapling", "acacia_log", "acacia_leaves", false);
+        addTree(options, "dark_oak_sapling", "dark_oak_log", "dark_oak_leaves", true);
+        addTree(options, "cherry_sapling", "cherry_log", "cherry_leaves", false);
+        addTree(options, "pale_oak_sapling", "pale_oak_log", "pale_oak_leaves", false);
+        addTree(
+                options,
+                "mangrove_propagule",
+                "mangrove_log",
+                "mangrove_leaves",
+                false,
+                "mangrove_roots"
+        );
+        addTree(options, "azalea", "oak_log", "azalea_leaves", false);
+        addTree(options, "flowering_azalea", "oak_log", "flowering_azalea_leaves", false);
+
+        addMushroom(options, "brown_mushroom", "brown_mushroom_block");
+        addMushroom(options, "red_mushroom", "red_mushroom_block");
+        addCactus(options);
+        addMoss(options, false);
+        addMoss(options, true);
+        addCoral(options, "tube");
+        addCoral(options, "brain");
+        addCoral(options, "bubble");
+        addCoral(options, "fire");
+        addCoral(options, "horn");
+        addChorus(options);
+
+        addSimplePlants(options, SoilKind.DIRT,
+                "bamboo",
+                "vine",
+                "glow_berries:cave_vines",
+                "sweet_berries:sweet_berry_bush",
+                "small_dripleaf",
+                "big_dripleaf",
+                "hanging_roots",
+                "lily_pad"
+        );
+        addSimplePlants(options, SoilKind.SAND,
+                "kelp",
+                "seagrass",
+                "sea_pickle"
+        );
+        addSimplePlants(options, SoilKind.STONE,
+                "glow_lichen"
+        );
+        addSimplePlants(options, SoilKind.GRASS,
+                "short_grass",
+                "fern",
+                "bush",
+                "firefly_bush",
+                "dead_bush",
+                "leaf_litter",
+                "pale_hanging_moss",
+                "spore_blossom",
+                "pink_petals",
+                "wildflowers",
+                "short_dry_grass",
+                "tall_dry_grass"
+        );
+        addSimplePlants(options, SoilKind.GRASS,
+                "tall_grass",
+                "large_fern",
+                "sunflower",
+                "lilac",
+                "rose_bush",
+                "peony"
+        );
+        addSimplePlants(options, SoilKind.GRASS,
+                "dandelion",
+                "golden_dandelion",
+                "poppy",
+                "blue_orchid",
+                "allium",
+                "azure_bluet",
+                "red_tulip",
+                "orange_tulip",
+                "white_tulip",
+                "pink_tulip",
+                "oxeye_daisy",
+                "cornflower",
+                "lily_of_the_valley",
+                "wither_rose",
+                "closed_eyeblossom",
+                "open_eyeblossom"
+        );
+        return List.copyOf(options);
+    }
+
+    private static void addPoisonousPotato(List<Option> options) {
+        options.add(new Option(
+                Items.POISONOUS_POTATO,
+                Blocks.POTATOES,
+                FarmerCrop.NONE,
+                SoilKind.FARMLAND,
+                GrowthStyle.NATURAL,
+                List.of(new HarvestRule(
+                        Items.POISONOUS_POTATO,
+                        1,
+                        1,
+                        FarmerYield.CHANCE_SCALE,
+                        0,
+                        FarmerYield.CHANCE_SCALE
+                ))
+        ));
+    }
+
+    private static void addTree(
+            List<Option> options,
+            String saplingPath,
+            String logPath,
+            String leavesPath,
+            boolean dropsApples,
+            String... additionalDrops
+    ) {
+        Item sapling = registeredItem(saplingPath);
+        Block saplingBlock = registeredBlock(saplingPath);
+        if (sapling == null || saplingBlock == null) {
+            return;
+        }
+        ArrayList<HarvestRule> rules = new ArrayList<>(4 + additionalDrops.length);
+        addRule(rules, logPath, 4, 1, FarmerYield.CHANCE_SCALE, 0, FarmerYield.CHANCE_SCALE);
+        addRule(rules, leavesPath, 2, 1, 7_500, 0, 7_500);
+        addRule(rules, saplingPath, 1, 0, 3_500, 500, 8_500);
+        if (dropsApples) {
+            addRule(rules, "apple", 1, 0, 1_000, 250, 4_000);
+        }
+        for (String additionalDrop : additionalDrops) {
+            addRule(
+                    rules,
+                    additionalDrop,
+                    2,
+                    1,
+                    FarmerYield.CHANCE_SCALE,
+                    0,
+                    FarmerYield.CHANCE_SCALE
+            );
+        }
+        options.add(new Option(
+                sapling,
+                saplingBlock,
+                FarmerCrop.NONE,
+                SoilKind.DIRT,
+                GrowthStyle.SCALED,
+                rules
+        ));
+    }
+
+    private static void addMushroom(List<Option> options, String mushroomPath, String blockPath) {
+        Item mushroom = registeredItem(mushroomPath);
+        Block mushroomBlock = registeredBlock(mushroomPath);
+        if (mushroom == null || mushroomBlock == null) {
+            return;
+        }
+        ArrayList<HarvestRule> rules = new ArrayList<>(3);
+        addSilkTouchRule(
+                rules,
+                "mushroom_stem",
+                2,
+                1,
+                6_500,
+                500,
+                9_000
+        );
+        addSilkTouchRule(rules, blockPath, 2, 1, 6_500, 500, 9_000);
+        addRule(
+                rules,
+                mushroomPath,
+                1,
+                1,
+                FarmerYield.CHANCE_SCALE,
+                0,
+                FarmerYield.CHANCE_SCALE
+        );
+        options.add(new Option(
+                mushroom,
+                mushroomBlock,
+                FarmerCrop.NONE,
+                SoilKind.PODZOL,
+                GrowthStyle.SCALED,
+                rules
+        ));
+    }
+
+    private static void addCactus(List<Option> options) {
+        Item cactus = registeredItem("cactus");
+        Block cactusBlock = registeredBlock("cactus");
+        if (cactus == null || cactusBlock == null) {
+            return;
+        }
+        ArrayList<HarvestRule> rules = new ArrayList<>(2);
+        addRule(rules, "cactus", 2, 1, FarmerYield.CHANCE_SCALE, 0, FarmerYield.CHANCE_SCALE);
+        addRule(rules, "cactus_flower", 1, 0, 2_500, 500, 7_500);
+        options.add(new Option(
+                cactus,
+                cactusBlock,
+                FarmerCrop.NONE,
+                SoilKind.SAND,
+                GrowthStyle.SCALED,
+                rules
+        ));
+    }
+
+    private static void addMoss(List<Option> options, boolean pale) {
+        String mossPath = pale ? "pale_moss_block" : "moss_block";
+        Item moss = registeredItem(mossPath);
+        Block mossBlock = registeredBlock(mossPath);
+        if (moss == null || mossBlock == null) {
+            return;
+        }
+        ArrayList<HarvestRule> rules = new ArrayList<>(1);
+        addRule(rules, mossPath, 1, 1, FarmerYield.CHANCE_SCALE, 0, FarmerYield.CHANCE_SCALE);
+        options.add(new Option(
+                moss,
+                mossBlock,
+                FarmerCrop.NONE,
+                SoilKind.GRASS,
+                GrowthStyle.SCALED,
+                rules
+        ));
+        addSimplePlants(options, SoilKind.GRASS, pale ? "pale_moss_carpet" : "moss_carpet");
+    }
+
+    private static void addCoral(List<Option> options, String color) {
+        String coralPath = color + "_coral";
+        String coralBlockPath = coralPath + "_block";
+        addSimplePlants(
+                options,
+                SoilKind.SAND,
+                coralBlockPath,
+                coralPath,
+                coralPath + "_fan"
+        );
+    }
+
+    private static void addChorus(List<Option> options) {
+        Item chorusFlower = registeredItem("chorus_flower");
+        Block chorusFlowerBlock = registeredBlock("chorus_flower");
+        if (chorusFlower == null || chorusFlowerBlock == null) {
+            return;
+        }
+        ArrayList<HarvestRule> rules = new ArrayList<>(2);
+        addRule(rules, "chorus_fruit", 2, 1, 8_000, 250, FarmerYield.CHANCE_SCALE);
+        addRule(rules, "chorus_flower", 1, 0, 3_000, 500, 8_500);
+        options.add(new Option(
+                chorusFlower,
+                chorusFlowerBlock,
+                FarmerCrop.NONE,
+                SoilKind.END_STONE,
+                GrowthStyle.SCALED,
+                rules
+        ));
+    }
+
+    private static void addSimplePlants(
+            List<Option> options,
+            SoilKind soil,
+            String... definitions
+    ) {
+        for (String definition : definitions) {
+            String[] paths = definition.split(":", 2);
+            String itemPath = paths[0];
+            String blockPath = paths.length == 2 ? paths[1] : itemPath;
+            Item item = registeredItem(itemPath);
+            Block block = registeredBlock(blockPath);
+            if (item == null || block == null) {
+                continue;
+            }
+            options.add(new Option(
+                    item,
+                    block,
+                    FarmerCrop.NONE,
+                    soil,
+                    GrowthStyle.SCALED,
+                    List.of(new HarvestRule(
+                            item,
+                            1,
+                            1,
+                            FarmerYield.CHANCE_SCALE,
+                            0,
+                            FarmerYield.CHANCE_SCALE
+                    ))
+            ));
+        }
+    }
+
+    private static void addRule(
+            List<HarvestRule> rules,
+            String itemPath,
+            int baseCount,
+            int fortuneCount,
+            int baseChance,
+            int fortuneChance,
+            int maximumChance
+    ) {
+        Item item = registeredItem(itemPath);
+        if (item != null) {
+            rules.add(new HarvestRule(
+                    item,
+                    baseCount,
+                    fortuneCount,
+                    baseChance,
+                    fortuneChance,
+                    maximumChance
+            ));
+        }
+    }
+
+    private static void addSilkTouchRule(
+            List<HarvestRule> rules,
+            String itemPath,
+            int baseCount,
+            int fortuneCount,
+            int baseChance,
+            int fortuneChance,
+            int maximumChance
+    ) {
+        Item item = registeredItem(itemPath);
+        if (item != null) {
+            rules.add(new HarvestRule(
+                    item,
+                    baseCount,
+                    fortuneCount,
+                    baseChance,
+                    fortuneChance,
+                    maximumChance,
+                    ToolRequirement.SILK_TOUCH
+            ));
+        }
+    }
+
+    private static Item registeredItem(String path) {
+        return BuiltInRegistries.ITEM.getOptional(minecraftId(path)).orElse(null);
+    }
+
+    private static Block registeredBlock(String path) {
+        return BuiltInRegistries.BLOCK.getOptional(minecraftId(path)).orElse(null);
+    }
+
+    private static Identifier minecraftId(String path) {
+        return Identifier.fromNamespaceAndPath("minecraft", path);
     }
 
     private static Catalog villagerCatalog() {
@@ -320,7 +931,9 @@ public final class FarmerCropStackAdapter {
             return Optional.empty();
         }
         ItemStack stack = new ItemStack(item);
-        if (!stack.is(ItemTags.VILLAGER_PLANTABLE_SEEDS)) {
+        boolean plantableSeed = stack.is(ItemTags.VILLAGER_PLANTABLE_SEEDS);
+        boolean simplePlant = stack.is(VILLAGER_FARMER_PLANTS);
+        if (!plantableSeed && !simplePlant) {
             return Optional.empty();
         }
         Block block = blockItem.getBlock();
@@ -328,7 +941,23 @@ public final class FarmerCropStackAdapter {
         if (BuiltInRegistries.ITEM.getKey(item) == null) {
             throw new IllegalArgumentException("Villager crop has no registered item identifier");
         }
-        return Optional.of(new Option(item, block, FarmerCrop.NONE));
+        return Optional.of(new Option(
+                item,
+                block,
+                FarmerCrop.NONE,
+                SoilKind.FARMLAND,
+                GrowthStyle.SCALED,
+                simplePlant && !plantableSeed
+                        ? List.of(new HarvestRule(
+                                item,
+                                1,
+                                1,
+                                FarmerYield.CHANCE_SCALE,
+                                0,
+                                FarmerYield.CHANCE_SCALE
+                        ))
+                        : List.of()
+        ));
     }
 
     private static Option villagerOption(ItemStack stack) {
@@ -365,7 +994,7 @@ public final class FarmerCropStackAdapter {
     }
 
     private static List<ItemStack> fallbackDynamicHarvest(ItemStack cropStack, int fortuneLevel) {
-        ItemStack result = cropStack.copyWithCount(Math.max(1, 2 + fortuneLevel));
+        ItemStack result = cropStack.copyWithCount(Math.max(1, 1 + fortuneLevel));
         return List.of(result);
     }
 
@@ -398,7 +1027,210 @@ public final class FarmerCropStackAdapter {
         return maxTicks <= 0 ? 0 : Math.min(maxStage, ticks * (maxStage + 1) / maxTicks);
     }
 
-    public record Option(Item item, Block block, FarmerCrop crop) {
+    private static float continuousGrowthScale(int growthTicks, int maxGrowthTicks) {
+        if (maxGrowthTicks <= 0) {
+            return 1.0F;
+        }
+        float progress = Math.clamp(growthTicks / (float) maxGrowthTicks, 0.0F, 1.0F);
+        return 0.20F + 0.80F * progress;
+    }
+
+    private static float stagedGrowthScale(int growthTicks, int maxGrowthTicks, int stages) {
+        int maximumStage = Math.max(1, stages - 1);
+        int currentStage = stage(
+                Math.max(0, growthTicks),
+                Math.max(0, maxGrowthTicks),
+                maximumStage
+        );
+        float progress = currentStage / (float) maximumStage;
+        return 0.20F + 0.80F * progress;
+    }
+
+    public record PreviewYield(ItemStack stack, int chanceBasisPoints, boolean requiresSilkTouch) {
+        public PreviewYield {
+            stack = stack.copy();
+            if (stack.isEmpty()) {
+                throw new IllegalArgumentException("A preview yield cannot be empty");
+            }
+            if (chanceBasisPoints < 1 || chanceBasisPoints > FarmerYield.CHANCE_SCALE) {
+                throw new IllegalArgumentException("Invalid preview yield chance");
+            }
+        }
+
+        public boolean isGuaranteed() {
+            return chanceBasisPoints == FarmerYield.CHANCE_SCALE;
+        }
+
+        @Override
+        public ItemStack stack() {
+            return stack.copy();
+        }
+    }
+
+    public enum RenderSupport {
+        FLOOR,
+        WALL,
+        WATER,
+        CEILING
+    }
+
+    public static final class Option {
+        private final Item item;
+        private final Block block;
+        private final FarmerCrop crop;
+        private final SoilKind soil;
+        private final GrowthStyle growthStyle;
+        private final List<HarvestRule> harvestRules;
+        private final boolean wallSupported;
+
+        private Option(Item item, Block block, FarmerCrop crop) {
+            this(
+                    item,
+                    block,
+                    crop,
+                    SoilKind.FARMLAND,
+                    GrowthStyle.NATURAL,
+                    List.of()
+            );
+        }
+
+        private Option(
+                Item item,
+                Block block,
+                FarmerCrop crop,
+                SoilKind soil,
+                GrowthStyle growthStyle,
+                List<HarvestRule> harvestRules
+        ) {
+            this.item = java.util.Objects.requireNonNull(item);
+            this.block = java.util.Objects.requireNonNull(block);
+            this.crop = java.util.Objects.requireNonNull(crop);
+            this.soil = java.util.Objects.requireNonNull(soil);
+            this.growthStyle = java.util.Objects.requireNonNull(growthStyle);
+            this.harvestRules = List.copyOf(harvestRules);
+            this.wallSupported = inferWallSupport(block);
+        }
+
+        public Item item() {
+            return item;
+        }
+
+        public Block block() {
+            return block;
+        }
+
+        public FarmerCrop crop() {
+            return crop;
+        }
+
+        private SoilKind soil() {
+            return soil;
+        }
+
+        private GrowthStyle growthStyle() {
+            return growthStyle;
+        }
+
+        private List<HarvestRule> harvestRules() {
+            return harvestRules;
+        }
+
+        private boolean wallSupported() {
+            return wallSupported;
+        }
+    }
+
+    private enum SoilKind {
+        FARMLAND,
+        DIRT,
+        GRASS,
+        SAND,
+        PODZOL,
+        STONE,
+        END_STONE;
+
+        private BlockState state() {
+            return switch (this) {
+                case FARMLAND -> Blocks.FARMLAND.defaultBlockState().setValue(
+                        FarmlandBlock.MOISTURE,
+                        FarmlandBlock.MAX_MOISTURE
+                );
+                case DIRT -> Blocks.DIRT.defaultBlockState();
+                case GRASS -> Blocks.GRASS_BLOCK.defaultBlockState();
+                case SAND -> Blocks.SAND.defaultBlockState();
+                case PODZOL -> Blocks.PODZOL.defaultBlockState();
+                case STONE -> Blocks.STONE.defaultBlockState();
+                case END_STONE -> Blocks.END_STONE.defaultBlockState();
+            };
+        }
+    }
+
+    private enum GrowthStyle {
+        NATURAL,
+        SCALED
+    }
+
+    private enum ToolRequirement {
+        NONE,
+        SILK_TOUCH;
+
+        private boolean allows(boolean silkTouch) {
+            return this == NONE || silkTouch;
+        }
+    }
+
+    private record HarvestRule(
+            Item item,
+            int baseCount,
+            int fortuneCount,
+            int baseChance,
+            int fortuneChance,
+            int maximumChance,
+            ToolRequirement requirement
+    ) {
+        private HarvestRule(
+                Item item,
+                int baseCount,
+                int fortuneCount,
+                int baseChance,
+                int fortuneChance,
+                int maximumChance
+        ) {
+            this(
+                    item,
+                    baseCount,
+                    fortuneCount,
+                    baseChance,
+                    fortuneChance,
+                    maximumChance,
+                    ToolRequirement.NONE
+            );
+        }
+
+        private HarvestRule {
+            java.util.Objects.requireNonNull(item);
+            java.util.Objects.requireNonNull(requirement);
+            if (baseCount < 1 || fortuneCount < 0) {
+                throw new IllegalArgumentException("Invalid villager crop output count");
+            }
+            if (baseChance < 1
+                    || baseChance > FarmerYield.CHANCE_SCALE
+                    || fortuneChance < 0
+                    || maximumChance < baseChance
+                    || maximumChance > FarmerYield.CHANCE_SCALE) {
+                throw new IllegalArgumentException("Invalid villager crop output chance");
+            }
+        }
+
+        private int count(int fortuneLevel) {
+            long count = baseCount + (long) Math.max(0, fortuneLevel) * fortuneCount;
+            return (int) Math.min(Integer.MAX_VALUE, count);
+        }
+
+        private int chance(int fortuneLevel) {
+            long chance = baseChance + (long) Math.max(0, fortuneLevel) * fortuneChance;
+            return (int) Math.min(maximumChance, chance);
+        }
     }
 
     private record Catalog(List<Option> options, Map<Item, Option> byItem) {

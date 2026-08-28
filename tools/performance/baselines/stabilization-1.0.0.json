@@ -1,0 +1,9 @@
+{
+  "captured_at": "2026-08-23",
+  "git_head": "9fddde4894ea3c4040ab3c2257a4d2ff5f3c10d1",
+  "dirty_entries": 41,
+  "artifact": "build/libs/trading_cells-1.0.0.jar",
+  "artifact_size_bytes": 1607762,
+  "artifact_sha256": "BAEEFDA73A8FF5DC930B6F08CE4DD22FA73D23CB22565D303E2137A1D89BCE51",
+  "purpose": "Reference before the 1.0.0 mob-farm core and datapack catalog refactor."
+}

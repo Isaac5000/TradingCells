@@ -13,12 +13,15 @@ Estas rutas no contienen fuentes ni recursos publicados y se pueden regenerar. N
 - `run-server/.cache/`: cache del servidor de desarrollo.
 - `run-server/logs/`: registros del servidor de desarrollo.
 
-## Eliminar tras revisar las mejoras compartidas
+## Recursos versionados revisados
 
-Estas carpetas solo conservan las texturas anteriores para comparacion visual. Los modelos ya usan las bases de `textures/item/upgrades/` y los distintivos se componen durante el renderizado.
+Las carpetas antiguas de mejoras ya no existen. Canteras y Trocadores usan las
+bases de `textures/item/upgrades/` y componen su distintivo durante el
+renderizado. Tambien se eliminaron las copias antiguas de tablas bajo
+`data/trading_cells/loot_tables/`; Minecraft 26.2 usa `loot_table/` en singular.
 
-- `src/main/resources/assets/trading_cells/textures/item/upgrades_piglin_netherite_trader/`
-- `src/main/resources/assets/trading_cells/textures/item/upgrades_quarry/`
+No queda ninguna ruta versionada que se pueda eliminar con seguridad en este
+momento.
 
 ## Conservar salvo decision manual
 

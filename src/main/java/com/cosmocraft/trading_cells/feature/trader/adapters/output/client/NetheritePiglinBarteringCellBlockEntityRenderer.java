@@ -6,6 +6,8 @@ import com.cosmocraft.trading_cells.platform.neoforge.client.render.MachineEntit
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -38,6 +40,7 @@ public final class NetheritePiglinBarteringCellBlockEntityRenderer implements Bl
 
     private final EntityRenderDispatcher entityRenderer;
     private final ItemModelResolver itemModelResolver;
+    private final Map<NetheritePiglinBarteringCellBlockEntity, EntityCache> entityCaches = new WeakHashMap<>();
 
     public NetheritePiglinBarteringCellBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         this.entityRenderer = context.entityRenderer();
@@ -67,12 +70,17 @@ public final class NetheritePiglinBarteringCellBlockEntityRenderer implements Bl
         state.displayPiglin = null;
         state.outputItem.clear();
         state.facing = blockEntity.getBlockState().getValue(NetheritePiglinBarteringCellBlock.FACING);
+        if (blockEntity.getLevel() == null) {
+            entityCaches.remove(blockEntity);
+            return;
+        }
+        EntityCache entityCache = entityCaches.computeIfAbsent(blockEntity, ignored -> new EntityCache());
 
         CompoundTag piglinData = blockEntity.copyPiglinData();
         if (piglinData == null) {
-            state.clearCachedPiglin();
+            entityCache.clear();
         } else {
-            Piglin piglin = state.getOrCreatePiglin(blockEntity, piglinData, blockEntity.isBartering());
+            Piglin piglin = entityCache.getOrCreatePiglin(blockEntity, piglinData, blockEntity.isBartering());
             if (piglin != null) {
                 orientForCellPreview(piglin, state.facing.toYRot());
                 PreviewEntityRenderUtil.prepare(piglin);
@@ -158,6 +166,9 @@ public final class NetheritePiglinBarteringCellBlockEntityRenderer implements Bl
         public @Nullable EntityRenderState displayPiglin;
         public final ItemStackRenderState outputItem = new ItemStackRenderState();
         public Direction facing = Direction.NORTH;
+    }
+
+    private static final class EntityCache {
         private @Nullable CompoundTag cachedPiglinData;
         private @Nullable Piglin cachedPiglin;
         private boolean cachedBartering;
@@ -178,7 +189,7 @@ public final class NetheritePiglinBarteringCellBlockEntityRenderer implements Bl
             return cachedPiglin;
         }
 
-        private void clearCachedPiglin() {
+        private void clear() {
             cachedPiglin = null;
             cachedPiglinData = null;
             cachedBartering = false;

@@ -22,20 +22,40 @@ public final class PlayerEquipmentSlots {
     }
 
     public static List<Slot> create(Inventory inventory) {
+        return create(
+                inventory,
+                X,
+                HEAD_Y,
+                CHEST_Y,
+                LEGS_Y,
+                FEET_Y,
+                OFFHAND_Y
+        );
+    }
+
+    public static List<Slot> create(
+            Inventory inventory,
+            int x,
+            int headY,
+            int chestY,
+            int legsY,
+            int feetY,
+            int offhandY
+    ) {
         return List.of(
-                new ArmorSlot(inventory, inventory.player, EquipmentSlot.HEAD, 39, X, HEAD_Y, InventoryMenu.EMPTY_ARMOR_SLOT_HELMET),
-                new ArmorSlot(inventory, inventory.player, EquipmentSlot.CHEST, 38, X, CHEST_Y, InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE),
-                new ArmorSlot(inventory, inventory.player, EquipmentSlot.LEGS, 37, X, LEGS_Y, InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS),
-                new ArmorSlot(inventory, inventory.player, EquipmentSlot.FEET, 36, X, FEET_Y, InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS),
-                new OffhandSlot(inventory)
+                new ArmorSlot(inventory, inventory.player, EquipmentSlot.HEAD, 39, x, headY, InventoryMenu.EMPTY_ARMOR_SLOT_HELMET),
+                new ArmorSlot(inventory, inventory.player, EquipmentSlot.CHEST, 38, x, chestY, InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE),
+                new ArmorSlot(inventory, inventory.player, EquipmentSlot.LEGS, 37, x, legsY, InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS),
+                new ArmorSlot(inventory, inventory.player, EquipmentSlot.FEET, 36, x, feetY, InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS),
+                new OffhandSlot(inventory, x, offhandY)
         );
     }
 
     private static final class OffhandSlot extends Slot {
         private final Inventory inventory;
 
-        private OffhandSlot(Inventory inventory) {
-            super(inventory, 40, X, OFFHAND_Y);
+        private OffhandSlot(Inventory inventory, int x, int y) {
+            super(inventory, 40, x, y);
             this.inventory = inventory;
         }
 

@@ -22,8 +22,9 @@ public final class IronFarmMenu extends AbstractContainerMenu {
     public static final int ENABLE_FLOWERS_BUTTON = 2;
     public static final int VILLAGER_ROW_X = MachineMenuLayout.machineX(56);
     public static final int VILLAGER_ROW_Y = 24;
-    public static final int OUTPUT_ROW_X = MachineMenuLayout.machineX(44);
+    public static final int OUTPUT_ROW_X = MachineMenuLayout.machineX(16);
     public static final int OUTPUT_ROW_Y = 72;
+    public static final int OUTPUT_SLOT_SPACING = 18;
     private static final int MACHINE_SLOT_COUNT = IronFarmBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
@@ -55,7 +56,7 @@ public final class IronFarmMenu extends AbstractContainerMenu {
             addSlot(new OutputSlot(
                     container,
                     IronFarmBlockEntity.FIRST_OUTPUT_SLOT + index,
-                    OUTPUT_ROW_X + index * 24,
+                    outputSlotX(index),
                     OUTPUT_ROW_Y
             ));
         }
@@ -92,6 +93,10 @@ public final class IronFarmMenu extends AbstractContainerMenu {
 
     public int maximumVillagers() {
         return data.get(6);
+    }
+
+    public static int outputSlotX(int index) {
+        return OUTPUT_ROW_X + index * OUTPUT_SLOT_SPACING;
     }
 
     public void setClientFlowersEnabled(boolean enabled) {

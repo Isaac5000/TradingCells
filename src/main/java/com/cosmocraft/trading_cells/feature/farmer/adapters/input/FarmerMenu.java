@@ -5,7 +5,6 @@ import com.cosmocraft.trading_cells.feature.farmer.domain.model.FarmerKind;
 import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
-import com.cosmocraft.trading_cells.platform.neoforge.menu.MachineMenuLayout;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -18,15 +17,6 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 public final class FarmerMenu extends AbstractContainerMenu {
-    public static final int WORKER_SLOT_X = MachineMenuLayout.machineX(50);
-    public static final int HOE_SLOT_X = MachineMenuLayout.machineX(80);
-    public static final int CROP_SLOT_X = MachineMenuLayout.machineX(110);
-    public static final int INPUT_SLOT_Y = 30;
-    public static final int OUTPUT_COLUMN_COUNT = 9;
-    public static final int OUTPUT_SLOT_FIRST_X = MachineMenuLayout.machineX(8);
-    public static final int OUTPUT_SLOT_SPACING = 18;
-    public static final int OUTPUT_SLOT_FIRST_Y = 82;
-    public static final int OUTPUT_ROW_SPACING = 18;
     private static final int MACHINE_SLOT_COUNT = FarmerBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
@@ -70,9 +60,9 @@ public final class FarmerMenu extends AbstractContainerMenu {
         this.container = container;
         this.data = data;
 
-        addSlot(new WorkerSlot(container, FarmerBlockEntity.WORKER_SLOT, WORKER_SLOT_X, INPUT_SLOT_Y));
-        addSlot(new CropSlot(container, FarmerBlockEntity.CROP_SLOT, CROP_SLOT_X, INPUT_SLOT_Y));
-        addSlot(new HoeSlot(container, FarmerBlockEntity.HOE_SLOT, HOE_SLOT_X, INPUT_SLOT_Y));
+        addSlot(new WorkerSlot(container, FarmerBlockEntity.WORKER_SLOT, workerSlotX(), workerSlotY()));
+        addSlot(new CropSlot(container, FarmerBlockEntity.CROP_SLOT, cropSlotX(), cropSlotY()));
+        addSlot(new HoeSlot(container, FarmerBlockEntity.HOE_SLOT, hoeSlotX(), hoeSlotY()));
         for (int index = 0; index < FarmerBlockEntity.OUTPUT_SLOT_COUNT; index++) {
             addSlot(new OutputSlot(
                     container,
@@ -81,8 +71,16 @@ public final class FarmerMenu extends AbstractContainerMenu {
                     outputSlotY(index)
             ));
         }
-        addStandardInventorySlots(inventory, MachineMenuLayout.PLAYER_INVENTORY_X, MachineMenuLayout.PLAYER_INVENTORY_SLOT_Y);
-        for (Slot equipmentSlot : PlayerEquipmentSlots.create(inventory)) {
+        addStandardInventorySlots(inventory, playerInventoryX(), playerInventoryY());
+        for (Slot equipmentSlot : PlayerEquipmentSlots.create(
+                inventory,
+                equipmentX(),
+                equipmentHeadY(),
+                equipmentChestY(),
+                equipmentLegsY(),
+                equipmentFeetY(),
+                equipmentOffhandY()
+        )) {
             addSlot(equipmentSlot);
         }
         addDataSlots(data);
@@ -96,12 +94,120 @@ public final class FarmerMenu extends AbstractContainerMenu {
         return kind;
     }
 
-    public static int outputSlotX(int index) {
-        return OUTPUT_SLOT_FIRST_X + index % OUTPUT_COLUMN_COUNT * OUTPUT_SLOT_SPACING;
+    public int outputSlotX(int index) {
+        return outputFirstX() + index % outputColumns() * outputSpacing();
     }
 
-    public static int outputSlotY(int index) {
-        return OUTPUT_SLOT_FIRST_Y + index / OUTPUT_COLUMN_COUNT * OUTPUT_ROW_SPACING;
+    public int outputSlotY(int index) {
+        return outputFirstY() + index / outputColumns() * outputSpacing();
+    }
+
+    private int workerSlotX() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.WORKER_SLOT_X
+                : PiglinFarmerMenuLayout.WORKER_SLOT_X;
+    }
+
+    private int workerSlotY() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.WORKER_SLOT_Y
+                : PiglinFarmerMenuLayout.WORKER_SLOT_Y;
+    }
+
+    private int hoeSlotX() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.HOE_SLOT_X
+                : PiglinFarmerMenuLayout.HOE_SLOT_X;
+    }
+
+    private int hoeSlotY() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.HOE_SLOT_Y
+                : PiglinFarmerMenuLayout.HOE_SLOT_Y;
+    }
+
+    private int cropSlotX() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.CROP_SLOT_X
+                : PiglinFarmerMenuLayout.CROP_SLOT_X;
+    }
+
+    private int cropSlotY() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.CROP_SLOT_Y
+                : PiglinFarmerMenuLayout.CROP_SLOT_Y;
+    }
+
+    private int outputFirstX() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.OUTPUT_FIRST_X
+                : PiglinFarmerMenuLayout.OUTPUT_FIRST_X;
+    }
+
+    private int outputFirstY() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.OUTPUT_FIRST_Y
+                : PiglinFarmerMenuLayout.OUTPUT_FIRST_Y;
+    }
+
+    private int outputColumns() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.OUTPUT_COLUMNS
+                : PiglinFarmerMenuLayout.OUTPUT_COLUMNS;
+    }
+
+    private int outputSpacing() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.OUTPUT_SPACING
+                : PiglinFarmerMenuLayout.OUTPUT_SPACING;
+    }
+
+    private int playerInventoryX() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.PLAYER_INVENTORY_X
+                : PiglinFarmerMenuLayout.PLAYER_INVENTORY_X;
+    }
+
+    private int playerInventoryY() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.PLAYER_INVENTORY_Y
+                : PiglinFarmerMenuLayout.PLAYER_INVENTORY_Y;
+    }
+
+    private int equipmentX() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.EQUIPMENT_X
+                : PiglinFarmerMenuLayout.EQUIPMENT_X;
+    }
+
+    private int equipmentHeadY() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.EQUIPMENT_HEAD_Y
+                : PiglinFarmerMenuLayout.EQUIPMENT_HEAD_Y;
+    }
+
+    private int equipmentChestY() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.EQUIPMENT_CHEST_Y
+                : PiglinFarmerMenuLayout.EQUIPMENT_CHEST_Y;
+    }
+
+    private int equipmentLegsY() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.EQUIPMENT_LEGS_Y
+                : PiglinFarmerMenuLayout.EQUIPMENT_LEGS_Y;
+    }
+
+    private int equipmentFeetY() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.EQUIPMENT_FEET_Y
+                : PiglinFarmerMenuLayout.EQUIPMENT_FEET_Y;
+    }
+
+    private int equipmentOffhandY() {
+        return kind == FarmerKind.VILLAGER
+                ? VillagerFarmerMenuLayout.EQUIPMENT_OFFHAND_Y
+                : PiglinFarmerMenuLayout.EQUIPMENT_OFFHAND_Y;
     }
 
     public int maxGrowthTicks() {

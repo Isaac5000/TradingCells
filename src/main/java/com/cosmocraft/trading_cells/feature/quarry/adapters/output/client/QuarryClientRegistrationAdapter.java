@@ -9,8 +9,8 @@ public final class QuarryClientRegistrationAdapter {
     }
 
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
-        event.register(QuarryRegistrationAdapter.QUARRY_MENU.get(), QuarryScreen::new);
-        event.register(QuarryRegistrationAdapter.PIGLIN_QUARRY_MENU.get(), QuarryScreen::new);
+        event.register(QuarryRegistrationAdapter.QUARRY_MENU.get(), VillagerQuarryScreen::new);
+        event.register(QuarryRegistrationAdapter.PIGLIN_QUARRY_MENU.get(), PiglinQuarryScreen::new);
     }
 
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {

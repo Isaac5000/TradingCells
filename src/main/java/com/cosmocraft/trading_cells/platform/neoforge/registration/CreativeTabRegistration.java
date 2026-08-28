@@ -12,8 +12,11 @@ import com.cosmocraft.trading_cells.feature.experience.adapters.output.Experienc
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryEnchantments;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmEnchantments;
+import com.cosmocraft.trading_cells.feature.combat.adapters.api.CombatEnchantments;
+import com.cosmocraft.trading_cells.feature.combat.adapters.output.CombatRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.RaiderFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.CreeperFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
@@ -22,9 +25,61 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 public final class CreativeTabRegistration {
+    // Declaration order determines the order in Minecraft's creative tab strip.
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ITEMS_TAB =
+            Registration.CREATIVE_MODE_TABS.register("trading_cells_items", () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup." + TradingCells.MOD_ID + ".items"))
+                    .icon(() -> CaptureRegistrationAdapter.VILLAGER_CAPTURER_ITEM.get().getDefaultInstance())
+                    .displayItems((parameters, output) -> {
+                        output.accept(ExperienceStorageRegistrationAdapter.ITEM.get());
+                        output.accept(ArcaneInfuserRegistrationAdapter.ITEM.get());
+                        output.accept(CombatRegistrationAdapter.STORM_SHARD_ITEM.get());
+                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_COPPER_UPGRADE_ITEM.get());
+                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_IRON_UPGRADE_ITEM.get());
+                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_GOLD_UPGRADE_ITEM.get());
+                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_DIAMOND_UPGRADE_ITEM.get());
+                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_NETHERITE_UPGRADE_ITEM.get());
+                        output.accept(QuarryRegistrationAdapter.QUARRY_COPPER_UPGRADE_ITEM.get());
+                        output.accept(QuarryRegistrationAdapter.QUARRY_IRON_UPGRADE_ITEM.get());
+                        output.accept(QuarryRegistrationAdapter.QUARRY_GOLD_UPGRADE_ITEM.get());
+                        output.accept(QuarryRegistrationAdapter.QUARRY_DIAMOND_UPGRADE_ITEM.get());
+                        output.accept(QuarryRegistrationAdapter.QUARRY_NETHERITE_UPGRADE_ITEM.get());
+                        parameters.holders().lookup(Registries.ENCHANTMENT)
+                                .flatMap(enchantments -> enchantments.get(FarmerEnchantments.FARMERS_TOUCH))
+                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
+                                        new EnchantmentInstance(enchantment, 1)
+                                )));
+                        parameters.holders().lookup(Registries.ENCHANTMENT)
+                                .flatMap(enchantments -> enchantments.get(QuarryEnchantments.MINERS_TOUCH))
+                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
+                                        new EnchantmentInstance(enchantment, 1)
+                                )));
+                        parameters.holders().lookup(Registries.ENCHANTMENT)
+                                .flatMap(enchantments -> enchantments.get(Enchantments.SILK_TOUCH))
+                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
+                                        new EnchantmentInstance(enchantment, 2)
+                                )));
+                        parameters.holders().lookup(Registries.ENCHANTMENT)
+                                .flatMap(enchantments -> enchantments.get(CombatEnchantments.WARRIORS_TOUCH))
+                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
+                                        new EnchantmentInstance(enchantment, 1)
+                                )));
+                        parameters.holders().lookup(Registries.ENCHANTMENT)
+                                .flatMap(enchantments -> enchantments.get(CombatEnchantments.DECAPITATION))
+                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
+                                        new EnchantmentInstance(enchantment, 1)
+                                )));
+                        output.accept(CaptureRegistrationAdapter.VILLAGER_CAPTURER_ITEM.get());
+                        output.accept(CaptureRegistrationAdapter.PIGLIN_CAPTURER_ITEM.get());
+                        output.accept(CaptureRegistrationAdapter.UNBREAKABLE_VILLAGER_CAPTURER_ITEM.get());
+                        output.accept(CaptureRegistrationAdapter.UNBREAKABLE_PIGLIN_CAPTURER_ITEM.get());
+                    })
+                    .build());
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MAIN_TAB =
             Registration.CREATIVE_MODE_TABS.register("villager_trader_cage_tab", () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + TradingCells.MOD_ID))
@@ -56,51 +111,6 @@ public final class CreativeTabRegistration {
                     })
                     .build());
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ITEMS_TAB =
-            Registration.CREATIVE_MODE_TABS.register("trading_cells_items", () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup." + TradingCells.MOD_ID + ".items"))
-                    .icon(() -> CaptureRegistrationAdapter.VILLAGER_CAPTURER_ITEM.get().getDefaultInstance())
-                    .displayItems((parameters, output) -> {
-                        output.accept(ExperienceStorageRegistrationAdapter.ITEM.get());
-                        output.accept(ArcaneInfuserRegistrationAdapter.ITEM.get());
-                        output.accept(SkeletonFarmRegistrationAdapter.STORM_SHARD_ITEM.get());
-                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_COPPER_UPGRADE_ITEM.get());
-                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_IRON_UPGRADE_ITEM.get());
-                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_GOLD_UPGRADE_ITEM.get());
-                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_DIAMOND_UPGRADE_ITEM.get());
-                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_NETHERITE_UPGRADE_ITEM.get());
-                        output.accept(QuarryRegistrationAdapter.QUARRY_COPPER_UPGRADE_ITEM.get());
-                        output.accept(QuarryRegistrationAdapter.QUARRY_IRON_UPGRADE_ITEM.get());
-                        output.accept(QuarryRegistrationAdapter.QUARRY_GOLD_UPGRADE_ITEM.get());
-                        output.accept(QuarryRegistrationAdapter.QUARRY_DIAMOND_UPGRADE_ITEM.get());
-                        output.accept(QuarryRegistrationAdapter.QUARRY_NETHERITE_UPGRADE_ITEM.get());
-                        parameters.holders().lookup(Registries.ENCHANTMENT)
-                                .flatMap(enchantments -> enchantments.get(FarmerEnchantments.FARMERS_TOUCH))
-                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
-                                        new EnchantmentInstance(enchantment, 1)
-                                )));
-                        parameters.holders().lookup(Registries.ENCHANTMENT)
-                                .flatMap(enchantments -> enchantments.get(QuarryEnchantments.MINERS_TOUCH))
-                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
-                                        new EnchantmentInstance(enchantment, 1)
-                                )));
-                        parameters.holders().lookup(Registries.ENCHANTMENT)
-                                .flatMap(enchantments -> enchantments.get(SkeletonFarmEnchantments.WARRIORS_TOUCH))
-                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
-                                        new EnchantmentInstance(enchantment, 1)
-                                )));
-                        parameters.holders().lookup(Registries.ENCHANTMENT)
-                                .flatMap(enchantments -> enchantments.get(SkeletonFarmEnchantments.DECAPITATION))
-                                .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
-                                        new EnchantmentInstance(enchantment, 1)
-                                )));
-                        output.accept(CaptureRegistrationAdapter.VILLAGER_CAPTURER_ITEM.get());
-                        output.accept(CaptureRegistrationAdapter.PIGLIN_CAPTURER_ITEM.get());
-                        output.accept(CaptureRegistrationAdapter.UNBREAKABLE_VILLAGER_CAPTURER_ITEM.get());
-                        output.accept(CaptureRegistrationAdapter.UNBREAKABLE_PIGLIN_CAPTURER_ITEM.get());
-                    })
-                    .build());
-
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> FARMS_TAB =
             Registration.CREATIVE_MODE_TABS.register("farms_tab", () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + TradingCells.MOD_ID + ".farms"))
@@ -108,6 +118,8 @@ public final class CreativeTabRegistration {
                     .displayItems((parameters, output) -> {
                         output.accept(SkeletonFarmRegistrationAdapter.ITEM.get());
                         output.accept(ZombieFarmRegistrationAdapter.ITEM.get());
+                        output.accept(RaiderFarmRegistrationAdapter.ITEM.get());
+                        output.accept(CreeperFarmRegistrationAdapter.ITEM.get());
                     })
                     .build());
 

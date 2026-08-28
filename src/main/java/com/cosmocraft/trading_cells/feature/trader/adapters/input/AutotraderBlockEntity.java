@@ -69,7 +69,7 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
     private static final String CURE_DISCOUNT_TAG = "TradingCellsCureDiscount";
     private static final int[] INPUT_A_SLOTS = new int[]{1, 2, 3, 4};
     private static final int[] INPUT_B_SLOTS = new int[]{5, 6, 7, 8};
-    private static final int[] OUTPUT_SLOTS = new int[]{9, 10, 11, 12};
+    private static final int[] OUTPUT_SLOTS = new int[]{9, 10, 11, 12, 13, 14, 15, 16};
     private static final int[] NO_SLOTS = new int[0];
     private static final int RESTOCK_CHECK_INTERVAL_TICKS = 300;
 
@@ -146,6 +146,10 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
 
     public ResourceHandler<FluidResource> experienceFluidHandler() {
         return experienceFluidHandler;
+    }
+
+    public int storedExperience() {
+        return storedExperience;
     }
 
     public void extractExperience(Player player) {

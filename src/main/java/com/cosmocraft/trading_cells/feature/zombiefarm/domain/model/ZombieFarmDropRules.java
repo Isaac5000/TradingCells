@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.feature.zombiefarm.domain.model;
 
+import com.cosmocraft.trading_cells.feature.combat.domain.model.DecapitationRules;
+
 /** Vanilla 26.2 zombie-family drop math shared by generation and previews. */
 public final class ZombieFarmDropRules {
     public static final int PROBABILITY_PARTS_PER_MILLION = 1_000_000;

@@ -6,6 +6,8 @@ import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFar
 import com.cosmocraft.trading_cells.feature.zombiefarm.application.port.input.ZombieFarmUseCase;
 import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmKind;
 import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmLoot;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmSwordTierCatalog;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmWeaponSnapshot;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
@@ -23,12 +25,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -62,6 +66,13 @@ public final class ZombieFarmBlockEntity extends PortableMachineBlockEntity impl
     private static final String PENDING_TAG_PREFIX = "PendingLoot";
     private static final String ENABLED_TAG = "Enabled";
     private static final int MAX_PERSISTED_PENDING_STACKS = 1_024;
+    private static final float DEATH_SOUND_VOLUME = 0.4F;
+    private static final float DEATH_SOUND_RANGE = 8.0F;
+    private static final SoundEvent ZOMBIE_DEATH_SOUND = shortRange(SoundEvents.ZOMBIE_DEATH);
+    private static final SoundEvent DROWNED_DEATH_SOUND = shortRange(SoundEvents.DROWNED_DEATH);
+    private static final SoundEvent HUSK_DEATH_SOUND = shortRange(SoundEvents.HUSK_DEATH);
+    private static final SoundEvent ZOMBIFIED_PIGLIN_DEATH_SOUND = shortRange(SoundEvents.ZOMBIFIED_PIGLIN_DEATH);
+    private static final SoundEvent ZOGLIN_DEATH_SOUND = shortRange(SoundEvents.ZOGLIN_DEATH);
     private static final int[] INPUT_SLOTS = new int[]{WORKER_SLOT, SWORD_SLOT};
     private static final int[] OUTPUT_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, CONTAINER_SIZE).toArray();
 
@@ -251,9 +262,6 @@ public final class ZombieFarmBlockEntity extends PortableMachineBlockEntity impl
             }
             case ADVANCED -> {
                 setChanged();
-                if (cycleTicks % 20 == 0) {
-                    markChangedAndSync();
-                }
             }
             case COMPLETED -> completeCycle(serverLevel);
         }
@@ -342,7 +350,7 @@ public final class ZombieFarmBlockEntity extends PortableMachineBlockEntity impl
     public boolean canPlaceItem(int slot, @NonNull ItemStack stack) {
         return switch (slot) {
             case WORKER_SLOT -> isAdultVillager(stack);
-            case SWORD_SLOT -> SwordTierCatalog.isSupported(stack);
+            case SWORD_SLOT -> MobFarmSwordTierCatalog.isSupported(stack);
             default -> false;
         };
     }
@@ -501,17 +509,21 @@ public final class ZombieFarmBlockEntity extends PortableMachineBlockEntity impl
                 null,
                 worldPosition,
                 switch (kind) {
-                    case DROWNED -> SoundEvents.DROWNED_DEATH;
-                    case HUSK -> SoundEvents.HUSK_DEATH;
-                    case ZOMBIFIED_PIGLIN -> SoundEvents.ZOMBIFIED_PIGLIN_DEATH;
-                    case ZOGLIN -> SoundEvents.ZOGLIN_DEATH;
-                    case ZOMBIE, ZOMBIE_VILLAGER -> SoundEvents.ZOMBIE_DEATH;
+                    case DROWNED -> DROWNED_DEATH_SOUND;
+                    case HUSK -> HUSK_DEATH_SOUND;
+                    case ZOMBIFIED_PIGLIN -> ZOMBIFIED_PIGLIN_DEATH_SOUND;
+                    case ZOGLIN -> ZOGLIN_DEATH_SOUND;
+                    case ZOMBIE, ZOMBIE_VILLAGER -> ZOMBIE_DEATH_SOUND;
                 },
                 SoundSource.BLOCKS,
-                0.8F,
+                DEATH_SOUND_VOLUME,
                 1.0F
         );
         markChangedAndSync();
+    }
+
+    private static SoundEvent shortRange(SoundEvent sound) {
+        return SoundEvent.createFixedRangeEvent(sound.location(), DEATH_SOUND_RANGE);
     }
 
     private void damageSword(ServerLevel serverLevel) {
@@ -611,16 +623,18 @@ public final class ZombieFarmBlockEntity extends PortableMachineBlockEntity impl
         }
         if (!swordCacheInitialized) {
             ItemStack sword = items.get(SWORD_SLOT);
-            cachedSupportedSword = SwordTierCatalog.isSupported(sword);
-            cachedTierPosition = SwordTierCatalog.timingPosition(sword);
-            cachedDamageLevel = ZombieFarmEnchantments.effectiveDamageLevel(sword, serverLevel, kind);
-            cachedLooting = ZombieFarmEnchantments.lootingLevel(sword, serverLevel.registryAccess());
-            cachedSweeping = ZombieFarmEnchantments.sweepingEdgeLevel(sword, serverLevel.registryAccess());
-            cachedWarriorsTouch = ZombieFarmEnchantments.protectsSword(sword, serverLevel.registryAccess());
-            cachedDecapitationLevel = ZombieFarmEnchantments.decapitationLevel(
+            MobFarmWeaponSnapshot weapon = MobFarmWeaponSnapshot.inspect(
                     sword,
-                    serverLevel.registryAccess()
+                    serverLevel,
+                    BuiltInRegistries.ENTITY_TYPE.getOptional(targetId).orElse(EntityTypes.ZOMBIE)
             );
+            cachedSupportedSword = weapon.supported();
+            cachedTierPosition = weapon.tierPosition();
+            cachedDamageLevel = weapon.effectiveDamageLevel();
+            cachedLooting = weapon.lootingLevel();
+            cachedSweeping = weapon.sweepingEdgeLevel();
+            cachedWarriorsTouch = weapon.warriorsTouch();
+            cachedDecapitationLevel = weapon.decapitationLevel();
             swordCacheInitialized = true;
         }
     }

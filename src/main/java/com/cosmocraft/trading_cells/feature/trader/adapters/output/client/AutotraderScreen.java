@@ -3,6 +3,7 @@ package com.cosmocraft.trading_cells.feature.trader.adapters.output.client;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.AutotraderMenu;
 import com.cosmocraft.trading_cells.feature.trader.domain.model.AutotraderPolicy;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRenderer;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.TradeExperienceDisplay;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerGuiThemeColors;
@@ -388,27 +389,24 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 VillagerTradeScreenCommon.TEXT_DARK,
                 false
         );
-        graphics.text(
+        drawSelectionPanelTitle(graphics, "gui.trading_cells.input_1",
+                VillagerTradeMenuLayout.AUTOTRADER_INPUT_A_TITLE_Y);
+        drawSelectionPanelTitle(graphics, "gui.trading_cells.input_2",
+                VillagerTradeMenuLayout.AUTOTRADER_INPUT_B_TITLE_Y);
+        drawSelectionPanelTitle(graphics, "gui.trading_cells.output",
+                VillagerTradeMenuLayout.AUTOTRADER_OUTPUT_TITLE_Y);
+    }
+
+    private void drawSelectionPanelTitle(GuiGraphicsExtractor graphics, String translationKey, int y) {
+        FittedTextRenderer.centered(
+                graphics,
                 font,
-                Component.translatable("gui.trading_cells.input_1"),
-                14,
-                VillagerTradeMenuLayout.AUTOTRADER_INPUT_A_TITLE_Y,
-                VillagerTradeScreenCommon.TEXT_DARK,
-                false
-        );
-        graphics.text(
-                font,
-                Component.translatable("gui.trading_cells.input_2"),
-                14,
-                VillagerTradeMenuLayout.AUTOTRADER_INPUT_B_TITLE_Y,
-                VillagerTradeScreenCommon.TEXT_DARK,
-                false
-        );
-        graphics.text(
-                font,
-                Component.translatable("gui.trading_cells.output"),
-                14,
-                VillagerTradeMenuLayout.AUTOTRADER_OUTPUT_TITLE_Y,
+                Component.translatable(translationKey),
+                VillagerTradeMenuLayout.AUTOTRADER_PANEL_X + 2,
+                VillagerTradeMenuLayout.AUTOTRADER_PANEL_X
+                        + VillagerTradeMenuLayout.AUTOTRADER_PANEL_WIDTH - 2,
+                y,
+                font.lineHeight,
                 VillagerTradeScreenCommon.TEXT_DARK,
                 false
         );
@@ -448,7 +446,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 VillagerTradeMenuLayout.AUTOTRADER_PANEL_X,
                 VillagerTradeMenuLayout.AUTOTRADER_OUTPUT_PANEL_Y,
                 VillagerTradeMenuLayout.AUTOTRADER_PANEL_WIDTH,
-                VillagerTradeMenuLayout.AUTOTRADER_PANEL_HEIGHT,
+                VillagerTradeMenuLayout.AUTOTRADER_OUTPUT_PANEL_HEIGHT,
                 colors
         );
     }
@@ -528,22 +526,18 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
     }
 
     private void drawBufferSlots(GuiGraphicsExtractor graphics) {
-        for (int row = 0; row < 3; row++) {
-            int y = switch (row) {
-                case 0 -> VillagerTradeMenuLayout.AUTOTRADER_INPUT_A_Y;
-                case 1 -> VillagerTradeMenuLayout.AUTOTRADER_INPUT_B_Y;
-                default -> VillagerTradeMenuLayout.AUTOTRADER_OUTPUT_Y;
-            };
-            for (int index = 0; index < AutotraderPolicy.INPUT_SLOTS_PER_COST; index++) {
-                VillagerTradeScreenLayout.drawSlotAtFramePosition(
-                        graphics,
-                        leftPos,
-                        topPos,
-                        VillagerTradeMenuLayout.AUTOTRADER_ROW_X + index * 18,
-                        y,
-                        VillagerGuiThemeColors.resolve()
-                );
-            }
+        VillagerGuiThemeColors colors = VillagerGuiThemeColors.resolve();
+        drawBufferRow(graphics, colors, VillagerTradeMenuLayout.AUTOTRADER_INPUT_A_Y);
+        drawBufferRow(graphics, colors, VillagerTradeMenuLayout.AUTOTRADER_INPUT_B_Y);
+        for (int index = 0; index < AutotraderPolicy.OUTPUT_SLOTS; index++) {
+            VillagerTradeScreenLayout.drawSlotAtFramePosition(
+                    graphics,
+                    leftPos,
+                    topPos,
+                    VillagerTradeMenuLayout.autotraderOutputFrameX(index),
+                    VillagerTradeMenuLayout.autotraderOutputFrameY(index),
+                    colors
+            );
         }
         MerchantOffer offer = menu.selectedOffer();
         if (offer == null || offer.getItemCostB().isEmpty()) {
@@ -561,6 +555,23 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                         18
                 );
             }
+        }
+    }
+
+    private void drawBufferRow(
+            GuiGraphicsExtractor graphics,
+            VillagerGuiThemeColors colors,
+            int y
+    ) {
+        for (int index = 0; index < AutotraderPolicy.INPUT_SLOTS_PER_COST; index++) {
+            VillagerTradeScreenLayout.drawSlotAtFramePosition(
+                    graphics,
+                    leftPos,
+                    topPos,
+                    VillagerTradeMenuLayout.AUTOTRADER_ROW_X + index * 18,
+                    y,
+                    colors
+            );
         }
     }
 

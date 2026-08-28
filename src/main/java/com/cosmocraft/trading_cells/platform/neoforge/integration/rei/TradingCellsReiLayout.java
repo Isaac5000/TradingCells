@@ -64,6 +64,18 @@ enum TradingCellsReiLayout {
             blockTexture("mossy_stone_bricks"),
             0xFF7F9B72
     ),
+    RAIDER_FARM(
+            Kind.SKELETON_FARM,
+            MachineScreenTheme.IRON_FARM,
+            blockTexture("dark_oak_planks"),
+            0xFF9C7548
+    ),
+    CREEPER_FARM(
+            Kind.SKELETON_FARM,
+            MachineScreenTheme.IRON_FARM,
+            blockTexture("moss_block"),
+            0xFF55A630
+    ),
     DECAPITATION_SMITHING(
             Kind.DECAPITATION_SMITHING,
             MachineScreenTheme.IRON_FARM,
@@ -99,6 +111,12 @@ enum TradingCellsReiLayout {
             MachineScreenTheme.CONVERTER,
             blockTexture("amethyst_block"),
             0xFF8E5AA7
+    ),
+    SPAWNER_REDSTONE_CONTROL(
+            Kind.SPAWNER_REDSTONE_CONTROL,
+            MachineScreenTheme.IRON_FARM,
+            blockTexture("mossy_cobblestone"),
+            0xFFB3261E
     );
 
     private final Kind kind;
@@ -150,6 +168,7 @@ enum TradingCellsReiLayout {
         PIGLIN_BARTERING,
         NETHERITE_PIGLIN_BARTERING,
         QUARRY,
-        ARCANE_INFUSION
+        ARCANE_INFUSION,
+        SPAWNER_REDSTONE_CONTROL
     }
 }

@@ -6,6 +6,8 @@ import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.Skeleto
 import com.cosmocraft.trading_cells.feature.skeletonfarm.application.port.input.SkeletonFarmUseCase;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmKind;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmLoot;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmSwordTierCatalog;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmWeaponSnapshot;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
@@ -23,12 +25,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -62,6 +66,10 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
     private static final String PENDING_TAG_PREFIX = "PendingLoot";
     private static final String ENABLED_TAG = "Enabled";
     private static final int MAX_PERSISTED_PENDING_STACKS = 1_024;
+    private static final float DEATH_SOUND_VOLUME = 0.4F;
+    private static final float DEATH_SOUND_RANGE = 8.0F;
+    private static final SoundEvent SKELETON_DEATH_SOUND = shortRange(SoundEvents.SKELETON_DEATH);
+    private static final SoundEvent WITHER_SKELETON_DEATH_SOUND = shortRange(SoundEvents.WITHER_SKELETON_DEATH);
     private static final int[] INPUT_SLOTS = new int[]{WORKER_SLOT, SWORD_SLOT};
     private static final int[] OUTPUT_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, CONTAINER_SIZE).toArray();
 
@@ -251,9 +259,6 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
             }
             case ADVANCED -> {
                 setChanged();
-                if (cycleTicks % 20 == 0) {
-                    markChangedAndSync();
-                }
             }
             case COMPLETED -> completeCycle(serverLevel);
         }
@@ -342,7 +347,7 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
     public boolean canPlaceItem(int slot, @NonNull ItemStack stack) {
         return switch (slot) {
             case WORKER_SLOT -> isAdultVillager(stack);
-            case SWORD_SLOT -> SwordTierCatalog.isSupported(stack);
+            case SWORD_SLOT -> MobFarmSwordTierCatalog.isSupported(stack);
             default -> false;
         };
     }
@@ -501,13 +506,17 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
                 null,
                 worldPosition,
                 kind == SkeletonFarmKind.WITHER_SKELETON
-                        ? SoundEvents.WITHER_SKELETON_DEATH
-                        : SoundEvents.SKELETON_DEATH,
+                        ? WITHER_SKELETON_DEATH_SOUND
+                        : SKELETON_DEATH_SOUND,
                 SoundSource.BLOCKS,
-                0.8F,
+                DEATH_SOUND_VOLUME,
                 1.0F
         );
         markChangedAndSync();
+    }
+
+    private static SoundEvent shortRange(SoundEvent sound) {
+        return SoundEvent.createFixedRangeEvent(sound.location(), DEATH_SOUND_RANGE);
     }
 
     private void damageSword(ServerLevel serverLevel) {
@@ -607,16 +616,18 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         }
         if (!swordCacheInitialized) {
             ItemStack sword = items.get(SWORD_SLOT);
-            cachedSupportedSword = SwordTierCatalog.isSupported(sword);
-            cachedTierPosition = SwordTierCatalog.timingPosition(sword);
-            cachedDamageLevel = SkeletonFarmEnchantments.effectiveDamageLevel(sword, serverLevel, kind);
-            cachedLooting = SkeletonFarmEnchantments.lootingLevel(sword, serverLevel.registryAccess());
-            cachedSweeping = SkeletonFarmEnchantments.sweepingEdgeLevel(sword, serverLevel.registryAccess());
-            cachedWarriorsTouch = SkeletonFarmEnchantments.protectsSword(sword, serverLevel.registryAccess());
-            cachedDecapitationLevel = SkeletonFarmEnchantments.decapitationLevel(
+            MobFarmWeaponSnapshot weapon = MobFarmWeaponSnapshot.inspect(
                     sword,
-                    serverLevel.registryAccess()
+                    serverLevel,
+                    BuiltInRegistries.ENTITY_TYPE.getOptional(targetId).orElse(EntityTypes.SKELETON)
             );
+            cachedSupportedSword = weapon.supported();
+            cachedTierPosition = weapon.tierPosition();
+            cachedDamageLevel = weapon.effectiveDamageLevel();
+            cachedLooting = weapon.lootingLevel();
+            cachedSweeping = weapon.sweepingEdgeLevel();
+            cachedWarriorsTouch = weapon.warriorsTouch();
+            cachedDecapitationLevel = weapon.decapitationLevel();
             swordCacheInitialized = true;
         }
     }

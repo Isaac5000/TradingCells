@@ -24,10 +24,6 @@ public record ExtractTradingCellExperiencePayload(int containerId, byte mode) im
             buffer -> new ExtractTradingCellExperiencePayload(buffer.readContainerId(), buffer.readByte())
     );
 
-    public ExtractTradingCellExperiencePayload {
-        mode = mode == NEXT_LEVEL ? NEXT_LEVEL : ALL;
-    }
-
     @Override
     public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return PAYLOAD_TYPE;
@@ -35,8 +31,12 @@ public record ExtractTradingCellExperiencePayload(int containerId, byte mode) im
 
     public static void handle(ExtractTradingCellExperiencePayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
+            if (!isSupportedMode(payload.mode())) {
+                return;
+            }
             if (context.player().containerMenu instanceof AutotraderMenu menu
-                    && menu.containerId == payload.containerId()) {
+                    && menu.containerId == payload.containerId()
+                    && menu.stillValid(context.player())) {
                 menu.extractExperienceFromPacket(context.player(), payload.mode());
                 return;
             }
@@ -46,5 +46,9 @@ public record ExtractTradingCellExperiencePayload(int containerId, byte mode) im
                     payload.mode()
             );
         });
+    }
+
+    public static boolean isSupportedMode(byte mode) {
+        return mode == ALL || mode == NEXT_LEVEL;
     }
 }

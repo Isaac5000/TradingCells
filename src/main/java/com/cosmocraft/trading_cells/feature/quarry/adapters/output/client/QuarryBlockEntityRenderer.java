@@ -7,6 +7,8 @@ import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntityRenderUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.BlockModelResolver;
@@ -40,6 +42,7 @@ public final class QuarryBlockEntityRenderer
     private static final double MATERIAL_OFFSET = 0.20D;
     private final EntityRenderDispatcher entityRenderer;
     private final BlockModelResolver blockModelResolver;
+    private final Map<QuarryBlockEntity, EntityCache> entityCaches = new WeakHashMap<>();
 
     public QuarryBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         entityRenderer = context.entityRenderer();
@@ -65,6 +68,7 @@ public final class QuarryBlockEntityRenderer
         Level level = blockEntity.getLevel();
         if (level == null) {
             state.clearCaches();
+            entityCaches.remove(blockEntity);
             return;
         }
         state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(level, blockEntity.getBlockPos());
@@ -77,7 +81,8 @@ public final class QuarryBlockEntityRenderer
             }
             state.cachedMaterial = material;
         }
-        Entity entity = state.getOrCreateWorker(blockEntity, level);
+        EntityCache entityCache = entityCaches.computeIfAbsent(blockEntity, ignored -> new EntityCache());
+        Entity entity = entityCache.getOrCreateWorker(blockEntity, level);
         if (entity == null) {
             return;
         }
@@ -173,8 +178,17 @@ public final class QuarryBlockEntityRenderer
         public @Nullable EntityRenderState worker;
         public Direction facing = Direction.NORTH;
         private BlockState cachedMaterial = Blocks.AIR.defaultBlockState();
+
+        private void clearCaches() {
+            material.clear();
+            cachedMaterial = Blocks.AIR.defaultBlockState();
+        }
+    }
+
+    private static final class EntityCache {
         private ItemStack cachedWorkerStack = ItemStack.EMPTY;
         private @Nullable Entity cachedWorker;
+        private QuarryKind cachedKind = QuarryKind.VILLAGER;
 
         private @Nullable Entity getOrCreateWorker(QuarryBlockEntity blockEntity, Level level) {
             ItemStack workerStack = blockEntity.getItem(QuarryBlockEntity.WORKER_SLOT);
@@ -184,6 +198,7 @@ public final class QuarryBlockEntityRenderer
                 return null;
             }
             if (cachedWorker == null
+                    || cachedKind != blockEntity.kind()
                     || !ItemStack.isSameItemSameComponents(cachedWorkerStack, workerStack)) {
                 CapturedMobKind capturedKind = blockEntity.kind() == QuarryKind.VILLAGER
                         ? CapturedMobKind.VILLAGER
@@ -195,15 +210,9 @@ public final class QuarryBlockEntityRenderer
                         BlockPos.ZERO
                 );
                 cachedWorkerStack = workerStack.copy();
+                cachedKind = blockEntity.kind();
             }
             return cachedWorker;
-        }
-
-        private void clearCaches() {
-            material.clear();
-            cachedMaterial = Blocks.AIR.defaultBlockState();
-            cachedWorkerStack = ItemStack.EMPTY;
-            cachedWorker = null;
         }
     }
 }

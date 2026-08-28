@@ -1,0 +1,16 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "ingredients": [
+    {"ingredient": "minecraft:emerald", "count": 1},
+    {"ingredient": "minecraft:totem_of_undying", "count": 1},
+    {"ingredient": "minecraft:emerald", "count": 1},
+    {"ingredient": "minecraft:lapis_lazuli", "count": 1},
+    {"ingredient": "#trading_cells:arcane_infusion_eggs", "count": 1},
+    {"ingredient": "minecraft:lapis_lazuli", "count": 1},
+    {"ingredient": "minecraft:dark_oak_planks", "count": 1},
+    {"ingredient": "minecraft:white_banner", "count": 1},
+    {"ingredient": "minecraft:dark_oak_planks", "count": 1}
+  ],
+  "experience": 150,
+  "result": {"type": "item", "item": "minecraft:evoker_spawn_egg"}
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "trading_cells:block/villager_breeder",
+  "textures": {
+    "base": "minecraft:block/moss_block",
+    "base_left": "minecraft:block/moss_block",
+    "base_center": "minecraft:block/moss_block",
+    "base_right": "minecraft:block/moss_block",
+    "frame": "minecraft:block/iron_block",
+    "glass": "minecraft:block/glass",
+    "particle": "minecraft:block/moss_block"
+  }
+}

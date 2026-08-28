@@ -1,7 +1,7 @@
 package com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.skeletonfarm.application.port.input.SkeletonFarmUseCase;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.DecapitationRules;
+import com.cosmocraft.trading_cells.feature.combat.domain.model.DecapitationRules;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmDropRules;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmKind;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmLoot;

@@ -29,6 +29,10 @@ public record ArcaneInfuserTransferPayload(int containerId, byte actionId, int r
                     )
             );
 
+    public ArcaneInfuserTransferPayload {
+        requestedLevels = Math.max(0, requestedLevels);
+    }
+
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return PAYLOAD_TYPE;
@@ -38,7 +42,8 @@ public record ArcaneInfuserTransferPayload(int containerId, byte actionId, int r
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)
                     || !(player.containerMenu instanceof ArcaneInfuserMenu menu)
-                    || menu.containerId != payload.containerId()) {
+                    || menu.containerId != payload.containerId()
+                    || !menu.stillValid(player)) {
                 return;
             }
             ArcaneInfusionTransferAction.fromId(payload.actionId()).ifPresent(action ->

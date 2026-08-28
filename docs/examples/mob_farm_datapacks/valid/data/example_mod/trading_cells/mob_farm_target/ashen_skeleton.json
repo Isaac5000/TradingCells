@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "family": "trading_cells:skeleton",
+  "entity_type": "example_mod:ashen_skeleton",
+  "generator_item": "example_mod:ashen_skeleton_spawn_egg",
+  "order": 100,
+  "loot": {
+    "include": [
+      "example_mod:ashen_bone",
+      "#example_mod:ashen_drops"
+    ],
+    "exclude": [
+      "minecraft:bone"
+    ]
+  }
+}

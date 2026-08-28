@@ -15,6 +15,13 @@ import statistics
 import subprocess
 from typing import Any
 
+from template_contract import (
+    MANIFEST_NAME,
+    scenario_definition,
+    template_fingerprint,
+    validate_manifest,
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -319,8 +326,14 @@ def graphics_adapters() -> list[str]:
         return []
 
 
-def write_metadata(root: Path, output: Path, args: argparse.Namespace) -> None:
-    properties = read_gradle_properties(root)
+def write_metadata(
+    root: Path,
+    output: Path,
+    args: argparse.Namespace,
+    properties: dict[str, str],
+    manifest: dict[str, Any],
+    fingerprint: str,
+) -> None:
     metadata = {
         "created_utc": dt.datetime.now(dt.UTC).isoformat(),
         "git_commit": subprocess.check_output(
@@ -344,6 +357,9 @@ def write_metadata(root: Path, output: Path, args: argparse.Namespace) -> None:
         "quick_play_world": args.quick_play_world or "",
         "camera": args.camera or [],
         "template_directory": str(args.template_directory or ""),
+        "template_manifest": manifest,
+        "template_manifest_name": MANIFEST_NAME if manifest else "",
+        "template_fingerprint": fingerprint,
         "operating_system": platform.platform(),
         "processor": platform.processor(),
         "graphics_adapters": graphics_adapters(),
@@ -362,19 +378,38 @@ def main() -> None:
         raise ValueError("Warmup and measurement durations are invalid")
     if args.width < 320 or args.height < 240:
         raise ValueError("The client resolution is too small")
+    root = Path(__file__).resolve().parents[2]
+    tools_directory = Path(__file__).resolve().parent
+    properties = read_gradle_properties(root)
+    definition = scenario_definition(tools_directory, "client", args.scenario)
+    if definition.get("template_required") and not args.template_directory:
+        raise ValueError(
+            f"Scenario {args.scenario!r} requires --template-directory so the world, "
+            "camera target and machine state remain identical"
+        )
+    manifest: dict[str, Any] = {}
+    fingerprint = ""
     if args.template_directory:
         args.template_directory = args.template_directory.resolve()
         if not args.template_directory.is_dir():
             raise ValueError(f"Template directory does not exist: {args.template_directory}")
+        manifest = validate_manifest(
+            args.template_directory,
+            "client",
+            args.scenario,
+            definition,
+            properties.get("minecraft_version", ""),
+            properties.get("neo_version", ""),
+        )
+        fingerprint = template_fingerprint(args.template_directory)
 
-    root = Path(__file__).resolve().parents[2]
     timestamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     output = (
         args.output_directory
         or root / "build" / "performance" / "client" / args.scenario / args.backend / timestamp
     ).resolve()
     output.mkdir(parents=True, exist_ok=False)
-    write_metadata(root, output, args)
+    write_metadata(root, output, args, properties, manifest, fingerprint)
     rows = [run_once(root, output, run, args) for run in range(1, args.runs + 1)]
     write_results(output, rows, args)
     print(f"Results: {output}")

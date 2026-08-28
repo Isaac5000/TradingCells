@@ -59,7 +59,7 @@ public final class VillagerTradeMenuLayout {
     public static final int MANUAL_PAYMENT_A_X = 165;
     public static final int MANUAL_PAYMENT_B_X = 191;
     public static final int MANUAL_RESULT_X = 249;
-    public static final int MANUAL_TRADER_SLOT_Y = 52;
+    public static final int MANUAL_TRADER_SLOT_Y = 50;
 
     public static final int AUTOTRADER_SELECTOR_X = 11;
     public static final int AUTOTRADER_SELECTOR_Y = 29;
@@ -69,17 +69,20 @@ public final class VillagerTradeMenuLayout {
     public static final int AUTOTRADER_PANEL_X = 12;
     public static final int AUTOTRADER_PANEL_WIDTH = 100;
     public static final int AUTOTRADER_PANEL_HEIGHT = 39;
+    public static final int AUTOTRADER_OUTPUT_PANEL_HEIGHT = 57;
     public static final int AUTOTRADER_INPUT_A_PANEL_Y = 60;
-    public static final int AUTOTRADER_INPUT_B_PANEL_Y = 107;
-    public static final int AUTOTRADER_OUTPUT_PANEL_Y = 154;
+    public static final int AUTOTRADER_INPUT_B_PANEL_Y = 99;
+    public static final int AUTOTRADER_OUTPUT_PANEL_Y = 138;
     public static final int AUTOTRADER_INPUT_A_TITLE_Y = 65;
-    public static final int AUTOTRADER_INPUT_B_TITLE_Y = 112;
-    public static final int AUTOTRADER_OUTPUT_TITLE_Y = 159;
+    public static final int AUTOTRADER_INPUT_B_TITLE_Y = 104;
+    public static final int AUTOTRADER_OUTPUT_TITLE_Y = 143;
 
     public static final int AUTOTRADER_ROW_X = 26;
     public static final int AUTOTRADER_INPUT_A_Y = 78;
-    public static final int AUTOTRADER_INPUT_B_Y = 125;
-    public static final int AUTOTRADER_OUTPUT_Y = 172;
+    public static final int AUTOTRADER_INPUT_B_Y = 117;
+    public static final int AUTOTRADER_OUTPUT_Y = 156;
+    public static final int AUTOTRADER_OUTPUT_COLUMNS = 4;
+    public static final int AUTOTRADER_SLOT_SPACING = 18;
 
     private VillagerTradeMenuLayout() {
     }
@@ -91,5 +94,13 @@ public final class VillagerTradeMenuLayout {
 
     public static int itemY(int frameY) {
         return frameY + 1;
+    }
+
+    public static int autotraderOutputFrameX(int index) {
+        return AUTOTRADER_ROW_X + index % AUTOTRADER_OUTPUT_COLUMNS * AUTOTRADER_SLOT_SPACING;
+    }
+
+    public static int autotraderOutputFrameY(int index) {
+        return AUTOTRADER_OUTPUT_Y + index / AUTOTRADER_OUTPUT_COLUMNS * AUTOTRADER_SLOT_SPACING;
     }
 }

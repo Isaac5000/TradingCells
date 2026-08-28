@@ -30,11 +30,6 @@ public record SelectAutotraderOfferPayload(
             )
     );
 
-    public SelectAutotraderOfferPayload {
-        selectedOfferIndex = Math.max(0, selectedOfferIndex);
-        knownOffersRevision = Math.max(0, knownOffersRevision);
-    }
-
     @Override
     public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return PAYLOAD_TYPE;

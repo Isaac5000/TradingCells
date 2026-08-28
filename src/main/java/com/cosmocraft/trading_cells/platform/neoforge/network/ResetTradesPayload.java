@@ -21,10 +21,6 @@ public record ResetTradesPayload(int containerId, int knownOffersRevision) imple
             buffer -> new ResetTradesPayload(buffer.readContainerId(), buffer.readVarInt())
     );
 
-    public ResetTradesPayload {
-        knownOffersRevision = Math.max(0, knownOffersRevision);
-    }
-
     @Override
     public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return PAYLOAD_TYPE;
@@ -33,7 +29,8 @@ public record ResetTradesPayload(int containerId, int knownOffersRevision) imple
     public static void handle(ResetTradesPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player().containerMenu instanceof AutotraderMenu menu
-                    && menu.containerId == payload.containerId()) {
+                    && menu.containerId == payload.containerId()
+                    && menu.stillValid(context.player())) {
                 menu.resetTradesFromPacket(context.player(), payload.knownOffersRevision());
                 return;
             }

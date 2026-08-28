@@ -23,6 +23,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.util.Mth;
 import net.minecraft.util.ProblemReporter;
@@ -174,6 +175,10 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
 
     public ResourceHandler<FluidResource> experienceFluidHandler() {
         return experienceFluidHandler;
+    }
+
+    public int storedExperience() {
+        return storedExperience;
     }
 
     public boolean hasVillager() {
@@ -968,6 +973,7 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
         private int tradeBatchDepth;
         private boolean tradeBatchStateChanged;
         private boolean tradeBatchOffersChanged;
+        private boolean tradeBatchSoundPending;
         private long nextTemporaryDiscountExpiry = Long.MAX_VALUE;
         private int preparedReputation = Integer.MIN_VALUE;
         private int preparedCareerDiscount = Integer.MIN_VALUE;
@@ -996,21 +1002,24 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
 
             boolean stateChanged = tradeBatchStateChanged;
             boolean offersChanged = tradeBatchOffersChanged;
+            boolean soundPending = tradeBatchSoundPending;
             tradeBatchStateChanged = false;
             tradeBatchOffersChanged = false;
-            if (!stateChanged) {
-                return;
-            }
-
-            owner.saveProxyToStoredData();
-            if (offersChanged) {
-                owner.markOffersChanged();
-                Player tradingPlayer = getTradingPlayer();
-                if (tradingPlayer != null) {
-                    sendCurrentOffers();
+            tradeBatchSoundPending = false;
+            if (stateChanged) {
+                owner.saveProxyToStoredData();
+                if (offersChanged) {
+                    owner.markOffersChanged();
+                    Player tradingPlayer = getTradingPlayer();
+                    if (tradingPlayer != null) {
+                        sendCurrentOffers();
+                    }
+                } else {
+                    owner.markChangedAndSync();
                 }
-            } else {
-                owner.markChangedAndSync();
+            }
+            if (soundPending) {
+                playTradeSound();
             }
         }
 
@@ -1074,12 +1083,27 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
             if (isTradeBatchActive()) {
                 tradeBatchStateChanged = true;
                 tradeBatchOffersChanged = true;
+                tradeBatchSoundPending = true;
                 return;
             }
             owner.saveProxyToStoredData();
             owner.markOffersChanged();
             if (tradingPlayer != null) {
                 sendCurrentOffers();
+            }
+            playTradeSound();
+        }
+
+        private void playTradeSound() {
+            if (owner.getLevel() instanceof ServerLevel serverLevel) {
+                serverLevel.playSound(
+                        null,
+                        owner.getBlockPos(),
+                        getNotifyTradeSound(),
+                        SoundSource.NEUTRAL,
+                        1.0F,
+                        1.0F
+                );
             }
         }
 

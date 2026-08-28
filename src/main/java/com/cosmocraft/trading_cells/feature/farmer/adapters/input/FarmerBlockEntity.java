@@ -160,7 +160,8 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
                     worldPosition,
                     items.get(CROP_SLOT),
                     items.get(HOE_SLOT),
-                    cachedFortuneLevel
+                    cachedFortuneLevel,
+                    cachedSilkTouch
             );
             pendingDynamicHarvestReady = true;
         }
@@ -171,8 +172,9 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
         }
         if (canCultivate) {
             outputAvailable = cachedDynamicCrop
-                    ? !completingCycle || canStoreStacks(pendingDynamicHarvest)
-                    : canStoreStacks(cachedMaximumHarvest);
+                    ? !completingCycle
+                            || pendingDynamicHarvestReady
+                    : canStoreAny(cachedMaximumHarvest);
         }
         activity.transition(canCultivate
                 ? outputAvailable
@@ -208,8 +210,14 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
         }
 
         if (cachedDynamicCrop) {
-            storeStacks(pendingDynamicHarvest);
+            List<ItemStack> completedHarvest = pendingDynamicHarvest;
+            storeStacks(completedHarvest);
+            boolean nextHarvestCanFit = completedHarvest.isEmpty() || canStoreAny(completedHarvest);
             clearPendingDynamicHarvest();
+            if (!nextHarvestCanFit) {
+                activity.transition(MachineActivityController.Activity.BLOCKED);
+                setCultivating(false);
+            }
         } else {
             storeHarvest(cachedHarvest);
         }
@@ -485,8 +493,8 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
         markChangedAndSync();
     }
 
-    private boolean canStoreStacks(List<ItemStack> stacks) {
-        return OrderedOutputInserter.canInsertAll(
+    private boolean canStoreAny(List<ItemStack> stacks) {
+        return OrderedOutputInserter.hasAnyCapacityFor(
                 items,
                 FIRST_OUTPUT_SLOT,
                 OUTPUT_SLOT_COUNT,
@@ -499,7 +507,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
             return;
         }
         for (FarmerYield yield : harvest.yields()) {
-                if (yield.isGuaranteed()
+            if (yield.isGuaranteed()
                     || yield.succeeds(level.getRandom().nextInt(FarmerYield.CHANCE_SCALE))) {
                 OrderedOutputInserter.insert(
                         items,
@@ -512,7 +520,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
     }
 
     private void storeStacks(List<ItemStack> stacks) {
-        OrderedOutputInserter.insertAllValidated(
+        OrderedOutputInserter.insertAllAvailable(
                 items,
                 FIRST_OUTPUT_SLOT,
                 OUTPUT_SLOT_COUNT,

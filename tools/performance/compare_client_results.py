@@ -27,6 +27,7 @@ METADATA_KEYS = (
     "neo_version",
     "backend_requested",
     "scenario",
+    "runs",
     "warmup_seconds",
     "measure_seconds",
     "resolution",
@@ -34,7 +35,7 @@ METADATA_KEYS = (
     "with_trading_cells",
     "quick_play_world",
     "camera",
-    "template_directory",
+    "template_fingerprint",
 )
 
 

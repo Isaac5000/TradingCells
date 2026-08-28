@@ -31,4 +31,8 @@ public final class ExperienceMath {
     public static int levelForTotalPoints(int points) {
         return MinecraftExperience.levelForTotalPoints(points);
     }
+
+    public static int levelForTotalPointsRoundedUp(int points) {
+        return MinecraftExperience.levelForTotalPointsRoundedUp(points);
+    }
 }

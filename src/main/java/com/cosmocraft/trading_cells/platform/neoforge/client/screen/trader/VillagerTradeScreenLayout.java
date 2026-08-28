@@ -47,19 +47,19 @@ public final class VillagerTradeScreenLayout {
     public static final int PREVIEW_ARROW_Y_OFFSET = 4;
     public static final int AUTOTRADER_PREVIEW_ARROW_Y_OFFSET = 3;
 
-    public static final int MANUAL_ROW_X = 11;
-    public static final int MANUAL_ROW_Y = 29;
+    public static final int MANUAL_ROW_X = 10;
+    public static final int MANUAL_ROW_Y = 30;
     public static final int MANUAL_ROW_WIDTH = 100;
-    public static final int MANUAL_SCROLL_X = 113;
-    public static final int MANUAL_SCROLL_Y = 29;
+    public static final int MANUAL_SCROLL_X = 109;
+    public static final int MANUAL_SCROLL_Y = 30;
     public static final int MANUAL_SCROLL_HEIGHT = 168;
 
-    public static final int AUTOTRADER_DROPDOWN_X = 12;
+    public static final int AUTOTRADER_DROPDOWN_X = 11;
     public static final int AUTOTRADER_DROPDOWN_Y = 48;
-    public static final int AUTOTRADER_DROPDOWN_VIEW_X = 14;
+    public static final int AUTOTRADER_DROPDOWN_VIEW_X = 13;
     public static final int AUTOTRADER_DROPDOWN_VIEW_Y = 50;
     public static final int AUTOTRADER_DROPDOWN_VIEW_WIDTH = 94;
-    public static final int AUTOTRADER_DROPDOWN_TRACK_X = 109;
+    public static final int AUTOTRADER_DROPDOWN_TRACK_X = 108;
     public static final int AUTOTRADER_DROPDOWN_HEIGHT = DROPDOWN_VISIBLE_ROWS * DROPDOWN_ROW_HEIGHT;
     private static final int[] EQUIPMENT_SLOT_Y = new int[]{
             VillagerTradeMenuLayout.EQUIPMENT_HEAD_Y,

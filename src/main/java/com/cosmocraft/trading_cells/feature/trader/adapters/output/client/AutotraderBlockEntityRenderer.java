@@ -7,6 +7,8 @@ import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntit
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.MachineEntityRenderScales;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.BlockModelResolver;
@@ -38,6 +40,7 @@ public final class AutotraderBlockEntityRenderer implements BlockEntityRenderer<
     private static final float POI_SCALE = 0.28F;
     private final EntityRenderDispatcher entityRenderer;
     private final BlockModelResolver blockModelResolver;
+    private final Map<AutotraderBlockEntity, EntityCache> entityCaches = new WeakHashMap<>();
 
     public AutotraderBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         entityRenderer = context.entityRenderer();
@@ -62,9 +65,10 @@ public final class AutotraderBlockEntityRenderer implements BlockEntityRenderer<
         state.displayEntity = null;
         state.poi.clear();
         if (blockEntity.getLevel() == null) {
-            state.clearCache();
+            entityCaches.remove(blockEntity);
             return;
         }
+        EntityCache entityCache = entityCaches.computeIfAbsent(blockEntity, ignored -> new EntityCache());
         state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(blockEntity.getLevel(), blockEntity.getBlockPos());
         ItemStack poiStack = blockEntity.copyPoiStack();
         if (poiStack.getItem() instanceof BlockItem blockItem) {
@@ -74,10 +78,10 @@ public final class AutotraderBlockEntityRenderer implements BlockEntityRenderer<
         }
         ItemStack stack = blockEntity.getItem(AutotraderBlockEntity.VILLAGER_SLOT);
         if (stack.isEmpty()) {
-            state.clearCache();
+            entityCache.clear();
             return;
         }
-        Entity entity = state.getOrCreateEntity(blockEntity, stack);
+        Entity entity = entityCache.getOrCreateEntity(blockEntity, stack);
         if (entity == null) {
             return;
         }
@@ -150,6 +154,9 @@ public final class AutotraderBlockEntityRenderer implements BlockEntityRenderer<
         public final BlockModelRenderState poi = new BlockModelRenderState();
         public @Nullable EntityRenderState displayEntity;
         public Direction facing = Direction.NORTH;
+    }
+
+    private static final class EntityCache {
         private ItemStack cachedStack = ItemStack.EMPTY;
         private @Nullable Entity cachedEntity;
 
@@ -166,7 +173,7 @@ public final class AutotraderBlockEntityRenderer implements BlockEntityRenderer<
             return cachedEntity;
         }
 
-        private void clearCache() {
+        private void clear() {
             cachedStack = ItemStack.EMPTY;
             cachedEntity = null;
         }

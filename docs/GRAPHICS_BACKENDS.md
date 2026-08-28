@@ -78,6 +78,11 @@ efectivo, fija mundo/camara/opciones, inicia JFR despues del calentamiento y tom
 la captura en un fotograma posterior. Admite las cuatro combinaciones
 OpenGL/Vulkan con/sin REI y un control `--without-trading-cells`.
 
+Cada escenario usa una plantilla registrada con
+`prepare_template_manifest.py`. El comparador exige la misma huella SHA-256 de
+mundo y estado en baseline y candidato; cambiar de plantilla invalida la pareja
+de resultados.
+
 Las comparaciones usan `compare_client_results.py`. El comparador comprueba
 metadatos, media, p95, CPU, asignaciones, memoria, trafico y capturas. No aplica
 tolerancias visuales salvo que se indiquen explicitamente.

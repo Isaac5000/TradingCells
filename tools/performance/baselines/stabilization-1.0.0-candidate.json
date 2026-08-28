@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-08-25",
+  "git_head": "9fddde4894ea3c4040ab3c2257a4d2ff5f3c10d1",
+  "dirty_entries": 146,
+  "artifact": "build/libs/trading_cells-1.0.0.jar",
+  "artifact_size_bytes": 1813690,
+  "artifact_sha256": "B4830A7A27F7A53997641012BAD3BD2E319F703A6432E290705D9C70DAF4386D",
+  "clean_release_check_runs": 2,
+  "reproducible_artifact": true,
+  "purpose": "Candidate after the 1.0.0 release hardening and reproducibility pass."
+}

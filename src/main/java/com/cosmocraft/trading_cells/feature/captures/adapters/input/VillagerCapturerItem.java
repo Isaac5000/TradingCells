@@ -160,12 +160,14 @@ public class VillagerCapturerItem extends AbstractCapturerItem {
             }
         }
 
-        Component baseComponent = getVillagerNameFromTag(tag);
         if (isBabyVillager(tag)) {
-            return Component.translatable("villager.baby", baseComponent);
+            return Component.translatable(
+                    "villager.baby",
+                    Component.translatable("entity.minecraft.villager")
+            );
         }
 
-        return baseComponent;
+        return getVillagerNameFromTag(tag);
     }
 
     private static @Nullable Villager releaseVillager(Level level, ItemStack stack, BlockPos position) {

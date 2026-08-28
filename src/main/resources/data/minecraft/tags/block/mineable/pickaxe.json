@@ -16,6 +16,8 @@
     "trading_cells:quarry",
     "trading_cells:piglin_quarry",
     "trading_cells:experience_storage",
-    "trading_cells:arcane_infuser"
+    "trading_cells:arcane_infuser",
+    "#trading_cells:silk_touch_two/pickaxe",
+    "#trading_cells:silk_touch_two/general"
   ]
 }

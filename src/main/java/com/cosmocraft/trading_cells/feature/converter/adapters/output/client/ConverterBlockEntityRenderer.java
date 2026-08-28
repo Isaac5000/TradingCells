@@ -8,6 +8,8 @@ import com.cosmocraft.trading_cells.platform.neoforge.client.render.PreviewEntit
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.MachineEntityRenderScales;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -34,6 +36,7 @@ import org.jspecify.annotations.Nullable;
 public final class ConverterBlockEntityRenderer implements BlockEntityRenderer<ConverterBlockEntity, ConverterBlockEntityRenderer.State> {
     private static final float SIDE_ENTITY_SCALE = MachineEntityRenderScales.VILLAGER_BREEDER_ENTITY;
     private final EntityRenderDispatcher entityRenderer;
+    private final Map<ConverterBlockEntity, EntityCache> entityCaches = new WeakHashMap<>();
 
     public ConverterBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         entityRenderer = context.entityRenderer();
@@ -59,22 +62,23 @@ public final class ConverterBlockEntityRenderer implements BlockEntityRenderer<C
 
         Level level = blockEntity.getLevel();
         if (level == null) {
-            state.clearCaches();
+            entityCaches.remove(blockEntity);
             return;
         }
+        EntityCache entityCache = entityCaches.computeIfAbsent(blockEntity, ignored -> new EntityCache());
         state.lightCoords = PreviewEntityRenderUtil.sampleCageLightCoords(level, blockEntity.getBlockPos());
         Direction side = state.facing.getClockWise();
 
         ItemStack villagerStack = blockEntity.getItem(ConverterBlockEntity.VILLAGER_SLOT);
         Entity containedVillager = blockEntity.stage() == ConverterStage.CURING
-                ? state.getOrCreateZombieVillager(blockEntity, villagerStack)
-                : state.getOrCreateVillager(blockEntity, villagerStack);
+                ? entityCache.getOrCreateZombieVillager(blockEntity, villagerStack)
+                : entityCache.getOrCreateVillager(blockEntity, villagerStack);
         if (containedVillager != null) {
             orient(containedVillager, side.getOpposite().toYRot());
             state.villager = extractEntity(containedVillager, partialTicks, state.lightCoords);
         }
 
-        Entity zombie = state.getOrCreateZombie(level);
+        Entity zombie = entityCache.getOrCreateZombie(level);
         if (zombie != null) {
             orient(zombie, side.toYRot());
             state.zombie = extractEntity(zombie, partialTicks, state.lightCoords);
@@ -160,6 +164,9 @@ public final class ConverterBlockEntityRenderer implements BlockEntityRenderer<C
         public @Nullable EntityRenderState villager;
         public @Nullable EntityRenderState zombie;
         public Direction facing = Direction.NORTH;
+    }
+
+    private static final class EntityCache {
         private ItemStack cachedVillagerStack = ItemStack.EMPTY;
         private @Nullable Entity cachedVillager;
         private @Nullable Entity cachedZombie;
@@ -215,14 +222,6 @@ public final class ConverterBlockEntityRenderer implements BlockEntityRenderer<C
                 cachedZombieVillagerStack = stack.copy();
             }
             return cachedZombieVillager;
-        }
-
-        private void clearCaches() {
-            cachedVillagerStack = ItemStack.EMPTY;
-            cachedVillager = null;
-            cachedZombie = null;
-            cachedZombieVillager = null;
-            cachedZombieVillagerStack = ItemStack.EMPTY;
         }
     }
 

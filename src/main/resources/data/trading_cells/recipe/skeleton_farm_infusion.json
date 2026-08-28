@@ -11,7 +11,7 @@
     {"ingredient": "minecraft:pale_moss_block", "count": 1},
     {"ingredient": "minecraft:iron_ingot", "count": 1}
   ],
-  "experience": 25000,
+  "experience": 50000,
   "result": {
     "type": "item",
     "item": "trading_cells:skeleton_farm"

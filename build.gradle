@@ -27,6 +27,17 @@ sourceSets.main.resources {
 }
 
 repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'Modrinth'
+                url = 'https://api.modrinth.com/maven'
+            }
+        }
+        filter {
+            includeGroup 'maven.modrinth'
+        }
+    }
     maven {
         name = 'Shedaniel'
         url = 'https://maven.shedaniel.me'
@@ -68,6 +79,12 @@ sourceSets {
         java.srcDir('tools/performance/client/java')
         resources.srcDir('tools/performance/client/resources')
     }
+    gameTest {
+        java.setSrcDirs(['src/gameTest/java'])
+        resources.setSrcDirs(['src/gameTest/resources'])
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
 }
 
 configurations.developmentClientCompileClasspath.extendsFrom(configurations.compileClasspath)
@@ -80,6 +97,8 @@ configurations.performanceClientRuntimeClasspath.extendsFrom(
         configurations.runtimeClasspath,
         configurations.localRuntime
 )
+configurations.gameTestCompileClasspath.extendsFrom(configurations.compileClasspath)
+configurations.gameTestRuntimeClasspath.extendsFrom(configurations.runtimeClasspath)
 
 def prepareVulkanFmlConfig = tasks.register('prepareVulkanFmlConfig') {
     group = 'ide'
@@ -190,12 +209,28 @@ neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
 
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+        "trading_cells_gametest" {
+            sourceSet(sourceSets.gameTest)
+        }
+        "trading_cells_performance" {
+            sourceSet(sourceSets.performanceClient)
+        }
+    }
+
     // This line is optional. Access Transformers are automatically detected
     // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
     runs {
+        configureEach {
+            loadedMods = [mods.trading_cells]
+        }
+
         client {
             client()
             sourceSet = sourceSets.developmentClient
@@ -253,6 +288,9 @@ neoForge {
         performanceClientVulkan {
             client()
             sourceSet = sourceSets.performanceClient
+            loadedMods = project.hasProperty('performanceExcludeTradingCells')
+                    ? [mods.trading_cells_performance]
+                    : [mods.trading_cells, mods.trading_cells_performance]
             gameDirectory = project.file(
                     project.findProperty('performanceClientRunDirectory')
                             ?: 'build/performance/client/vulkan'
@@ -268,6 +306,9 @@ neoForge {
         performanceClientOpenGL {
             client()
             sourceSet = sourceSets.performanceClient
+            loadedMods = project.hasProperty('performanceExcludeTradingCells')
+                    ? [mods.trading_cells_performance]
+                    : [mods.trading_cells, mods.trading_cells_performance]
             gameDirectory = project.file(
                     project.findProperty('performanceClientRunDirectory')
                             ?: 'build/performance/client/opengl'
@@ -305,6 +346,9 @@ neoForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
+            sourceSet = sourceSets.gameTest
+            loadedMods = [mods.trading_cells, mods.trading_cells_gametest]
+            gameDirectory = project.file('build/gametest')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
@@ -330,28 +374,16 @@ neoForge {
             // Recommended logging level for the console
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
-            logLevel = org.slf4j.event.Level.DEBUG
+            logLevel = name == 'gameTestServer'
+                    ? org.slf4j.event.Level.INFO
+                    : org.slf4j.event.Level.DEBUG
         }
     }
 
-    mods {
-        // define mod <-> source bindings
-        // these are used to tell the game which sources are for which mod
-        // multi mod projects should define one per mod
-        if (!project.hasProperty('performanceExcludeTradingCells')) {
-            "${mod_id}" {
-                sourceSet(sourceSets.main)
-            }
-        }
-        if (project.hasProperty('performanceClientOutput')) {
-            "trading_cells_performance" {
-                sourceSet(sourceSets.performanceClient)
-            }
-        }
-    }
 }
 
 dependencies {
+    compileOnly "maven.modrinth:jade:${jade_version}"
     compileOnly "me.shedaniel:RoughlyEnoughItems-api-neoforge:${rei_api_version}"
     compileOnly("net.fabricmc:fabric-loader:0.19.3") {
         transitive = false
@@ -360,6 +392,9 @@ dependencies {
     if (!project.hasProperty('withoutRei')) {
         localRuntime "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
         localRuntime "dev.architectury:architectury-neoforge:${architectury_version}"
+    }
+    if (!project.hasProperty('withoutJade')) {
+        localRuntime "maven.modrinth:jade:${jade_version}"
     }
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
@@ -390,6 +425,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             mod_license            : mod_license,
             mod_version            : mod_version,
             rei_version_range      : rei_version_range,
+            jade_version_range     : jade_version_range,
     ]
     inputs.properties replaceProperties
     expand replaceProperties
@@ -419,6 +455,7 @@ publishing {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
     options.compilerArgs.add('-Xlint:unchecked')
+    options.compilerArgs.add('-Xlint:deprecation')
 }
 
 tasks.register('checkArchitecture') {
@@ -433,7 +470,7 @@ tasks.register('checkArchitecture') {
         def violations = []
         def featurePrefix = 'com.cosmocraft.trading_cells.feature.'
         def sharedPrefix = 'com.cosmocraft.trading_cells.shared.'
-        def sharedFeatures = ['captures'] as Set
+        def sharedFeatures = ['captures', 'combat'] as Set
         fileTree(sourceRoot).matching { include '**/*.java' }.each { source ->
             def relativePath = sourceRoot.toPath()
                     .relativize(source.toPath())
@@ -509,7 +546,8 @@ tasks.register('checkArchitecture') {
             if (ownerFeature != null) {
                 imports.each { imported ->
                     if (imported.text.startsWith("import ${sharedPrefix}")
-                            && !imported.text.contains('.shared.machines.domain.')) {
+                            && !imported.text.contains('.shared.machines.domain.')
+                            && !imported.text.contains('.shared.mobfarm.domain.')) {
                         violations << "${relativePath}:${imported.line}: use a public shared-domain boundary"
                         return
                     }
@@ -530,6 +568,11 @@ tasks.register('checkArchitecture') {
                             && !imported.text.contains('.captures.domain.')
                             && !imported.text.contains('.captures.adapters.api.')) {
                         violations << "${relativePath}:${imported.line}: use the public Captures API"
+                    }
+                    if (target == 'combat'
+                            && !imported.text.contains('.combat.domain.')
+                            && !imported.text.contains('.combat.adapters.api.')) {
+                        violations << "${relativePath}:${imported.line}: use the public Combat API"
                     }
                 }
             }
@@ -634,12 +677,139 @@ tasks.register('checkVillagerTradeGuiTextures', Exec) {
     inputs.dir('src/main/resources/assets/trading_cells/textures/gui/sprites')
 }
 
+tasks.register('checkProjectResources', Exec) {
+    group = 'verification'
+    description = 'Validates JSON, translations, models, textures and recipe references.'
+    commandLine pythonExecutable, 'tools/validate_project_resources.py'
+    inputs.file('tools/validate_project_resources.py')
+    inputs.dir('src/main/resources')
+    if (file('src/generated/resources').isDirectory()) {
+        inputs.dir('src/generated/resources')
+    }
+}
+
+tasks.register('checkReleaseContracts', Exec) {
+    group = 'verification'
+    description = 'Verifies the compatibility identifiers frozen for Trading Cells 1.0.0.'
+    commandLine pythonExecutable, 'tools/release/verify_release_contracts.py'
+    inputs.file('gradle.properties')
+    inputs.file('tools/release/contracts-1.0.0.json')
+    inputs.file('tools/release/verify_release_contracts.py')
+    inputs.dir('src/main/java/com/cosmocraft/trading_cells/platform/neoforge/network')
+    inputs.dir('src/main/java/com/cosmocraft/trading_cells/platform/neoforge/mobfarm')
+    inputs.dir('src/main/resources/data/trading_cells/recipe')
+    inputs.files(fileTree('src/main/java/com/cosmocraft/trading_cells/feature') {
+        include '**/*BlockEntity.java'
+    })
+}
+
+def publishedJar = tasks.named('jar', Jar)
+tasks.register('checkPublishedJarContents') {
+    group = 'verification'
+    description = 'Checks that the release JAR contains required resources and no development leftovers.'
+    dependsOn publishedJar
+    inputs.file(publishedJar.flatMap { it.archiveFile })
+
+    doLast {
+        def jarFile = publishedJar.get().archiveFile.get().asFile
+        def entries = []
+        new java.util.zip.ZipFile(jarFile).withCloseable { zip ->
+            def enumeration = zip.entries()
+            while (enumeration.hasMoreElements()) {
+                def entry = enumeration.nextElement()
+                if (!entry.directory) {
+                    entries << entry.name
+                }
+            }
+        }
+
+        def required = [
+                'META-INF/neoforge.mods.toml',
+                'com/cosmocraft/trading_cells/platform/neoforge/bootstrap/TradingCells.class',
+                'assets/trading_cells/lang/en_us.json',
+                'assets/trading_cells/lang/es_es.json'
+        ]
+        def missing = required.findAll { !entries.contains(it) }
+        def forbiddenFragments = [
+                'com/cosmocraft/trading_cells/gametest/',
+                'data/trading_cells/loot_tables/',
+                'textures/item/quarry_upgrades/',
+                'textures/item/piglin_barter_upgrades/',
+                'textures/item/upgrades_quarry/',
+                'textures/item/upgrades_piglin_netherite_trader/',
+                'src/gameTest/',
+                'tools/'
+        ]
+        def forbidden = entries.findAll { entry ->
+            entry.endsWith('.bbmodel')
+                    || forbiddenFragments.any { entry.contains(it) }
+        }
+        if (!missing.isEmpty() || !forbidden.isEmpty()) {
+            def details = []
+            if (!missing.isEmpty()) {
+                details << "missing: ${missing.join(', ')}"
+            }
+            if (!forbidden.isEmpty()) {
+                details << "forbidden: ${forbidden.join(', ')}"
+            }
+            throw new GradleException("Published JAR validation failed: ${details.join('; ')}")
+        }
+    }
+}
+
+tasks.register('checkSinglePublishedArtifact') {
+    group = 'verification'
+    description = 'Rejects missing or additional JARs in the publication directory.'
+    dependsOn publishedJar
+
+    doLast {
+        def expectedName = "${project.mod_id}-${project.mod_version}.jar"
+        def jars = fileTree('build/libs').matching { include '*.jar' }.files
+                .collect { it.name }
+                .sort()
+        if (jars != [expectedName]) {
+            throw new GradleException(
+                    "Expected only ${expectedName} in build/libs, found: ${jars.join(', ')}"
+            )
+        }
+    }
+}
+
 tasks.named('check').configure {
     dependsOn tasks.named('checkArchitecture')
     dependsOn tasks.named('checkGraphicsBackendIndependence')
     dependsOn tasks.named('verifyDomainRules')
     dependsOn tasks.named('checkMachineGuiTextures')
     dependsOn tasks.named('checkVillagerTradeGuiTextures')
+    dependsOn tasks.named('checkProjectResources')
+    dependsOn tasks.named('checkReleaseContracts')
+    dependsOn tasks.named('checkPublishedJarContents')
+}
+
+tasks.register('releaseCheck') {
+    group = 'verification'
+    description = 'Runs all automated checks required before publishing Trading Cells.'
+    dependsOn tasks.named('check')
+    dependsOn tasks.named('runGameTestServer')
+    dependsOn tasks.named('checkSinglePublishedArtifact')
+}
+
+tasks.register('recordReleaseEvidence', Exec) {
+    group = 'verification'
+    description = 'Runs releaseCheck and records a non-destructive worktree and JAR audit.'
+    dependsOn tasks.named('releaseCheck')
+    commandLine pythonExecutable,
+            'tools/release/record_release_evidence.py',
+            '--output',
+            'build/reports/release/release-audit.json',
+            '--release-check-passed'
+    inputs.file('tools/release/record_release_evidence.py')
+    inputs.file('build/libs/' + project.mod_id + '-' + project.mod_version + '.jar')
+    outputs.files(
+            'build/reports/release/release-audit.json',
+            'build/reports/release/release-audit.md'
+    )
+    outputs.upToDateWhen { false }
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

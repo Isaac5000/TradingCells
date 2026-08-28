@@ -34,7 +34,6 @@ public final class AutotraderMenu extends AbstractContainerMenu {
     public static final int INPUT_ROW_X = VillagerTradeMenuLayout.itemX(VillagerTradeMenuLayout.AUTOTRADER_ROW_X);
     public static final int INPUT_A_ROW_Y = VillagerTradeMenuLayout.itemY(VillagerTradeMenuLayout.AUTOTRADER_INPUT_A_Y);
     public static final int INPUT_B_ROW_Y = VillagerTradeMenuLayout.itemY(VillagerTradeMenuLayout.AUTOTRADER_INPUT_B_Y);
-    public static final int OUTPUT_ROW_Y = VillagerTradeMenuLayout.itemY(VillagerTradeMenuLayout.AUTOTRADER_OUTPUT_Y);
     private static final int MACHINE_SLOT_COUNT = AutotraderBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INVENTORY_END = PLAYER_INVENTORY_START + 27;
@@ -91,8 +90,8 @@ public final class AutotraderMenu extends AbstractContainerMenu {
             addSlot(new OutputSlot(
                     container,
                     AutotraderBlockEntity.FIRST_OUTPUT_SLOT + index,
-                    INPUT_ROW_X + index * 18,
-                    OUTPUT_ROW_Y
+                    outputSlotX(index),
+                    outputSlotY(index)
             ));
         }
         addStandardInventorySlots(
@@ -112,6 +111,14 @@ public final class AutotraderMenu extends AbstractContainerMenu {
 
     public int offerCount() {
         return offers().size();
+    }
+
+    public static int outputSlotX(int index) {
+        return VillagerTradeMenuLayout.itemX(VillagerTradeMenuLayout.autotraderOutputFrameX(index));
+    }
+
+    public static int outputSlotY(int index) {
+        return VillagerTradeMenuLayout.itemY(VillagerTradeMenuLayout.autotraderOutputFrameY(index));
     }
 
     public int storedExperience() {

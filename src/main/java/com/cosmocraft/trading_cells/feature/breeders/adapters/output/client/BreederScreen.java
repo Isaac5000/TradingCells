@@ -2,7 +2,6 @@ package com.cosmocraft.trading_cells.feature.breeders.adapters.output.client;
 
 import com.cosmocraft.trading_cells.feature.breeders.adapters.input.BreederBlockEntity;
 import com.cosmocraft.trading_cells.feature.breeders.adapters.input.BreederMenu;
-import com.cosmocraft.trading_cells.feature.breeders.adapters.input.MinecraftBreederFood;
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederKind;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
@@ -12,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.CommonComponents;
@@ -39,21 +37,7 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
     private static final int PROGRESS_WIDTH = MachineScreenLayout.PROGRESS_FILL_WIDTH;
     private static final int PROGRESS_HEIGHT = MachineScreenLayout.PROGRESS_FILL_HEIGHT;
 
-    private static final int MAX_VISIBLE_FOODS = 4;
     private static final int OFFSCREEN_MOUSE_COORDINATE = -10_000;
-    private static final int FOOD_INFO_BUTTON_SIZE = 12;
-    private static final int FOOD_INFO_BUTTON_X = MachineScreenLayout.MACHINE_PANEL_X
-            + MachineScreenLayout.MACHINE_PANEL_WIDTH - FOOD_INFO_BUTTON_SIZE - 3;
-    private static final int FOOD_INFO_BUTTON_Y = MachineScreenLayout.MACHINE_PANEL_Y
-            + MachineScreenLayout.MACHINE_PANEL_HEIGHT - FOOD_INFO_BUTTON_SIZE - 3;
-    private static final int FOOD_LIST_X = -20;
-    private static final int FOOD_LIST_Y = 42;
-    private static final int FOOD_LIST_WIDTH = MachineScreenLayout.WIDTH + 40;
-    private static final int FOOD_HEADER_HEIGHT = 15;
-    private static final int FOOD_ROW_HEIGHT = 28;
-    private static final int FOOD_ITEM_X_OFFSET = 7;
-    private static final int FOOD_NAME_X_OFFSET = 30;
-
     private static final int MAX_VISIBLE_VARIANTS = 4;
     private static final int VARIANT_BUTTON_X = MachineScreenLayout.machineX(101);
     private static final int VARIANT_BUTTON_Y = 23;
@@ -63,9 +47,6 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
     private static final int VARIANT_ROW_HEIGHT = 16;
 
     private final List<VariantButton> variantButtons = new ArrayList<>();
-    private Button foodInfoButton;
-    private boolean foodListOpen;
-    private int foodScroll;
     private Button variantSelector;
     private boolean variantListOpen;
     private int variantScroll;
@@ -80,18 +61,6 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
     @Override
     protected void init() {
         super.init();
-        foodInfoButton = addRenderableWidget(Button.builder(
-                        Component.literal("?"),
-                        button -> toggleFoodList()
-                )
-                .bounds(
-                        leftPos + FOOD_INFO_BUTTON_X,
-                        topPos + FOOD_INFO_BUTTON_Y,
-                        FOOD_INFO_BUTTON_SIZE,
-                        FOOD_INFO_BUTTON_SIZE
-                )
-                .build());
-        foodInfoButton.setTooltip(Tooltip.create(Component.translatable("button.trading_cells.food_help")));
         if (menu.kind() != BreederKind.VILLAGER) {
             return;
         }
@@ -106,13 +75,6 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
         super.containerTick();
         if (variantSelector != null) {
             variantSelector.setMessage(variantSelectorLabel());
-        }
-        if (foodListOpen) {
-            int maximumScroll = Math.max(
-                    0,
-                    MinecraftBreederFood.options(menu.kind()).size() - MAX_VISIBLE_FOODS
-            );
-            foodScroll = Mth.clamp(foodScroll, 0, maximumScroll);
         }
         if (variantListOpen
                 && variantButtons.size() != Math.min(MAX_VISIBLE_VARIANTS, menu.villagerVariantCount())) {
@@ -244,16 +206,10 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
 
     @Override
     public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        boolean overlayHovered = foodListOpen && isWithinFoodList(mouseX, mouseY)
-                || variantListOpen && isWithinVariantList(mouseX, mouseY);
+        boolean overlayHovered = variantListOpen && isWithinVariantList(mouseX, mouseY);
         int contentMouseX = overlayHovered ? OFFSCREEN_MOUSE_COORDINATE : mouseX;
         int contentMouseY = overlayHovered ? OFFSCREEN_MOUSE_COORDINATE : mouseY;
         super.extractContents(graphics, contentMouseX, contentMouseY, partialTick);
-        if (foodListOpen) {
-            graphics.nextStratum();
-            drawFoodList(graphics, mouseX, mouseY);
-            return;
-        }
         if (!variantListOpen) {
             return;
         }
@@ -292,12 +248,6 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
 
     @Override
     public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
-        int foodCount = MinecraftBreederFood.options(menu.kind()).size();
-        if (foodListOpen && isWithinFoodList(x, y) && foodCount > MAX_VISIBLE_FOODS) {
-            int maxScroll = foodCount - MAX_VISIBLE_FOODS;
-            foodScroll = Mth.clamp((int) (foodScroll - scrollY), 0, maxScroll);
-            return true;
-        }
         if (variantListOpen && menu.villagerVariantCount() > MAX_VISIBLE_VARIANTS) {
             int maxScroll = menu.villagerVariantCount() - MAX_VISIBLE_VARIANTS;
             variantScroll = Mth.clamp((int) (variantScroll - scrollY), 0, maxScroll);
@@ -308,14 +258,6 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        boolean overFoodButton = foodInfoButton != null
-                && foodInfoButton.isMouseOver(event.x(), event.y());
-        if (foodListOpen && !overFoodButton && isWithinFoodList(event.x(), event.y())) {
-            return true;
-        }
-        if (foodListOpen && !overFoodButton) {
-            closeFoodList();
-        }
         if (variantListOpen
                 && !isWithinVariantList(event.x(), event.y())
                 && (variantSelector == null || !variantSelector.isMouseOver(event.x(), event.y()))) {
@@ -324,26 +266,11 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
         return super.mouseClicked(event, doubleClick);
     }
 
-    private void toggleFoodList() {
-        if (foodListOpen) {
-            closeFoodList();
-            return;
-        }
-        closeVariantList();
-        foodListOpen = true;
-        foodScroll = 0;
-    }
-
-    private void closeFoodList() {
-        foodListOpen = false;
-    }
-
     private void toggleVariantList() {
         if (variantListOpen) {
             closeVariantList();
             return;
         }
-        closeFoodList();
         variantListOpen = true;
         int variantCount = menu.villagerVariantCount();
         variantScroll = Mth.clamp(
@@ -372,140 +299,6 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
 
     private Component variantSelectorLabel() {
         return menu.selectedVillagerVariantName();
-    }
-
-    private void drawFoodList(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        List<MinecraftBreederFood.Option> foods = MinecraftBreederFood.options(menu.kind());
-        int visible = Math.clamp(foods.size() - foodScroll, 0, MAX_VISIBLE_FOODS);
-        int panelX = leftPos + FOOD_LIST_X;
-        int panelY = topPos + FOOD_LIST_Y;
-        int rowsHeight = visible * FOOD_ROW_HEIGHT;
-        int panelHeight = FOOD_HEADER_HEIGHT + rowsHeight + 2;
-        boolean scrollable = foods.size() > MAX_VISIBLE_FOODS;
-        MachineScreenTheme theme = menu.kind() == BreederKind.VILLAGER
-                ? MachineScreenTheme.VILLAGER_BREEDER
-                : MachineScreenTheme.PIGLIN_BREEDER;
-
-        graphics.fill(
-                panelX,
-                panelY,
-                panelX + FOOD_LIST_WIDTH,
-                panelY + panelHeight,
-                theme.frameDark()
-        );
-        graphics.fill(
-                panelX + 1,
-                panelY + 1,
-                panelX + FOOD_LIST_WIDTH - 1,
-                panelY + panelHeight - 1,
-                theme.frame()
-        );
-        graphics.text(
-                font,
-                Component.translatable("gui.trading_cells.accepted_foods"),
-                panelX + 5,
-                panelY + 4,
-                theme.titleText(),
-                false
-        );
-
-        int rowWidth = FOOD_LIST_WIDTH - 4 - (scrollable ? 5 : 0);
-        for (int row = 0; row < visible; row++) {
-            MinecraftBreederFood.Option option = foods.get(foodScroll + row);
-            ItemStack stack = new ItemStack(option.item());
-            int rowX = panelX + 2;
-            int rowY = panelY + FOOD_HEADER_HEIGHT + row * FOOD_ROW_HEIGHT;
-            boolean active = option.food() == menu.activeFood() && menu.breedTicks() > 0;
-            boolean hovered = mouseX >= rowX
-                    && mouseX < rowX + rowWidth
-                    && mouseY >= rowY
-                    && mouseY < rowY + FOOD_ROW_HEIGHT - 1;
-            int rowFill = theme.slot();
-            if (active) {
-                rowFill = theme.frameLight();
-            } else if (hovered) {
-                rowFill = theme.frame();
-            }
-
-            graphics.fill(
-                    rowX,
-                    rowY,
-                    rowX + rowWidth,
-                    rowY + FOOD_ROW_HEIGHT - 1,
-                    rowFill
-            );
-            graphics.outline(
-                    rowX,
-                    rowY,
-                    rowWidth,
-                    FOOD_ROW_HEIGHT - 1,
-                    active || hovered ? theme.slotHighlight() : theme.frameLight()
-            );
-
-            int itemX = rowX + FOOD_ITEM_X_OFFSET;
-            int itemY = rowY + 1;
-            graphics.fakeItem(stack, itemX, itemY);
-            graphics.centeredText(
-                    font,
-                    Component.literal("x" + menu.foodCost(option.food())),
-                    itemX + 8,
-                    rowY + 18,
-                    theme.titleText()
-            );
-
-            String itemName = stack.getHoverName().getString();
-            int maximumNameWidth = rowWidth - FOOD_NAME_X_OFFSET - 4;
-            String visibleName = font.plainSubstrByWidth(itemName, maximumNameWidth);
-            graphics.text(
-                    font,
-                    Component.literal(visibleName),
-                    rowX + FOOD_NAME_X_OFFSET,
-                    rowY + 9,
-                    theme.titleText(),
-                    false
-            );
-            if (mouseX >= itemX
-                    && mouseX < itemX + 16
-                    && mouseY >= itemY
-                    && mouseY < itemY + 16) {
-                graphics.setTooltipForNextFrame(font, stack, mouseX, mouseY);
-            } else if (hovered && !visibleName.equals(itemName)) {
-                graphics.setTooltipForNextFrame(font, Component.literal(itemName), mouseX, mouseY);
-            }
-        }
-        drawFoodScrollbar(graphics, foods.size(), visible, panelX, panelY, theme);
-    }
-
-    private void drawFoodScrollbar(
-            GuiGraphicsExtractor graphics,
-            int foodCount,
-            int visible,
-            int panelX,
-            int panelY,
-            MachineScreenTheme theme
-    ) {
-        if (foodCount <= visible) {
-            return;
-        }
-        int trackX = panelX + FOOD_LIST_WIDTH - 5;
-        int trackY = panelY + FOOD_HEADER_HEIGHT + 2;
-        int trackHeight = visible * FOOD_ROW_HEIGHT - 5;
-        int thumbHeight = Math.max(9, trackHeight * visible / foodCount);
-        int maxScroll = foodCount - visible;
-        int thumbY = trackY + (trackHeight - thumbHeight) * foodScroll / maxScroll;
-        graphics.fill(trackX, trackY, trackX + 2, trackY + trackHeight, theme.frameDark());
-        graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbHeight, theme.slotHighlight());
-    }
-
-    private boolean isWithinFoodList(double mouseX, double mouseY) {
-        int visible = Math.min(MAX_VISIBLE_FOODS, MinecraftBreederFood.options(menu.kind()).size());
-        int panelHeight = FOOD_HEADER_HEIGHT + visible * FOOD_ROW_HEIGHT + 2;
-        int panelX = leftPos + FOOD_LIST_X;
-        int panelY = topPos + FOOD_LIST_Y;
-        return mouseX >= panelX
-                && mouseX < panelX + FOOD_LIST_WIDTH
-                && mouseY >= panelY
-                && mouseY < panelY + panelHeight;
     }
 
     private boolean isWithinVariantList(double mouseX, double mouseY) {

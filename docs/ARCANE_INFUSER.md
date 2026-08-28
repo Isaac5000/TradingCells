@@ -34,6 +34,19 @@ Catalizador de sculk | Bloque de netherita | Piedra del End
 
 Coste: `30.000` XP.
 
+### Toque de Seda II
+
+```text
+Fragmento de eco | Fragmento de amatista | Fragmento de eco
+Huevo de tortuga | Libro con Toque de Seda I | Huevo de tortuga
+Fragmento de eco | Estrella del Nether | Fragmento de eco
+```
+
+Coste: `75.000` XP. Produce `minecraft:silk_touch` a nivel 2, no un
+encantamiento alternativo. Se aplica en yunque a las mismas herramientas que el
+Toque de Seda vanilla y permite recoger los bloques enumerados en
+[`SILK_TOUCH_II.md`](SILK_TOUCH_II.md).
+
 ### Nitwit
 
 ```text
@@ -52,7 +65,7 @@ Huevo de Stray      | Spawner           | Huevo de Bogged
 Lingote de hierro   | Bloque de musgo pálido | Lingote de hierro
 ```
 
-Coste: `25.000` XP. Usa directamente los huevos generadores de las cinco variantes compatibles y produce el bloque de Granja de Esqueletos.
+Coste: `50.000` XP. Usa directamente los huevos generadores de las cinco variantes compatibles y produce el bloque de Granja de Esqueletos.
 
 ### Huevos generadores de esqueletos
 
@@ -73,11 +86,46 @@ Huevo de momificado | Spawner             | Huevo de ahogado
 Lingote de hierro   | Huevo de piglin z.  | Lingote de hierro
 ```
 
-Coste: `25.000` XP. Produce la Granja de Zombis. El zoglin está disponible en el selector, pero no participa en esta receta.
+Coste: `50.000` XP. Produce la Granja de Zombis. El zoglin está disponible en el selector, pero no participa en esta receta.
 
 ### Huevos generadores de zombis
 
 Seis recetas convierten `#trading_cells:arcane_infusion_eggs` en huevos de zombi, aldeano zombi, momificado, ahogado, piglin zombificado o zoglin. Los costes son `55`, `91`, `76`, `160`, `112` y `139` XP respectivamente.
+
+### Granja de Saqueadores
+
+```text
+Huevo de saqueador | Frasco ominoso      | Huevo de devastador
+Huevo de bruja     | Spawner             | Huevo de invocador
+Lingote de hierro  | Tablones de roble oscuro | Lingote de hierro
+```
+
+Coste: `100.000` XP. Cualquier nivel de frasco ominoso es válido. La máquina
+incluye saqueador, invocador, devastador y bruja; el saqueador normal puede
+producir su estandarte ominoso. También admite objetivos registrados por tags o
+datapacks.
+
+### Huevos generadores de saqueadores
+
+Cuatro recetas convierten `#trading_cells:arcane_infusion_eggs` en huevos de
+saqueador, invocador, devastador o bruja. Sus costes son `80`, `150`, `150` y
+`100` XP respectivamente.
+
+### Granja de Creepers
+
+```text
+Lingote de hierro         | Huevo de creeper | Lingote de hierro
+Fragmento de la Tormenta  | Spawner          | Fragmento de la Tormenta
+Lingote de hierro         | Bloque de musgo  | Lingote de hierro
+```
+
+Coste: `25.000` XP. La máquina permite alternar entre Creeper normal y cargado;
+los objetivos de mods pueden añadirse mediante tags o datapacks.
+
+### Huevo generador de Creeper
+
+Una infusión de `75` XP convierte un huevo normal admitido en un huevo de
+Creeper usando pólvora, TNT, musgo y un mechero.
 
 ### Toque del Guerrero
 

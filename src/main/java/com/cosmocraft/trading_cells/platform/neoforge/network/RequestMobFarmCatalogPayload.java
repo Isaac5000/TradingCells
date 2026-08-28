@@ -1,6 +1,8 @@
 package com.cosmocraft.trading_cells.platform.neoforge.network;
 
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
+import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarmMenu;
+import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFarmMenu;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -29,13 +31,18 @@ public record RequestMobFarmCatalogPayload(int containerId) implements CustomPac
     public static void handle(RequestMobFarmCatalogPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer serverPlayer)
-                    || serverPlayer.containerMenu.containerId != payload.containerId()) {
+                    || serverPlayer.containerMenu.containerId != payload.containerId()
+                    || !serverPlayer.containerMenu.stillValid(serverPlayer)) {
                 return;
             }
             if (serverPlayer.containerMenu instanceof SkeletonFarmMenu skeletonMenu) {
                 PacketDistributor.sendToPlayer(serverPlayer, MobFarmCatalogSyncPayload.from(skeletonMenu));
             } else if (serverPlayer.containerMenu instanceof ZombieFarmMenu zombieMenu) {
                 PacketDistributor.sendToPlayer(serverPlayer, MobFarmCatalogSyncPayload.from(zombieMenu));
+            } else if (serverPlayer.containerMenu instanceof RaiderFarmMenu raiderMenu) {
+                PacketDistributor.sendToPlayer(serverPlayer, MobFarmCatalogSyncPayload.from(raiderMenu));
+            } else if (serverPlayer.containerMenu instanceof CreeperFarmMenu creeperMenu) {
+                PacketDistributor.sendToPlayer(serverPlayer, MobFarmCatalogSyncPayload.from(creeperMenu));
             }
         });
     }

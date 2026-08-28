@@ -13,12 +13,17 @@ import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfus
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmTooltipEventAdapter;
+import com.cosmocraft.trading_cells.feature.combat.adapters.input.CombatTooltipEventAdapter;
+import com.cosmocraft.trading_cells.feature.combat.adapters.output.CombatRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.RaiderFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.CreeperFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.silktouch.adapters.output.SilkTouchTwoRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.TraderTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
@@ -28,6 +33,7 @@ import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.minecraft.world.level.material.Fluid;
@@ -50,6 +56,8 @@ public class Registration {
     public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(Registries.FLUID, TradingCells.MOD_ID);
     public static final DeferredRegister<FluidType> FLUID_TYPES =
             DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, TradingCells.MOD_ID);
+    public static final DeferredRegister<MapCodec<? extends IGlobalLootModifier>> GLOBAL_LOOT_MODIFIER_SERIALIZERS =
+            DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, TradingCells.MOD_ID);
 
     public static void init(IEventBus modEventBus) {
         loadFeatures(modEventBus);
@@ -65,10 +73,12 @@ public class Registration {
         RECIPE_DISPLAY_TYPES.register(modEventBus);
         FLUIDS.register(modEventBus);
         FLUID_TYPES.register(modEventBus);
+        GLOBAL_LOOT_MODIFIER_SERIALIZERS.register(modEventBus);
     }
 
     private static void loadFeatures(IEventBus modEventBus) {
         ExperienceFluidRegistration.load();
+        CombatRegistrationAdapter.load();
         CaptureRegistrationAdapter.load();
         TraderRegistrationAdapter.load();
         AutotraderRegistrationAdapter.load();
@@ -80,6 +90,9 @@ public class Registration {
         FarmerRegistrationAdapter.load();
         IronFarmRegistrationAdapter.load();
         SkeletonFarmRegistrationAdapter.load();
+        RaiderFarmRegistrationAdapter.load();
+        CreeperFarmRegistrationAdapter.load();
+        SilkTouchTwoRegistrationAdapter.load();
         ZombieFarmRegistrationAdapter.load();
         QuarryRegistrationAdapter.load(modEventBus);
         CreativeTabRegistration.load();
@@ -87,6 +100,6 @@ public class Registration {
         ExperienceStorageTooltipEventAdapter.register(modEventBus);
         QuarryTooltipEventAdapter.register(modEventBus);
         TraderTooltipEventAdapter.register(modEventBus);
-        SkeletonFarmTooltipEventAdapter.register(modEventBus);
+        CombatTooltipEventAdapter.register(modEventBus);
     }
 }

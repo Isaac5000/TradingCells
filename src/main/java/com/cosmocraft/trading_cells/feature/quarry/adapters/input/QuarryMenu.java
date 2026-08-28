@@ -2,7 +2,6 @@ package com.cosmocraft.trading_cells.feature.quarry.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
-import com.cosmocraft.trading_cells.platform.neoforge.menu.MachineMenuLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
 import com.cosmocraft.trading_cells.platform.neoforge.network.QuarryCatalogSyncPayload;
 import java.util.List;
@@ -21,14 +20,6 @@ import org.jspecify.annotations.NonNull;
 
 public final class QuarryMenu extends AbstractContainerMenu {
     public static final int TOGGLE_DEEP_MINING_BUTTON = 0;
-    public static final int WORKER_SLOT_X = MachineMenuLayout.machineX(44);
-    public static final int PICKAXE_SLOT_X = MachineMenuLayout.machineX(80);
-    public static final int UPGRADE_SLOT_X = MachineMenuLayout.machineX(116);
-    public static final int INPUT_SLOT_Y = 24;
-    public static final int OUTPUT_COLUMN_COUNT = 9;
-    public static final int OUTPUT_SLOT_FIRST_X = MachineMenuLayout.machineX(8);
-    public static final int OUTPUT_SLOT_FIRST_Y = 81;
-    public static final int OUTPUT_SLOT_SPACING = 18;
 
     private static final int MACHINE_SLOT_COUNT = QuarryBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
@@ -76,9 +67,9 @@ public final class QuarryMenu extends AbstractContainerMenu {
         this.container = container;
         this.data = data;
 
-        addSlot(new WorkerSlot(container, QuarryBlockEntity.WORKER_SLOT, WORKER_SLOT_X, INPUT_SLOT_Y));
-        addSlot(new PickaxeSlot(container, QuarryBlockEntity.PICKAXE_SLOT, PICKAXE_SLOT_X, INPUT_SLOT_Y));
-        addSlot(new UpgradeSlot(container, QuarryBlockEntity.UPGRADE_SLOT, UPGRADE_SLOT_X, INPUT_SLOT_Y));
+        addSlot(new WorkerSlot(container, QuarryBlockEntity.WORKER_SLOT, workerSlotX(), workerSlotY()));
+        addSlot(new PickaxeSlot(container, QuarryBlockEntity.PICKAXE_SLOT, pickaxeSlotX(), pickaxeSlotY()));
+        addSlot(new UpgradeSlot(container, QuarryBlockEntity.UPGRADE_SLOT, upgradeSlotX(), upgradeSlotY()));
         for (int index = 0; index < QuarryBlockEntity.OUTPUT_SLOT_COUNT; index++) {
             addSlot(new OutputSlot(
                     container,
@@ -89,10 +80,18 @@ public final class QuarryMenu extends AbstractContainerMenu {
         }
         addStandardInventorySlots(
                 inventory,
-                MachineMenuLayout.PLAYER_INVENTORY_X,
-                MachineMenuLayout.PLAYER_INVENTORY_SLOT_Y
+                playerInventoryX(),
+                playerInventoryY()
         );
-        for (Slot equipmentSlot : PlayerEquipmentSlots.create(inventory)) {
+        for (Slot equipmentSlot : PlayerEquipmentSlots.create(
+                inventory,
+                equipmentX(),
+                equipmentHeadY(),
+                equipmentChestY(),
+                equipmentLegsY(),
+                equipmentFeetY(),
+                equipmentOffhandY()
+        )) {
             addSlot(equipmentSlot);
         }
         addDataSlots(data);
@@ -178,12 +177,120 @@ public final class QuarryMenu extends AbstractContainerMenu {
         );
     }
 
-    public static int outputSlotX(int index) {
-        return OUTPUT_SLOT_FIRST_X + index % OUTPUT_COLUMN_COUNT * OUTPUT_SLOT_SPACING;
+    public int outputSlotX(int index) {
+        return outputFirstX() + index % outputColumns() * outputSpacing();
     }
 
-    public static int outputSlotY(int index) {
-        return OUTPUT_SLOT_FIRST_Y + index / OUTPUT_COLUMN_COUNT * OUTPUT_SLOT_SPACING;
+    public int outputSlotY(int index) {
+        return outputFirstY() + index / outputColumns() * outputSpacing();
+    }
+
+    private int workerSlotX() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.WORKER_SLOT_X
+                : PiglinQuarryMenuLayout.WORKER_SLOT_X;
+    }
+
+    private int workerSlotY() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.WORKER_SLOT_Y
+                : PiglinQuarryMenuLayout.WORKER_SLOT_Y;
+    }
+
+    private int pickaxeSlotX() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.PICKAXE_SLOT_X
+                : PiglinQuarryMenuLayout.PICKAXE_SLOT_X;
+    }
+
+    private int pickaxeSlotY() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.PICKAXE_SLOT_Y
+                : PiglinQuarryMenuLayout.PICKAXE_SLOT_Y;
+    }
+
+    private int upgradeSlotX() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.UPGRADE_SLOT_X
+                : PiglinQuarryMenuLayout.UPGRADE_SLOT_X;
+    }
+
+    private int upgradeSlotY() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.UPGRADE_SLOT_Y
+                : PiglinQuarryMenuLayout.UPGRADE_SLOT_Y;
+    }
+
+    private int outputFirstX() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.OUTPUT_FIRST_X
+                : PiglinQuarryMenuLayout.OUTPUT_FIRST_X;
+    }
+
+    private int outputFirstY() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.OUTPUT_FIRST_Y
+                : PiglinQuarryMenuLayout.OUTPUT_FIRST_Y;
+    }
+
+    private int outputColumns() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.OUTPUT_COLUMNS
+                : PiglinQuarryMenuLayout.OUTPUT_COLUMNS;
+    }
+
+    private int outputSpacing() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.OUTPUT_SPACING
+                : PiglinQuarryMenuLayout.OUTPUT_SPACING;
+    }
+
+    private int playerInventoryX() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.PLAYER_INVENTORY_X
+                : PiglinQuarryMenuLayout.PLAYER_INVENTORY_X;
+    }
+
+    private int playerInventoryY() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.PLAYER_INVENTORY_Y
+                : PiglinQuarryMenuLayout.PLAYER_INVENTORY_Y;
+    }
+
+    private int equipmentX() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.EQUIPMENT_X
+                : PiglinQuarryMenuLayout.EQUIPMENT_X;
+    }
+
+    private int equipmentHeadY() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.EQUIPMENT_HEAD_Y
+                : PiglinQuarryMenuLayout.EQUIPMENT_HEAD_Y;
+    }
+
+    private int equipmentChestY() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.EQUIPMENT_CHEST_Y
+                : PiglinQuarryMenuLayout.EQUIPMENT_CHEST_Y;
+    }
+
+    private int equipmentLegsY() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.EQUIPMENT_LEGS_Y
+                : PiglinQuarryMenuLayout.EQUIPMENT_LEGS_Y;
+    }
+
+    private int equipmentFeetY() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.EQUIPMENT_FEET_Y
+                : PiglinQuarryMenuLayout.EQUIPMENT_FEET_Y;
+    }
+
+    private int equipmentOffhandY() {
+        return kind == QuarryKind.VILLAGER
+                ? VillagerQuarryMenuLayout.EQUIPMENT_OFFHAND_Y
+                : PiglinQuarryMenuLayout.EQUIPMENT_OFFHAND_Y;
     }
 
     @Override

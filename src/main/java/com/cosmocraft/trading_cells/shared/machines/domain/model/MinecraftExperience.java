@@ -80,6 +80,16 @@ public final class MinecraftExperience {
         return maximumAdditionalLevels(0, 0.0F, Math.max(0, points));
     }
 
+    public static int levelForTotalPointsRoundedUp(int points) {
+        int safePoints = Math.max(0, points);
+        int level = levelForTotalPoints(safePoints);
+        if (safePoints == pointsAtStartOfLevel(level)
+                || level >= MAX_FULL_LEVEL_WITH_INT_POINTS) {
+            return level;
+        }
+        return level + 1;
+    }
+
     public static ExperienceState stateForTotalPoints(int points) {
         int safePoints = Math.max(0, points);
         int level = levelForTotalPoints(safePoints);
