@@ -1,33 +1,47 @@
-# Rutas prescindibles
+# Auditoria de archivos prescindibles
 
-Estas rutas no contienen fuentes ni recursos publicados y se pueden regenerar. No se han eliminado automaticamente.
+Registro actualizado el `2026-08-29`. Solo se eliminan rutas versionadas con
+reemplazo y ausencia de consumidores comprobados.
 
-## Eliminacion segura
+## Eliminados de forma segura
 
-- `.gradle/`: cache local de Gradle.
-- `build/`: clases, recursos procesados, informes y JAR generados.
-- `logs/`: registro vacio/residual de ejecuciones locales.
-- `run/.cache/`: cache del cliente de desarrollo.
-- `run/logs/`: registros del cliente de desarrollo.
-- `run/crash-reports/`: informes de cierres ya revisados.
-- `run-server/.cache/`: cache del servidor de desarrollo.
-- `run-server/logs/`: registros del servidor de desarrollo.
+| Ruta | Motivo | Reemplazo |
+| --- | --- | --- |
+| `tools/performance/verify_output_inserter.ps1` | verificador Windows duplicado | `run_java_benchmark.py output-inserter` |
+| `tools/performance/verify_high_level_tooltip.ps1` | verificador Windows duplicado | `run_java_benchmark.py high-level-tooltip` |
+| `tools/performance/verify_autotrader_readiness.ps1` | verificador Windows duplicado | `run_java_benchmark.py autotrader-readiness` |
+| `tools/performance/summarize_jfr.ps1` | resumen JFR Windows-only | `summarize_jfr.py` |
+| `tools/release/__pycache__/*.pyc` | bytecode generado versionado | fuente Python y `.gitignore` |
+| `tools/generate_piglin_capturer.py` | sin consumidores y no reproduce el PNG actual | textura versionada actual |
+| `tools/generate_villager_capturer.py` | sin consumidores y no reproduce el PNG actual | textura versionada actual |
 
-## Recursos versionados revisados
+## Generados locales regenerables
 
-Las carpetas antiguas de mejoras ya no existen. Canteras y Trocadores usan las
-bases de `textures/item/upgrades/` y componen su distintivo durante el
-renderizado. Tambien se eliminaron las copias antiguas de tablas bajo
-`data/trading_cells/loot_tables/`; Minecraft 26.2 usa `loot_table/` en singular.
+No son fuentes y estan ignorados: `.gradle/`, `build/`, `logs/`, caches e informes
+de `run/` y `run-server/`, `__pycache__/`, `*.pyc`, `out/` y `bin/`. No se borran
+automaticamente porque los mundos y resultados locales pueden servir para regresion.
 
-No queda ninguna ruta versionada que se pueda eliminar con seguridad en este
-momento.
+## Candidatos a eliminacion
 
-## Conservar salvo decision manual
+No queda ningun candidato versionado con duda razonable. Los dos generadores de
+capturadores se probaron desde otro directorio: ambos cambiaron los PNG actuales,
+por lo que se restauraron las texturas y se eliminaron los generadores obsoletos.
 
-- `run/saves/`, `run/world/` y `run-server/world/`: contienen mundos de prueba y datos utiles para regresiones.
-- `run/config/`, `run-server/config/`, `run/mods/` y `run-server/mods/`: forman el entorno de compatibilidad local.
-- `.idea/`: configuracion local de IntelliJ; esta ignorada, pero puede ser util para desarrollar.
-- `tools/performance/`: herramientas y resultados reproducibles, no residuos de compilacion.
+## Conservados deliberadamente
 
-No se ha encontrado codigo residual de Milk/Cookie ni otra feature versionada que pueda marcarse con seguridad como sobrante.
+- `gradlew` y `gradlew.bat`: launchers oficiales necesarios para Unix y Windows;
+  no son implementaciones duplicadas de logica del proyecto.
+- `gradle/wrapper/`: build reproducible.
+- Python bajo `tools/`: validacion grafica, recursos, publicacion, plantillas y
+  rendimiento; es portable y evita una migracion artificial a Java.
+- `tools/generate_enchantment_levels.py`: fuente determinista y portable de las
+  traducciones romanas 11-255; sigue siendo util al portar recursos.
+- `tools/performance/results/` y `baselines/`: evidencia de optimizaciones aceptadas
+  y rechazadas que evita repetir regresiones.
+- `run/saves/`, `run/world/`, `run-server/world/` y configuraciones locales: estan
+  ignorados y pueden contener fixtures manuales; decidir su limpieza fuera de Git.
+- Documentos de `docs/`: cada uno mantiene un contrato funcional, de compatibilidad,
+  publicacion o rendimiento distinto. `PROJECT_CONTEXT.md` solo los enruta.
+
+No quedan scripts PowerShell, Bash o CMD propios. Tampoco se encontro codigo
+residual de features eliminadas ni otro archivo versionado eliminable con certeza.

@@ -137,6 +137,14 @@ La referencia completa, límites y efectos exactos están en
 
 ## Desarrollo
 
+Para desarrollar y ejecutar todas las verificaciones se necesitan Git, JDK 25 y
+Python 3.11 o posterior. Instala la dependencia grafica fijada con
+`python -m pip install --requirement tools/requirements.txt`.
+
+Los ejemplos usan `./gradlew` en Linux/macOS. En Windows ejecuta el mismo comando
+con `gradlew.bat`; no se necesita PowerShell, Bash ni una instalacion global de
+Gradle.
+
 ```bash
 ./gradlew clean releaseCheck
 ```
@@ -155,6 +163,10 @@ arbol y el resultado automatizado en `build/reports/release/`:
 `checkReleaseContracts`, incluido en `check`, impide cambiar accidentalmente la
 version del mod, IDs de payload, claves NBT persistentes, las 59 recetas o las
 versiones publicas del catalogo de granjas durante la linea 1.0.x.
+
+`checkPortability`, tambien incluido en `check`, detecta scripts dependientes del
+sistema, rutas absolutas, shells externos, colisiones por mayusculas y residuos
+Python versionados.
 
 Cliente de desarrollo con REI:
 

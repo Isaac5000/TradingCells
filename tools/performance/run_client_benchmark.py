@@ -7,7 +7,6 @@ import argparse
 import csv
 import datetime as dt
 import json
-import os
 from pathlib import Path
 import platform
 import shutil
@@ -21,6 +20,7 @@ from template_contract import (
     template_fingerprint,
     validate_manifest,
 )
+from platform_tools import configure_utf8_stdio, find_jdk_tool, gradle_wrapper
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,6 +43,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-directory", type=Path)
     parser.add_argument("--without-rei", action="store_true")
     parser.add_argument("--without-trading-cells", action="store_true")
+    parser.add_argument(
+        "--graphics-adapter",
+        action="append",
+        default=[],
+        help="Graphics adapter label to store in metadata; may be repeated.",
+    )
     return parser.parse_args()
 
 
@@ -113,22 +119,8 @@ def verify_backend(row: dict[str, str], backend: str) -> None:
         )
 
 
-def find_jfr_tool() -> Path | None:
-    java_home = os.environ.get("JAVA_HOME")
-    candidates: list[Path] = []
-    if java_home:
-        candidates.append(Path(java_home) / "bin" / "jfr.exe")
-    command = shutil.which("jfr") or shutil.which("jfr.exe")
-    if command:
-        candidates.append(Path(command))
-    gradle_jdks = Path.home() / ".gradle" / "jdks"
-    if gradle_jdks.is_dir():
-        candidates.extend(gradle_jdks.glob("**/bin/jfr.exe"))
-    return next((candidate for candidate in candidates if candidate.is_file()), None)
-
-
 def jfr_metrics(recording: Path, measured_seconds: float) -> dict[str, str]:
-    tool = find_jfr_tool()
+    tool = find_jdk_tool("jfr", required=False)
     if tool is None or not recording.is_file():
         return {}
     event_names = ",".join(
@@ -199,7 +191,7 @@ def run_once(
         else "runPerformanceClientVulkan"
     )
     command = [
-        str(root / "gradlew.bat"),
+        str(gradle_wrapper(root)),
         f"-PperformanceClientRunDirectory={game_directory}",
         f"-PperformanceClientOutput={result_directory}",
         f"-PperformanceClientWarmup={args.warmup_seconds}",
@@ -305,27 +297,6 @@ def read_gradle_properties(root: Path) -> dict[str, str]:
     return result
 
 
-def graphics_adapters() -> list[str]:
-    if os.name != "nt":
-        return []
-    try:
-        output = subprocess.check_output(
-            [
-                "powershell",
-                "-NoProfile",
-                "-Command",
-                "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name",
-            ],
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=15,
-        )
-        return [line.strip() for line in output.splitlines() if line.strip()]
-    except (OSError, subprocess.SubprocessError):
-        return []
-
-
 def write_metadata(
     root: Path,
     output: Path,
@@ -362,7 +333,7 @@ def write_metadata(
         "template_fingerprint": fingerprint,
         "operating_system": platform.platform(),
         "processor": platform.processor(),
-        "graphics_adapters": graphics_adapters(),
+        "graphics_adapters": args.graphics_adapter,
     }
     (output / "metadata.json").write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
@@ -416,4 +387,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    configure_utf8_stdio()
     main()

@@ -218,6 +218,11 @@ traducciones ingles/espanol, modelos, texturas, recetas y directorios de datos.
 `checkPublishedJarContents` inspecciona el artefacto final y rechaza GameTests,
 herramientas y recursos obsoletos. Ambas tareas forman parte de `check`.
 
+`checkPortability` rechaza herramientas auxiliares especificas de un sistema,
+shells externos, rutas absolutas operativas, APIs de proceso Windows sin proteger,
+colisiones de mayusculas/minusculas y bytecode Python versionado. Tambien forma
+parte de `check`; la CI lo ejecuta en Ubuntu, Windows y macOS.
+
 Los GameTests viven en `src/gameTest`, fuera del JAR. Una registradora minima
 recoge suites por feature y fixtures compartidos; cada prueba publica un contrato
 de comportamiento y no depende de la ubicacion interna del metodo probado.

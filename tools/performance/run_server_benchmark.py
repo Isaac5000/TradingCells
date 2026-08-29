@@ -28,6 +28,12 @@ from template_contract import (
     validate_manifest,
     write_manifest,
 )
+from platform_tools import (
+    configure_utf8_stdio,
+    find_jdk_tool,
+    gradle_wrapper,
+    hidden_process_startup,
+)
 
 
 READY_PATTERN = re.compile(r"Done \([^)]+\)! For help")
@@ -47,7 +53,7 @@ RCON_PASSWORD = "trading-cells-local-benchmark"
 class ServerProcess:
     def __init__(self, root: Path, game_directory: Path, log_file: Path) -> None:
         command = [
-            str(root / "gradlew.bat"),
+            str(gradle_wrapper(root)),
             f"-PperformanceRunDirectory={game_directory}",
             "runPerformanceServer",
             "--console=plain",
@@ -55,8 +61,8 @@ class ServerProcess:
         self._lines: list[str] = []
         self._queue: queue.Queue[str] = queue.Queue()
         self._log = log_file.open("w", encoding="utf-8", newline="\n")
-        startup = subprocess.STARTUPINFO()
-        startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startup = hidden_process_startup()
+        process_options = {"startupinfo": startup} if startup is not None else {}
         self.process = subprocess.Popen(
             command,
             cwd=root,
@@ -67,7 +73,7 @@ class ServerProcess:
             encoding="utf-8",
             errors="replace",
             bufsize=1,
-            startupinfo=startup,
+            **process_options,
         )
         self._reader = threading.Thread(target=self._read_output, daemon=True)
         self._reader.start()
@@ -84,6 +90,11 @@ class ServerProcess:
             self._queue.put(line)
             self._log.write(line + "\n")
             self._log.flush()
+
+    def _close_process_streams(self) -> None:
+        for stream in (self.process.stdin, self.process.stdout):
+            if stream is not None and not stream.closed:
+                stream.close()
 
     def command(self, value: str) -> None:
         if self.process.poll() is not None:
@@ -124,6 +135,7 @@ class ServerProcess:
                     self.process.kill()
                     self.process.wait(timeout=15)
         self._reader.join(timeout=5)
+        self._close_process_streams()
         self._log.close()
 
     def abort(self, rcon_port: int | None = None) -> None:
@@ -142,6 +154,7 @@ class ServerProcess:
                 self.process.kill()
                 self.process.wait(timeout=15)
         self._reader.join(timeout=5)
+        self._close_process_streams()
         self._log.close()
 
 
@@ -312,22 +325,8 @@ def percentile(values: list[float], fraction: float) -> float:
     return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
 
 
-def find_jfr_tool() -> Path | None:
-    java_home = os.environ.get("JAVA_HOME")
-    candidates = []
-    if java_home:
-        candidates.append(Path(java_home) / "bin" / "jfr.exe")
-    command = shutil.which("jfr") or shutil.which("jfr.exe")
-    if command:
-        candidates.append(Path(command))
-    java_root = Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Java"
-    if java_root.is_dir():
-        candidates.extend(path / "bin" / "jfr.exe" for path in sorted(java_root.iterdir(), reverse=True))
-    return next((candidate for candidate in candidates if candidate.is_file()), None)
-
-
 def jfr_tick_p95(recording: Path) -> float:
-    jfr_tool = find_jfr_tool()
+    jfr_tool = find_jdk_tool("jfr", required=False)
     if jfr_tool is None:
         return 0.0
     output = subprocess.check_output(
@@ -628,4 +627,5 @@ def read_gradle_properties(root: Path) -> dict[str, str]:
 
 
 if __name__ == "__main__":
+    configure_utf8_stdio()
     main()

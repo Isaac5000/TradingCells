@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 import statistics
 
+from platform_tools import configure_utf8_stdio
+
 
 LOWER_IS_BETTER = (
     "mean_mspt",
@@ -112,4 +114,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    configure_utf8_stdio()
     main()

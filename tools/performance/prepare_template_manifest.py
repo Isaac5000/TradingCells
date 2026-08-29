@@ -7,6 +7,7 @@ import argparse
 from pathlib import Path
 
 from template_contract import scenario_definition, template_fingerprint, write_manifest
+from platform_tools import configure_utf8_stdio
 
 
 def read_gradle_properties(root: Path) -> dict[str, str]:
@@ -48,4 +49,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    configure_utf8_stdio()
     main()

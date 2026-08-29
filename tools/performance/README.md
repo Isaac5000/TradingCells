@@ -4,24 +4,29 @@ Estas herramientas son exclusivamente de desarrollo y no entran en el JAR public
 Cada resultado conserva mundo, configuracion, commit, JVM, backend y duracion para
 poder repetir la comparacion.
 
+Requieren Python 3.11 o posterior y un JDK 25 accesible mediante `JAVA_HOME` o
+`PATH`. En los ejemplos, `python` representa ese interprete; en sistemas donde
+corresponda puede llamarse `python3`. Las rutas usan la sintaxis portable que
+aceptan los tres sistemas.
+
 ## Pruebas puras
 
 Insertador de inventario:
 
-```powershell
-.\tools\performance\verify_output_inserter.ps1
+```text
+python tools/performance/run_java_benchmark.py output-inserter
 ```
 
 Tooltips de encantamientos por encima del limite vanilla:
 
-```powershell
-.\tools\performance\verify_high_level_tooltip.ps1
+```text
+python tools/performance/run_java_benchmark.py high-level-tooltip
 ```
 
 Hipotesis de cache del Autotrader:
 
-```powershell
-.\tools\performance\verify_autotrader_readiness.ps1
+```text
+python tools/performance/run_java_benchmark.py autotrader-readiness
 ```
 
 La ultima prueba conserva un umbral estructural del 10 %. Actualmente lo incumple
@@ -29,24 +34,16 @@ y documenta una optimizacion descartada; no hay una cache equivalente en producc
 
 ## Servidor
 
-```powershell
-python .\tools\performance\run_server_benchmark.py `
-  --scenario idle-machines --runs 3 --warmup-seconds 15 --measure-seconds 30
+```text
+python tools/performance/run_server_benchmark.py --scenario idle-machines --runs 3 --warmup-seconds 15 --measure-seconds 30
 ```
 
 Las cargas simples viven en archivos `.txt`. Los escenarios activos, bloqueados,
 automatizados, de granjas y de 2.304 intercambios requieren una plantilla ya preparada:
 
-```powershell
-python .\tools\performance\prepare_template_manifest.py <plantilla> `
-  --category server --scenario active-machines `
-  --notes "256 maquinas activas con entradas y salidas preparadas"
-
-python .\tools\performance\run_server_benchmark.py `
-  --scenario active-machines `
-  --template-directory <plantilla> `
-  --setup-command "forceload add -256 -256 -160 -160" `
-  --runs 3 --warmup-seconds 15 --measure-seconds 30
+```text
+python tools/performance/prepare_template_manifest.py <plantilla> --category server --scenario active-machines --notes "256 maquinas activas con entradas y salidas preparadas"
+python tools/performance/run_server_benchmark.py --scenario active-machines --template-directory <plantilla> --setup-command "forceload add -256 -256 -160 -160" --runs 3 --warmup-seconds 15 --measure-seconds 30
 ```
 
 `--setup-command` se ejecuta por RCON despues de alcanzar `Done` y antes del
@@ -59,10 +56,16 @@ Cada ejecucion produce JFR, perfil de ticks, registro, `runs.csv`,
 El manifiesto fija la version, el escenario y la carga esperada. La huella SHA-256
 del directorio completo impide comparar por accidente dos mundos diferentes.
 
+Resumen textual adicional de cualquier grabacion:
+
+```text
+python tools/performance/summarize_jfr.py <grabacion.jfr>
+```
+
 Comparacion:
 
-```powershell
-python .\tools\performance\compare_results.py <baseline> <candidate> --risk structural
+```text
+python tools/performance/compare_results.py <baseline> <candidate> --risk structural
 ```
 
 Los cambios locales usan `--risk local` y un umbral predeterminado del 3 %.
@@ -73,17 +76,9 @@ el cambio.
 
 Ejemplo reproducible con mundo y camara fijos:
 
-```powershell
-python .\tools\performance\prepare_template_manifest.py <plantilla> `
-  --category client --scenario visible-machines `
-  --notes "64 maquinas visibles desde la camara indicada"
-
-python .\tools\performance\run_client_benchmark.py `
-  --backend vulkan --scenario visible-machines --runs 3 `
-  --warmup-seconds 15 --measure-seconds 30 `
-  --width 1920 --height 1080 `
-  --template-directory <plantilla> --quick-play-world world `
-  --camera 3.5 82 -6 0 30 --without-rei
+```text
+python tools/performance/prepare_template_manifest.py <plantilla> --category client --scenario visible-machines --notes "64 maquinas visibles desde la camara indicada"
+python tools/performance/run_client_benchmark.py --backend vulkan --scenario visible-machines --runs 3 --warmup-seconds 15 --measure-seconds 30 --width 1920 --height 1080 --template-directory <plantilla> --quick-play-world world --camera 3.5 82 -6 0 30 --without-rei
 ```
 
 Opciones relevantes:
@@ -93,6 +88,8 @@ Opciones relevantes:
 - `--without-trading-cells`: crea un control vanilla con el mismo grabador.
 - `--camera X Y Z YAW PITCH`: fija posicion y orientacion cada fotograma.
 - `--template-directory`: clona el mismo mundo antes de cada repeticion.
+- `--graphics-adapter TEXTO`: registra manualmente la GPU; puede repetirse y evita
+  depender de una utilidad concreta del sistema operativo.
 
 Todos los escenarios de cliente exigen una plantilla con manifiesto. La posicion
 de camara, resolucion, backend y presencia de REI tambien quedan registradas en
@@ -102,13 +99,8 @@ Una matriz de estres puede prepararse desde maquinas configuradas de un mundo
 real sin modificar el original. `--source` puede repetirse para alternar varios
 tipos de maquina dentro de la matriz:
 
-```powershell
-python .\tools\performance\prepare_machine_matrix.py `
-  .\run\vulkan\saves\Test `
-  .\build\performance\templates\villager-machines `
-  --source -213 -59 -198 --source -213 -59 -197 `
-  --source -213 -59 -199 --source -213 -59 -200 `
-  --source -223 -59 -202 --source -213 -59 -202
+```text
+python tools/performance/prepare_machine_matrix.py run/vulkan/saves/Test build/performance/templates/villager-machines --source -213 -59 -198 --source -213 -59 -197 --source -213 -59 -199 --source -213 -59 -200 --source -223 -59 -202 --source -213 -59 -202
 ```
 
 El preparador arranca el servidor dedicado, clona los `BlockEntity` mediante
@@ -127,15 +119,14 @@ que Vulkan complete la lectura del framebuffer.
 
 Comparacion de rendimiento y capturas:
 
-```powershell
-python .\tools\performance\compare_client_results.py <baseline> <candidate>
+```text
+python tools/performance/compare_client_results.py <baseline> <candidate>
 ```
 
 Para el control con el mod presente/ausente:
 
-```powershell
-python .\tools\performance\compare_client_results.py <sin-mod> <con-mod> `
-  --stability-only --allow-mod-presence-difference
+```text
+python tools/performance/compare_client_results.py <sin-mod> <con-mod> --stability-only --allow-mod-presence-difference
 ```
 
 Por defecto las capturas del mismo backend deben ser identicas. Se pueden declarar

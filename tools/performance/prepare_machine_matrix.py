@@ -9,6 +9,7 @@ import shutil
 
 from run_server_benchmark import free_tcp_port, prepare_template, read_gradle_properties
 from template_contract import scenario_definition, template_fingerprint, write_manifest
+from platform_tools import configure_utf8_stdio
 
 
 def parse_args() -> argparse.Namespace:
@@ -130,4 +131,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    configure_utf8_stdio()
     main()

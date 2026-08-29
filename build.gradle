@@ -703,6 +703,21 @@ tasks.register('checkReleaseContracts', Exec) {
     })
 }
 
+tasks.register('checkPortability', Exec) {
+    group = 'verification'
+    description = 'Rejects accidental OS-specific tooling, paths and generated Python artifacts.'
+    commandLine pythonExecutable, 'tools/check_portability.py'
+    inputs.file('tools/check_portability.py')
+    inputs.file('.gitattributes')
+    inputs.file('.gitignore')
+    inputs.dir('.github/workflows')
+    inputs.files(fileTree('tools') {
+        include '**/*.py', '**/*.ps1', '**/*.sh', '**/*.bat', '**/*.cmd'
+        exclude '**/__pycache__/**'
+    })
+    inputs.files(fileTree('src') { include '**/*.java' })
+}
+
 def publishedJar = tasks.named('jar', Jar)
 tasks.register('checkPublishedJarContents') {
     group = 'verification'
@@ -757,19 +772,19 @@ tasks.register('checkPublishedJarContents') {
     }
 }
 
+def expectedPublishedJarName = "${project.mod_id}-${project.mod_version}.jar"
 tasks.register('checkSinglePublishedArtifact') {
     group = 'verification'
     description = 'Rejects missing or additional JARs in the publication directory.'
     dependsOn publishedJar
 
     doLast {
-        def expectedName = "${project.mod_id}-${project.mod_version}.jar"
         def jars = fileTree('build/libs').matching { include '*.jar' }.files
                 .collect { it.name }
                 .sort()
-        if (jars != [expectedName]) {
+        if (jars != [expectedPublishedJarName]) {
             throw new GradleException(
-                    "Expected only ${expectedName} in build/libs, found: ${jars.join(', ')}"
+                    "Expected only ${expectedPublishedJarName} in build/libs, found: ${jars.join(', ')}"
             )
         }
     }
@@ -783,6 +798,7 @@ tasks.named('check').configure {
     dependsOn tasks.named('checkVillagerTradeGuiTextures')
     dependsOn tasks.named('checkProjectResources')
     dependsOn tasks.named('checkReleaseContracts')
+    dependsOn tasks.named('checkPortability')
     dependsOn tasks.named('checkPublishedJarContents')
 }
 

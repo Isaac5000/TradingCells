@@ -8,6 +8,8 @@ import csv
 import json
 from pathlib import Path
 
+from platform_tools import configure_utf8_stdio
+
 
 LOWER_IS_BETTER = (
     "median_mean_frame_ms",
@@ -78,8 +80,10 @@ def compare_images(
     except ImportError as exception:
         raise RuntimeError("Pillow is required for screenshot comparison") from exception
 
-    before_runs = list(csv.DictReader((baseline / "runs.csv").open(encoding="utf-8", newline="")))
-    after_runs = list(csv.DictReader((candidate / "runs.csv").open(encoding="utf-8", newline="")))
+    with (baseline / "runs.csv").open(encoding="utf-8", newline="") as handle:
+        before_runs = list(csv.DictReader(handle))
+    with (candidate / "runs.csv").open(encoding="utf-8", newline="") as handle:
+        after_runs = list(csv.DictReader(handle))
     if len(before_runs) != len(after_runs):
         raise ValueError("Baseline and candidate have a different number of client runs")
     accepted = True
@@ -89,17 +93,21 @@ def compare_images(
         after_name = after_row.get("screenshot_file", "")
         if not before_name or not after_name:
             raise ValueError(f"Missing screenshot for run {index}")
-        with Image.open(baseline / before_name).convert("RGBA") as before_image:
-            with Image.open(candidate / after_name).convert("RGBA") as after_image:
-                if before_image.size != after_image.size:
-                    raise ValueError(
-                        f"Screenshot dimensions differ in run {index}: "
-                        f"{before_image.size}/{after_image.size}"
-                    )
-                difference = ImageChops.difference(before_image, after_image)
-                pixels = list(difference.getdata())
-                changed = sum(1 for pixel in pixels if max(pixel) > maximum_channel_delta)
-                largest_delta = max((max(pixel) for pixel in pixels), default=0)
+        with Image.open(baseline / before_name) as before_source:
+            with Image.open(candidate / after_name) as after_source:
+                with before_source.convert("RGBA") as before_image:
+                    with after_source.convert("RGBA") as after_image:
+                        if before_image.size != after_image.size:
+                            raise ValueError(
+                                f"Screenshot dimensions differ in run {index}: "
+                                f"{before_image.size}/{after_image.size}"
+                            )
+                        difference = ImageChops.difference(before_image, after_image)
+                        pixels = list(difference.getdata())
+                        changed = sum(
+                            1 for pixel in pixels if max(pixel) > maximum_channel_delta
+                        )
+                        largest_delta = max((max(pixel) for pixel in pixels), default=0)
         run_accepted = changed <= maximum_changed_pixels
         accepted &= run_accepted
         print(
@@ -174,4 +182,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    configure_utf8_stdio()
     main()

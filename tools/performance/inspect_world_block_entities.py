@@ -12,6 +12,8 @@ import struct
 import sys
 import zlib
 
+from platform_tools import configure_utf8_stdio
+
 
 class NbtReader:
     def __init__(self, payload: bytes) -> None:
@@ -177,4 +179,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    configure_utf8_stdio()
     main()

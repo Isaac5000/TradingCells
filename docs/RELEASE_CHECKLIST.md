@@ -2,9 +2,10 @@
 
 ## Automatizacion
 
-- [x] Ejecutar `./gradlew clean releaseCheck` dos veces con JAR identico (`2026-08-25`).
+- [x] Ejecutar `clean releaseCheck` dos veces con JAR identico (`2026-08-29`, 19/19 GameTests).
 - [x] Ejecutar `./gradlew runServer` y confirmar que alcanza `Done` sin errores de Trading Cells (`2026-08-25`).
 - [x] Comprobar que `build/libs/trading_cells-1.0.0.jar` es el unico artefacto que se publica.
+- [ ] Confirmar la CI del commit definitivo en Ubuntu, Windows y macOS.
 - [ ] Instalar ese JAR en una instancia limpia, no el classpath de desarrollo.
 
 ## Cliente y graficos
@@ -58,6 +59,7 @@ haber solicitado el backend: el log debe confirmar el backend efectivo.
 
 | Fecha | Prueba/backend | Mods | Mundo/plantilla | Resultado | Registro |
 | --- | --- | --- | --- | --- | --- |
+| 2026-08-29 | `clean releaseCheck` x2 | Trading Cells GameTests | Mundo temporal | Aprobado; 19/19 y JAR reproducible | `docs/releases/1.0.0-validation.md` |
 | 2026-08-25 | `clean releaseCheck` x2 | Trading Cells GameTests | Mundo temporal | Aprobado; 17/17 y JAR reproducible | `docs/releases/1.0.0-validation.md` |
 | 2026-08-25 | Servidor dedicado | Trading Cells | `run-server/world` | Alcanza `Done (0.270s)` | `docs/releases/1.0.0-validation.md` |
 | 2026-08-25 | Smoke RCON, 1.024 inactivas | Trading Cells | `idle-machines` | Aprobado; cierre controlado | `build/performance/release-1.0.0-idle-smoke` |
