@@ -12,6 +12,9 @@ import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.Skeleton
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.AutotraderBlockEntity;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.VillagerTradingCellBlockEntity;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmBlockEntity;
+import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarmBlockEntity;
+import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFarmBlockEntity;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmBlockEntity;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -59,6 +62,9 @@ public final class PortableMachineJadeDataProvider implements IServerDataProvide
             case ArcaneInfuserBlockEntity infuser -> infuser.storedExperience();
             case SkeletonFarmBlockEntity farm -> farm.dataAccess().get(4);
             case ZombieFarmBlockEntity farm -> farm.dataAccess().get(4);
+            case RaiderFarmBlockEntity farm -> farm.dataAccess().get(4);
+            case CreeperFarmBlockEntity farm -> farm.dataAccess().get(4);
+            case ConfiguredMobFarmBlockEntity farm -> farm.dataAccess().get(4);
             case AutotraderBlockEntity autotrader -> autotrader.storedExperience();
             case VillagerTradingCellBlockEntity trader -> trader.storedExperience();
             default -> -1;
@@ -81,6 +87,18 @@ public final class PortableMachineJadeDataProvider implements IServerDataProvide
                     farm.cycleDurationTicks()
             );
             case ZombieFarmBlockEntity farm -> new Progress(
+                    farm.cycleTicks(),
+                    farm.cycleDurationTicks()
+            );
+            case RaiderFarmBlockEntity farm -> new Progress(
+                    farm.cycleTicks(),
+                    farm.cycleDurationTicks()
+            );
+            case CreeperFarmBlockEntity farm -> new Progress(
+                    farm.cycleTicks(),
+                    farm.cycleDurationTicks()
+            );
+            case ConfiguredMobFarmBlockEntity farm -> new Progress(
                     farm.cycleTicks(),
                     farm.cycleDurationTicks()
             );

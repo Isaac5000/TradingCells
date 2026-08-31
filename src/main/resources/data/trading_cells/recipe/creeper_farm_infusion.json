@@ -1,15 +1,16 @@
 {
   "type": "trading_cells:arcane_infusion",
+  "category": "production",
   "ingredients": [
-    {"ingredient": "minecraft:iron_ingot", "count": 1},
+    {"ingredient": "minecraft:gunpowder", "count": 1},
     {"ingredient": "minecraft:creeper_spawn_egg", "count": 1},
-    {"ingredient": "minecraft:iron_ingot", "count": 1},
+    {"ingredient": "minecraft:gunpowder", "count": 1},
+    {"ingredient": "trading_cells:storm_shard", "count": 1},
+    {"ingredient": "trading_cells:experience_storage", "count": 1},
     {"ingredient": "trading_cells:storm_shard", "count": 1},
     {"ingredient": "minecraft:spawner", "count": 1},
-    {"ingredient": "trading_cells:storm_shard", "count": 1},
-    {"ingredient": "minecraft:iron_ingot", "count": 1},
-    {"ingredient": "minecraft:moss_block", "count": 1},
-    {"ingredient": "minecraft:iron_ingot", "count": 1}
+    {"ingredient": "minecraft:pale_moss_block", "count": 1},
+    {"ingredient": "minecraft:iron_block", "count": 1}
   ],
   "experience": 25000,
   "result": {"type": "item", "item": "trading_cells:creeper_farm"}

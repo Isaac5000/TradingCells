@@ -1,5 +1,6 @@
 {
   "type": "trading_cells:arcane_infusion",
+  "category": "equipment",
   "ingredients": [
     {"ingredient": "trading_cells:storm_shard", "count": 1},
     {"ingredient": "minecraft:dragon_head", "count": 1},

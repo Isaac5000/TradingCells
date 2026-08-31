@@ -1,15 +1,16 @@
 {
   "type": "trading_cells:arcane_infusion",
+  "category": "production",
   "ingredients": [
     {"ingredient": "minecraft:pillager_spawn_egg", "count": 1},
     {"ingredient": "minecraft:ominous_bottle", "count": 1},
     {"ingredient": "minecraft:ravager_spawn_egg", "count": 1},
     {"ingredient": "minecraft:witch_spawn_egg", "count": 1},
-    {"ingredient": "minecraft:spawner", "count": 1},
+    {"ingredient": "trading_cells:experience_storage", "count": 1},
     {"ingredient": "minecraft:evoker_spawn_egg", "count": 1},
-    {"ingredient": "minecraft:iron_ingot", "count": 1},
+    {"ingredient": "minecraft:spawner", "count": 1},
     {"ingredient": "minecraft:dark_oak_planks", "count": 1},
-    {"ingredient": "minecraft:iron_ingot", "count": 1}
+    {"ingredient": "minecraft:iron_block", "count": 1}
   ],
   "experience": 100000,
   "result": {"type": "item", "item": "trading_cells:raider_farm"}

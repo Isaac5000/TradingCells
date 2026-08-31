@@ -10,15 +10,14 @@ de equivalencia y balance antes de modificar la version estable.
    progreso y XP sin alterar sus estados.
 3. **1.2.0 - Distribuidor de XP.** Valvulas y prioridades entre Almacenes, Infusores,
    Traders y granjas mediante la API de fluidos.
-4. **1.3.0 - Granja de Artropodos.** Aranas, aranas de cueva, silverfish y
-   endermites, con Perdicion de los Artropodos como progresion de herramienta.
-5. **Actualizaciones posteriores.** Granjas independientes de blaze, cubos de
-   magma y ghasts, seguidas de enderman y shulker, con costes y reglas propias.
-6. **Configurador de maquinas.** Copiar filtros y ajustes entre maquinas sin
+4. **Granjas futuras.** Animales de granja y peces son los siguientes grupos
+   prioritarios. El inventario completo, candidatos y exclusiones vive en
+   [`MOB_FARM_ROADMAP.md`](MOB_FARM_ROADMAP.md).
+5. **Configurador de maquinas.** Copiar filtros y ajustes entre maquinas sin
    copiar inventario, entidades ni XP.
-7. **Control por redstone.** Pausa, extraccion de XP y senal de salida llena,
+6. **Control por redstone.** Pausa, extraccion de XP y senal de salida llena,
    manteniendo el comportamiento actual cuando no exista senal.
 
-La API de objetivos por datapack y el nucleo puro compartido forman parte de la
-1.0.0. Las futuras familias reutilizaran esas reglas por composicion; cada
-bloque, tabla y regla de botin seguira perteneciendo a su propia feature.
+La API de objetivos por datapack y el nucleo compartido de las diez familias
+configurables forman parte de la 1.0.0. Las futuras familias reutilizaran esas
+reglas por composicion; cada bloque y sus recursos seguiran teniendo IDs propios.

@@ -13,6 +13,7 @@ import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.Quarry
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.SkeletonFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.client.RaiderFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.client.CreeperFarmClientRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.client.ConfiguredMobFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.client.ZombieFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.VillagerTradingCellClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.client.network.TradingCellClientPayloadRegistration;
@@ -46,6 +47,7 @@ public class TradingCellsClient {
             modBus.addListener(ExperienceStorageClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(ArcaneInfuserClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(ArcaneInfuserClientRegistrationAdapter::onRegisterRenderers);
+            modBus.addListener(ArcaneInfuserClientRegistrationAdapter::onRegisterRecipeBookSearchCategories);
             modBus.addListener(AutotraderClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(VillagerTradingCellClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(NetheritePiglinBarteringCellClientRegistrationAdapter::onRegisterMenuScreens);
@@ -63,6 +65,8 @@ public class TradingCellsClient {
             modBus.addListener(RaiderFarmClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(CreeperFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(CreeperFarmClientRegistrationAdapter::onRegisterRenderers);
+            modBus.addListener(ConfiguredMobFarmClientRegistrationAdapter::onRegisterMenuScreens);
+            modBus.addListener(ConfiguredMobFarmClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(ZombieFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(ZombieFarmClientRegistrationAdapter::onRegisterRenderers);
         }

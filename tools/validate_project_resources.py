@@ -18,6 +18,116 @@ from typing import Any, Iterable
 
 MOD_ID = "trading_cells"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+ENTITY_FARM_BLOCKS = {
+    "arthropod_farm",
+    "blaze_farm",
+    "breeze_farm",
+    "creeper_farm",
+    "enderman_farm",
+    "ghast_farm",
+    "guardian_farm",
+    "phantom_farm",
+    "piglin_farm",
+    "raider_farm",
+    "shulker_farm",
+    "skeleton_farm",
+    "slime_farm",
+    "zombie_farm",
+}
+ENTITY_FARM_FRAME_TEXTURE = "minecraft:block/iron_block"
+ENTITY_FARM_BASE_TEXTURES = {
+    "arthropod_farm": "minecraft:block/pale_moss_block",
+    "blaze_farm": "minecraft:block/nether_bricks",
+    "breeze_farm": "minecraft:block/polished_tuff",
+    "creeper_farm": "minecraft:block/pale_moss_block",
+    "enderman_farm": "minecraft:block/end_stone",
+    "ghast_farm": "minecraft:block/soul_soil",
+    "guardian_farm": "minecraft:block/prismarine_bricks",
+    "phantom_farm": "minecraft:block/pale_moss_block",
+    "piglin_farm": "minecraft:block/polished_blackstone",
+    "raider_farm": "minecraft:block/dark_oak_planks",
+    "shulker_farm": "minecraft:block/purpur_block",
+    "skeleton_farm": "minecraft:block/pale_moss_block",
+    "slime_farm": "trading_cells:block/slime_block_opaque",
+    "zombie_farm": "minecraft:block/pale_moss_block",
+}
+ENTITY_FARM_RECIPE_BASES = {
+    key: value.replace("minecraft:block/", "minecraft:")
+    for key, value in ENTITY_FARM_BASE_TEXTURES.items()
+}
+ENTITY_FARM_RECIPE_BASES["slime_farm"] = "minecraft:slime_block"
+CONFIGURED_FARM_UPPER_INGREDIENTS = {
+    "arthropod_farm": (
+        "minecraft:cave_spider_spawn_egg",
+        "minecraft:string",
+        "minecraft:spider_spawn_egg",
+        "minecraft:endermite_spawn_egg",
+        "minecraft:silverfish_spawn_egg",
+    ),
+    "blaze_farm": (
+        "minecraft:blaze_powder",
+        "minecraft:blaze_spawn_egg",
+        "minecraft:blaze_powder",
+        "minecraft:blaze_rod",
+        "minecraft:blaze_rod",
+    ),
+    "breeze_farm": (
+        "minecraft:wind_charge",
+        "minecraft:breeze_spawn_egg",
+        "minecraft:wind_charge",
+        "minecraft:breeze_rod",
+        "minecraft:breeze_rod",
+    ),
+    "enderman_farm": (
+        "minecraft:chorus_fruit",
+        "minecraft:enderman_spawn_egg",
+        "minecraft:chorus_fruit",
+        "minecraft:ender_pearl",
+        "minecraft:ender_pearl",
+    ),
+    "ghast_farm": (
+        "minecraft:ghast_tear",
+        "minecraft:fire_charge",
+        "minecraft:ghast_tear",
+        "minecraft:ghast_spawn_egg",
+        "minecraft:happy_ghast_spawn_egg",
+    ),
+    "guardian_farm": (
+        "minecraft:prismarine_crystals",
+        "minecraft:heart_of_the_sea",
+        "minecraft:prismarine_crystals",
+        "minecraft:elder_guardian_spawn_egg",
+        "minecraft:guardian_spawn_egg",
+    ),
+    "phantom_farm": (
+        "minecraft:phantom_membrane",
+        "minecraft:phantom_spawn_egg",
+        "minecraft:phantom_membrane",
+        "minecraft:phantom_membrane",
+        "minecraft:phantom_membrane",
+    ),
+    "piglin_farm": (
+        "minecraft:gold_ingot",
+        "minecraft:crossbow",
+        "minecraft:gold_ingot",
+        "minecraft:piglin_brute_spawn_egg",
+        "minecraft:piglin_spawn_egg",
+    ),
+    "shulker_farm": (
+        "minecraft:end_rod",
+        "minecraft:shulker_spawn_egg",
+        "minecraft:end_rod",
+        "minecraft:shulker_shell",
+        "minecraft:shulker_shell",
+    ),
+    "slime_farm": (
+        "minecraft:slime_ball",
+        "minecraft:sulfur_cube_spawn_egg",
+        "minecraft:slime_ball",
+        "minecraft:magma_cube_spawn_egg",
+        "minecraft:slime_spawn_egg",
+    ),
+}
 CRAFTING_RECIPE_TYPES = {
     "minecraft:crafting_shaped",
     "minecraft:crafting_shapeless",
@@ -148,6 +258,87 @@ def validate_data_directories(roots: list[Path], errors: list[str]) -> None:
                 errors.append(
                     f"{old_path}: obsolete data directory; use {current_name}/ for Minecraft 26.2"
                 )
+
+
+def validate_pickaxe_coverage(
+    roots: list[Path], parsed_json: dict[Path, Any], errors: list[str]
+) -> None:
+    tag_path = find_resource(
+        roots, Path("data/minecraft/tags/block/mineable/pickaxe.json")
+    )
+    if tag_path is None:
+        errors.append("missing minecraft:mineable/pickaxe block tag")
+        return
+
+    document = parsed_json.get(tag_path)
+    values = document.get("values") if isinstance(document, dict) else None
+    if not isinstance(values, list):
+        errors.append(f"{tag_path}: values must be an array")
+        return
+
+    tagged_blocks: set[str] = set()
+    for value in values:
+        if isinstance(value, str):
+            identifier = value
+        elif isinstance(value, dict):
+            identifier = value.get("id")
+        else:
+            identifier = None
+        if isinstance(identifier, str) and identifier.startswith(f"{MOD_ID}:"):
+            tagged_blocks.add(identifier)
+
+    expected_blocks: set[str] = set()
+    relative_root = Path("assets") / MOD_ID / "blockstates"
+    for root in roots:
+        directory = root / relative_root
+        if not directory.is_dir():
+            continue
+        for path in directory.rglob("*.json"):
+            block_id = path.relative_to(directory).with_suffix("").as_posix()
+            expected_blocks.add(f"{MOD_ID}:{block_id}")
+
+    for identifier in sorted(expected_blocks - tagged_blocks):
+        errors.append(f"{tag_path}: mod block missing from pickaxe tag: {identifier}")
+
+
+def validate_entity_farm_particles(
+    roots: list[Path], parsed_json: dict[Path, Any], errors: list[str]
+) -> None:
+    for block_id in sorted(ENTITY_FARM_BLOCKS):
+        model_paths = (
+            Path("assets") / MOD_ID / "models" / "block" / f"{block_id}.json",
+            Path("assets") / MOD_ID / "models" / "block" / f"{block_id}_frame.json",
+            Path("assets") / MOD_ID / "models" / "item" / f"{block_id}.json",
+        )
+        for model_path in model_paths:
+            path = find_resource(roots, model_path)
+            if path is None:
+                errors.append(f"missing entity-farm model: {model_path}")
+                continue
+            document = parsed_json.get(path)
+            textures = document.get("textures") if isinstance(document, dict) else None
+            if not isinstance(textures, dict):
+                errors.append(f"{path}: textures must be an object")
+                continue
+            if textures.get("frame") != ENTITY_FARM_FRAME_TEXTURE:
+                errors.append(f"{path}: entity-farm frame must use iron_block")
+            if textures.get("particle") != ENTITY_FARM_FRAME_TEXTURE:
+                errors.append(f"{path}: entity-farm particles must use the iron frame texture")
+            expected_base = ENTITY_FARM_BASE_TEXTURES[block_id]
+            for texture_key in ("base", "base_left", "base_center", "base_right"):
+                if texture_key in textures and textures[texture_key] != expected_base:
+                    errors.append(
+                        f"{path}: entity-farm {texture_key} must use {expected_base}"
+                    )
+            expected_parent = (
+                "trading_cells:item/villager_breeder"
+                if model_path.parent.name == "item"
+                else "trading_cells:block/machine_cage_frame"
+                if model_path.stem.endswith("_frame")
+                else "trading_cells:block/villager_breeder"
+            )
+            if document.get("parent") != expected_parent:
+                errors.append(f"{path}: entity-farm model must inherit {expected_parent}")
 
 
 def validate_models_and_textures(
@@ -289,6 +480,309 @@ def validate_recipes(
             if isinstance(recipe_key, dict):
                 for ingredient in recipe_key.values():
                     validate_owned_item_reference(ingredient, path, definitions, errors)
+
+
+def validate_entity_farm_recipes(
+    roots: list[Path], parsed_json: dict[Path, Any], errors: list[str]
+) -> None:
+    for block_id in sorted(ENTITY_FARM_BLOCKS):
+        recipe_path = find_resource(
+            roots, Path(f"data/trading_cells/recipe/{block_id}_infusion.json")
+        )
+        if recipe_path is None:
+            errors.append(f"missing entity-farm infusion recipe: {block_id}")
+            continue
+        recipe = parsed_json.get(recipe_path)
+        ingredients = recipe.get("ingredients") if isinstance(recipe, dict) else None
+        if not isinstance(ingredients, list) or len(ingredients) != 9:
+            errors.append(f"{recipe_path}: entity-farm infusion must contain nine slots")
+            continue
+
+        ingredient_ids = [
+            entry.get("ingredient") if isinstance(entry, dict) else None
+            for entry in ingredients
+        ]
+        if ingredient_ids[4] != "trading_cells:experience_storage":
+            errors.append(f"{recipe_path}: center slot must contain Experience Storage")
+        if ingredient_ids[6] != "minecraft:spawner":
+            errors.append(f"{recipe_path}: bottom-left slot must contain a Spawner")
+        if ingredient_ids[8] != "minecraft:iron_block":
+            errors.append(f"{recipe_path}: bottom-right slot must contain an Iron Block")
+        expected_base = ENTITY_FARM_RECIPE_BASES[block_id]
+        if ingredient_ids[7] != expected_base:
+            errors.append(f"{recipe_path}: bottom base must contain {expected_base}")
+
+        expected_upper = CONFIGURED_FARM_UPPER_INGREDIENTS.get(block_id)
+        if expected_upper is not None:
+            actual_upper = tuple(ingredient_ids[index] for index in (0, 1, 2, 3, 5))
+            if actual_upper != expected_upper:
+                errors.append(
+                    f"{recipe_path}: configured-farm upper ingredients do not match its family pattern"
+                )
+
+        if block_id == "creeper_farm":
+            upper_corners = ingredient_ids[0], ingredient_ids[2]
+            if upper_corners != ("minecraft:gunpowder", "minecraft:gunpowder"):
+                errors.append(f"{recipe_path}: both upper corners must contain gunpowder")
+
+    configured_generator_patterns = {
+        "spider_spawn_egg_infusion": (
+            (
+                "minecraft:string",
+                "minecraft:fermented_spider_eye",
+                "minecraft:string",
+                "minecraft:spider_eye",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:spider_eye",
+                "minecraft:string",
+                "minecraft:fermented_spider_eye",
+                "minecraft:string",
+            ),
+            "minecraft:spider_spawn_egg",
+        ),
+        "cave_spider_spawn_egg_infusion": (
+            (
+                "minecraft:string",
+                "minecraft:poisonous_potato",
+                "minecraft:string",
+                "minecraft:spider_eye",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:spider_eye",
+                "minecraft:string",
+                "minecraft:poisonous_potato",
+                "minecraft:string",
+            ),
+            "minecraft:cave_spider_spawn_egg",
+        ),
+        "endermite_spawn_egg_infusion": (
+            (
+                "minecraft:end_stone",
+                "minecraft:ender_pearl",
+                "minecraft:end_stone",
+                "minecraft:purpur_block",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:purpur_block",
+                "minecraft:end_stone",
+                "minecraft:chorus_fruit",
+                "minecraft:end_stone",
+            ),
+            "minecraft:endermite_spawn_egg",
+        ),
+        "silverfish_spawn_egg_infusion": (
+            (
+                "minecraft:stone",
+                "minecraft:stone",
+                "minecraft:stone",
+                "minecraft:stone",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:stone",
+                "minecraft:stone",
+                "minecraft:stone",
+                "minecraft:stone",
+            ),
+            "minecraft:silverfish_spawn_egg",
+        ),
+        "slime_spawn_egg_infusion": (
+            (
+                "minecraft:slime_ball",
+                "minecraft:slime_ball",
+                "minecraft:slime_ball",
+                "minecraft:slime_ball",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:slime_ball",
+                "minecraft:slime_ball",
+                "minecraft:slime_ball",
+                "minecraft:slime_ball",
+            ),
+            "minecraft:slime_spawn_egg",
+        ),
+        "sulfur_cube_spawn_egg_infusion": (
+            (
+                "minecraft:slime_ball",
+                "minecraft:sulfur",
+                "minecraft:slime_ball",
+                "minecraft:sulfur",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:sulfur",
+                "minecraft:slime_ball",
+                "minecraft:sulfur",
+                "minecraft:slime_ball",
+            ),
+            "minecraft:sulfur_cube_spawn_egg",
+        ),
+        "magma_cube_spawn_egg_infusion": (
+            (
+                "minecraft:magma_block",
+                "minecraft:magma_block",
+                "minecraft:magma_block",
+                "minecraft:magma_cream",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:magma_cream",
+                "minecraft:magma_block",
+                "minecraft:magma_block",
+                "minecraft:magma_block",
+            ),
+            "minecraft:magma_cube_spawn_egg",
+        ),
+        "guardian_spawn_egg_infusion": (
+            (
+                "minecraft:prismarine_shard",
+                "minecraft:prismarine_crystals",
+                "minecraft:prismarine_shard",
+                "minecraft:cod",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:cod",
+                "minecraft:prismarine_shard",
+                "minecraft:prismarine_crystals",
+                "minecraft:prismarine_shard",
+            ),
+            "minecraft:guardian_spawn_egg",
+        ),
+        "elder_guardian_spawn_egg_infusion": (
+            (
+                "minecraft:prismarine_crystals",
+                "minecraft:wet_sponge",
+                "minecraft:prismarine_crystals",
+                "minecraft:prismarine_shard",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:prismarine_shard",
+                "minecraft:prismarine_crystals",
+                "minecraft:wet_sponge",
+                "minecraft:prismarine_crystals",
+            ),
+            "minecraft:elder_guardian_spawn_egg",
+        ),
+        "piglin_brute_spawn_egg_infusion": (
+            (
+                "minecraft:golden_axe",
+                "minecraft:gold_block",
+                "minecraft:golden_axe",
+                "minecraft:bone_block",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:bone_block",
+                "minecraft:blackstone",
+                "minecraft:blackstone",
+                "minecraft:blackstone",
+            ),
+            "minecraft:piglin_brute_spawn_egg",
+        ),
+        "blaze_spawn_egg_infusion": (
+            (
+                "minecraft:blaze_rod",
+                "minecraft:blaze_powder",
+                "minecraft:blaze_rod",
+                "minecraft:blaze_powder",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:blaze_powder",
+                "minecraft:blaze_rod",
+                "minecraft:blaze_powder",
+                "minecraft:blaze_rod",
+            ),
+            "minecraft:blaze_spawn_egg",
+        ),
+        "enderman_spawn_egg_infusion": (
+            (
+                "minecraft:ender_pearl",
+                "minecraft:crying_obsidian",
+                "minecraft:ender_pearl",
+                "minecraft:crying_obsidian",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:crying_obsidian",
+                "minecraft:ender_pearl",
+                "minecraft:crying_obsidian",
+                "minecraft:ender_pearl",
+            ),
+            "minecraft:enderman_spawn_egg",
+        ),
+        "shulker_spawn_egg_infusion": (
+            (
+                "minecraft:chorus_fruit",
+                "minecraft:shulker_shell",
+                "minecraft:chorus_fruit",
+                "minecraft:end_stone",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:end_stone",
+                "minecraft:chorus_fruit",
+                "minecraft:shulker_shell",
+                "minecraft:chorus_fruit",
+            ),
+            "minecraft:shulker_spawn_egg",
+        ),
+        "breeze_spawn_egg_infusion": (
+            (
+                "minecraft:breeze_rod",
+                "minecraft:wind_charge",
+                "minecraft:breeze_rod",
+                "minecraft:wind_charge",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:wind_charge",
+                "minecraft:breeze_rod",
+                "minecraft:wind_charge",
+                "minecraft:breeze_rod",
+            ),
+            "minecraft:breeze_spawn_egg",
+        ),
+        "phantom_spawn_egg_infusion": (
+            (
+                "minecraft:phantom_membrane",
+                "minecraft:phantom_membrane",
+                "minecraft:phantom_membrane",
+                "minecraft:phantom_membrane",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:phantom_membrane",
+                "minecraft:phantom_membrane",
+                "minecraft:phantom_membrane",
+                "minecraft:phantom_membrane",
+            ),
+            "minecraft:phantom_spawn_egg",
+        ),
+        "ghast_spawn_egg_infusion": (
+            (
+                "minecraft:ghast_tear",
+                "minecraft:fire_charge",
+                "minecraft:ghast_tear",
+                "minecraft:gunpowder",
+                "#trading_cells:arcane_infusion_eggs",
+                "minecraft:gunpowder",
+                "minecraft:soul_sand",
+                "minecraft:lava_bucket",
+                "minecraft:soul_sand",
+            ),
+            "minecraft:ghast_spawn_egg",
+        ),
+        "happy_ghast_spawn_egg_infusion": (
+            (
+                "minecraft:ghast_tear",
+                "minecraft:snowball",
+                "minecraft:ghast_tear",
+                "minecraft:white_wool",
+                "minecraft:dried_ghast",
+                "minecraft:white_wool",
+                "minecraft:sand",
+                "minecraft:water_bucket",
+                "minecraft:sand",
+            ),
+            "minecraft:happy_ghast_spawn_egg",
+        ),
+    }
+    for recipe_id, (expected_ingredients, result_item) in configured_generator_patterns.items():
+        recipe_path = find_resource(
+            roots, Path(f"data/trading_cells/recipe/{recipe_id}.json")
+        )
+        recipe = parsed_json.get(recipe_path) if recipe_path is not None else None
+        ingredients = recipe.get("ingredients") if isinstance(recipe, dict) else None
+        result = recipe.get("result") if isinstance(recipe, dict) else None
+        if not isinstance(ingredients, list) or len(ingredients) != 9:
+            errors.append(f"{recipe_path}: configured generator infusion must contain nine slots")
+            continue
+        ingredient_ids = tuple(
+            entry.get("ingredient") if isinstance(entry, dict) else None
+            for entry in ingredients
+        )
+        if ingredient_ids != expected_ingredients:
+            errors.append(f"{recipe_path}: configured generator ingredients do not match its pattern")
+        if not isinstance(result, dict) or result.get("item") != result_item:
+            errors.append(f"{recipe_path}: result must be {result_item}")
 
 
 def validate_mob_farm_targets(
@@ -458,9 +952,12 @@ def main() -> int:
 
     validate_languages(roots, errors)
     validate_data_directories(roots, errors)
+    validate_pickaxe_coverage(roots, parsed_json, errors)
     validate_models_and_textures(roots, parsed_json, errors)
+    validate_entity_farm_particles(roots, parsed_json, errors)
     validate_png_files(roots, errors)
     validate_recipes(roots, parsed_json, errors)
+    validate_entity_farm_recipes(roots, parsed_json, errors)
     validate_mob_farm_targets(roots, parsed_json, errors)
     validate_rei_categories(project_root, roots, parsed_json, errors)
     validate_mob_farm_examples(project_root, errors)

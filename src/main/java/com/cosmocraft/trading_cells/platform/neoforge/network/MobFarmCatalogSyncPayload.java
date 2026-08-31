@@ -3,6 +3,7 @@ package com.cosmocraft.trading_cells.platform.neoforge.network;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
 import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarmMenu;
 import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFarmMenu;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmMenu;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmCatalog;
@@ -88,6 +89,16 @@ public record MobFarmCatalogSyncPayload(
         return create(
                 menu.containerId,
                 MobFarmCatalog.Family.CREEPER,
+                menu.selectedTargetId(),
+                menu.targetEntries(),
+                menu.disabledDynamicLootIds()
+        );
+    }
+
+    public static MobFarmCatalogSyncPayload from(ConfiguredMobFarmMenu menu) {
+        return create(
+                menu.containerId,
+                menu.family(),
                 menu.selectedTargetId(),
                 menu.targetEntries(),
                 menu.disabledDynamicLootIds()

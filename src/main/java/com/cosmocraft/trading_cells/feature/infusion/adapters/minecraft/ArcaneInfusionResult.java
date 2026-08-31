@@ -86,14 +86,19 @@ public record ArcaneInfusionResult(
             );
 
     public boolean matchesInput(ArcaneInfusionInput input) {
+        return matchesPlacementInput(4, input.getItem(4));
+    }
+
+    /** Applies component-sensitive requirements which are stricter than the item ingredient. */
+    public boolean matchesPlacementInput(int slot, ItemStack stack) {
+        if (slot != 4) {
+            return true;
+        }
         return switch (type) {
             case ENCHANTED_BOOK -> inputEnchantment
-                    .map(required -> matchesEnchantedBook(input.getItem(4), required, inputLevel))
-                    .orElseGet(() -> ArcaneInfusionRecipe.isPlainBook(input.getItem(4)));
-            case NITWIT_VILLAGER -> CapturedMobStackAdapter.hasVillagerProfession(
-                    input.getItem(4),
-                    NONE_PROFESSION
-            );
+                    .map(required -> matchesEnchantedBook(stack, required, inputLevel))
+                    .orElseGet(() -> ArcaneInfusionRecipe.isPlainBook(stack));
+            case NITWIT_VILLAGER -> CapturedMobStackAdapter.hasVillagerProfession(stack, NONE_PROFESSION);
             case ITEM -> true;
         };
     }

@@ -17,6 +17,7 @@ import com.cosmocraft.trading_cells.feature.combat.adapters.output.CombatRegistr
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.RaiderFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.CreeperFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.ConfiguredMobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
@@ -120,6 +121,7 @@ public final class CreativeTabRegistration {
                         output.accept(ZombieFarmRegistrationAdapter.ITEM.get());
                         output.accept(RaiderFarmRegistrationAdapter.ITEM.get());
                         output.accept(CreeperFarmRegistrationAdapter.ITEM.get());
+                        ConfiguredMobFarmRegistrationAdapter.items().forEach(item -> output.accept(item.get()));
                     })
                     .build());
 

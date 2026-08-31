@@ -24,6 +24,9 @@ import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.RaiderFar
 import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.client.RaiderFarmScreen;
 import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.CreeperFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.client.CreeperFarmScreen;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.ConfiguredMobFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.client.ConfiguredMobFarmScreen;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmKind;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.client.ZombieFarmScreen;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
@@ -72,6 +75,8 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
             category("raider_farm");
     public static final CategoryIdentifier<TradingCellsReiDisplay> CREEPER_FARM =
             category("creeper_farm");
+    public static final CategoryIdentifier<TradingCellsReiDisplay> CONFIGURED_MOB_FARM =
+            category("configured_mob_farm");
     public static final CategoryIdentifier<TradingCellsReiDisplay> DECAPITATION_SMITHING =
             category("decapitation_smithing");
     public static final CategoryIdentifier<TradingCellsReiDisplay> PIGLIN_BARTERING =
@@ -151,6 +156,11 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         CreeperFarmRegistrationAdapter.ITEM.get()
                 ),
                 new TradingCellsReiCategory(
+                        CONFIGURED_MOB_FARM,
+                        "category.trading_cells.configured_mob_farm",
+                        ConfiguredMobFarmRegistrationAdapter.item(ConfiguredMobFarmKind.ARTHROPOD).get()
+                ),
+                new TradingCellsReiCategory(
                         DECAPITATION_SMITHING,
                         "category.trading_cells.decapitation_smithing",
                         Items.SMITHING_TABLE
@@ -210,6 +220,9 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.addWorkstations(ZOMBIE_FARM, EntryStacks.of(ZombieFarmRegistrationAdapter.ITEM.get()));
         registry.addWorkstations(RAIDER_FARM, EntryStacks.of(RaiderFarmRegistrationAdapter.ITEM.get()));
         registry.addWorkstations(CREEPER_FARM, EntryStacks.of(CreeperFarmRegistrationAdapter.ITEM.get()));
+        ConfiguredMobFarmRegistrationAdapter.items().forEach(item ->
+                registry.addWorkstations(CONFIGURED_MOB_FARM, EntryStacks.of(item.get()))
+        );
         registry.addWorkstations(DECAPITATION_SMITHING, EntryStacks.of(Items.SMITHING_TABLE));
         registry.addWorkstations(
                 PIGLIN_BARTERING,
@@ -258,6 +271,10 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.configure(ZOMBIE_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(RAIDER_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(CREEPER_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(
+                CONFIGURED_MOB_FARM,
+                configuration -> configuration.setQuickCraftingEnabledByDefault(false)
+        );
         registry.configure(
                 DECAPITATION_SMITHING,
                 configuration -> configuration.setQuickCraftingEnabledByDefault(false)
@@ -376,6 +393,16 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                 ),
                 CreeperFarmScreen.class,
                 CREEPER_FARM
+        );
+        registry.registerContainerClickArea(
+                new Rectangle(
+                        ConfiguredMobFarmScreen.RECIPE_VIEWER_X,
+                        ConfiguredMobFarmScreen.RECIPE_VIEWER_Y,
+                        ConfiguredMobFarmScreen.RECIPE_VIEWER_WIDTH,
+                        ConfiguredMobFarmScreen.RECIPE_VIEWER_HEIGHT
+                ),
+                ConfiguredMobFarmScreen.class,
+                CONFIGURED_MOB_FARM
         );
         registry.registerContainerClickArea(
                 new Rectangle(

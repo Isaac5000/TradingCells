@@ -7,6 +7,7 @@ import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFa
 import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarmMenu;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenu;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellExperiencePayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.AutotraderMenuSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellMenuSyncPayload;
@@ -78,6 +79,9 @@ public final class TradingCellClientPayloadRegistration {
                     && menu.containerId == payload.containerId()) {
                 menu.applyCatalogSnapshot(payload);
             } else if (context.player().containerMenu instanceof CreeperFarmMenu menu
+                    && menu.containerId == payload.containerId()) {
+                menu.applyCatalogSnapshot(payload);
+            } else if (context.player().containerMenu instanceof ConfiguredMobFarmMenu menu
                     && menu.containerId == payload.containerId()) {
                 menu.applyCatalogSnapshot(payload);
             }

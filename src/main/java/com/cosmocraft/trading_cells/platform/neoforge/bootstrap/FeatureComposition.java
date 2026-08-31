@@ -28,6 +28,8 @@ import com.cosmocraft.trading_cells.feature.raiderfarm.application.port.input.Ra
 import com.cosmocraft.trading_cells.feature.raiderfarm.application.service.RaiderFarmService;
 import com.cosmocraft.trading_cells.feature.creeperfarm.application.port.input.CreeperFarmUseCase;
 import com.cosmocraft.trading_cells.feature.creeperfarm.application.service.CreeperFarmService;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.application.port.input.ConfiguredMobFarmUseCase;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.application.service.ConfiguredMobFarmService;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.application.port.input.SkeletonFarmUseCase;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.application.service.SkeletonFarmService;
 import com.cosmocraft.trading_cells.feature.zombiefarm.application.port.input.ZombieFarmUseCase;
@@ -45,6 +47,7 @@ public final class FeatureComposition {
     private static final ZombieFarmUseCase ZOMBIE_FARM = new ZombieFarmService();
     private static final RaiderFarmUseCase RAIDER_FARM = new RaiderFarmService();
     private static final CreeperFarmUseCase CREEPER_FARM = new CreeperFarmService();
+    private static final ConfiguredMobFarmUseCase CONFIGURED_MOB_FARM = new ConfiguredMobFarmService();
 
     private FeatureComposition() {
     }
@@ -103,6 +106,10 @@ public final class FeatureComposition {
 
     public static CreeperFarmUseCase creeperFarm() {
         return CREEPER_FARM;
+    }
+
+    public static ConfiguredMobFarmUseCase configuredMobFarm() {
+        return CONFIGURED_MOB_FARM;
     }
 
     public static VillagerTraderUseCase villagerTrader() {

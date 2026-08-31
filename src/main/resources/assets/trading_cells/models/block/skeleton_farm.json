@@ -7,6 +7,6 @@
     "base_right": "minecraft:block/pale_moss_block",
     "frame": "minecraft:block/iron_block",
     "glass": "minecraft:block/glass",
-    "particle": "minecraft:block/pale_moss_block"
+    "particle": "minecraft:block/iron_block"
   }
 }

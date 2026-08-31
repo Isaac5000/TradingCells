@@ -1,23 +1,31 @@
 package com.cosmocraft.trading_cells.feature.infusion.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionRecipe;
 import com.cosmocraft.trading_cells.feature.infusion.domain.model.ArcaneInfusionTransferAction;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.MachineMenuLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BooleanSupplier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.StackedItemContents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.RecipeBookMenu;
+import net.minecraft.world.inventory.RecipeBookType;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jspecify.annotations.NonNull;
 
-public final class ArcaneInfuserMenu extends AbstractContainerMenu {
+public final class ArcaneInfuserMenu extends RecipeBookMenu {
     private static final int INPUT_GRID_X = MachineMenuLayout.machineX(-2);
     private static final int INPUT_GRID_Y = 39;
     private static final int INPUT_GRID_SPACING = 18;
@@ -116,6 +124,53 @@ public final class ArcaneInfuserMenu extends AbstractContainerMenu {
         return !(target instanceof OutputSlot);
     }
 
+    @Override
+    public PostPlaceAction handlePlacement(
+            boolean useMaxItems,
+            boolean allowDroppingItemsToClear,
+            RecipeHolder<?> holder,
+            ServerLevel level,
+            Inventory inventory
+    ) {
+        if (!(holder.value() instanceof ArcaneInfusionRecipe recipe)) {
+            return PostPlaceAction.NOTHING;
+        }
+
+        List<ItemStack> returnedInventory = copyInventory(inventory.getNonEquipmentItems());
+        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+            if (!insertIntoInventory(
+                    returnedInventory,
+                    container.getItem(slot),
+                    allowDroppingItemsToClear
+            )) {
+                return PostPlaceAction.NOTHING;
+            }
+        }
+
+        PlacementPlan plan = useMaxItems
+                ? largestPlacement(recipe, returnedInventory)
+                : placement(recipe, returnedInventory, 1);
+        if (plan == null) {
+            applyPlacement(inventory, returnedInventory, emptyInputs());
+            return PostPlaceAction.PLACE_GHOST_RECIPE;
+        }
+
+        applyPlacement(inventory, plan.inventory(), plan.inputs());
+        return PostPlaceAction.NOTHING;
+    }
+
+    @Override
+    public void fillCraftSlotsStackedContents(StackedItemContents stackedContents) {
+        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+            stackedContents.accountStack(container.getItem(slot));
+        }
+    }
+
+    @Override
+    public RecipeBookType getRecipeBookType() {
+        return RecipeBookType.CRAFTING;
+    }
+
     public static int inputSlotX(int slot) {
         return INPUT_GRID_X + slot % 3 * INPUT_GRID_SPACING;
     }
@@ -179,6 +234,187 @@ public final class ArcaneInfuserMenu extends AbstractContainerMenu {
         return index < PLAYER_INVENTORY_END
                 ? moveItemStackTo(stack, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)
                 : moveItemStackTo(stack, PLAYER_INVENTORY_START, PLAYER_INVENTORY_END, false);
+    }
+
+    private void applyPlacement(
+            Inventory inventory,
+            List<ItemStack> inventoryContents,
+            List<ItemStack> inputs
+    ) {
+        for (int slot = 0; slot < inventoryContents.size(); slot++) {
+            inventory.setItem(slot, inventoryContents.get(slot).copy());
+        }
+        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+            container.setItem(slot, inputs.get(slot).copy());
+        }
+        inventory.setChanged();
+        container.setChanged();
+    }
+
+    private static PlacementPlan largestPlacement(
+            ArcaneInfusionRecipe recipe,
+            List<ItemStack> inventory
+    ) {
+        int maximum = Item.ABSOLUTE_MAX_STACK_SIZE;
+        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+            int count = recipe.ingredient(slot).count();
+            if (count > 0) {
+                maximum = Math.min(maximum, Item.ABSOLUTE_MAX_STACK_SIZE / count);
+            }
+        }
+        for (int batches = maximum; batches >= 1; batches--) {
+            PlacementPlan plan = placement(recipe, inventory, batches);
+            if (plan != null) {
+                return plan;
+            }
+        }
+        return null;
+    }
+
+    private static PlacementPlan placement(
+            ArcaneInfusionRecipe recipe,
+            List<ItemStack> inventory,
+            int batches
+    ) {
+        List<ItemStack> workingInventory = copyInventory(inventory);
+        List<ItemStack> inputs = emptyInputs();
+        return assignInput(recipe, 0, batches, workingInventory, inputs)
+                ? new PlacementPlan(workingInventory, inputs)
+                : null;
+    }
+
+    private static boolean assignInput(
+            ArcaneInfusionRecipe recipe,
+            int slot,
+            int batches,
+            List<ItemStack> inventory,
+            List<ItemStack> inputs
+    ) {
+        if (slot == ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT) {
+            return true;
+        }
+
+        int perBatch = recipe.ingredient(slot).count();
+        if (perBatch == 0) {
+            inputs.set(slot, ItemStack.EMPTY);
+            return assignInput(recipe, slot + 1, batches, inventory, inputs);
+        }
+
+        int required = perBatch * batches;
+        List<ItemStack> considered = new ArrayList<>();
+        for (ItemStack candidate : inventory) {
+            if (candidate.isEmpty() || containsSameComponents(considered, candidate)) {
+                continue;
+            }
+            considered.add(candidate.copyWithCount(1));
+            if (required > candidate.getMaxStackSize()) {
+                continue;
+            }
+
+            ItemStack target = candidate.copyWithCount(required);
+            if (!recipe.matchesPlacementStack(slot, target)
+                    || countMatching(inventory, candidate) < required) {
+                continue;
+            }
+
+            List<ItemStack> nextInventory = copyInventory(inventory);
+            consumeMatching(nextInventory, candidate, required);
+            ItemStack previous = inputs.set(slot, target);
+            if (assignInput(recipe, slot + 1, batches, nextInventory, inputs)) {
+                replaceContents(inventory, nextInventory);
+                return true;
+            }
+            inputs.set(slot, previous);
+        }
+        return false;
+    }
+
+    private static boolean insertIntoInventory(
+            List<ItemStack> inventory,
+            ItemStack source,
+            boolean discardOverflow
+    ) {
+        ItemStack remainder = source.copy();
+        if (remainder.isEmpty()) {
+            return true;
+        }
+        for (ItemStack existing : inventory) {
+            if (ItemStack.isSameItemSameComponents(existing, remainder)) {
+                int moved = Math.min(remainder.getCount(), existing.getMaxStackSize() - existing.getCount());
+                if (moved > 0) {
+                    existing.grow(moved);
+                    remainder.shrink(moved);
+                }
+                if (remainder.isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            if (inventory.get(slot).isEmpty()) {
+                int moved = Math.min(remainder.getCount(), remainder.getMaxStackSize());
+                inventory.set(slot, remainder.copyWithCount(moved));
+                remainder.shrink(moved);
+                if (remainder.isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        return discardOverflow;
+    }
+
+    private static int countMatching(List<ItemStack> inventory, ItemStack template) {
+        int count = 0;
+        for (ItemStack stack : inventory) {
+            if (ItemStack.isSameItemSameComponents(stack, template)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private static void consumeMatching(
+            List<ItemStack> inventory,
+            ItemStack template,
+            int amount
+    ) {
+        int remaining = amount;
+        for (int slot = 0; slot < inventory.size() && remaining > 0; slot++) {
+            ItemStack stack = inventory.get(slot);
+            if (!ItemStack.isSameItemSameComponents(stack, template)) {
+                continue;
+            }
+            int consumed = Math.min(stack.getCount(), remaining);
+            stack.shrink(consumed);
+            remaining -= consumed;
+            if (stack.isEmpty()) {
+                inventory.set(slot, ItemStack.EMPTY);
+            }
+        }
+    }
+
+    private static boolean containsSameComponents(List<ItemStack> stacks, ItemStack candidate) {
+        return stacks.stream().anyMatch(stack -> ItemStack.isSameItemSameComponents(stack, candidate));
+    }
+
+    private static List<ItemStack> copyInventory(List<ItemStack> source) {
+        return source.stream().map(ItemStack::copy).collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+    }
+
+    private static List<ItemStack> emptyInputs() {
+        List<ItemStack> inputs = new ArrayList<>(ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT);
+        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
+            inputs.add(ItemStack.EMPTY);
+        }
+        return inputs;
+    }
+
+    private static void replaceContents(List<ItemStack> target, List<ItemStack> source) {
+        target.clear();
+        target.addAll(source);
+    }
+
+    private record PlacementPlan(List<ItemStack> inventory, List<ItemStack> inputs) {
     }
 
     private static final class OutputSlot extends Slot {

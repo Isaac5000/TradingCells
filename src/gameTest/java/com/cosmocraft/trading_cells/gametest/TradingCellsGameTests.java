@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.gametest;
 
 import com.cosmocraft.trading_cells.gametest.feature.silktouch.SilkTouchTwoGameTests;
+import com.cosmocraft.trading_cells.gametest.feature.configuredmobfarm.ConfiguredMobFarmGameTests;
 import com.cosmocraft.trading_cells.gametest.feature.farmer.FarmerGameTests;
 import com.cosmocraft.trading_cells.gametest.feature.machine.PortableMachineGameTests;
 import com.cosmocraft.trading_cells.gametest.feature.machine.MachineCapabilityGameTests;
@@ -65,6 +66,7 @@ public final class TradingCellsGameTests {
         tests.addAll(IronFarmGameTests.tests());
         tests.addAll(QuarryGameTests.tests());
         tests.addAll(MobFarmGameTests.tests());
+        tests.addAll(ConfiguredMobFarmGameTests.tests());
         tests.addAll(ExperienceGameTests.tests());
         tests.addAll(ArcaneInfuserGameTests.tests());
         tests.addAll(NetworkGameTests.tests());

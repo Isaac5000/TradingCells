@@ -18,6 +18,7 @@ import com.cosmocraft.trading_cells.feature.combat.adapters.output.CombatRegistr
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.RaiderFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.CreeperFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.ConfiguredMobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.silktouch.adapters.output.SilkTouchTwoRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.TraderTooltipEventAdapter;
@@ -29,6 +30,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -53,6 +55,8 @@ public class Registration {
             DeferredRegister.create(Registries.RECIPE_TYPE, TradingCells.MOD_ID);
     public static final DeferredRegister<RecipeDisplay.Type<?>> RECIPE_DISPLAY_TYPES =
             DeferredRegister.create(Registries.RECIPE_DISPLAY, TradingCells.MOD_ID);
+    public static final DeferredRegister<RecipeBookCategory> RECIPE_BOOK_CATEGORIES =
+            DeferredRegister.create(Registries.RECIPE_BOOK_CATEGORY, TradingCells.MOD_ID);
     public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(Registries.FLUID, TradingCells.MOD_ID);
     public static final DeferredRegister<FluidType> FLUID_TYPES =
             DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, TradingCells.MOD_ID);
@@ -71,6 +75,7 @@ public class Registration {
         RECIPE_SERIALIZERS.register(modEventBus);
         RECIPE_TYPES.register(modEventBus);
         RECIPE_DISPLAY_TYPES.register(modEventBus);
+        RECIPE_BOOK_CATEGORIES.register(modEventBus);
         FLUIDS.register(modEventBus);
         FLUID_TYPES.register(modEventBus);
         GLOBAL_LOOT_MODIFIER_SERIALIZERS.register(modEventBus);
@@ -92,6 +97,7 @@ public class Registration {
         SkeletonFarmRegistrationAdapter.load();
         RaiderFarmRegistrationAdapter.load();
         CreeperFarmRegistrationAdapter.load();
+        ConfiguredMobFarmRegistrationAdapter.load(modEventBus);
         SilkTouchTwoRegistrationAdapter.load();
         ZombieFarmRegistrationAdapter.load();
         QuarryRegistrationAdapter.load(modEventBus);

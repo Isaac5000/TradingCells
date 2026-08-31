@@ -10,11 +10,14 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 
 - Version publica: `1.0.0` para Minecraft `26.2.0` y NeoForge `26.2.0.57`.
 - Java 25 y Gradle Wrapper 9.5; `gradlew` esta registrado como ejecutable.
-- La validacion automatica mas reciente se documento el `2026-08-29` en
-  `docs/releases/1.0.0-validation.md`: dos JAR identicos y 19/19 GameTests. La
+- La validacion automatica mas reciente se documento el `2026-08-31` en
+  `docs/releases/1.0.0-validation.md`: dos JAR identicos y 26/26 GameTests. La
   matriz manual y la CI del commit definitivo siguen abiertas.
 - Cambios recientes añadieron granjas de Saqueadores/Creepers y optimizaciones de
-  render y servidor. Debe regenerarse la evidencia final antes de publicar.
+  render y servidor. El arbol actual incorpora ademas diez familias configurables
+  y un libro de recetas propio para el Infusor; 26/26 GameTests pasan. Las bases
+  de Artropodos y Fantasmas usan musgo palido, el suelo de Slimes es opaco y el
+  render del Ghast dispone de un desplazamiento vertical propio.
 
 ## Arquitectura
 
@@ -40,13 +43,32 @@ permitidas esta en `ARCHITECTURE.md` y la ruta corta de cada feature en
 No buscar dentro de `.gradle/`, `build/`, `logs/`, `run/` o `run-server/` salvo
 que la tarea trate expresamente resultados o mundos locales.
 
+## Ruta documental minima
+
+| Necesidad | Leer | Motivo |
+| --- | --- | --- |
+| Empezar una tarea | `AGENTS.md` y este archivo | reglas operativas, estado e invariantes |
+| Localizar una feature | `PROJECT_INDEX.md` | indice corto de rutas y validacion dirigida |
+| Cambiar fronteras Java | `ARCHITECTURE.md` | dependencias completas que no se duplican aqui |
+| Usar o publicar el mod | `README.md`, `CHANGELOG.md` | documentacion publica |
+| Tocar un contrato concreto | solo el archivo enlazado de `docs/` | mecanica, compatibilidad o publicacion |
+| Modificar herramientas | `tools/README.md` o `tools/performance/README.md` | comandos y salidas propias del tooling |
+
+`PROJECT_INDEX.md` se conserva deliberadamente: evita cargar este contexto y la
+arquitectura completa para localizar una clase. Los documentos especializados no
+se deben abrir en bloque ni fusionar con este archivo, porque cambian con ritmos y
+responsables distintos.
+
 ## Modulos y responsabilidades
 
 Las features registradas son `captures`, `combat`, `trader`, `breeders`,
 `incubators`, `farmer`, `quarry`, `converter`, `ironfarm`, `skeletonfarm`,
 `zombiefarm`, `raiderfarm`, `creeperfarm`, `experience`, `infusion` y `silktouch`.
+`configuredmobfarm` implementa por composicion Artropodos, Slimes, Guardianes,
+Piglins, Blazes, Ghasts, Endermen, Shulkers, Breezes y Phantoms.
 `platform/neoforge/mobfarm` mantiene el catalogo dinamico comun; las cuatro
-familias conservan Block Entities, inventarios, pantallas y botin independientes.
+familias historicas conservan su implementacion y las diez nuevas comparten una
+Block Entity configurable sin compartir IDs persistentes.
 
 ## Funcionalidades implementadas
 
@@ -54,8 +76,10 @@ familias conservan Block Entities, inventarios, pantallas y botin independientes
 - Cultivos y Canteras para aldeanos y piglins con herramientas, Fortuna/Eficiencia,
   catalogos dinamicos, salidas parciales y persistencia.
 - Conversion de aldeanos, Granja de Hierro y granjas de Esqueletos, Zombis,
-  Saqueadores y Creepers con filtros, objetivos ampliables y XP.
-- Almacen y fluido de XP, Infusor Arcano y encantamientos propios.
+  Saqueadores, Creepers, Artropodos, Slimes, Guardianes, Piglins, Blazes, Ghasts,
+  Endermen, Shulkers, Breezes y Phantoms con filtros, objetivos ampliables y XP.
+- Almacen y fluido de XP, Infusor Arcano con recetario categorizado y recetas
+  posicionales dispersas, y encantamientos propios.
 - Toque de Seda II sobre el encantamiento vanilla, bloques especiales, generadores
   preservados, pruebas/Arcas repetibles y control persistente por redstone.
 - Integraciones opcionales REI y Jade; clientes OpenGL y Vulkan.
@@ -99,6 +123,7 @@ Detalles y numeros: `tools/performance/RESULTS.md`.
 - No invocar shells para operaciones que cubren Java, Gradle o Python.
 - Toda mutacion persistente de una Block Entity debe marcar y sincronizar su estado.
 - Conservar cambios de usuario; no limpiar el arbol de trabajo automaticamente.
+- No añadir un generador o script sin consumidor comprobado y salida reproducible.
 
 ## Dependencias y herramientas
 
@@ -181,11 +206,12 @@ Control rapido de tooling: `python tools/check_portability.py`. Evidencia final:
 - Repetir dos `clean releaseCheck`, comparar JAR y registrar nueva evidencia.
 - Ejecutar las plantillas de rendimiento activas, bloqueadas, automatizadas,
   multijugador, granjas y REI antes de una optimizacion estructural.
-- Consultar `DELETE.md` antes de añadir nuevos generadores o scripts auxiliares.
 - Futuras mecanicas estan aisladas en `docs/ROADMAP.md`.
 
 ## Ultimos cambios relevantes
 
+- `2026-08-30`: diez familias configurables de granjas, recetas y Spawn Eggs;
+  recetario lila del Infusor con colocacion exacta; inventario futuro de criaturas.
 - `2026-08-29`: herramientas de rendimiento portables, control automatico de
   portabilidad, CI Windows/macOS y documentacion de contexto por capas.
 - Commits previos: `f9b8646` corrige el permiso de `gradlew`; `a944f56` incorpora

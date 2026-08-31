@@ -1,5 +1,6 @@
 {
   "type": "trading_cells:arcane_infusion",
+  "category": "generators",
   "ingredients": [
     {"ingredient": "minecraft:brown_mushroom", "count": 1},
     {"ingredient": "minecraft:arrow", "count": 1},
@@ -11,7 +12,7 @@
     {"ingredient": "minecraft:bow", "count": 1},
     {"ingredient": "minecraft:arrow", "count": 1}
   ],
-  "experience": 112,
+  "experience": 140,
   "result": {
     "type": "item",
     "item": "minecraft:bogged_spawn_egg"

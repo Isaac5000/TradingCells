@@ -4,6 +4,7 @@ import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.Skeleton
 import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarmMenu;
 import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFarmMenu;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenu;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -43,6 +44,8 @@ public record RequestMobFarmCatalogPayload(int containerId) implements CustomPac
                 PacketDistributor.sendToPlayer(serverPlayer, MobFarmCatalogSyncPayload.from(raiderMenu));
             } else if (serverPlayer.containerMenu instanceof CreeperFarmMenu creeperMenu) {
                 PacketDistributor.sendToPlayer(serverPlayer, MobFarmCatalogSyncPayload.from(creeperMenu));
+            } else if (serverPlayer.containerMenu instanceof ConfiguredMobFarmMenu configuredMenu) {
+                PacketDistributor.sendToPlayer(serverPlayer, MobFarmCatalogSyncPayload.from(configuredMenu));
             }
         });
     }

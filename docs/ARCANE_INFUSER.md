@@ -10,7 +10,22 @@ Entrada | Centro  | Entrada  -> Resultado
 Entrada | Entrada | Entrada
 ```
 
-Los nueve huecos guardan cualquier objeto. Una receta válida se previsualiza en la salida, pero los ingredientes y el XP solo se consumen al retirar el resultado, como en una mesa de trabajo. No existe modo automático ni transferencia de objetos mediante tolvas o tuberías.
+Los nueve huecos guardan cualquier objeto. Una receta valida se previsualiza en
+la salida, pero los ingredientes y el XP solo se consumen al retirar el
+resultado, como en una mesa de trabajo. No existe modo automatico ni
+transferencia de objetos mediante tolvas o tuberias.
+
+El boton de libro lila abre el recetario propio a la izquierda y desplaza el
+menu a la derecha cuando hay espacio, sin solaparlos. El boton queda sobre la
+salida de la receta. Incluye buscador, filtro de todas/solo
+fabricables y las categorias Generadores, Equipo, Produccion y Varios. Todas las
+infusiones estan desbloqueadas desde el principio y no generan avisos de receta.
+Un clic coloca un lote; Shift coloca el maximo de lotes completos. El servidor
+comprueba cantidades y componentes exactos antes de modificar el inventario.
+
+Una receta puede exigir huecos vacios con `{"empty": true}` en cualquiera de
+sus nueve posiciones. El campo opcional `category` acepta `generators`,
+`equipment`, `production` o `misc`; si se omite usa `misc`.
 
 ## Infusiones
 
@@ -61,8 +76,8 @@ Coste: `5.000` XP. El resultado conserva el capturador, su variante, durabilidad
 
 ```text
 Huevo de esqueleto  | Huevo de Parched  | Huevo de esqueleto Wither
-Huevo de Stray      | Spawner           | Huevo de Bogged
-Lingote de hierro   | Bloque de musgo pálido | Lingote de hierro
+Huevo de Stray      | Almacén de XP     | Huevo de Bogged
+Spawner              | Bloque de musgo pálido | Bloque de hierro
 ```
 
 Coste: `50.000` XP. Usa directamente los huevos generadores de las cinco variantes compatibles y produce el bloque de Granja de Esqueletos.
@@ -71,33 +86,36 @@ Coste: `50.000` XP. Usa directamente los huevos generadores de las cinco variant
 
 Seis recetas transforman un huevo normal admitido por `#trading_cells:arcane_infusion_eggs` en el huevo generador objetivo. La etiqueta incluye `#minecraft:eggs`, el huevo de tortuga y el huevo de sniffer, y puede ampliarse mediante datapacks o mods. Los ingredientes exteriores combinan huesos, armas, flechas y materiales representativos de cada variante. El caballo esqueleto está disponible en el selector y tiene su propia infusión, pero no participa en la receta de la granja.
 
-- Esqueleto normal: `55` XP, equivalente al nivel 5.
-- Esqueleto de hielo: `91` XP, equivalente al nivel 7.
-- Esqueleto de pantano: `112` XP, equivalente al nivel 8.
-- Esqueleto del desierto: `112` XP, equivalente al nivel 8.
-- Esqueleto Wither: `160` XP, equivalente al nivel 10.
-- Caballo esqueleto: `139` XP, equivalente al nivel 9.
+- Esqueleto normal: `60` XP.
+- Esqueleto de hielo: `100` XP.
+- Esqueleto de pantano: `140` XP.
+- Esqueleto del desierto: `140` XP.
+- Esqueleto Wither: `300` XP.
+- Caballo esqueleto: `180` XP.
 
 ### Granja de Zombis
 
 ```text
-Huevo de zombi      | Bloque de musgo pálido | Huevo de aldeano zombi
-Huevo de momificado | Spawner             | Huevo de ahogado
-Lingote de hierro   | Huevo de piglin z.  | Lingote de hierro
+Huevo de zombi      | Huevo de piglin z.  | Huevo de aldeano zombi
+Huevo de momificado | Almacén de XP       | Huevo de ahogado
+Spawner              | Bloque de musgo pálido | Bloque de hierro
 ```
 
 Coste: `50.000` XP. Produce la Granja de Zombis. El zoglin está disponible en el selector, pero no participa en esta receta.
 
 ### Huevos generadores de zombis
 
-Seis recetas convierten `#trading_cells:arcane_infusion_eggs` en huevos de zombi, aldeano zombi, momificado, ahogado, piglin zombificado o zoglin. Los costes son `55`, `91`, `76`, `160`, `112` y `139` XP respectivamente.
+Nueve recetas convierten `#trading_cells:arcane_infusion_eggs` en huevos de
+zombi, aldeano zombi, momificado, ahogado, piglin zombificado, zoglin, caballo
+zombi, Camel Husk o Zombie Nautilus. Sus costes son `60`, `120`, `100`, `200`,
+`160`, `250`, `180`, `200` y `200` XP respectivamente.
 
 ### Granja de Saqueadores
 
 ```text
 Huevo de saqueador | Frasco ominoso      | Huevo de devastador
-Huevo de bruja     | Spawner             | Huevo de invocador
-Lingote de hierro  | Tablones de roble oscuro | Lingote de hierro
+Huevo de bruja     | Almacén de XP       | Huevo de invocador
+Spawner             | Tablones de roble oscuro | Bloque de hierro
 ```
 
 Coste: `100.000` XP. Cualquier nivel de frasco ominoso es válido. La máquina
@@ -107,25 +125,63 @@ datapacks.
 
 ### Huevos generadores de saqueadores
 
-Cuatro recetas convierten `#trading_cells:arcane_infusion_eggs` en huevos de
-saqueador, invocador, devastador o bruja. Sus costes son `80`, `150`, `150` y
-`100` XP respectivamente.
+Cinco recetas convierten `#trading_cells:arcane_infusion_eggs` en huevos de
+saqueador, invocador, devastador, bruja o vindicador. Sus costes son `100`,
+`350`, `450`, `250` y `200` XP respectivamente. Illusioner puede entrar por el
+tag vanilla de saqueadores, pero Minecraft no proporciona un huevo para crear.
 
 ### Granja de Creepers
 
 ```text
-Lingote de hierro         | Huevo de creeper | Lingote de hierro
-Fragmento de la Tormenta  | Spawner          | Fragmento de la Tormenta
-Lingote de hierro         | Bloque de musgo  | Lingote de hierro
+Pólvora                    | Huevo de creeper     | Pólvora
+Fragmento de la Tormenta  | Almacén de XP        | Fragmento de la Tormenta
+Spawner                    | Bloque de musgo pálido | Bloque de hierro
 ```
 
-Coste: `25.000` XP. La máquina permite alternar entre Creeper normal y cargado;
-los objetivos de mods pueden añadirse mediante tags o datapacks.
+Coste: `25.000` XP. La máquina usa musgo pálido en su base, permite alternar entre
+Creeper normal y cargado y admite objetivos de mods mediante tags o datapacks.
 
 ### Huevo generador de Creeper
 
-Una infusión de `75` XP convierte un huevo normal admitido en un huevo de
+Una infusion de `80` XP convierte un huevo normal admitido en un huevo de
 Creeper usando pólvora, TNT, musgo y un mechero.
+
+### Nuevas familias de granjas
+
+Todas usan Almacen de XP en el centro y la fila inferior `Spawner | bloque base
+| Bloque de hierro`. Los cinco huecos restantes combinan Spawn Eggs y materiales
+tematicos. Sus objetivos se amplian mediante tags y descriptores de datapack.
+
+| Granja | Objetivos integrados | Base | Coste |
+| --- | --- | --- | ---: |
+| Artropodos | Spider, Cave Spider, Silverfish y Endermite | Cobweb | 35.000 XP |
+| Slimes | Slime, Magma Cube y Sulfur Cube | Slime Block | 45.000 XP |
+| Guardianes | Guardian y Elder Guardian | Prismarine Bricks | 75.000 XP |
+| Piglins | Piglin y Piglin Brute | Polished Blackstone Bricks | 70.000 XP |
+| Blazes | Blaze | Nether Bricks | 55.000 XP |
+| Ghasts | Ghast y Happy Ghast | Soul Soil | 65.000 XP |
+| Endermen | Enderman | End Stone | 60.000 XP |
+| Shulkers | Shulker | Purpur Pillar | 90.000 XP |
+| Breezes | Breeze | Polished Tuff | 80.000 XP |
+| Phantoms | Phantom | Polished Deepslate | 40.000 XP |
+
+### Huevos generadores de las nuevas familias
+
+| Familia | Costes de sus huevos |
+| --- | --- |
+| Artropodos | Spider `80`, Cave Spider `120`, Silverfish `100`, Endermite `140` XP |
+| Slimes | Slime `80`, Magma Cube `180`, Sulfur Cube `200` XP |
+| Guardianes | Guardian `220`, Elder Guardian `550` XP |
+| Piglins | Piglin `180`, Piglin Brute `320` XP |
+| Blaze | `250` XP |
+| Ghasts | Ghast `280`, Happy Ghast `280` XP |
+| Enderman | `250` XP |
+| Shulker | `350` XP |
+| Breeze | `300` XP |
+| Phantom | `180` XP |
+
+El limite de cualquier infusión de Spawn Egg es `550` XP, equivalente a veinte
+niveles completos. Los costes son multiplos de diez.
 
 ### Toque del Guerrero
 
@@ -162,12 +218,17 @@ Esta receta hace renovable el ingrediente central de la Granja de Esqueletos sin
 ## Funcionamiento
 
 - Una receta válida sin experiencia suficiente muestra el resultado atenuado y bloquea su extracción.
-- El marcador inferior muestra `XP disponible/XP necesario` y limita visualmente el primer valor al coste de la receta.
+- El marcador inferior muestra `XP almacenada/XP necesaria`, incluida la receta
+  fantasma seleccionada en el recetario, sin limitar visualmente el primer valor.
 - Ingredientes y experiencia se consumen en una única operación atómica.
 - Si falta cualquier recurso, no se consume nada.
+- Los ingredientes con recipiente de fabricación, como los cubos de agua o lava,
+  dejan el recipiente vacío en su mismo hueco.
 - Al completarse, reproduce un sonido y una ráfaga breve de partículas.
 - La flecha del menú abre la categoría de Infusión Arcana cuando REI está instalado.
 - El botón de transferencia de REI mueve los nueve ingredientes a su posición cuando el menú del Infusor está abierto. No comprueba ni transfiere experiencia.
+- El recetario vanilla adaptado funciona sin REI y conserva exactamente los
+  componentes de libros encantados y capturadores.
 - La experiencia líquida sí admite entrada y salida mediante la capacidad de fluidos de NeoForge.
 - El menú permite almacenar o retirar niveles del jugador; una cantidad vacía transfiere todo lo posible.
 

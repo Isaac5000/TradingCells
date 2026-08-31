@@ -28,7 +28,12 @@ data/<namespace>/trading_cells/mob_farm_target/<id>.json
 ```
 
 - `family`: one of `trading_cells:skeleton`, `trading_cells:zombie`,
-  `trading_cells:raider` or `trading_cells:creeper`.
+  `trading_cells:raider`, `trading_cells:creeper`,
+  `trading_cells:arthropod`, `trading_cells:slime`,
+  `trading_cells:guardian`, `trading_cells:piglin`,
+  `trading_cells:blaze`, `trading_cells:ghast`,
+  `trading_cells:enderman`, `trading_cells:shulker`,
+  `trading_cells:breeze` or `trading_cells:phantom`.
 - `entity_type`: registered entity used by the target.
 - `generator_item`: item shown as the target generator/icon.
 - `order`: ascending selector order; ties use the entity identifier.
@@ -42,11 +47,11 @@ remove an item produced by another enabled category in the entity's loot table.
 ## Resolution and fallback
 
 Vanilla targets are installed first, targets found through each family's entity
-tag are added second, and datapack descriptors are applied last. Trading Cells
-ships `raider_farm_targets` and `creeper_farm_targets` tags in addition to the
-vanilla skeleton and zombie groups. Normal resource-pack priority resolves two
-files with the same resource ID. If different descriptor IDs target the same
-entity, the lexicographically first ID wins and the server writes a warning.
+tag are added second, and datapack descriptors are applied last. Skeletons and
+zombies use the vanilla family tags; every other family exposes a matching
+`#trading_cells:<name>_farm_targets` tag. Normal resource-pack priority resolves
+two files with the same resource ID. If different descriptor IDs target the
+same entity, the lexicographically first ID wins and the server writes a warning.
 
 An invalid descriptor is discarded without affecting the others. If rebuilding
 the complete snapshot fails, Trading Cells restores its fixed vanilla catalog.
@@ -55,6 +60,9 @@ for rules Trading Cells can calculate from the same source used for generation.
 
 This format extends an existing family. Registering a completely new block and
 family still requires code.
+
+The complete built-in target inventory and the classification of future mobs
+are recorded in [`MOB_FARM_ROADMAP.md`](MOB_FARM_ROADMAP.md).
 
 Charged Creepers are a code-owned synthetic variant of their vanilla entity
 type. A descriptor can add a registered modded entity, but cannot create

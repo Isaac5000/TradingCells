@@ -7,6 +7,6 @@
     "base_right": "minecraft:block/dark_oak_planks",
     "frame": "minecraft:block/iron_block",
     "glass": "minecraft:block/glass",
-    "particle": "minecraft:block/dark_oak_planks"
+    "particle": "minecraft:block/iron_block"
   }
 }

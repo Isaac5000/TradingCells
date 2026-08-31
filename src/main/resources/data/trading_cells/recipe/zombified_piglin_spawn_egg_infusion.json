@@ -1,5 +1,6 @@
 {
   "type": "trading_cells:arcane_infusion",
+  "category": "generators",
   "ingredients": [
     {"ingredient": "minecraft:gold_nugget", "count": 1},
     {"ingredient": "minecraft:rotten_flesh", "count": 1},
@@ -11,7 +12,7 @@
     {"ingredient": "minecraft:golden_sword", "count": 1},
     {"ingredient": "minecraft:gold_nugget", "count": 1}
   ],
-  "experience": 112,
+  "experience": 160,
   "result": {
     "type": "item",
     "item": "minecraft:zombified_piglin_spawn_egg"

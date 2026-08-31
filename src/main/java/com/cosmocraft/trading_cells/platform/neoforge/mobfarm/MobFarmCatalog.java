@@ -20,7 +20,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -40,11 +39,33 @@ public final class MobFarmCatalog {
             "pillager", "evoker", "ravager", "witch"
     );
     private static final List<Identifier> CREEPER_BASE = ids("creeper");
-    private static final Map<Family, List<Identifier>> BASE_IDS = Map.of(
-            Family.SKELETON, SKELETON_BASE,
-            Family.ZOMBIE, ZOMBIE_BASE,
-            Family.RAIDER, RAIDER_BASE,
-            Family.CREEPER, CREEPER_BASE
+    private static final List<Identifier> ARTHROPOD_BASE = ids(
+            "spider", "cave_spider", "silverfish", "endermite"
+    );
+    private static final List<Identifier> SLIME_BASE = ids("slime", "magma_cube", "sulfur_cube");
+    private static final List<Identifier> GUARDIAN_BASE = ids("guardian", "elder_guardian");
+    private static final List<Identifier> PIGLIN_BASE = ids("piglin", "piglin_brute");
+    private static final List<Identifier> BLAZE_BASE = ids("blaze");
+    private static final List<Identifier> GHAST_BASE = ids("ghast", "happy_ghast");
+    private static final List<Identifier> ENDERMAN_BASE = ids("enderman");
+    private static final List<Identifier> SHULKER_BASE = ids("shulker");
+    private static final List<Identifier> BREEZE_BASE = ids("breeze");
+    private static final List<Identifier> PHANTOM_BASE = ids("phantom");
+    private static final Map<Family, List<Identifier>> BASE_IDS = Map.ofEntries(
+            Map.entry(Family.SKELETON, SKELETON_BASE),
+            Map.entry(Family.ZOMBIE, ZOMBIE_BASE),
+            Map.entry(Family.RAIDER, RAIDER_BASE),
+            Map.entry(Family.CREEPER, CREEPER_BASE),
+            Map.entry(Family.ARTHROPOD, ARTHROPOD_BASE),
+            Map.entry(Family.SLIME, SLIME_BASE),
+            Map.entry(Family.GUARDIAN, GUARDIAN_BASE),
+            Map.entry(Family.PIGLIN, PIGLIN_BASE),
+            Map.entry(Family.BLAZE, BLAZE_BASE),
+            Map.entry(Family.GHAST, GHAST_BASE),
+            Map.entry(Family.ENDERMAN, ENDERMAN_BASE),
+            Map.entry(Family.SHULKER, SHULKER_BASE),
+            Map.entry(Family.BREEZE, BREEZE_BASE),
+            Map.entry(Family.PHANTOM, PHANTOM_BASE)
     );
     private static final AtomicReference<Map<Family, List<Target>>> TARGETS =
             new AtomicReference<>(fallbackTargets());
@@ -108,9 +129,6 @@ public final class MobFarmCatalog {
             EntityType<?> type = holder.value();
             Identifier id = entityTypes.getKey(type);
             if (id == null || discovered.containsKey(id)) {
-                continue;
-            }
-            if (type.getCategory() != MobCategory.MONSTER && !baseIds.contains(id)) {
                 continue;
             }
             addDiscoveredTarget(entityTypes, items, family, id, discovered);
@@ -224,8 +242,7 @@ public final class MobFarmCatalog {
     ) {
         try {
             EntityType<?> type = entityTypes.getOptional(id).orElse(null);
-            if (type == null || type.getCategory() != MobCategory.MONSTER
-                    && !BASE_IDS.get(family).contains(id)) {
+            if (type == null) {
                 return;
             }
             targetMap.put(id, new Target(id, defaultGeneratorItem(items, id), lootItems(items, type, id)));
@@ -281,7 +298,8 @@ public final class MobFarmCatalog {
         return "minecraft:zombie".equals(entity)
                         && ("minecraft:red_mushroom".equals(item)
                         || "minecraft:music_disc_lava_chicken".equals(item))
-                || "minecraft:husk".equals(entity) && "minecraft:rabbit_foot".equals(item);
+                || "minecraft:husk".equals(entity) && "minecraft:rabbit_foot".equals(item)
+                || "minecraft:ghast".equals(entity) && "minecraft:music_disc_tears".equals(item);
     }
 
     private static Map<Family, List<Target>> fallbackTargets() {
@@ -303,7 +321,17 @@ public final class MobFarmCatalog {
         SKELETON("skeleton", EntityTypeTags.SKELETONS),
         ZOMBIE("zombie", EntityTypeTags.ZOMBIES),
         RAIDER("raider", customFamilyTag("raider_farm_targets")),
-        CREEPER("creeper", customFamilyTag("creeper_farm_targets"));
+        CREEPER("creeper", customFamilyTag("creeper_farm_targets")),
+        ARTHROPOD("arthropod", customFamilyTag("arthropod_farm_targets")),
+        SLIME("slime", customFamilyTag("slime_farm_targets")),
+        GUARDIAN("guardian", customFamilyTag("guardian_farm_targets")),
+        PIGLIN("piglin", customFamilyTag("piglin_farm_targets")),
+        BLAZE("blaze", customFamilyTag("blaze_farm_targets")),
+        GHAST("ghast", customFamilyTag("ghast_farm_targets")),
+        ENDERMAN("enderman", customFamilyTag("enderman_farm_targets")),
+        SHULKER("shulker", customFamilyTag("shulker_farm_targets")),
+        BREEZE("breeze", customFamilyTag("breeze_farm_targets")),
+        PHANTOM("phantom", customFamilyTag("phantom_farm_targets"));
 
         private final Identifier id;
         private final TagKey<EntityType<?>> tag;

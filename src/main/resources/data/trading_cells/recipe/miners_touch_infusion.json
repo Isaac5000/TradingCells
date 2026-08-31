@@ -1,5 +1,6 @@
 {
   "type": "trading_cells:arcane_infusion",
+  "category": "equipment",
   "ingredients": [
     {"ingredient": "minecraft:end_stone", "count": 1},
     {"ingredient": "minecraft:echo_shard", "count": 1},

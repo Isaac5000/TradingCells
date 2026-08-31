@@ -41,6 +41,7 @@ Todas las rutas Java siguientes parten de
 | Zombis | `feature/zombiefarm/` | `docs/ZOMBIE_FARM.md` |
 | Saqueadores | `feature/raiderfarm/` | objetivos, estandarte ominoso, botin y XP |
 | Creepers | `feature/creeperfarm/` | normal/cargado, botin y Fragmentos de la Tormenta |
+| Granjas configurables | `feature/configuredmobfarm/` | diez familias; `docs/MOB_FARM_ROADMAP.md` |
 | Experiencia | `feature/experience/` | almacenamiento, calculo y fluido XP |
 | Infusor | `feature/infusion/` | `ArcaneInfuserBlockEntity`; `docs/ARCANE_INFUSER.md` |
 | Toque de Seda II | `feature/silktouch/` | `SilkTouchTwo*`, `PreservedSpawner*`; `docs/SILK_TOUCH_II.md` |
@@ -57,6 +58,7 @@ La estructura de capas y las dependencias permitidas estan en `ARCHITECTURE.md`.
 | Jade opcional | `platform/neoforge/integration/jade/` |
 | Catalogos dinamicos | `platform/neoforge/catalog/` |
 | Catalogo de granjas | `platform/neoforge/mobfarm/`, `docs/MOB_FARM_DATAPACKS.md` |
+| Inventario futuro de criaturas | `docs/MOB_FARM_ROADMAP.md` |
 | Fluido XP | `platform/neoforge/fluid/` |
 | Reglas puras temporizadas | `shared/machines/domain/model/` |
 | Reglas puras de granjas | `shared/mobfarm/domain/model/` |

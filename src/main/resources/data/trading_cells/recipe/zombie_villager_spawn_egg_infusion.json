@@ -1,5 +1,6 @@
 {
   "type": "trading_cells:arcane_infusion",
+  "category": "generators",
   "ingredients": [
     {"ingredient": "minecraft:rotten_flesh", "count": 1},
     {"ingredient": "minecraft:emerald", "count": 1},
@@ -11,7 +12,7 @@
     {"ingredient": "minecraft:bell", "count": 1},
     {"ingredient": "minecraft:rotten_flesh", "count": 1}
   ],
-  "experience": 91,
+  "experience": 120,
   "result": {
     "type": "item",
     "item": "minecraft:zombie_villager_spawn_egg"

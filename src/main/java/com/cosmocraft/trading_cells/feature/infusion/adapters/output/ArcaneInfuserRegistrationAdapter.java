@@ -4,10 +4,12 @@ import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuse
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserBlockEntity;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserMenu;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionRecipe;
+import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionRecipeCategory;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionRecipeDisplay;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineBlockProperties;
 import com.cosmocraft.trading_cells.platform.neoforge.registration.Registration;
+import java.util.List;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -17,11 +19,15 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.RecipeBookCategory;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -70,12 +76,42 @@ public final class ArcaneInfuserRegistrationAdapter {
                             ArcaneInfusionRecipeDisplay.STREAM_CODEC
                     )
             );
+    public static final DeferredHolder<RecipeBookCategory, RecipeBookCategory> GENERATORS_CATEGORY =
+            Registration.RECIPE_BOOK_CATEGORIES.register(
+                    "arcane_infusion_generators",
+                    RecipeBookCategory::new
+            );
+    public static final DeferredHolder<RecipeBookCategory, RecipeBookCategory> EQUIPMENT_CATEGORY =
+            Registration.RECIPE_BOOK_CATEGORIES.register(
+                    "arcane_infusion_equipment",
+                    RecipeBookCategory::new
+            );
+    public static final DeferredHolder<RecipeBookCategory, RecipeBookCategory> PRODUCTION_CATEGORY =
+            Registration.RECIPE_BOOK_CATEGORIES.register(
+                    "arcane_infusion_production",
+                    RecipeBookCategory::new
+            );
+    public static final DeferredHolder<RecipeBookCategory, RecipeBookCategory> MISC_CATEGORY =
+            Registration.RECIPE_BOOK_CATEGORIES.register(
+                    "arcane_infusion_misc",
+                    RecipeBookCategory::new
+            );
 
     private ArcaneInfuserRegistrationAdapter() {
     }
 
     public static void load(IEventBus modEventBus) {
         modEventBus.addListener(ArcaneInfuserRegistrationAdapter::onRegisterCapabilities);
+        NeoForge.EVENT_BUS.addListener(ArcaneInfuserRegistrationAdapter::onDatapackSync);
+    }
+
+    public static RecipeBookCategory recipeBookCategory(ArcaneInfusionRecipeCategory category) {
+        return switch (category) {
+            case GENERATORS -> GENERATORS_CATEGORY.get();
+            case EQUIPMENT -> EQUIPMENT_CATEGORY.get();
+            case PRODUCTION -> PRODUCTION_CATEGORY.get();
+            case MISC -> MISC_CATEGORY.get();
+        };
     }
 
     private static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
@@ -89,5 +125,17 @@ public final class ArcaneInfuserRegistrationAdapter {
                 BLOCK_ENTITY.get(),
                 (infuser, side) -> infuser.fluidHandler()
         );
+    }
+
+    private static void onDatapackSync(OnDatapackSyncEvent event) {
+        event.sendRecipes(RECIPE_TYPE.get());
+        List<RecipeHolder<?>> recipes = event.getPlayerList()
+                .getServer()
+                .getRecipeManager()
+                .getRecipes()
+                .stream()
+                .filter(holder -> holder.value().getType() == RECIPE_TYPE.get())
+                .toList();
+        event.getRelevantPlayers().forEach(player -> player.awardRecipes(recipes));
     }
 }

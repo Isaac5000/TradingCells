@@ -22,8 +22,11 @@ La versión actual del mod es `1.0.0`.
 - **Granja de Hierro**: produce hierro con multiplicadores base `x1`, `x2` y `x3` según los aldeanos instalados.
 - **Granja de Esqueletos**: permite elegir entre esqueletos normales, Wither, de hielo, de pantano y del desierto, filtrar sus recompensas y mejorar la caza con una espada.
 - **Granja de Zombis**: permite cazar zombis, aldeanos zombis, momificados, ahogados, piglins zombificados y zoglins con filtros de botín independientes.
-- **Granja de Saqueadores**: reúne saqueadores, invocadores, devastadores, brujas y la variante ominosa, con botín filtrable y objetivos externos ampliables.
+- **Granja de Saqueadores**: reúne saqueadores, invocadores, vindicadores, ilusionistas, devastadores y brujas, con botín filtrable y objetivos externos ampliables.
 - **Granja de Creepers**: procesa Creepers normales y cargados, incluida la obtención renovable de Fragmentos de la Tormenta.
+- **Granjas configurables de criaturas**: añade Artropodos, Slimes, Guardianes,
+  Piglins, Blazes, Ghasts, Endermen, Shulkers, Breezes y Phantoms. Cada bloque
+  acepta por tag criaturas equivalentes de otros mods.
 - **Cantera de Aldeanos**: extrae materiales del Overworld. El pico, su nivel, Eficiencia, Fortuna y Toque de Seda afectan al resultado.
 
 ## Máquinas de piglins
@@ -50,21 +53,25 @@ El depósito expone experiencia líquida mediante la API de transferencia de Neo
 
 ## Infusor Arcano
 
-El **Infusor Arcano** usa nueve entradas como una mesa de trabajo, una salida de previsualización y un depósito de hasta `2.147.483.647` puntos de experiencia. No tiene modo automático ni acepta objetos mediante tolvas: solo consume los recursos de forma atómica cuando el jugador retira manualmente un resultado válido.
+El **Infusor Arcano** usa nueve entradas como una mesa de trabajo, una salida de previsualización y un depósito de hasta `2.147.483.647` puntos de experiencia. No tiene modo automático ni acepta objetos mediante tolvas: solo consume los recursos de forma atómica cuando el jugador retira manualmente un resultado válido. Su libro lila muestra todas las recetas desde el principio, con buscador, categorias, filtro de fabricables y colocacion de un lote o del maximo con Mayus. Las recetas pueden exigir huecos vacios.
 
 - **Toque del Granjero** (`15.000` XP): libro central, flor de chorus, tótem, estrella del Nether, bloque de netherita y patata, remolacha, trigo y zanahoria en las esquinas.
 - **Toque del Minero** (`30.000` XP): libro central, fragmento de eco, tótem, estrella del Nether, bloque de netherita y dos piedras del End más dos catalizadores de sculk en las esquinas.
 - **Toque de Seda II** (`75.000` XP): libro con Toque de Seda I en el centro, cuatro fragmentos de eco, un fragmento de amatista, dos huevos de tortuga y una estrella del Nether. Permite recoger bloques especiales que normalmente desaparecen.
 - **Nitwit** (`5.000` XP): transforma un aldeano capturado sin empleo, conservando todos sus demás datos y el tipo de capturador.
-- **Granja de Esqueletos** (`50.000` XP): combina los huevos generadores de cinco variantes alrededor de un spawner central; el caballo esqueleto se selecciona por separado y su base usa musgo pálido.
+- **Granja de Esqueletos** (`50.000` XP): combina los huevos generadores de cinco variantes; el caballo esqueleto se selecciona por separado y su base usa musgo pálido.
 - **Granja de Zombis** (`50.000` XP): combina los huevos de cinco variantes alrededor de un spawner; el zoglin se selecciona en la máquina, pero no encarece su receta. Su base usa musgo pálido.
 - **Granja de Saqueadores** (`100.000` XP): combina huevos de saqueador, invocador, devastador y bruja con un spawner y cualquier frasco ominoso. El saqueador normal incluye el estandarte ominoso entre sus filtros.
-- **Granja de Creepers** (`25.000` XP): combina un huevo de Creeper, dos Fragmentos de la Tormenta, cuatro lingotes de hierro, musgo y un spawner.
+- **Granja de Creepers** (`25.000` XP): combina un huevo de Creeper, dos Fragmentos de la Tormenta, polvora, musgo palido, un spawner, un Almacen de XP y un Bloque de hierro.
+- **Diez granjas adicionales** (`35.000-90.000` XP): Artropodos, Slimes,
+  Guardianes, Piglins, Blazes, Ghasts, Endermen, Shulkers, Breezes y Phantoms.
+  Todas usan el Almacen de XP central y `Spawner | base | Bloque de hierro` en
+  la fila inferior.
 - **Toque del Guerrero** (`45.000` XP): crea un libro que evita el desgaste de espadas dentro de todas las granjas de criaturas del mod.
 - **Decapitación** (`25.000` XP): usa un Fragmento de la Tormenta en cada esquina para crear un libro aplicable a espadas y hachas.
-- **Huevos de esqueletos** (`55-160` XP): transforma un huevo normal, incluidos los huevos de tortuga y sniffer, en el huevo generador de esqueleto, esqueleto de hielo, pantano, desierto o Wither. El más caro cuesta exactamente la experiencia total del nivel 10.
-- **Huevos de zombis** (`55-160` XP): crea los huevos de zombi, aldeano zombi, momificado, ahogado, piglin zombificado y zoglin a partir de cualquier huevo normal admitido.
-- **Huevos de saqueadores** (`80-150` XP): crea huevos de saqueador, invocador, devastador y bruja; otra infusión de `75` XP crea el huevo de Creeper.
+- **Huevos generadores** (`60-550` XP): crea los huevos de todas las criaturas
+  integradas que disponen de uno. El limite superior equivale a veinte niveles;
+  los detalles y costes estan en [`docs/ARCANE_INFUSER.md`](docs/ARCANE_INFUSER.md).
 
 El spawner es renovable mediante una receta tardía con barrotes de hierro, obsidiana, un aliento de dragón y una estrella del Nether. La Granja de Esqueletos usa ese bloque en su propia infusión y muestra el objetivo seleccionado inmóvil sobre un spawner interior.
 
@@ -94,7 +101,7 @@ El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Bot�
 
 ## Compatibilidad
 
-REI muestra los procesos de criaderos, incubadoras, cultivos, conversión, granjas de hierro, esqueletos, zombis, saqueadores y creepers, canteras, trueques e infusión arcana, además de las recetas normales. Su integración es opcional y solo se carga en cliente.
+REI muestra los procesos de criaderos, incubadoras, cultivos, conversión, granjas de hierro, las catorce familias de criaturas, canteras, trueques e infusión arcana, además de las recetas normales. Su integración es opcional y solo se carga en cliente.
 
 Jade tambien es opcional. Cuando esta instalado muestra XP, nivel y progreso de
 las maquinas compatibles, ademas del requisito de Toque de Seda II y la entidad
@@ -105,16 +112,17 @@ Las listas de profesiones, POI, aspectos de bioma, cultivos, alimentos y niveles
 
 Los datapacks y mods pueden añadir plantas al Cultivo de Aldeanos mediante el tag de ítems `#trading_cells:villager_farmer_plants`. Si no existe un perfil equilibrado propio, el cultivo conserva la tabla de botín del bloque como fuente de sus resultados.
 
-Las granjas de criaturas amplían sus selectores con los tags de esqueletos,
-zombis, saqueadores y creepers. Los objetos enumerables de sus tablas cargadas
-reciben filtros individuales; una tabla externa inválida no elimina las
-variantes fijas.
+Las granjas de criaturas amplian sus selectores con los tags de sus catorce
+familias. Los objetos enumerables de sus tablas cargadas reciben filtros
+individuales; una tabla externa invalida no elimina las variantes fijas.
 
 La 1.0.0 incluye además un formato público de datapacks para añadir objetivos a
-las familias de esqueletos, zombis, saqueadores y creepers sin sustituir su botín real. Permite elegir
+las catorce familias registradas sin sustituir su botín real. Permite elegir
 entidad, generador, orden y filtros mediante IDs o tags. El esquema, sus reglas
 de fallback y packs de ejemplo están en
 [`docs/MOB_FARM_DATAPACKS.md`](docs/MOB_FARM_DATAPACKS.md).
+El inventario de criaturas implementadas, candidatas y excluidas esta en
+[`docs/MOB_FARM_ROADMAP.md`](docs/MOB_FARM_ROADMAP.md).
 
 ### Vulkan y OpenGL
 

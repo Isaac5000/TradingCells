@@ -2,7 +2,7 @@
 
 ## Automatizacion
 
-- [x] Ejecutar `clean releaseCheck` dos veces con JAR identico (`2026-08-29`, 19/19 GameTests).
+- [x] Ejecutar `clean releaseCheck` dos veces con JAR identico (`2026-08-31`, 26/26 GameTests).
 - [x] Ejecutar `./gradlew runServer` y confirmar que alcanza `Done` sin errores de Trading Cells (`2026-08-25`).
 - [x] Comprobar que `build/libs/trading_cells-1.0.0.jar` es el unico artefacto que se publica.
 - [ ] Confirmar la CI del commit definitivo en Ubuntu, Windows y macOS.
@@ -59,6 +59,11 @@ haber solicitado el backend: el log debe confirmar el backend efectivo.
 
 | Fecha | Prueba/backend | Mods | Mundo/plantilla | Resultado | Registro |
 | --- | --- | --- | --- | --- | --- |
+| 2026-08-31 | `clean releaseCheck` x2 | Trading Cells GameTests | Mundo temporal | Aprobado; 26/26; JAR reproducible `14752C37...B3A103` | `docs/releases/1.0.0-validation.md` |
+| 2026-08-31 | Arranque Vulkan y carga de recursos | REI, Jade, Trading Cells | `Test` | Backend Vulkan real; suelo de Slimes opaco; sin errores de recursos de Trading Cells | `run/vulkan/logs/latest.log` |
+| 2026-08-31 | Menu de Granja de Piglins, Vulkan | REI, Jade, Trading Cells | `Test` | Aprobado; menu estable y sin NPE | `run/vulkan/logs/latest.log` |
+| 2026-08-30 | `clean releaseCheck` x2 | Trading Cells GameTests | Mundo temporal | Aprobado; 23/23 y JAR reproducible | `docs/releases/1.0.0-validation.md` |
+| 2026-08-30 | Arranque cliente OpenGL | REI, Jade, Trading Cells | Cliente de desarrollo | Menu principal; registros cliente cargados | `docs/releases/1.0.0-validation.md` |
 | 2026-08-29 | `clean releaseCheck` x2 | Trading Cells GameTests | Mundo temporal | Aprobado; 19/19 y JAR reproducible | `docs/releases/1.0.0-validation.md` |
 | 2026-08-25 | `clean releaseCheck` x2 | Trading Cells GameTests | Mundo temporal | Aprobado; 17/17 y JAR reproducible | `docs/releases/1.0.0-validation.md` |
 | 2026-08-25 | Servidor dedicado | Trading Cells | `run-server/world` | Alcanza `Done (0.270s)` | `docs/releases/1.0.0-validation.md` |

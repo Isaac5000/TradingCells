@@ -4,6 +4,7 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
@@ -16,8 +17,8 @@ public final class PreviewEntityRenderUtil {
     }
 
     public static void prepare(Entity entity) {
-        int identity = System.identityHashCode(entity) & 0x3FFF_FFFF;
-        entity.setId(PREVIEW_ENTITY_ID_BASE - identity);
+        int typeId = Math.max(0, BuiltInRegistries.ENTITY_TYPE.getId(entity.getType()));
+        entity.setId(PREVIEW_ENTITY_ID_BASE - typeId);
         entity.setNoGravity(true);
         entity.clearFire();
         entity.setSilent(true);

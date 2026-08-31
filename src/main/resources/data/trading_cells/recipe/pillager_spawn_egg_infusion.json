@@ -1,5 +1,6 @@
 {
   "type": "trading_cells:arcane_infusion",
+  "category": "generators",
   "ingredients": [
     {"ingredient": "minecraft:dark_oak_planks", "count": 1},
     {"ingredient": "minecraft:arrow", "count": 1},
@@ -11,6 +12,6 @@
     {"ingredient": "minecraft:emerald", "count": 1},
     {"ingredient": "minecraft:dark_oak_planks", "count": 1}
   ],
-  "experience": 80,
+  "experience": 100,
   "result": {"type": "item", "item": "minecraft:pillager_spawn_egg"}
 }

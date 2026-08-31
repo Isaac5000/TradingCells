@@ -40,6 +40,9 @@ import com.cosmocraft.trading_cells.feature.raiderfarm.domain.model.RaiderFarmKi
 import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFarmLootAdapter;
 import com.cosmocraft.trading_cells.feature.creeperfarm.domain.model.CreeperFarmCycle;
 import com.cosmocraft.trading_cells.feature.creeperfarm.domain.model.CreeperFarmKind;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmTargetCatalog;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmCycle;
+import com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmKind;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.EnhancedPiglinBarterRewards;
 import com.cosmocraft.trading_cells.feature.trader.adapters.minecraft.PiglinBarterCatalog;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
@@ -97,6 +100,7 @@ public final class TradingCellsReiDisplays {
         addZombieFarm(displays);
         addRaiderFarm(displays);
         addCreeperFarm(displays);
+        addConfiguredMobFarms(displays);
         addDecapitationSmithing(displays);
         addPiglinBartering(displays);
         addQuarries(displays);
@@ -817,6 +821,107 @@ public final class TradingCellsReiDisplays {
         return kind == CreeperFarmKind.CHARGED_CREEPER
                 ? new ItemStack(CombatRegistrationAdapter.STORM_SHARD_ITEM.get())
                 : new ItemStack(Items.CREEPER_SPAWN_EGG);
+    }
+
+    private static void addConfiguredMobFarms(List<TradingCellsReiDisplay> displays) {
+        EntryIngredient worker = captured(CapturedMobKind.VILLAGER, false, true);
+        EntryIngredient swords = described(
+                MobFarmSwordTierCatalog.itemStacks(),
+                tooltip("rei.trading_cells.raider_sword")
+        );
+        for (ConfiguredMobFarmKind kind : ConfiguredMobFarmKind.values()) {
+            for (var targetDefinition : ConfiguredMobFarmTargetCatalog.targets(kind)) {
+                ItemStack targetStack = BuiltInRegistries.ITEM.getOptional(targetDefinition.generatorItemId())
+                        .map(ItemStack::new)
+                        .orElseGet(() -> new ItemStack(Items.SPAWNER));
+                EntryIngredient target = described(
+                        targetStack,
+                        tooltip("rei.trading_cells.raider_target"),
+                        tooltip("rei.trading_cells.not_consumed")
+                );
+                List<ItemStack> outputStacks = configuredMobFarmOutputs(kind, targetDefinition);
+                List<EntryIngredient> outputs = outputStacks.isEmpty()
+                        ? List.of()
+                        : List.of(EntryIngredient.of(outputStacks.stream()
+                                .map(stack -> EntryStacks.of(stack).tooltip(
+                                        tooltip("rei.trading_cells.dynamic_drop")
+                                ))
+                                .toList()));
+                Identifier targetId = targetDefinition.entityTypeId();
+                displays.add(display(
+                        TradingCellsReiClientPlugin.CONFIGURED_MOB_FARM,
+                        TradingCellsReiLayout.RAIDER_FARM,
+                        "configured_mob_farm/" + kind.path() + "/"
+                                + targetId.getNamespace() + "_" + targetId.getPath(),
+                        List.of(worker, swords, target),
+                        List.of(worker, swords),
+                        outputs,
+                        ConfiguredMobFarmCycle.effectiveCycleTicks(0.0D, 0),
+                        List.of(
+                                Component.translatable("rei.trading_cells.raider_farm_note"),
+                                Component.translatable("rei.trading_cells.raider_filters_note")
+                        )
+                ));
+            }
+        }
+    }
+
+    private static List<ItemStack> configuredMobFarmOutputs(
+            ConfiguredMobFarmKind kind,
+            com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmCatalog.Target target
+    ) {
+        LinkedHashSet<Item> items = new LinkedHashSet<>();
+        target.lootItemIds().stream()
+                .map(id -> BuiltInRegistries.ITEM.getOptional(id).orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .forEach(items::add);
+        ConfiguredMobFarmTargetCatalog.equipment(target.entityTypeId()).stream()
+                .map(ItemStack::getItem)
+                .forEach(items::add);
+        if (items.isEmpty()) {
+            addKnownConfiguredOutputs(items, kind, target.entityTypeId().getPath());
+        }
+        return items.stream().map(ItemStack::new).toList();
+    }
+
+    private static void addKnownConfiguredOutputs(Set<Item> items, ConfiguredMobFarmKind kind, String targetPath) {
+        switch (kind) {
+            case ARTHROPOD -> {
+                if (targetPath.contains("spider")) {
+                    items.add(Items.STRING);
+                    items.add(Items.SPIDER_EYE);
+                }
+            }
+            case SLIME -> {
+                if ("slime".equals(targetPath)) {
+                    items.add(Items.SLIME_BALL);
+                } else if ("magma_cube".equals(targetPath)) {
+                    items.add(Items.MAGMA_CREAM);
+                }
+            }
+            case GUARDIAN -> {
+                items.add(Items.PRISMARINE_SHARD);
+                items.add(Items.PRISMARINE_CRYSTALS);
+                items.add(Items.COD);
+                if ("elder_guardian".equals(targetPath)) {
+                    items.add(Items.WET_SPONGE);
+                }
+            }
+            case BLAZE -> items.add(Items.BLAZE_ROD);
+            case GHAST -> {
+                if ("ghast".equals(targetPath)) {
+                    items.add(Items.GHAST_TEAR);
+                    items.add(Items.GUNPOWDER);
+                }
+            }
+            case ENDERMAN -> items.add(Items.ENDER_PEARL);
+            case SHULKER -> items.add(Items.SHULKER_SHELL);
+            case BREEZE -> items.add(Items.BREEZE_ROD);
+            case PHANTOM -> items.add(Items.PHANTOM_MEMBRANE);
+            case PIGLIN -> {
+                // Equipment is inserted above; no guaranteed table drop exists.
+            }
+        }
     }
 
     private static void addPiglinBartering(List<TradingCellsReiDisplay> displays) {

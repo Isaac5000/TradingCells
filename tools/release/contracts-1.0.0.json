@@ -3,8 +3,8 @@
   "network_registration_version": "2",
   "mob_farm_target_schema_version": 1,
   "mob_farm_catalog_protocol_version": 1,
-  "recipe_catalog_count": 59,
-  "recipe_catalog_sha256": "6535CC2DC65F702E2680EE8AF3AB0D76D408E0382A2AFBBB8E573F9DC6E221DF",
+  "recipe_catalog_count": 91,
+  "recipe_catalog_sha256": "2BBD48BB43E5DA8F282B060DC32C132481217FCF4930530344FBAAD57F23AEC5",
   "payload_ids": {
     "ArcaneInfuserTransferPayload": "arcane_infuser_transfer",
     "AutotraderMenuSyncPayload": "autotrader_menu_sync",
@@ -34,6 +34,18 @@
       "StageTicks",
       "CuredReady",
       "TradingCellsCureDiscount"
+    ],
+    "feature/configuredmobfarm/adapters/input/ConfiguredMobFarmBlockEntity.java": [
+      "CycleTicks",
+      "CycleDurationTicks",
+      "MobTarget",
+      "EnabledLootMask",
+      "DisabledDynamicLootCount",
+      "StoredExperience",
+      "PendingLootCount",
+      "PendingLootReady",
+      "PendingBatchStarted",
+      "Enabled"
     ],
     "feature/experience/adapters/input/ExperienceStorageBlockEntity.java": [
       "StoredExperience"

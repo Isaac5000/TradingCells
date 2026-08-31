@@ -3,6 +3,7 @@ package com.cosmocraft.trading_cells.feature.infusion.adapters.output.client;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterRecipeBookSearchCategoriesEvent;
 
 public final class ArcaneInfuserClientRegistrationAdapter {
     private ArcaneInfuserClientRegistrationAdapter() {
@@ -17,5 +18,11 @@ public final class ArcaneInfuserClientRegistrationAdapter {
                 ArcaneInfuserRegistrationAdapter.BLOCK_ENTITY.get(),
                 ArcaneInfuserBlockEntityRenderer::new
         );
+    }
+
+    public static void onRegisterRecipeBookSearchCategories(
+            RegisterRecipeBookSearchCategoriesEvent event
+    ) {
+        ArcaneInfusionRecipeBookComponent.registerSearchCategory(event);
     }
 }

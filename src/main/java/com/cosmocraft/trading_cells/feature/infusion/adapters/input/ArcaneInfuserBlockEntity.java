@@ -31,6 +31,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.BlockState;
@@ -488,9 +489,15 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
 
     private void consume(ArcaneInfusionRecipe recipe) {
         for (int slot = 0; slot < INPUT_SLOT_COUNT; slot++) {
-            items.get(slot).shrink(recipe.ingredient(slot).count());
-            if (items.get(slot).isEmpty()) {
-                items.set(slot, ItemStack.EMPTY);
+            int count = recipe.ingredient(slot).count();
+            if (count == 0) {
+                continue;
+            }
+            ItemStack consumed = items.get(slot);
+            ItemStackTemplate remainder = consumed.getCraftingRemainder();
+            consumed.shrink(count);
+            if (consumed.isEmpty()) {
+                items.set(slot, remainder == null ? ItemStack.EMPTY : remainder.create());
             }
         }
         storedExperience -= recipe.experience();

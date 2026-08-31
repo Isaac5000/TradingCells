@@ -1,5 +1,6 @@
 {
   "type": "trading_cells:arcane_infusion",
+  "category": "equipment",
   "ingredients": [
     {"ingredient": "minecraft:potato", "count": 1},
     {"ingredient": "minecraft:chorus_flower", "count": 1},
