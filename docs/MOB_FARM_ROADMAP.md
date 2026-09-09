@@ -12,7 +12,7 @@ botin propio.
 | --- | --- | --- | ---: |
 | Esqueletos | Skeleton, Stray, Wither Skeleton, Bogged, Parched y Skeleton Horse | `#minecraft:skeletons` | 50.000 XP |
 | Zombis | Zombie, Zombie Villager, Husk, Drowned, Zombified Piglin, Zoglin, Zombie Horse, Camel Husk y Zombie Nautilus | `#minecraft:zombies` | 50.000 XP |
-| Saqueadores | Pillager, Evoker, Ravager, Vindicator, Illusioner y Witch | `#trading_cells:raider_farm_targets` | 100.000 XP |
+| Saqueadores | Pillager, Evoker, Ravager, Vindicator, Illusioner, Witch y Vex | `#trading_cells:raider_farm_targets` | 100.000 XP |
 | Creepers | Creeper y variante sintetica cargada | `#trading_cells:creeper_farm_targets` | 25.000 XP |
 | Artropodos | Spider, Cave Spider, Silverfish y Endermite | `#trading_cells:arthropod_farm_targets` | 35.000 XP |
 | Slimes | Slime, Magma Cube y Sulfur Cube | `#trading_cells:slime_farm_targets` | 45.000 XP |
@@ -24,24 +24,27 @@ botin propio.
 | Shulkers | Shulker | `#trading_cells:shulker_farm_targets` | 90.000 XP |
 | Breezes | Breeze | `#trading_cells:breeze_farm_targets` | 80.000 XP |
 | Phantoms | Phantom | `#trading_cells:phantom_farm_targets` | 40.000 XP |
+| Animales | Cow, Mooshroom, Sheep, Pig, Chicken, Rabbit y Goat | `#trading_cells:livestock_farm_targets` | 20.000 XP |
+| Peces | Cod, Salmon, Tropical Fish y Pufferfish | `#trading_cells:fish_farm_targets` | 20.000 XP |
+| Acuaticas | Squid, Glow Squid, Dolphin y Nautilus | `#trading_cells:aquatic_farm_targets` | 30.000 XP |
+| Monturas | Horse, Donkey, Mule, Camel, Llama y Trader Llama | `#trading_cells:mount_farm_targets` | 30.000 XP |
+| Anfibios | Axolotl, Frog, Tadpole y Turtle | `#trading_cells:amphibian_farm_targets` | 25.000 XP |
+| Abejas | Bee | `#trading_cells:bee_farm_targets` | 25.000 XP |
+| Creakings | Creaking | `#trading_cells:creaking_farm_targets` | 85.000 XP |
 
 La Granja de Hierro cubre al Iron Golem mediante su mecanica propia. El Creeper
 cargado no es un `EntityType` distinto y por eso sigue siendo una variante de
 codigo. Sulfur Cube y Happy Ghast permanecen en sus familias aunque hoy no
 aporten un botin util: un datapack o mod puede darselo en el futuro.
 
+En total hay cuatro familias historicas y diecisiete configurables. Los objetivos
+sin botin fisico completan ciclos de XP y siguen disponibles para recompensas de
+datapacks o mods.
+
 ## Candidatos para futuras granjas
 
 | Prioridad | Familia propuesta | Criaturas | Motivo o separacion |
 | --- | --- | --- | --- |
-| Alta | Animales de granja | Cow, Mooshroom, Sheep, Pig, Chicken, Rabbit y Goat | Grupo claro con productos renovables. Hoglin queda fuera por decision expresa. |
-| Alta | Peces | Cod, Salmon, Tropical Fish y Pufferfish | Un mismo entorno y botin sencillo; admite tags de peces de mods. |
-| Media | Criaturas acuaticas | Squid, Glow Squid, Dolphin y Nautilus | Separada de peces para no mezclar tinta, movilidad y criaturas sin botin. |
-| Media | Anfibios y reptiles | Axolotl, Frog, Tadpole y Turtle | Requiere decidir si la produccion representa botin, crecimiento o puesta. |
-| Media | Monturas y carga | Horse, Donkey, Mule, Camel, Llama y Trader Llama | Familia de modelos y recursos comun; no incluye monturas no-muertas ya cubiertas. |
-| Media | Abejas | Bee | Candidata a una granja propia por colmenas, miel y polinizacion. |
-| Media | Creaking | Creaking | Necesita respetar su dependencia del Creaking Heart y la resina. |
-| Media | Vexes | Vex | Extension natural de Saqueadores, pero requiere decidir su valor sin botin base. |
 | Baja | Sniffers | Sniffer | Granja individual orientada a excavacion, no a muerte directa. |
 | Baja | Striders | Strider | Granja individual del Nether con entorno y botin muy limitados. |
 | Baja | Fauna salvaje | Armadillo, Fox, Panda, Polar Bear y Ocelot | Categoria posible, pero heterogenea y con poco botin directo. |

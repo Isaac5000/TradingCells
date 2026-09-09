@@ -37,9 +37,27 @@ las traducciones puras de API permanecen en adaptadores.
 | `zombiefarm` | Ciclos de caza de zombis, catalogo dinamico, filtros y experiencia acumulada. |
 | `raiderfarm` | Ciclos de saqueadores, variante ominosa, catalogo dinamico, filtros y experiencia acumulada. |
 | `creeperfarm` | Ciclos de creepers normales y cargados, botin dinamico y Fragmentos de la Tormenta. |
+| `configuredmobfarm` | Diecisiete familias configurables compuestas sobre el catalogo comun de objetivos. |
 | `experience` | Calculo y transferencia segura de niveles para el deposito de experiencia. |
+| `experiencenetwork` | Grafo de tuberias, conexiones terminales y transferencia atomica de XP. |
 | `infusion` | Recetas de infusion, consumo atomico manual y deposito de XP. |
+| `machinecontrol` | Configurador, copia de ajustes y seleccion del modo de redstone. |
+| `machinecontroller` | Escaneo de maquinas cargadas y presentacion incremental de diagnosticos. |
 | `silktouch` | Botin especial de Toque de Seda II y restauracion segura de datos de bloques. |
+
+## Infraestructura de maquinas
+
+`platform/neoforge/machine` publica las fronteras pequenas que necesitan varias
+features: `MachineDiagnosticSource`, `MachineConfigurationPort` y la base portable.
+Los valores puros de diagnostico y redstone viven en `shared/machines`; no conocen
+Minecraft ni dependen de una feature lateral.
+
+`machinecontrol` posee el Configurador y solo invoca el puerto de configuracion.
+`machinecontroller` consume el puerto de diagnostico sin conocer clases concretas.
+`experiencenetwork` descubre capacidades de fluido de NeoForge en extremos
+cargados, pero no importa implementaciones de las maquinas conectadas. Registro,
+payloads e integraciones opcionales siguen componiendose desde `platform/neoforge`.
+El contrato funcional completo esta en `docs/MACHINE_INFRASTRUCTURE.md`.
 
 ## Trader
 

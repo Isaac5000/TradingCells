@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -75,6 +76,9 @@ public final class FarmerCropStackAdapter {
     private static final List<Option> VANILLA_VILLAGER_OPTIONS = createVanillaVillagerOptions();
     private static final Catalog VANILLA_VILLAGER_CATALOG = Catalog.create(VANILLA_VILLAGER_OPTIONS);
     private static final AtomicReference<Catalog> VILLAGER_CATALOG = new AtomicReference<>();
+    private static final AtomicReference<Catalog> PIGLIN_DYNAMIC_CATALOG =
+            new AtomicReference<>(Catalog.create(List.of()));
+    private static final AtomicInteger CATALOG_REVISION = new AtomicInteger();
     private static final Set<Item> REPORTED_HARVEST_FAILURES = ConcurrentHashMap.newKeySet();
 
     private FarmerCropStackAdapter() {
@@ -89,10 +93,7 @@ public final class FarmerCropStackAdapter {
     }
 
     public static boolean isSupported(FarmerKind kind, ItemStack stack) {
-        if (kind == FarmerKind.VILLAGER) {
-            return villagerOption(stack) != null;
-        }
-        return from(kind, stack) != FarmerCrop.NONE;
+        return option(kind, stack) != null || from(kind, stack) != FarmerCrop.NONE;
     }
 
     public static boolean isDynamicVillagerCrop(ItemStack stack) {
@@ -100,8 +101,17 @@ public final class FarmerCropStackAdapter {
         return option != null && option.crop() == FarmerCrop.NONE;
     }
 
+    public static boolean isDynamicCrop(FarmerKind kind, ItemStack stack) {
+        Option option = option(kind, stack);
+        return option != null && option.crop() == FarmerCrop.NONE;
+    }
+
     public static List<Option> villagerOptions() {
         return villagerCatalog().options();
+    }
+
+    public static int catalogRevision() {
+        return CATALOG_REVISION.get();
     }
 
     public static ItemStack previewOutput(Option option) {
@@ -141,11 +151,11 @@ public final class FarmerCropStackAdapter {
                     PIGLIN_VISUAL_GROWTH_STAGES
             );
         }
-        Option option = kind == FarmerKind.VILLAGER ? villagerOption(cropStack) : null;
+        Option option = option(kind, cropStack);
         if (option == null || option.growthStyle() != GrowthStyle.SCALED) {
             return 1.0F;
         }
-        return stagedGrowthScale(growthTicks, maxGrowthTicks, VISUAL_GROWTH_STAGES);
+        return stagedGrowthScale(growthTicks, maxGrowthTicks, option.visualStages());
     }
 
     public static ItemStack input(FarmerCrop crop) {
@@ -251,26 +261,27 @@ public final class FarmerCropStackAdapter {
         if (crop != FarmerCrop.NONE) {
             return cropState(crop, growthTicks, maxGrowthTicks);
         }
-        Option option = kind == FarmerKind.VILLAGER ? villagerOption(cropStack) : null;
+        Option option = option(kind, cropStack);
         return option == null
                 ? Blocks.AIR.defaultBlockState()
                 : stateAtProgress(option.block(), growthTicks, maxGrowthTicks);
     }
 
-    public static List<ItemStack> dynamicVillagerHarvest(
+    public static List<ItemStack> dynamicHarvest(
             ServerLevel level,
             BlockPos pos,
+            FarmerKind kind,
             ItemStack cropStack,
             ItemStack hoe,
             int fortuneLevel,
             boolean silkTouch
     ) {
-        Option option = villagerOption(cropStack);
+        Option option = option(kind, cropStack);
         if (option == null || option.crop() != FarmerCrop.NONE) {
             return List.of();
         }
         if (!option.harvestRules().isEmpty()) {
-            return customVillagerHarvest(level, option, fortuneLevel, silkTouch);
+            return customHarvest(level, option, fortuneLevel, silkTouch);
         }
         try {
             List<ItemStack> drops = Block.getDrops(
@@ -294,12 +305,31 @@ public final class FarmerCropStackAdapter {
         }
     }
 
+    public static List<ItemStack> dynamicVillagerHarvest(
+            ServerLevel level,
+            BlockPos pos,
+            ItemStack cropStack,
+            ItemStack hoe,
+            int fortuneLevel,
+            boolean silkTouch
+    ) {
+        return dynamicHarvest(level, pos, FarmerKind.VILLAGER, cropStack, hoe, fortuneLevel, silkTouch);
+    }
+
     public static BlockState soilState(FarmerKind kind, ItemStack cropStack) {
         FarmerCrop crop = from(kind, cropStack);
         if (kind == FarmerKind.VILLAGER && crop == FarmerCrop.NONE) {
-            Option option = villagerOption(cropStack);
+            Option option = option(kind, cropStack);
             if (option != null) {
-                return option.soil().state();
+                return option.supportBlock() == null
+                        ? option.soil().state()
+                        : option.supportBlock().defaultBlockState();
+            }
+        }
+        if (kind == FarmerKind.PIGLIN && crop == FarmerCrop.NONE) {
+            Option option = option(kind, cropStack);
+            if (option != null) {
+                return option.supportBlock().defaultBlockState();
             }
         }
         return soilState(kind, crop);
@@ -318,7 +348,10 @@ public final class FarmerCropStackAdapter {
         if (cropStack.is(FARMER_CEILING_PLANTS)) {
             return RenderSupport.CEILING;
         }
-        Option option = kind == FarmerKind.VILLAGER ? villagerOption(cropStack) : null;
+        Option option = option(kind, cropStack);
+        if (option != null && option.renderSupport() != null) {
+            return option.renderSupport();
+        }
         if (option != null && option.wallSupported()) {
             return RenderSupport.WALL;
         }
@@ -432,7 +465,7 @@ public final class FarmerCropStackAdapter {
         if (crop != FarmerCrop.NONE) {
             return cropState(crop, 0, 1).getFluidState();
         }
-        Option option = kind == FarmerKind.VILLAGER ? villagerOption(cropStack) : null;
+        Option option = option(kind, cropStack);
         return option == null
                 ? Fluids.EMPTY.defaultFluidState()
                 : option.block().defaultBlockState().getFluidState();
@@ -488,7 +521,7 @@ public final class FarmerCropStackAdapter {
         };
     }
 
-    private static List<ItemStack> customVillagerHarvest(
+    private static List<ItemStack> customHarvest(
             ServerLevel level,
             Option option,
             int fortuneLevel,
@@ -895,9 +928,74 @@ public final class FarmerCropStackAdapter {
         if (cached != null) {
             return cached;
         }
-        Catalog discovered = discoverVillagerCatalog();
+        Catalog discovered = mergeDefinitions(discoverVillagerCatalog(), FarmerKind.VILLAGER);
         VILLAGER_CATALOG.compareAndSet(null, discovered);
         return VILLAGER_CATALOG.get();
+    }
+
+    public static void refreshCatalogs() {
+        try {
+            Catalog discovered = discoverVillagerCatalog();
+            VILLAGER_CATALOG.set(mergeDefinitions(discovered, FarmerKind.VILLAGER));
+            PIGLIN_DYNAMIC_CATALOG.set(mergeDefinitions(Catalog.create(List.of()), FarmerKind.PIGLIN));
+        } catch (RuntimeException | LinkageError exception) {
+            TradingCells.LOGGER.warn("Farmer crop catalogs could not be rebuilt; fixed crops remain active.",
+                    exception);
+            VILLAGER_CATALOG.set(VANILLA_VILLAGER_CATALOG);
+            PIGLIN_DYNAMIC_CATALOG.set(Catalog.create(List.of()));
+        }
+        CATALOG_REVISION.incrementAndGet();
+    }
+
+    private static Catalog mergeDefinitions(Catalog base, FarmerKind kind) {
+        Map<Item, Option> merged = new java.util.LinkedHashMap<>();
+        base.options().forEach(option -> merged.put(option.item(), option));
+        for (FarmerCropReloadListener.Definition definition : FarmerCropReloadListener.definitions(kind)) {
+            try {
+                Option option = descriptorOption(definition);
+                merged.put(option.item(), option);
+            } catch (RuntimeException | LinkageError exception) {
+                TradingCells.LOGGER.warn("Discarding farmer crop descriptor '{}': {}",
+                        definition.sourceId(), exception.getMessage());
+            }
+        }
+        return Catalog.create(List.copyOf(merged.values()));
+    }
+
+    private static Option descriptorOption(FarmerCropReloadListener.Definition definition) {
+        Item input = BuiltInRegistries.ITEM.getOptional(definition.input())
+                .orElseThrow(() -> new IllegalArgumentException("unknown input " + definition.input()));
+        Block cropBlock = BuiltInRegistries.BLOCK.getOptional(definition.block())
+                .orElseThrow(() -> new IllegalArgumentException("unknown block " + definition.block()));
+        Block supportBlock = BuiltInRegistries.BLOCK.getOptional(definition.support())
+                .orElseThrow(() -> new IllegalArgumentException("unknown support " + definition.support()));
+        GrowthStyle growthStyle = switch (definition.growthStyle()) {
+            case "natural" -> GrowthStyle.NATURAL;
+            case "scaled" -> GrowthStyle.SCALED;
+            default -> throw new IllegalArgumentException("unknown growth_style " + definition.growthStyle());
+        };
+        RenderSupport renderSupport = switch (definition.renderSupport()) {
+            case "floor" -> RenderSupport.FLOOR;
+            case "wall" -> RenderSupport.WALL;
+            case "water" -> RenderSupport.WATER;
+            case "ceiling" -> RenderSupport.CEILING;
+            default -> throw new IllegalArgumentException("unknown render_support " + definition.renderSupport());
+        };
+        List<HarvestRule> rules = definition.outputs().stream().map(output -> {
+            Item item = BuiltInRegistries.ITEM.getOptional(output.item())
+                    .orElseThrow(() -> new IllegalArgumentException("unknown output " + output.item()));
+            return new HarvestRule(
+                    item,
+                    output.baseCount(),
+                    output.fortuneCount(),
+                    output.chance(),
+                    output.fortuneChance(),
+                    output.maximumChance(),
+                    output.requiresSilkTouch() ? ToolRequirement.SILK_TOUCH : ToolRequirement.NONE
+            );
+        }).toList();
+        return new Option(input, cropBlock, FarmerCrop.NONE, SoilKind.FARMLAND, growthStyle,
+                rules, supportBlock, renderSupport, definition.visualStages());
     }
 
     private static Catalog discoverVillagerCatalog() {
@@ -965,6 +1063,16 @@ public final class FarmerCropStackAdapter {
             return null;
         }
         return villagerCatalog().byItem().get(stack.getItem());
+    }
+
+    private static Option option(FarmerKind kind, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return null;
+        }
+        return switch (kind) {
+            case VILLAGER -> villagerCatalog().byItem().get(stack.getItem());
+            case PIGLIN -> PIGLIN_DYNAMIC_CATALOG.get().byItem().get(stack.getItem());
+        };
     }
 
     private static BlockState stateAtProgress(Block block, int growthTicks, int maxGrowthTicks) {
@@ -1082,6 +1190,9 @@ public final class FarmerCropStackAdapter {
         private final GrowthStyle growthStyle;
         private final List<HarvestRule> harvestRules;
         private final boolean wallSupported;
+        private final Block supportBlock;
+        private final RenderSupport renderSupport;
+        private final int visualStages;
 
         private Option(Item item, Block block, FarmerCrop crop) {
             this(
@@ -1090,7 +1201,10 @@ public final class FarmerCropStackAdapter {
                     crop,
                     SoilKind.FARMLAND,
                     GrowthStyle.NATURAL,
-                    List.of()
+                    List.of(),
+                    null,
+                    null,
+                    VISUAL_GROWTH_STAGES
             );
         }
 
@@ -1102,6 +1216,21 @@ public final class FarmerCropStackAdapter {
                 GrowthStyle growthStyle,
                 List<HarvestRule> harvestRules
         ) {
+            this(item, block, crop, soil, growthStyle, harvestRules, null, null,
+                    VISUAL_GROWTH_STAGES);
+        }
+
+        private Option(
+                Item item,
+                Block block,
+                FarmerCrop crop,
+                SoilKind soil,
+                GrowthStyle growthStyle,
+                List<HarvestRule> harvestRules,
+                Block supportBlock,
+                RenderSupport renderSupport,
+                int visualStages
+        ) {
             this.item = java.util.Objects.requireNonNull(item);
             this.block = java.util.Objects.requireNonNull(block);
             this.crop = java.util.Objects.requireNonNull(crop);
@@ -1109,6 +1238,9 @@ public final class FarmerCropStackAdapter {
             this.growthStyle = java.util.Objects.requireNonNull(growthStyle);
             this.harvestRules = List.copyOf(harvestRules);
             this.wallSupported = inferWallSupport(block);
+            this.supportBlock = supportBlock;
+            this.renderSupport = renderSupport;
+            this.visualStages = Math.clamp(visualStages, 2, 64);
         }
 
         public Item item() {
@@ -1137,6 +1269,18 @@ public final class FarmerCropStackAdapter {
 
         private boolean wallSupported() {
             return wallSupported;
+        }
+
+        private Block supportBlock() {
+            return supportBlock;
+        }
+
+        private RenderSupport renderSupport() {
+            return renderSupport;
+        }
+
+        private int visualStages() {
+            return visualStages;
         }
     }
 

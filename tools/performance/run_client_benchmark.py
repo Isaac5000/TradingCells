@@ -38,8 +38,18 @@ def parse_args() -> argparse.Namespace:
         nargs=5,
         metavar=("X", "Y", "Z", "YAW", "PITCH"),
     )
+    parser.add_argument(
+        "--open-block",
+        type=int,
+        nargs=3,
+        metavar=("X", "Y", "Z"),
+        help="Right-click this block once after the quick-play world is ready.",
+    )
     parser.add_argument("--template-directory", type=Path)
     parser.add_argument("--quick-play-world")
+    parser.add_argument("--language", help="Minecraft language for visual checks, for example es_es.")
+    parser.add_argument("--ui-fixture", choices=("pipe", "rules", "interactions", "crafting", "materials", "connections", "caps"),
+                        help="Install a logistics UI fixture in the disposable cloned world; not a performance baseline.")
     parser.add_argument("--output-directory", type=Path)
     parser.add_argument("--without-rei", action="store_true")
     parser.add_argument("--without-trading-cells", action="store_true")
@@ -68,7 +78,7 @@ def clone_template(template: Path | None, destination: Path) -> None:
         shutil.move(server_world, client_world)
 
 
-def normalize_options(game_directory: Path) -> None:
+def normalize_options(game_directory: Path, language: str | None = None) -> None:
     options_file = game_directory / "options.txt"
     values: dict[str, str] = {}
     order: list[str] = []
@@ -92,6 +102,8 @@ def normalize_options(game_directory: Path) -> None:
         "simulationDistance": "5",
         "tutorialStep": "none",
     }
+    if language:
+        fixed["lang"] = language
     for key, value in fixed.items():
         if key not in values:
             order.append(key)
@@ -116,6 +128,16 @@ def verify_backend(row: dict[str, str], backend: str) -> None:
         raise RuntimeError(
             f"Requested {backend}, but Minecraft reported {row['backend']!r}. "
             "The run may have fallen back to another graphics backend."
+        )
+
+
+def verify_dimensions(row: dict[str, str], width: int, height: int) -> None:
+    effective = (int(row["width"]), int(row["height"]))
+    requested = (width, height)
+    if effective != requested:
+        raise RuntimeError(
+            f"Requested {width}x{height}, but Minecraft rendered {effective[0]}x{effective[1]}. "
+            "The run cannot be compared at a different resolution."
         )
 
 
@@ -182,7 +204,7 @@ def run_once(
     result_directory = run_root / "result"
     run_root.mkdir(parents=True)
     clone_template(args.template_directory, game_directory)
-    normalize_options(game_directory)
+    normalize_options(game_directory, args.language)
     result_directory.mkdir(parents=True)
     jfr = run_root / "client.jfr"
     task = (
@@ -205,8 +227,14 @@ def run_once(
         command.append(
             "-PperformanceClientCamera=" + ",".join(str(value) for value in args.camera)
         )
+    if args.open_block:
+        command.append(
+            "-PperformanceClientOpenBlock=" + ",".join(str(value) for value in args.open_block)
+        )
     if args.quick_play_world:
         command.append(f"-PquickPlayWorld={args.quick_play_world}")
+    if args.ui_fixture:
+        command.append(f"-PperformanceClientUiFixture={args.ui_fixture}")
     if args.without_rei:
         command.append("-PwithoutRei")
     if args.without_trading_cells:
@@ -236,6 +264,12 @@ def run_once(
         )
     row = read_summary(summary_file)
     verify_backend(row, args.backend)
+    verify_dimensions(row, args.width, args.height)
+    if args.open_block and args.ui_fixture not in ("connections", "caps") and not row.get("screen_class", ""):
+        raise RuntimeError(
+            "The configured block did not leave a container screen open; "
+            f"got {row.get('screen_class', '')!r}"
+        )
     row.update(jfr_metrics(jfr, float(row["measured_seconds"])))
     row["run"] = str(run_number)
     row["jfr_file"] = str(jfr.relative_to(output)) if jfr.is_file() else ""
@@ -245,6 +279,9 @@ def run_once(
         target = result_directory / "capture.png"
         shutil.copy2(screenshot, target)
         row["screenshot_file"] = str(target.relative_to(output))
+        if args.ui_fixture in ("materials", "connections") and len(screenshots) >= 2:
+            earlier = sorted(screenshots, key=lambda path: path.stat().st_mtime_ns)[-2]
+            shutil.copy2(earlier, result_directory / "animation-before.png")
     else:
         row["screenshot_file"] = ""
     return row
@@ -276,6 +313,7 @@ def write_results(output: Path, rows: list[dict[str, str]], args: argparse.Names
         "runs": len(rows),
         "with_rei": str(not args.without_rei).lower(),
         "with_trading_cells": str(not args.without_trading_cells).lower(),
+        "ui_fixture": args.ui_fixture or "",
     }
     for metric in numeric:
         summary[f"median_{metric}"] = round(
@@ -326,7 +364,10 @@ def write_metadata(
         "with_rei": not args.without_rei,
         "with_trading_cells": not args.without_trading_cells,
         "quick_play_world": args.quick_play_world or "",
+        "ui_fixture": args.ui_fixture or "",
+        "language": args.language or "template",
         "camera": args.camera or [],
+        "open_block": args.open_block or [],
         "template_directory": str(args.template_directory or ""),
         "template_manifest": manifest,
         "template_manifest_name": MANIFEST_NAME if manifest else "",
@@ -349,6 +390,8 @@ def main() -> None:
         raise ValueError("Warmup and measurement durations are invalid")
     if args.width < 320 or args.height < 240:
         raise ValueError("The client resolution is too small")
+    if args.open_block and not args.quick_play_world:
+        raise ValueError("--open-block requires --quick-play-world")
     root = Path(__file__).resolve().parents[2]
     tools_directory = Path(__file__).resolve().parent
     properties = read_gradle_properties(root)

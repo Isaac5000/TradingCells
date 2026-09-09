@@ -332,7 +332,7 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
         if (required == 0 && selectedRecipeExperience >= 0) {
             required = selectedRecipeExperience;
         }
-        int available = required == 0 ? 0 : menu.storedExperience();
+        int available = required == 0 ? 0 : Math.min(menu.storedExperience(), required);
         int panelX = x + RECIPE_EXPERIENCE_X;
         int panelY = y + RECIPE_EXPERIENCE_Y;
         graphics.fill(
@@ -356,19 +356,21 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
                 panelY + RECIPE_EXPERIENCE_HEIGHT - 2,
                 SUMMARY_INTERIOR
         );
-        drawFittedCenteredText(
-                graphics,
-                Component.translatable(
-                        "gui.trading_cells.arcane_recipe_experience",
-                        available,
-                        required
-                ),
-                panelX + RECIPE_EXPERIENCE_WIDTH / 2,
-                panelY + 4,
-                RECIPE_EXPERIENCE_WIDTH - 6,
-                0.62F,
-                VALUE_TEXT_COLOR
-        );
+        if (required > 0) {
+            drawFittedCenteredText(
+                    graphics,
+                    Component.translatable(
+                            "gui.trading_cells.arcane_recipe_experience",
+                            available,
+                            required
+                    ),
+                    panelX + RECIPE_EXPERIENCE_WIDTH / 2,
+                    panelY + 4,
+                    RECIPE_EXPERIENCE_WIDTH - 6,
+                    0.62F,
+                    VALUE_TEXT_COLOR
+            );
+        }
     }
 
     private void drawPanel(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {

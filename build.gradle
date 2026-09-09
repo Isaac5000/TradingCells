@@ -78,6 +78,7 @@ sourceSets {
     performanceClient {
         java.srcDir('tools/performance/client/java')
         resources.srcDir('tools/performance/client/resources')
+        compileClasspath += sourceSets.main.output
     }
     gameTest {
         java.setSrcDirs(['src/gameTest/java'])
@@ -176,6 +177,14 @@ def configurePerformanceClientRun = { run, currentProject ->
             currentProject.findProperty('performanceClientScenario')?.toString() ?: 'unspecified'
     )
     run.systemProperty(
+            'trading_cells.performance.client.width',
+            currentProject.findProperty('performanceClientWidth')?.toString() ?: '1920'
+    )
+    run.systemProperty(
+            'trading_cells.performance.client.height',
+            currentProject.findProperty('performanceClientHeight')?.toString() ?: '1080'
+    )
+    run.systemProperty(
             'trading_cells.performance.client.requireWorld',
             currentProject.hasProperty('quickPlayWorld').toString()
     )
@@ -184,6 +193,16 @@ def configurePerformanceClientRun = { run, currentProject ->
                 'trading_cells.performance.client.camera',
                 currentProject.property('performanceClientCamera').toString()
         )
+    }
+    if (currentProject.hasProperty('performanceClientOpenBlock')) {
+        run.systemProperty(
+                'trading_cells.performance.client.openBlock',
+                currentProject.property('performanceClientOpenBlock').toString()
+        )
+    }
+    if (currentProject.hasProperty('performanceClientUiFixture')) {
+        run.systemProperty('trading_cells.performance.client.uiFixture',
+                currentProject.property('performanceClientUiFixture').toString())
     }
     run.programArguments.addAll(
             '--width',
@@ -677,6 +696,14 @@ tasks.register('checkVillagerTradeGuiTextures', Exec) {
     inputs.dir('src/main/resources/assets/trading_cells/textures/gui/sprites')
 }
 
+tasks.register('checkLogisticsResources', Exec) {
+    group = 'verification'
+    description = 'Checks reproducible logistics models, sprites and recipes.'
+    commandLine pythonExecutable, 'tools/generate_logistics_resources.py', '--check'
+    inputs.file('tools/generate_logistics_resources.py')
+    inputs.dir('src/main/resources')
+}
+
 tasks.register('checkProjectResources', Exec) {
     group = 'verification'
     description = 'Validates JSON, translations, models, textures and recipe references.'
@@ -797,6 +824,7 @@ tasks.named('check').configure {
     dependsOn tasks.named('checkMachineGuiTextures')
     dependsOn tasks.named('checkVillagerTradeGuiTextures')
     dependsOn tasks.named('checkProjectResources')
+    dependsOn tasks.named('checkLogisticsResources')
     dependsOn tasks.named('checkReleaseContracts')
     dependsOn tasks.named('checkPortability')
     dependsOn tasks.named('checkPublishedJarContents')

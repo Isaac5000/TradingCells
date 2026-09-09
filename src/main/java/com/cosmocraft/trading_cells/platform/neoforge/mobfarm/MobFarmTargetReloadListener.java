@@ -19,7 +19,7 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 /** Loads the public schema-v1 descriptors used to extend registered mob-farm families. */
-final class MobFarmTargetReloadListener extends SimpleJsonResourceReloadListener<JsonElement> {
+public final class MobFarmTargetReloadListener extends SimpleJsonResourceReloadListener<JsonElement> {
     static final int SCHEMA_VERSION = 1;
     private static final Codec<JsonElement> JSON_CODEC = Codec.PASSTHROUGH.xmap(
             dynamic -> dynamic.convert(JsonOps.INSTANCE).getValue(),
@@ -41,6 +41,15 @@ final class MobFarmTargetReloadListener extends SimpleJsonResourceReloadListener
             ResourceManager resourceManager,
             ProfilerFiller profiler
     ) {
+        DEFINITIONS.set(parseValid(resources));
+    }
+
+    /** Returns the descriptors accepted from one reload batch in deterministic source order. */
+    public static List<Identifier> validDescriptorIds(Map<Identifier, JsonElement> resources) {
+        return parseValid(resources).stream().map(Definition::sourceId).toList();
+    }
+
+    private static List<Definition> parseValid(Map<Identifier, JsonElement> resources) {
         List<Definition> parsed = new ArrayList<>();
         resources.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
@@ -56,7 +65,7 @@ final class MobFarmTargetReloadListener extends SimpleJsonResourceReloadListener
                     }
                 });
         parsed.sort(Comparator.comparing(definition -> definition.sourceId().toString()));
-        DEFINITIONS.set(List.copyOf(parsed));
+        return List.copyOf(parsed);
     }
 
     private static Definition parse(Identifier sourceId, JsonElement element) {

@@ -40,8 +40,36 @@
     {
       "id": "mob-farms",
       "machines": 256,
-      "families": ["skeleton", "zombie"],
-      "states": ["active", "paused", "partial_output", "full_output", "xp_only"],
+      "families": [
+        "skeleton",
+        "zombie",
+        "raider",
+        "creeper",
+        "arthropod",
+        "slime",
+        "guardian",
+        "piglin",
+        "blaze",
+        "ghast",
+        "enderman",
+        "shulker",
+        "breeze",
+        "phantom",
+        "livestock",
+        "fish",
+        "aquatic",
+        "mount",
+        "amphibian",
+        "bee",
+        "creaking"
+      ],
+      "states": [
+        "active",
+        "paused",
+        "partial_output",
+        "full_output",
+        "xp_only"
+      ],
       "template_required": true,
       "notes": "Keep targets, filters, swords, loot-table revision and RNG seed identical."
     },
@@ -50,13 +78,44 @@
       "machines": 405,
       "template_required": true,
       "notes": "The same 9x9x5 real-machine matrix used by the client benchmark."
+    },
+    {
+      "id": "logistics-1024-idle",
+      "pipes": 1024,
+      "state": "idle",
+      "template_required": true,
+      "notes": "Connected universal pipes in loaded chunks; XP uses fluid capability. Benchmark-only chunk tickets, no pipe tickers."
+    },
+    {
+      "id": "logistics-1024-active",
+      "pipes": 1024,
+      "state": "active",
+      "template_required": true,
+      "notes": "Connected universal pipes in loaded chunks; XP uses fluid capability. Benchmark-only chunk tickets, no pipe tickers."
+    },
+    {
+      "id": "logistics-4096-idle",
+      "pipes": 4096,
+      "state": "idle",
+      "template_required": true,
+      "notes": "Connected universal pipes in loaded chunks; XP uses fluid capability. Benchmark-only chunk tickets, no pipe tickers."
+    },
+    {
+      "id": "logistics-4096-active",
+      "pipes": 4096,
+      "state": "active",
+      "template_required": true,
+      "notes": "Connected universal pipes in loaded chunks; XP uses fluid capability. Benchmark-only chunk tickets, no pipe tickers."
     }
   ],
   "client": [
     {
       "id": "vanilla-control",
       "visible_machines": 0,
-      "variants": ["with_trading_cells", "without_trading_cells"],
+      "variants": [
+        "with_trading_cells",
+        "without_trading_cells"
+      ],
       "template_required": true
     },
     {
@@ -75,12 +134,52 @@
       "machines": 405,
       "template_required": true,
       "notes": "A 9x9x5 matrix cloned from configured machines in a real world."
+    },
+    {
+      "id": "logistics-1024-idle",
+      "pipes": 1024,
+      "state": "idle",
+      "template_required": true,
+      "notes": "Connected universal pipes in loaded chunks; XP uses fluid capability. Benchmark-only chunk tickets, no pipe tickers."
+    },
+    {
+      "id": "logistics-1024-active",
+      "pipes": 1024,
+      "state": "active",
+      "template_required": true,
+      "notes": "Connected universal pipes in loaded chunks; XP uses fluid capability. Benchmark-only chunk tickets, no pipe tickers."
+    },
+    {
+      "id": "logistics-4096-idle",
+      "pipes": 4096,
+      "state": "idle",
+      "template_required": true,
+      "notes": "Connected universal pipes in loaded chunks; XP uses fluid capability. Benchmark-only chunk tickets, no pipe tickers."
+    },
+    {
+      "id": "logistics-4096-active",
+      "pipes": 4096,
+      "state": "active",
+      "template_required": true,
+      "notes": "Connected universal pipes in loaded chunks; XP uses fluid capability. Benchmark-only chunk tickets, no pipe tickers."
     }
   ],
   "backend_matrix": [
-    {"backend": "opengl", "with_rei": true},
-    {"backend": "opengl", "with_rei": false},
-    {"backend": "vulkan", "with_rei": true},
-    {"backend": "vulkan", "with_rei": false}
+    {
+      "backend": "opengl",
+      "with_rei": true
+    },
+    {
+      "backend": "opengl",
+      "with_rei": false
+    },
+    {
+      "backend": "vulkan",
+      "with_rei": true
+    },
+    {
+      "backend": "vulkan",
+      "with_rei": false
+    }
   ]
 }

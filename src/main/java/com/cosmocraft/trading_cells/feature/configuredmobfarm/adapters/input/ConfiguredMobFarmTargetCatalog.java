@@ -33,6 +33,13 @@ public final class ConfiguredMobFarmTargetCatalog {
             case SHULKER -> MobFarmCatalog.Family.SHULKER;
             case BREEZE -> MobFarmCatalog.Family.BREEZE;
             case PHANTOM -> MobFarmCatalog.Family.PHANTOM;
+            case LIVESTOCK -> MobFarmCatalog.Family.LIVESTOCK;
+            case FISH -> MobFarmCatalog.Family.FISH;
+            case AQUATIC -> MobFarmCatalog.Family.AQUATIC;
+            case MOUNT -> MobFarmCatalog.Family.MOUNT;
+            case AMPHIBIAN -> MobFarmCatalog.Family.AMPHIBIAN;
+            case BEE -> MobFarmCatalog.Family.BEE;
+            case CREAKING -> MobFarmCatalog.Family.CREAKING;
         };
     }
 

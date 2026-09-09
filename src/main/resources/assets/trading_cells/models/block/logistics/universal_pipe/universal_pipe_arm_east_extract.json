@@ -1,0 +1,64 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "pipe": "trading_cells:block/logistics/universal_pipe/universal_pipe",
+    "frame": "trading_cells:block/logistics/pipe_base",
+    "particle": "trading_cells:block/logistics/pipe_base"
+  },
+  "elements": [
+    {
+      "from": [
+        11,
+        5,
+        5
+      ],
+      "to": [
+        15,
+        11,
+        11
+      ],
+      "faces": {
+        "down": {
+          "texture": "#pipe",
+          "uv": [
+            11,
+            16.0,
+            15,
+            0.0
+          ],
+          "rotation": 0
+        },
+        "up": {
+          "texture": "#pipe",
+          "uv": [
+            11,
+            0.0,
+            15,
+            16.0
+          ],
+          "rotation": 0
+        },
+        "north": {
+          "texture": "#pipe",
+          "uv": [
+            15,
+            16.0,
+            11,
+            0.0
+          ],
+          "rotation": 0
+        },
+        "south": {
+          "texture": "#pipe",
+          "uv": [
+            11,
+            16.0,
+            15,
+            0.0
+          ],
+          "rotation": 0
+        }
+      }
+    }
+  ]
+}

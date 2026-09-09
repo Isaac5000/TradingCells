@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "kind": "piglin",
+  "input": "minecraft:dead_fire_coral",
+  "block": "minecraft:dead_fire_coral",
+  "support": "minecraft:blackstone",
+  "growth_style": "scaled",
+  "render_support": "floor",
+  "visual_stages": 4,
+  "outputs": [
+    {
+      "item": "minecraft:coal",
+      "base_count": 1,
+      "fortune_count": 0,
+      "chance": 10000,
+      "fortune_chance": 0,
+      "maximum_chance": 10000
+    }
+  ]
+}

@@ -36,7 +36,7 @@ public final class MobFarmCatalog {
             "zombie", "zombie_villager", "husk", "drowned", "zombified_piglin", "zoglin"
     );
     private static final List<Identifier> RAIDER_BASE = ids(
-            "pillager", "evoker", "ravager", "witch"
+            "pillager", "evoker", "ravager", "witch", "vex"
     );
     private static final List<Identifier> CREEPER_BASE = ids("creeper");
     private static final List<Identifier> ARTHROPOD_BASE = ids(
@@ -51,6 +51,23 @@ public final class MobFarmCatalog {
     private static final List<Identifier> SHULKER_BASE = ids("shulker");
     private static final List<Identifier> BREEZE_BASE = ids("breeze");
     private static final List<Identifier> PHANTOM_BASE = ids("phantom");
+    private static final List<Identifier> LIVESTOCK_BASE = ids(
+            "cow", "mooshroom", "sheep", "pig", "chicken", "rabbit", "goat"
+    );
+    private static final List<Identifier> FISH_BASE = ids(
+            "cod", "salmon", "tropical_fish", "pufferfish"
+    );
+    private static final List<Identifier> AQUATIC_BASE = ids(
+            "squid", "glow_squid", "dolphin", "nautilus"
+    );
+    private static final List<Identifier> MOUNT_BASE = ids(
+            "horse", "donkey", "mule", "camel", "llama", "trader_llama"
+    );
+    private static final List<Identifier> AMPHIBIAN_BASE = ids(
+            "axolotl", "frog", "tadpole", "turtle"
+    );
+    private static final List<Identifier> BEE_BASE = ids("bee");
+    private static final List<Identifier> CREAKING_BASE = ids("creaking");
     private static final Map<Family, List<Identifier>> BASE_IDS = Map.ofEntries(
             Map.entry(Family.SKELETON, SKELETON_BASE),
             Map.entry(Family.ZOMBIE, ZOMBIE_BASE),
@@ -65,7 +82,14 @@ public final class MobFarmCatalog {
             Map.entry(Family.ENDERMAN, ENDERMAN_BASE),
             Map.entry(Family.SHULKER, SHULKER_BASE),
             Map.entry(Family.BREEZE, BREEZE_BASE),
-            Map.entry(Family.PHANTOM, PHANTOM_BASE)
+            Map.entry(Family.PHANTOM, PHANTOM_BASE),
+            Map.entry(Family.LIVESTOCK, LIVESTOCK_BASE),
+            Map.entry(Family.FISH, FISH_BASE),
+            Map.entry(Family.AQUATIC, AQUATIC_BASE),
+            Map.entry(Family.MOUNT, MOUNT_BASE),
+            Map.entry(Family.AMPHIBIAN, AMPHIBIAN_BASE),
+            Map.entry(Family.BEE, BEE_BASE),
+            Map.entry(Family.CREAKING, CREAKING_BASE)
     );
     private static final AtomicReference<Map<Family, List<Target>>> TARGETS =
             new AtomicReference<>(fallbackTargets());
@@ -331,7 +355,14 @@ public final class MobFarmCatalog {
         ENDERMAN("enderman", customFamilyTag("enderman_farm_targets")),
         SHULKER("shulker", customFamilyTag("shulker_farm_targets")),
         BREEZE("breeze", customFamilyTag("breeze_farm_targets")),
-        PHANTOM("phantom", customFamilyTag("phantom_farm_targets"));
+        PHANTOM("phantom", customFamilyTag("phantom_farm_targets")),
+        LIVESTOCK("livestock", customFamilyTag("livestock_farm_targets")),
+        FISH("fish", customFamilyTag("fish_farm_targets")),
+        AQUATIC("aquatic", customFamilyTag("aquatic_farm_targets")),
+        MOUNT("mount", customFamilyTag("mount_farm_targets")),
+        AMPHIBIAN("amphibian", customFamilyTag("amphibian_farm_targets")),
+        BEE("bee", customFamilyTag("bee_farm_targets")),
+        CREAKING("creaking", customFamilyTag("creaking_farm_targets"));
 
         private final Identifier id;
         private final TagKey<EntityType<?>> tag;

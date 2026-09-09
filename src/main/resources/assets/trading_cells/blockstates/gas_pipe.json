@@ -1,0 +1,1358 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "up": "none",
+        "north": "none",
+        "east": "none",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_0"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "none",
+        "east": "none",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_0"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "none",
+        "east": "none",
+        "up": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_0"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "none",
+        "east": "none",
+        "up": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_0"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "none",
+        "south": "none",
+        "up": "none",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_0"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "none",
+        "south": "none",
+        "up": "none",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_0"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "pipe|insert|extract",
+        "east": "none",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_1"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "pipe|insert|extract",
+        "east": "none",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_1"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "pipe|insert|extract",
+        "east": "none",
+        "up": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_1"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "pipe|insert|extract",
+        "east": "none",
+        "up": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_1"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "pipe|insert|extract",
+        "south": "none",
+        "up": "none",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_1"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "pipe|insert|extract",
+        "south": "none",
+        "up": "none",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_1"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "none",
+        "east": "pipe|insert|extract",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_2"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "none",
+        "east": "pipe|insert|extract",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_2"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "none",
+        "east": "pipe|insert|extract",
+        "up": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_2"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "none",
+        "east": "pipe|insert|extract",
+        "up": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_2"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "none",
+        "south": "pipe|insert|extract",
+        "up": "none",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_2"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "none",
+        "south": "pipe|insert|extract",
+        "up": "none",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_2"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_3"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "south": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_3"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "up": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_3"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "up": "none",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_3"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "up": "none",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_3"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "up": "none",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_3"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "none",
+        "east": "none",
+        "south": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_4"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "none",
+        "east": "none",
+        "south": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_4"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "none",
+        "east": "none",
+        "up": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_4"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "none",
+        "east": "none",
+        "up": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_4"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "none",
+        "south": "none",
+        "up": "pipe|insert|extract",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_4"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "none",
+        "south": "none",
+        "up": "pipe|insert|extract",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_4"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "pipe|insert|extract",
+        "east": "none",
+        "south": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_5"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "pipe|insert|extract",
+        "east": "none",
+        "south": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_5"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "pipe|insert|extract",
+        "east": "none",
+        "up": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_5"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "pipe|insert|extract",
+        "east": "none",
+        "up": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_5"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "pipe|insert|extract",
+        "south": "none",
+        "up": "pipe|insert|extract",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_5"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "pipe|insert|extract",
+        "south": "none",
+        "up": "pipe|insert|extract",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_5"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "none",
+        "east": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_6"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "none",
+        "east": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_6"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "none",
+        "east": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_6"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "none",
+        "east": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_6"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "none",
+        "south": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_6"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "none",
+        "south": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_6"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_7"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_7"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_7"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "west": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_7"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_7"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "north": "none"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_7"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "none",
+        "east": "none",
+        "south": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_8"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "none",
+        "east": "none",
+        "south": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_8"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "none",
+        "east": "none",
+        "up": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_8"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "none",
+        "east": "none",
+        "up": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_8"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "none",
+        "south": "none",
+        "up": "none",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_8"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "none",
+        "south": "none",
+        "up": "none",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_8"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "pipe|insert|extract",
+        "east": "none",
+        "south": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_9"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "pipe|insert|extract",
+        "east": "none",
+        "south": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_9"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "pipe|insert|extract",
+        "east": "none",
+        "up": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_9"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "pipe|insert|extract",
+        "east": "none",
+        "up": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_9"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "pipe|insert|extract",
+        "south": "none",
+        "up": "none",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_9"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "pipe|insert|extract",
+        "south": "none",
+        "up": "none",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_9"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "none",
+        "east": "pipe|insert|extract",
+        "south": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_10"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "none",
+        "east": "pipe|insert|extract",
+        "south": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_10"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "none",
+        "east": "pipe|insert|extract",
+        "up": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_10"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "none",
+        "east": "pipe|insert|extract",
+        "up": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_10"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "none",
+        "south": "pipe|insert|extract",
+        "up": "none",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_10"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "none",
+        "south": "pipe|insert|extract",
+        "up": "none",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_10"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "south": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_11"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "south": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_11"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "up": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_11"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "up": "none",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_11"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "up": "none",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_11"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "up": "none",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_11"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "none",
+        "east": "none",
+        "south": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_12"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "none",
+        "east": "none",
+        "south": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_12"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "none",
+        "east": "none",
+        "up": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_12"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "none",
+        "east": "none",
+        "up": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_12"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "none",
+        "south": "none",
+        "up": "pipe|insert|extract",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_12"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "none",
+        "south": "none",
+        "up": "pipe|insert|extract",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_12"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "pipe|insert|extract",
+        "east": "none",
+        "south": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_13"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "pipe|insert|extract",
+        "east": "none",
+        "south": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_13"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "pipe|insert|extract",
+        "east": "none",
+        "up": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_13"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "pipe|insert|extract",
+        "east": "none",
+        "up": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_13"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "pipe|insert|extract",
+        "south": "none",
+        "up": "pipe|insert|extract",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_13"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "pipe|insert|extract",
+        "south": "none",
+        "up": "pipe|insert|extract",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_13"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "none",
+        "east": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_14"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "none",
+        "east": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_14"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "none",
+        "east": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_14"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "none",
+        "east": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_14"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "none",
+        "south": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_14"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "none",
+        "south": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_14"
+      }
+    },
+    {
+      "when": {
+        "up": "none",
+        "north": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_up_15"
+      }
+    },
+    {
+      "when": {
+        "down": "none",
+        "north": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_down_15"
+      }
+    },
+    {
+      "when": {
+        "north": "none",
+        "down": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_north_15"
+      }
+    },
+    {
+      "when": {
+        "south": "none",
+        "down": "pipe|insert|extract",
+        "east": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_south_15"
+      }
+    },
+    {
+      "when": {
+        "west": "none",
+        "down": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_west_15"
+      }
+    },
+    {
+      "when": {
+        "east": "none",
+        "down": "pipe|insert|extract",
+        "south": "pipe|insert|extract",
+        "up": "pipe|insert|extract",
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_core_east_15"
+      }
+    },
+    {
+      "when": {
+        "north": "pipe|insert"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_north"
+      }
+    },
+    {
+      "when": {
+        "north": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_north_extract"
+      }
+    },
+    {
+      "when": {
+        "north": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_extract"
+      }
+    },
+    {
+      "when": {
+        "north": "insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_cap"
+      }
+    },
+    {
+      "when": {
+        "south": "pipe|insert"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_south"
+      }
+    },
+    {
+      "when": {
+        "south": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_south_extract"
+      }
+    },
+    {
+      "when": {
+        "south": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_extract",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "south": "insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_cap",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "west": "pipe|insert"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_west"
+      }
+    },
+    {
+      "when": {
+        "west": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_west_extract"
+      }
+    },
+    {
+      "when": {
+        "west": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_extract",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "west": "insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_cap",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "east": "pipe|insert"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_east"
+      }
+    },
+    {
+      "when": {
+        "east": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_east_extract"
+      }
+    },
+    {
+      "when": {
+        "east": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_extract",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "east": "insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_cap",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "up": "pipe|insert"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_up"
+      }
+    },
+    {
+      "when": {
+        "up": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_up_extract"
+      }
+    },
+    {
+      "when": {
+        "up": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_extract",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "up": "insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_cap",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "down": "pipe|insert"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_down"
+      }
+    },
+    {
+      "when": {
+        "down": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_arm_down_extract"
+      }
+    },
+    {
+      "when": {
+        "down": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_extract",
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "down": "insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/logistics/gas_pipe/gas_pipe_cap",
+        "x": 90
+      }
+    }
+  ]
+}

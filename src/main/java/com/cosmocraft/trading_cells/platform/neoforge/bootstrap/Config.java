@@ -14,6 +14,11 @@ public final class Config {
     public static final ModConfigSpec.IntValue IRON_FARM_CYCLE_TICKS;
     public static final ModConfigSpec.IntValue IRON_FARM_MULTIPLIER_BONUS;
     public static final ModConfigSpec.BooleanValue VILLAGER_INFINITE_TRADES;
+    public static final ModConfigSpec.IntValue LOGISTICS_OPERATION_BUDGET;
+    public static final ModConfigSpec.IntValue LOGISTICS_INFINITE_FACE_OPERATIONS;
+    public static final ModConfigSpec.IntValue LOGISTICS_TOPOLOGY_VISITS;
+    public static final ModConfigSpec.IntValue LOGISTICS_TERMINAL_ENDPOINTS;
+    public static final ModConfigSpec.IntValue LOGISTICS_TERMINAL_REFRESH_TICKS;
 
     public static final ModConfigSpec SPEC;
 
@@ -39,6 +44,39 @@ public final class Config {
                 "for example, 15 changes them to x16, x17 and x18. Use 0 for the defaults."
         );
         IRON_FARM_MULTIPLIER_BONUS = BUILDER.defineInRange("ironFarmMultiplierBonus", 0, 0, 1_024);
+        BUILDER.pop();
+
+        BUILDER.comment("Universal logistics network safety budgets.").push("logistics");
+        LOGISTICS_OPERATION_BUDGET = BUILDER.defineInRange(
+                "operationsPerDimensionTick",
+                1_024,
+                1,
+                1_000_000
+        );
+        LOGISTICS_INFINITE_FACE_OPERATIONS = BUILDER.defineInRange(
+                "infiniteOperationsPerFaceTick",
+                64,
+                1,
+                65_536
+        );
+        LOGISTICS_TOPOLOGY_VISITS = BUILDER.defineInRange(
+                "topologyVisitsPerTick",
+                4_096,
+                64,
+                1_000_000
+        );
+        LOGISTICS_TERMINAL_ENDPOINTS = BUILDER.defineInRange(
+                "terminalEndpointsPerTick",
+                256,
+                16,
+                65_536
+        );
+        LOGISTICS_TERMINAL_REFRESH_TICKS = BUILDER.defineInRange(
+                "terminalRefreshTicks",
+                20,
+                1,
+                1_200
+        );
         BUILDER.pop();
 
         BUILDER.comment("Capturer item settings.").push("capturers");

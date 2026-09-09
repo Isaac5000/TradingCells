@@ -3,6 +3,146 @@
 Resultados locales conservados en `build/performance`. Los artefactos pesados
 estan ignorados por Git; este archivo registra las medianas y las decisiones.
 
+## Logistica universal: referencia inicial
+
+2026-09-05, servidor dedicado, tres pasadas por escenario, 15 s de calentamiento
+y 30 s medidos. Matrices universales conectadas con fuente de XP e Infusor; copia
+del mundo Test. Los chunks se fijan exclusivamente en la plantilla de medida.
+Estas cifras son un baseline de desarrollo, no una comparacion antes/despues.
+
+| Escenario | Media MSPT | p95 MSPT | TPS |
+| --- | ---: | ---: | ---: |
+| 1.024 tuberias activas | 0,767889 | 1,114157 | 20,013342 |
+| 4.096 tuberias activas | 0,820278 | 1,026404 | 20,013342 |
+| 1.024 tuberias en reposo | 0,347820 | 0,494970 | 20,013342 |
+| 4.096 tuberias en reposo | 0,460236 | 0,859923 | 20,026658 |
+
+Evidencia: `build/performance/results/logistics-1024-active/20260905-165552/`.
+Huella de plantilla: `4e6b0fb7bd638d9562d22f9d2b34149c8a3ec37bbaffe99258908554c22e2a49`.
+Las otras tres series estan en `build/performance/results/`:
+
+| Serie | Directorio | Huella de plantilla |
+| --- | --- | --- |
+| 4.096 activas | `logistics-4096-active/20260905-170044` | `62d758b45418fe6a9f1c0f224b7dec5a098d891e11a969e9f560658302f5ea1c` |
+| 1.024 en reposo | `logistics-1024-idle/20260905-170613` | `1391a51014079240c5c8c3bd3b6436d11875cf673949f817c923d028d32a7b5e` |
+| 4.096 en reposo | `logistics-4096-idle/20260905-225156` | `a0c2f6cd49bd70e95d125985a4b0444aa8e5631aaddd89ccce1332935ff1a2ac` |
+
+La ultima serie incorpora la invalidacion de capacidades vecinas; las anteriores
+son previas a ese cambio. No compararlas como versiones equivalentes ni usarlas
+para aprobar una optimizacion. CPU y asignaciones por pasada estan en los CSV.
+
+Fuente y destino unicos: no extrapolar estos resultados a miles de extractores
+ni considerar cerrada la matriz cliente o la comparacion de regresiones.
+
+Terminal abierto, 1.024 tuberias activas, 1280x720, tres pasadas de 15+30 s,
+Jade presente y REI ausente. El listado de items esta vacio: la fuente transporta
+XP por fluido. No representa un terminal con miles de variantes ni toda la red
+visible sin el menu.
+
+| Backend | Fotograma medio ms | p95 ms | FPS | Asignaciones B/s |
+| --- | ---: | ---: | ---: | ---: |
+| OpenGL | 0,684613 | 0,976600 | 1152,405971 | 239278753 |
+| Vulkan | 0,392510 | 0,524400 | 1842,607961 | 410160292 |
+
+Evidencia: `build/performance/client/logistics-1024-active/opengl/20260905-230054`
+y `vulkan/20260906-035852`; huella comun
+`ed1184469c83e67c2cf11775992d073cec94e5e12d1b11ec57782d9c525ba909`.
+Comparacion RGB del panel `(266,122)-(1014,598)`: cero pixeles distintos en las
+tres parejas. Los backends no son candidatos de una optimizacion entre si.
+Vulkan incluye la incorporacion posterior de capacidades de items a once tipos
+de maquinas, ajenas a los endpoints de esta escena; no es una comparacion binaria
+de versiones del mod.
+Estas mediciones tambien son anteriores a la correccion funcional del turno
+circular del 2026-09-06. No se ha aprobado una optimizacion de ese cambio.
+
+Las carpetas OpenGL `20260905-225801` (validacion antigua del controlador) y
+Vulkan `20260905-230548` (timeout al abrir menu en la segunda pasada) no se
+aceptan como series completas. El grabador de desarrollo posiciona al jugador
+en el servidor y abre el MenuProvider real; esto no prueba la interaccion con
+la llave ni sustituye las pruebas funcionales.
+
+Las secciones siguientes del Controlador/red XP son historicas: aquellos
+sistemas se retiraron y sus resultados no validan las tuberias universales.
+
+## Controlador de 1.024 maquinas
+
+Medicion estructural del 4 de septiembre de 2026 con una matriz `32x32` de
+Almacenes de Experiencia reales, radio 32, menu abierto, REI ausente y huella
+`3b3411bc503753051d5eb24992edb3fadf40fa091ff0ff9d43432f2edb0a2c95`.
+Cada candidata OpenGL usa tres pasadas de 15 s de calentamiento y 30 s de captura
+a `1280x720`.
+
+| Metrica OpenGL | Antes | Cache de vista | Cambio |
+| --- | ---: | ---: | ---: |
+| Fotograma medio | 4,501855 ms | 3,851987 ms | -14,44 % |
+| Fotograma p50 | 3,3497 ms | 2,9364 ms | -12,34 % |
+| Fotograma p95 | 10,8963 ms | 8,6020 ms | -21,06 % |
+| Fotograma p99 | 12,2804 ms | 10,0743 ms | -17,96 % |
+| FPS | 192,464 | 222,297 | +15,50 % |
+| CPU JVM | 2,530 % | 2,141 % | -15,37 % |
+| Asignaciones | 249,5 MB/s | 105,5 MB/s | -57,69 % |
+
+La pantalla conserva una lista filtrada/ordenada y los nombres traducidos hasta
+que cambian la revision recibida, busqueda, filtro, posicion o inicializacion. La
+sincronizacion del servidor sigue revisando posiciones cada 20 ticks y no congela
+datos. Los 696x440 pixeles del menu fueron identicos; las 5.528 diferencias de la
+captura completa quedaron fuera del panel, en el mundo animado.
+
+La misma candidata se ejecuto tres veces con Vulkan y dimensiones efectivas
+verificadas de `1280x720`:
+
+| Metrica Vulkan | Mediana |
+| --- | ---: |
+| Fotograma medio | 1,847397 ms |
+| Fotograma p95 | 3,3376 ms |
+| Fotograma p99 | 4,7233 ms |
+| FPS | 363,999 |
+| CPU JVM | 1,949 % |
+| Asignaciones | 170,5 MB/s |
+
+El panel completo fue identico pixel a pixel entre las capturas OpenGL y Vulkan.
+Las primeras ejecuciones Vulkan que el sistema maximizo a `1920x1009` se
+invalidaron; el grabador ahora fija y verifica la resolucion antes de aceptar una
+pasada.
+
+## Red de XP de 1.024 tuberias
+
+Tres pasadas de servidor dedicado sobre una red `32x32`, un Distribuidor, un
+Almacen fuente y un Infusor destino. Huella:
+`5f398309460ffb56e9893368a4989f7d3751d1d46ccc8c7e76c368463d9407f8`.
+
+| Metrica | Mediana |
+| --- | ---: |
+| MSPT medio | 0,452054 |
+| MSPT p95 | 0,618039 |
+| TPS del perfil | 20,133333 |
+| CPU JVM | 0,229134 % |
+| Asignaciones | 0,559 MB/s |
+| Paquetes | 0 |
+
+JFR solo encontro una muestra dentro del Distribuidor; el coste dominante fue la
+serializacion normal de mundo y chunks. No se cambio la seleccion de extremos ni
+se introdujo otra cache porque no existe evidencia para alcanzar el umbral del
+3 %.
+
+## 405 Granjas de Animales y Peces
+
+Referencia inicial del 2 de septiembre de 2026 sobre una copia del mundo `Test`.
+La plantilla alterna Granjas de Animales y Peces creadas desde una granja
+configurable real, conservando su aldeano y espada, con huella de cliente
+`7e6422dc032c44086c255564680318a1e49dc37abf8706565f22b207349f2452`.
+
+| Entorno | Pasadas | Media | p95 | FPS/TPS |
+| --- | ---: | ---: | ---: | ---: |
+| Servidor dedicado | 3 | 1,421531 MSPT | 2,143565 MSPT | 20,019987 TPS |
+| OpenGL + REI | 1 | 7,972478 ms | 11,2752 ms | 114,565 FPS |
+| Vulkan + REI | 1 | 7,184991 ms | 9,4147 ms | 125,668 FPS |
+
+Ambos backends produjeron una captura no vacia con las 405 maquinas y sus bases
+alternadas. Las pasadas de cliente son un baseline funcional inicial; la matriz
+de publicacion con tres pasadas, sin REI, escalas e idiomas permanece aplazada
+hasta congelar funcionalidades.
+
 ## 405 Granjas de Zombis activas
 
 Medicion del 28 de agosto de 2026 con una copia fija del mundo `Test`, 405
@@ -51,6 +191,26 @@ se introdujo un refactor mecanico de servidor porque no alcanzaria el umbral y
 arriesgaria tiempos o tiradas aleatorias.
 
 ## Matrices mixtas de 405 maquinas
+
+### Animales y Peces
+
+Revalidacion del 2 de septiembre de 2026 sobre una matriz `9x9x5` de 405
+granjas activas alternando Animales y Peces, clonadas de maquinas reales. Las
+tres pasadas por backend comparten la huella de plantilla
+`7e6422dc032c44086c255564680318a1e49dc37abf8706565f22b207349f2452`,
+camara `-218 -57 -208 -90 10`, REI, resolucion `1424x855`, 15 s de
+calentamiento y 30 s de captura.
+
+| Ruta | Ejecuciones | FPS | Media | p95 | Asignaciones |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Cliente OpenGL | 3 | 109,537 | 8,325 ms | 11,032 ms | 103,5 MB/s |
+| Cliente Vulkan | 3 | 130,046 | 6,773 ms | 8,647 ms | 123,4 MB/s |
+| Servidor dedicado | 3 | 20 TPS | 1,422 MSPT | 2,144 MSPT | 1,68 MB/s |
+
+Las capturas muestran la misma geometria, bases, orientacion y contenido. No se
+exige igualdad binaria entre backends porque agua y entidades se capturan en
+instantes distintos. Esta serie cierra una referencia funcional; no se atribuye
+una mejora ni se conserva una optimizacion nueva a partir de ella.
 
 Medicion del 28 de agosto de 2026 con copias verificadas del mundo `Test`, una
 matriz `9x9x5`, camara fija, REI, `1920x1080`, 15 s de calentamiento y 30 s de

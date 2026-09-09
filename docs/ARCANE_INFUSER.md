@@ -119,16 +119,17 @@ Spawner             | Tablones de roble oscuro | Bloque de hierro
 ```
 
 Coste: `100.000` XP. Cualquier nivel de frasco ominoso es válido. La máquina
-incluye saqueador, invocador, devastador y bruja; el saqueador normal puede
-producir su estandarte ominoso. También admite objetivos registrados por tags o
-datapacks.
+incluye saqueador, invocador, vindicador, ilusionista, devastador, bruja y vex;
+el saqueador normal puede producir su estandarte ominoso. También admite
+objetivos registrados por tags o datapacks.
 
 ### Huevos generadores de saqueadores
 
-Cinco recetas convierten `#trading_cells:arcane_infusion_eggs` en huevos de
-saqueador, invocador, devastador, bruja o vindicador. Sus costes son `100`,
-`350`, `450`, `250` y `200` XP respectivamente. Illusioner puede entrar por el
-tag vanilla de saqueadores, pero Minecraft no proporciona un huevo para crear.
+Seis recetas convierten `#trading_cells:arcane_infusion_eggs` en huevos de
+saqueador, invocador, devastador, bruja, vindicador o vex. Sus costes son `100`,
+`350`, `450`, `250`, `200` y `300` XP respectivamente. Illusioner puede entrar
+por el tag vanilla de saqueadores, pero Minecraft no proporciona un huevo para
+crear.
 
 ### Granja de Creepers
 
@@ -154,16 +155,23 @@ tematicos. Sus objetivos se amplian mediante tags y descriptores de datapack.
 
 | Granja | Objetivos integrados | Base | Coste |
 | --- | --- | --- | ---: |
-| Artropodos | Spider, Cave Spider, Silverfish y Endermite | Cobweb | 35.000 XP |
+| Artropodos | Spider, Cave Spider, Silverfish y Endermite | Pale Moss Block | 35.000 XP |
 | Slimes | Slime, Magma Cube y Sulfur Cube | Slime Block | 45.000 XP |
 | Guardianes | Guardian y Elder Guardian | Prismarine Bricks | 75.000 XP |
-| Piglins | Piglin y Piglin Brute | Polished Blackstone Bricks | 70.000 XP |
+| Piglins | Piglin y Piglin Brute | Polished Blackstone | 70.000 XP |
 | Blazes | Blaze | Nether Bricks | 55.000 XP |
 | Ghasts | Ghast y Happy Ghast | Soul Soil | 65.000 XP |
 | Endermen | Enderman | End Stone | 60.000 XP |
-| Shulkers | Shulker | Purpur Pillar | 90.000 XP |
+| Shulkers | Shulker | Purpur Block | 90.000 XP |
 | Breezes | Breeze | Polished Tuff | 80.000 XP |
-| Phantoms | Phantom | Polished Deepslate | 40.000 XP |
+| Phantoms | Phantom | Pale Moss Block | 40.000 XP |
+| Animales | Cow, Mooshroom, Sheep, Pig, Chicken, Rabbit y Goat | Hay Block | 20.000 XP |
+| Peces | Cod, Salmon, Tropical Fish y Pufferfish | Sand | 20.000 XP |
+| Acuaticas | Squid, Glow Squid, Dolphin y Nautilus | Dark Prismarine | 30.000 XP |
+| Monturas | Horse, Donkey, Mule, Camel, Llama y Trader Llama | Oak Planks | 30.000 XP |
+| Anfibios | Axolotl, Frog, Tadpole y Turtle | Mud | 25.000 XP |
+| Abejas | Bee | Honeycomb Block | 25.000 XP |
+| Creakings | Creaking | Pale Moss Block | 85.000 XP |
 
 ### Huevos generadores de las nuevas familias
 
@@ -179,6 +187,13 @@ tematicos. Sus objetivos se amplian mediante tags y descriptores de datapack.
 | Shulker | `350` XP |
 | Breeze | `300` XP |
 | Phantom | `180` XP |
+| Animales | Chicken `80`, Rabbit `100`, Pig `120`, Sheep `140`, Cow `160`, Goat `180`, Mooshroom `220` XP |
+| Peces | Cod `80`, Salmon `100`, Tropical Fish `120`, Pufferfish `140` XP |
+| Acuaticas | Squid `80`, Glow Squid `120`, Dolphin `180`, Nautilus `220` XP |
+| Monturas | Horse `160`, Donkey `140`, Mule `180`, Camel `180`, Llama `160`, Trader Llama `220` XP |
+| Anfibios | Axolotl `180`, Frog `120`, Tadpole `80`, Turtle `180` XP |
+| Abeja | `140` XP |
+| Creaking | `500` XP |
 
 El limite de cualquier infusión de Spawn Egg es `550` XP, equivalente a veinte
 niveles completos. Los costes son multiplos de diez.

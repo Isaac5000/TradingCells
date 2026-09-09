@@ -4,11 +4,13 @@ import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobSta
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.quarry.application.port.input.QuarryUseCase;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
-import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineInventoryDiagnostics;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -176,6 +178,60 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
     }
 
     @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineInventoryDiagnostics.OutputUsage output = MachineInventoryDiagnostics.outputUsage(
+                this,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT
+        );
+        MachineDiagnosticStatus diagnosticStatus = switch (status) {
+            case MINING -> MachineDiagnosticStatus.RUNNING;
+            case INVENTORY_FULL -> MachineDiagnosticStatus.BLOCKED;
+            default -> MachineDiagnosticStatus.INACTIVE;
+        };
+        String reason = switch (status) {
+            case WORKER_REQUIRED -> "worker_required";
+            case PICKAXE_REQUIRED, PICKAXE_BROKEN -> "tool_required";
+            case NO_COMPATIBLE_MATERIALS -> "missing_recipe";
+            case INVENTORY_FULL -> "output_full";
+            default -> MachineDiagnosticSnapshot.NONE;
+        };
+        return applyRedstonePause(new MachineDiagnosticSnapshot(
+                diagnosticStatus,
+                reason,
+                cycleTicks,
+                cycleDurationTicks,
+                0,
+                output.used(),
+                output.capacity()
+        ));
+    }
+
+    @Override
+    public CompoundTag exportMachineConfiguration() {
+        CompoundTag configuration = super.exportMachineConfiguration();
+        configuration.putBoolean(DEEP_MINING_TAG, deepMining);
+        return configuration;
+    }
+
+    @Override
+    public boolean canApplyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        return super.canApplyMachineConfiguration(schemaVersion, configuration)
+                && configuration.contains(DEEP_MINING_TAG);
+    }
+
+    @Override
+    public void applyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        if (!canApplyMachineConfiguration(schemaVersion, configuration)) {
+            return;
+        }
+        super.applyMachineConfiguration(schemaVersion, configuration);
+        setDeepMining(kind == QuarryKind.VILLAGER && configuration.getBooleanOr(DEEP_MINING_TAG, false));
+        activity.wake();
+        markChangedAndSync();
+    }
+
+    @Override
     public void processTick() {
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
@@ -325,6 +381,16 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             invalidateWorker();
         }
         return removed;
+    }
+
+    @Override
+    public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
+        if (insideTransaction && isOutputSlot(slot)) {
+            // Rollback restores produced items without allowing external output insertion.
+            items.set(slot, stack);
+        } else {
+            setItem(slot, stack);
+        }
     }
 
     @Override

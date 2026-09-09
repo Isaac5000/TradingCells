@@ -13,8 +13,11 @@ import com.cosmocraft.trading_cells.feature.trader.domain.service.TradeDiscountP
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineInventoryDiagnostics;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandler;
-import com.cosmocraft.trading_cells.platform.neoforge.registration.ExperienceFluidRegistration;
+import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandlers;
 import com.cosmocraft.trading_cells.platform.neoforge.trading.MerchantOfferComparator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -75,12 +78,9 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
 
     private final AutotraderUseCase autotraderService = FeatureComposition.autotrader();
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
-    private final ExperienceFluidHandler experienceFluidHandler = new ExperienceFluidHandler(
-            () -> FluidResource.of(ExperienceFluidRegistration.SOURCE.get()),
+    private final ExperienceFluidHandler experienceFluidHandler = ExperienceFluidHandlers.source(
             this::getStoredExperienceForFluid,
             this::setStoredExperienceFromFluid,
-            () -> Integer.MAX_VALUE,
-            false,
             this::markChangedAndSync
     );
     private int selectedOfferIndex;
@@ -150,6 +150,48 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
 
     public int storedExperience() {
         return storedExperience;
+    }
+
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineInventoryDiagnostics.OutputUsage output = MachineInventoryDiagnostics.outputUsage(
+                this,
+                FIRST_OUTPUT_SLOT,
+                AutotraderPolicy.OUTPUT_SLOTS
+        );
+        if (!hasStoredVillager()) {
+            return diagnostic(MachineDiagnosticStatus.INACTIVE, "worker_required", output);
+        }
+        MerchantOffer offer = selectedOffer();
+        if (offer == null || offer.isOutOfStock()) {
+            return diagnostic(MachineDiagnosticStatus.INACTIVE, "missing_recipe", output);
+        }
+        ItemCost costA = offer.getItemCostA();
+        @Nullable ItemCost costB = offer.getItemCostB().orElse(null);
+        if (countMatching(INPUT_A_SLOTS, costA) < offer.getCostA().getCount()
+                || costB != null && countMatching(INPUT_B_SLOTS, costB) < offer.getCostB().getCount()) {
+            return diagnostic(MachineDiagnosticStatus.INACTIVE, "input_required", output);
+        }
+        if (!canStoreOutput(offer.getResult())) {
+            return diagnostic(MachineDiagnosticStatus.BLOCKED, "output_full", output);
+        }
+        return diagnostic(MachineDiagnosticStatus.RUNNING, MachineDiagnosticSnapshot.NONE, output);
+    }
+
+    private MachineDiagnosticSnapshot diagnostic(
+            MachineDiagnosticStatus status,
+            String reason,
+            MachineInventoryDiagnostics.OutputUsage output
+    ) {
+        return applyRedstonePause(new MachineDiagnosticSnapshot(
+                status,
+                reason,
+                0,
+                0,
+                storedExperience,
+                output.used(),
+                output.capacity()
+        ));
     }
 
     public void extractExperience(Player player) {
@@ -651,6 +693,16 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
             emptyOffersInitializationAttempted = false;
         }
         return removed;
+    }
+
+    @Override
+    public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
+        if (insideTransaction && isOutputSlot(slot)) {
+            // Rollback restores produced items without allowing external output insertion.
+            items.set(slot, stack);
+        } else {
+            setItem(slot, stack);
+        }
     }
 
     @Override

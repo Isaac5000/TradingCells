@@ -6,8 +6,10 @@ import com.cosmocraft.trading_cells.feature.experience.domain.model.ExperienceTr
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.experience.PlayerExperienceTransfer;
 import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandler;
+import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandlers;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
-import com.cosmocraft.trading_cells.platform.neoforge.registration.ExperienceFluidRegistration;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,15 +30,18 @@ public final class ExperienceStorageBlockEntity extends PortableMachineBlockEnti
     static final String STORED_EXPERIENCE_TAG = "StoredExperience";
 
     private final ExperienceStorageUseCase service = FeatureComposition.experienceStorage();
-    private final ExperienceFluidHandler fluidHandler = new ExperienceFluidHandler(
-            () -> FluidResource.of(ExperienceFluidRegistration.SOURCE.get()),
+    private final ExperienceFluidHandler fluidHandler = ExperienceFluidHandlers.bidirectional(
             this::storedExperience,
             this::setStoredExperienceRaw,
             () -> CAPACITY,
-            true,
             this::markChangedAndSync
     );
     private int storedExperience;
+
+    @Override
+    public boolean supportsRedstoneControl() {
+        return false;
+    }
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -75,6 +80,19 @@ public final class ExperienceStorageBlockEntity extends PortableMachineBlockEnti
 
     public int storedExperience() {
         return storedExperience;
+    }
+
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        return new MachineDiagnosticSnapshot(
+                MachineDiagnosticStatus.INACTIVE,
+                MachineDiagnosticSnapshot.NONE,
+                0,
+                0,
+                storedExperience,
+                0,
+                0
+        );
     }
 
     public ResourceHandler<FluidResource> fluidHandler() {

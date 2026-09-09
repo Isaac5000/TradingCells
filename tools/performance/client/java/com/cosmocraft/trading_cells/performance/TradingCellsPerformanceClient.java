@@ -11,6 +11,13 @@ import jdk.jfr.Configuration;
 import jdk.jfr.Recording;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
+import net.minecraft.client.gui.screens.LevelLoadingScreen;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
@@ -25,8 +32,11 @@ public final class TradingCellsPerformanceClient {
     private static final String WARMUP_PROPERTY = "trading_cells.performance.client.warmupSeconds";
     private static final String MEASURE_PROPERTY = "trading_cells.performance.client.measureSeconds";
     private static final String SCENARIO_PROPERTY = "trading_cells.performance.client.scenario";
+    private static final String WIDTH_PROPERTY = "trading_cells.performance.client.width";
+    private static final String HEIGHT_PROPERTY = "trading_cells.performance.client.height";
     private static final String REQUIRE_WORLD_PROPERTY = "trading_cells.performance.client.requireWorld";
     private static final String CAMERA_PROPERTY = "trading_cells.performance.client.camera";
+    private static final String OPEN_BLOCK_PROPERTY = "trading_cells.performance.client.openBlock";
     private static final String JFR_PROPERTY = "trading_cells.performance.client.jfr";
     private static final int MAX_SAMPLES = 1_000_000;
 
@@ -34,8 +44,11 @@ public final class TradingCellsPerformanceClient {
     private final long measureNanos;
     private final Path outputDirectory;
     private final String scenario;
+    private final int expectedWidth;
+    private final int expectedHeight;
     private final boolean requireWorld;
     private final CameraPose cameraPose;
+    private final BlockPos openBlock;
     private final Path jfrPath;
     private final long[] samples = new long[MAX_SAMPLES];
     private long startedAt;
@@ -45,7 +58,12 @@ public final class TradingCellsPerformanceClient {
     private int sampleCount;
     private boolean completed;
     private boolean captureRequested;
+    private boolean secondMaterialCapture;
     private Recording recording;
+    private long firstOpenAttempt;
+    private long lastOpenAttempt;
+    private volatile boolean serverCameraPositioned;
+    private volatile boolean serverCameraRequested;
 
     public TradingCellsPerformanceClient() {
         String output = System.getProperty(OUTPUT_PROPERTY, "").trim();
@@ -53,8 +71,11 @@ public final class TradingCellsPerformanceClient {
         warmupNanos = secondsProperty(WARMUP_PROPERTY, 15.0D);
         measureNanos = secondsProperty(MEASURE_PROPERTY, 30.0D);
         scenario = System.getProperty(SCENARIO_PROPERTY, "unspecified");
+        expectedWidth = positiveIntProperty(WIDTH_PROPERTY, 1_920);
+        expectedHeight = positiveIntProperty(HEIGHT_PROPERTY, 1_080);
         requireWorld = Boolean.parseBoolean(System.getProperty(REQUIRE_WORLD_PROPERTY, "false"));
         cameraPose = CameraPose.parse(System.getProperty(CAMERA_PROPERTY, ""));
+        openBlock = parseBlockPos(System.getProperty(OPEN_BLOCK_PROPERTY, ""));
         String jfr = System.getProperty(JFR_PROPERTY, "").trim();
         jfrPath = jfr.isEmpty() ? null : Path.of(jfr).toAbsolutePath();
         if (outputDirectory != null) {
@@ -65,10 +86,35 @@ public final class TradingCellsPerformanceClient {
 
     private void onFramePre(RenderFrameEvent.Pre event) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (!System.getProperty("trading_cells.performance.client.uiFixture", "").isEmpty()) {
+            LogisticsUiFixture.inspect(minecraft);
+        }
+        enforceWindowSize(minecraft);
         if (cameraPose == null || minecraft.player == null) {
+            openConfiguredBlock(minecraft);
             return;
         }
+        positionServerCamera(minecraft);
         cameraPose.apply(minecraft.player);
+        openConfiguredBlock(minecraft);
+    }
+
+    private void positionServerCamera(Minecraft minecraft) {
+        var server = minecraft.getSingleplayerServer();
+        if (serverCameraPositioned || serverCameraRequested || server == null) {
+            return;
+        }
+        serverCameraRequested = true;
+        var playerId = minecraft.player.getUUID();
+        server.execute(() -> {
+            var player = server.getPlayerList().getPlayer(playerId);
+            if (player != null) {
+                player.connection.teleport(cameraPose.position.x, cameraPose.position.y, cameraPose.position.z,
+                        cameraPose.yaw, cameraPose.pitch);
+                serverCameraPositioned = true;
+            }
+            serverCameraRequested = false;
+        });
     }
 
     private void onFramePost(RenderFrameEvent.Post event) {
@@ -78,15 +124,28 @@ public final class TradingCellsPerformanceClient {
                 Screenshot.grab(Minecraft.getInstance(), false);
                 captureRequested = true;
                 shutdownAtNanos = now + 2_000_000_000L;
+            } else if (captureRequested && !secondMaterialCapture
+                    && (System.getProperty("trading_cells.performance.client.uiFixture", "").equals("materials")
+                        || LogisticsUiFixture.worldScene())
+                    && now >= shutdownAtNanos - 1_400_000_000L) {
+                Screenshot.grab(Minecraft.getInstance(), false);
+                secondMaterialCapture = true;
             } else if (captureRequested && now >= shutdownAtNanos) {
                 Minecraft.getInstance().stop();
             }
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        if (requireWorld && (minecraft.level == null || minecraft.player == null)) {
+        if (requireWorld && (minecraft.level == null
+                || minecraft.player == null
+                || minecraft.gui.screen() instanceof LevelLoadingScreen)) {
             return;
         }
+        if (openBlock != null && !LogisticsUiFixture.worldScene() && !isConfiguredBlockScreenOpen(minecraft)) {
+            return;
+        }
+        if (!System.getProperty("trading_cells.performance.client.uiFixture", "").isEmpty()
+                && !LogisticsUiFixture.readyForCapture()) { return; }
         long now = System.nanoTime();
         if (startedAt == 0L) {
             startedAt = now;
@@ -126,10 +185,13 @@ public final class TradingCellsPerformanceClient {
         double measuredSeconds = measuredNanos / 1_000_000_000.0D;
         Minecraft minecraft = Minecraft.getInstance();
         String backend = RenderSystem.getDevice().getDeviceInfo().backendName().replace(',', ';');
-        String header = "scenario,backend,frames,measured_seconds,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,width,height";
+        String header = "scenario,backend,frames,measured_seconds,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,width,height,screen_class";
+        String screenClass = minecraft.gui.screen() == null
+                ? ""
+                : minecraft.gui.screen().getClass().getName().replace(',', ';');
         String row = String.format(
                 Locale.ROOT,
-                "%s,%s,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%d,%d",
+                "%s,%s,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%d,%d,%s",
                 scenario,
                 backend,
                 sampleCount,
@@ -140,7 +202,8 @@ public final class TradingCellsPerformanceClient {
                 percentile(ordered, 0.99D) / 1_000_000.0D,
                 sampleCount / measuredSeconds,
                 minecraft.getWindow().getWidth(),
-                minecraft.getWindow().getHeight()
+                minecraft.getWindow().getHeight(),
+                screenClass
         );
         try {
             Files.createDirectories(outputDirectory);
@@ -194,6 +257,100 @@ public final class TradingCellsPerformanceClient {
             throw new IllegalArgumentException(key + " must be a finite non-negative number");
         }
         return (long) (seconds * 1_000_000_000.0D);
+    }
+
+    private static int positiveIntProperty(String key, int fallback) {
+        int value = Integer.parseInt(System.getProperty(key, Integer.toString(fallback)));
+        if (value <= 0) {
+            throw new IllegalArgumentException(key + " must be a positive integer");
+        }
+        return value;
+    }
+
+    private void enforceWindowSize(Minecraft minecraft) {
+        if (!minecraft.getWindow().isFullscreen()
+                && (minecraft.getWindow().getWidth() != expectedWidth
+                || minecraft.getWindow().getHeight() != expectedHeight)) {
+            minecraft.getWindow().setWindowed(expectedWidth, expectedHeight);
+        }
+    }
+
+    private void openConfiguredBlock(Minecraft minecraft) {
+        if (LogisticsUiFixture.worldScene() && LogisticsUiFixture.readyForCapture()) { return; }
+        if (openBlock == null
+                || minecraft.level == null
+                || minecraft.player == null
+                || minecraft.gameMode == null
+                || minecraft.gui.screen() != null) {
+            return;
+        }
+        var chunk = minecraft.level.getChunk(
+                openBlock.getX() >> 4,
+                openBlock.getZ() >> 4,
+                ChunkStatus.FULL,
+                false
+        );
+        if (chunk == null || chunk.getBlockState(openBlock).isAir() && !LogisticsUiFixture.worldScene()) {
+            return;
+        }
+        long now = System.nanoTime();
+        if (firstOpenAttempt == 0L) {
+            firstOpenAttempt = now;
+        }
+        if (now - firstOpenAttempt > 30_000_000_000L) {
+            throw new IllegalStateException("Configured block menu did not open within 30 seconds: " + openBlock);
+        }
+        if (now - lastOpenAttempt < 1_000_000_000L) {
+            return;
+        }
+        lastOpenAttempt = now;
+        var server = minecraft.getSingleplayerServer();
+        if (server != null) {
+            var playerId = minecraft.player.getUUID();
+            server.execute(() -> {
+                var player = server.getPlayerList().getPlayer(playerId);
+                if (player == null || player.containerMenu != player.inventoryMenu
+                        || !LogisticsUiFixture.worldScene() && player.distanceToSqr(Vec3.atCenterOf(openBlock)) > 64) {
+                    return;
+                }
+                var level = (net.minecraft.server.level.ServerLevel) player.level();
+                if (!System.getProperty("trading_cells.performance.client.uiFixture", "").isEmpty()) {
+                    LogisticsUiFixture.prepare(player, openBlock);
+                    if (LogisticsUiFixture.worldScene()) { return; }
+                }
+                var loaded = level.getChunkSource().getChunkNow(openBlock.getX() >> 4, openBlock.getZ() >> 4);
+                if (loaded != null && net.neoforged.fml.ModList.get().isLoaded("trading_cells")
+                        && LogisticsUiFixture.openPipe(player, loaded.getBlockEntity(openBlock))) { return; }
+                if (loaded != null && loaded.getBlockEntity(openBlock) instanceof net.minecraft.world.MenuProvider menu) {
+                    player.openMenu(menu);
+                }
+            });
+            return;
+        }
+        minecraft.gameMode.useItemOn(
+                minecraft.player,
+                InteractionHand.MAIN_HAND,
+                new BlockHitResult(Vec3.atCenterOf(openBlock), Direction.UP, openBlock, false)
+        );
+    }
+
+    private static boolean isConfiguredBlockScreenOpen(Minecraft minecraft) {
+        return minecraft.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>;
+    }
+
+    private static BlockPos parseBlockPos(String value) {
+        if (value.isBlank()) {
+            return null;
+        }
+        String[] parts = value.split(",", -1);
+        if (parts.length != 3) {
+            throw new IllegalArgumentException(OPEN_BLOCK_PROPERTY + " must contain x,y,z");
+        }
+        return new BlockPos(
+                Integer.parseInt(parts[0]),
+                Integer.parseInt(parts[1]),
+                Integer.parseInt(parts[2])
+        );
     }
 
     private record CameraPose(Vec3 position, float yaw, float pitch) {

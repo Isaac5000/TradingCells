@@ -1,10 +1,11 @@
 {
   "mod_version": "1.0.0",
   "network_registration_version": "2",
+  "farmer_crop_schema_version": 1,
   "mob_farm_target_schema_version": 1,
   "mob_farm_catalog_protocol_version": 1,
-  "recipe_catalog_count": 91,
-  "recipe_catalog_sha256": "2BBD48BB43E5DA8F282B060DC32C132481217FCF4930530344FBAAD57F23AEC5",
+  "recipe_catalog_count": 140,
+  "recipe_catalog_sha256": "D34053445410568154FE1465CF63B0617624805E3D413E5EC3326A55D02E4187",
   "payload_ids": {
     "ArcaneInfuserTransferPayload": "arcane_infuser_transfer",
     "AutotraderMenuSyncPayload": "autotrader_menu_sync",
@@ -18,7 +19,11 @@
     "SelectAutotraderOfferPayload": "select_autotrader_offer",
     "SelectTradingCellOfferPayload": "select_trading_cell_offer",
     "TradingCellExperiencePayload": "trading_cell_experience",
-    "TradingCellMenuSyncPayload": "trading_cell_menu_sync"
+    "TradingCellMenuSyncPayload": "trading_cell_menu_sync",
+    "PipeConfigurationPayload": "pipe_configuration",
+    "NetworkTerminalActionPayload": "network_terminal_action",
+    "NetworkTerminalSyncPayload": "network_terminal_sync",
+    "NetworkCraftingSyncPayload": "network_crafting_sync"
   },
   "persistent_nbt_keys": {
     "feature/breeders/adapters/input/BreederBlockEntity.java": [
@@ -158,6 +163,24 @@
       "PendingLootReady",
       "PendingBatchStarted",
       "Enabled"
+    ],
+    "platform/neoforge/machine/PortableMachineBlockEntity.java": [
+      "MachineRedstoneMode"
+    ],
+    "feature/logistics/adapters/input/LogisticsPipeBlockEntity.java": [
+      "LogisticsSchemaVersion",
+      "LogisticsRevision",
+      "LogisticsFace"
+    ],
+    "feature/logistics/adapters/input/PipeFaceConfiguration.java": [
+      "SchemaVersion",
+      "Mode",
+      "ExplicitMode",
+      "PipeDisconnected",
+      "Priority",
+      "UpgradeTier",
+      "BareProfiles",
+      "UpgradeProfiles"
     ]
   }
 }

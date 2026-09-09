@@ -19,6 +19,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -108,7 +109,11 @@ public final class ConfiguredMobFarmBlockEntityRenderer implements BlockEntityRe
 
         Entity raider = entityCache.getOrCreateRaider(level, blockEntity.selectedTargetId());
         if (raider != null) {
-            state.raider = entityCache.getOrCreateRaiderRenderState(raider, side.getOpposite().toYRot());
+            state.raider = entityCache.getOrCreateRaiderRenderState(
+                    raider,
+                    side.getOpposite().toYRot(),
+                    usesSwimmingPose(blockEntity.selectedKind())
+            );
             state.raiderScale = fittedSpawnerEntityScale(raider)
                     * previewScaleMultiplier(blockEntity.selectedKind(), blockEntity.selectedTargetId());
             state.raiderY += previewYOffset(blockEntity.selectedKind());
@@ -244,6 +249,12 @@ public final class ConfiguredMobFarmBlockEntityRenderer implements BlockEntityRe
         return kind == ConfiguredMobFarmKind.GHAST ? GHAST_ENTITY_Y_OFFSET : 0.0D;
     }
 
+    private static boolean usesSwimmingPose(ConfiguredMobFarmKind kind) {
+        return kind == ConfiguredMobFarmKind.FISH
+                || kind == ConfiguredMobFarmKind.AQUATIC
+                || kind == ConfiguredMobFarmKind.AMPHIBIAN;
+    }
+
     @Override
     public @NonNull AABB getRenderBoundingBox(ConfiguredMobFarmBlockEntity blockEntity) {
         BlockPos pos = blockEntity.getBlockPos();
@@ -318,10 +329,13 @@ public final class ConfiguredMobFarmBlockEntityRenderer implements BlockEntityRe
             return cachedRaider;
         }
 
-        private EntityRenderState getOrCreateRaiderRenderState(Entity raider, float yaw) {
+        private EntityRenderState getOrCreateRaiderRenderState(Entity raider, float yaw, boolean submerged) {
             if (cachedRaiderRenderState == null || cachedRaiderYaw != yaw) {
                 orient(raider, yaw);
                 cachedRaiderRenderState = extractEntity(raider);
+                if (submerged && cachedRaiderRenderState instanceof LivingEntityRenderState livingState) {
+                    livingState.isInWater = true;
+                }
                 cachedRaiderYaw = yaw;
             }
             return cachedRaiderRenderState;

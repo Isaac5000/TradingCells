@@ -8,13 +8,17 @@ import com.cosmocraft.trading_cells.feature.ironfarm.domain.model.IronFarmCycle;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineInventoryDiagnostics;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -119,6 +123,60 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
     }
 
     @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineInventoryDiagnostics.OutputUsage output = MachineInventoryDiagnostics.outputUsage(
+                this,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT
+        );
+        MachineActivityController.Activity current = activity.activity();
+        MachineDiagnosticStatus diagnosticStatus = switch (current) {
+            case ACTIVE -> MachineDiagnosticStatus.RUNNING;
+            case BLOCKED -> MachineDiagnosticStatus.BLOCKED;
+            case INACTIVE -> MachineDiagnosticStatus.INACTIVE;
+        };
+        String reason = current == MachineActivityController.Activity.BLOCKED
+                ? "output_full"
+                : current == MachineActivityController.Activity.INACTIVE && villagerCount() == 0
+                        ? "worker_required"
+                        : MachineDiagnosticSnapshot.NONE;
+        return applyRedstonePause(new MachineDiagnosticSnapshot(
+                diagnosticStatus,
+                reason,
+                cycleTicks,
+                ironFarmService.cycle().cycleTicks(),
+                0,
+                output.used(),
+                output.capacity()
+        ));
+    }
+
+    @Override
+    public CompoundTag exportMachineConfiguration() {
+        CompoundTag configuration = super.exportMachineConfiguration();
+        configuration.putBoolean(FLOWERS_ENABLED_TAG, flowersEnabled);
+        return configuration;
+    }
+
+    @Override
+    public boolean canApplyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        return super.canApplyMachineConfiguration(schemaVersion, configuration)
+                && configuration.contains(FLOWERS_ENABLED_TAG);
+    }
+
+    @Override
+    public void applyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        if (!canApplyMachineConfiguration(schemaVersion, configuration)) {
+            return;
+        }
+        super.applyMachineConfiguration(schemaVersion, configuration);
+        flowersEnabled = configuration.getBooleanOr(FLOWERS_ENABLED_TAG, true);
+        cachedOutputMultiplier = -1;
+        activity.wake();
+        markChangedAndSync();
+    }
+
+    @Override
     public void processTick() {
         if (level == null || level.isClientSide()) {
             return;
@@ -217,6 +275,16 @@ public final class IronFarmBlockEntity extends PortableMachineBlockEntity implem
         items.set(slot, inserted);
         invalidateVillagerCount(slot);
         markChangedAndSync();
+    }
+
+    @Override
+    public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
+        if (insideTransaction && isOutputSlot(slot)) {
+            // Capability rollback must restore outputs even though external insertion is forbidden.
+            items.set(slot, stack);
+        } else {
+            setItem(slot, stack);
+        }
     }
 
     @Override

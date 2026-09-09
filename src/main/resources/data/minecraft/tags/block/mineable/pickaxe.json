@@ -25,6 +25,13 @@
     "trading_cells:shulker_farm",
     "trading_cells:breeze_farm",
     "trading_cells:phantom_farm",
+    "trading_cells:livestock_farm",
+    "trading_cells:fish_farm",
+    "trading_cells:aquatic_farm",
+    "trading_cells:mount_farm",
+    "trading_cells:amphibian_farm",
+    "trading_cells:bee_farm",
+    "trading_cells:creaking_farm",
     "trading_cells:converter",
     "trading_cells:netherite_piglin_bartering_cell",
     "trading_cells:quarry",
@@ -32,6 +39,13 @@
     "trading_cells:experience_storage",
     "trading_cells:arcane_infuser",
     "#trading_cells:silk_touch_two/pickaxe",
-    "#trading_cells:silk_touch_two/general"
+    "#trading_cells:silk_touch_two/general",
+    "trading_cells:item_pipe",
+    "trading_cells:fluid_pipe",
+    "trading_cells:gas_pipe",
+    "trading_cells:energy_pipe",
+    "trading_cells:universal_pipe",
+    "trading_cells:network_terminal",
+    "trading_cells:network_crafting_terminal"
   ]
 }

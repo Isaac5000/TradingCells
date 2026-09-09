@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "pattern": [
+    " II",
+    " CI",
+    "S  "
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "C": "minecraft:copper_ingot",
+    "S": "minecraft:stick"
+  },
+  "result": {
+    "id": "trading_cells:pipe_wrench",
+    "count": 1
+  }
+}

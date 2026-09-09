@@ -11,6 +11,13 @@ import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmWeaponSnaps
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineInventoryDiagnostics;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmCatalog;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmMachineConfiguration;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
+import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandler;
+import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandlers;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import java.util.ArrayList;
@@ -23,6 +30,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -43,6 +51,8 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
 public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity implements WorldlyContainer, MenuProvider {
     public static final int WORKER_SLOT = 0;
@@ -73,6 +83,7 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
     private static final int[] INPUT_SLOTS = new int[]{WORKER_SLOT, SWORD_SLOT};
     private static final int[] OUTPUT_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, CONTAINER_SIZE).toArray();
 
+    private static final int[] AUTOMATION_SLOTS = java.util.stream.IntStream.range(0, CONTAINER_SIZE).toArray();
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private final SkeletonFarmUseCase rules = FeatureComposition.skeletonFarm();
     private final MachineActivityController activity = new MachineActivityController();
@@ -83,6 +94,11 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
     private int cycleTicks;
     private int cycleDurationTicks = rules.effectiveCycleTicks(0.0D, 0);
     private int storedExperience;
+    private final ExperienceFluidHandler experienceFluidHandler = ExperienceFluidHandlers.source(
+            () -> storedExperience,
+            value -> storedExperience = Math.max(0, value),
+            this::markChangedAndSync
+    );
     private boolean enabled = true;
     private boolean hunting;
     private List<ItemStack> pendingLoot = List.of();
@@ -162,7 +178,90 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         return cycleDurationTicks;
     }
 
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineInventoryDiagnostics.OutputUsage output = MachineInventoryDiagnostics.outputUsage(
+                this,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT
+        );
+        MachineDiagnosticStatus diagnosticStatus;
+        String reason;
+        if (!enabled) {
+            diagnosticStatus = MachineDiagnosticStatus.PAUSED;
+            reason = "manual";
+        } else if (!isAdultVillager(items.get(WORKER_SLOT))) {
+            diagnosticStatus = MachineDiagnosticStatus.INACTIVE;
+            reason = "worker_required";
+        } else if (!MobFarmSwordTierCatalog.isSupported(items.get(SWORD_SLOT))) {
+            diagnosticStatus = MachineDiagnosticStatus.INACTIVE;
+            reason = "tool_required";
+        } else if (hasGeneratableLoot() && output.full()) {
+            diagnosticStatus = MachineDiagnosticStatus.BLOCKED;
+            reason = "output_full";
+        } else {
+            diagnosticStatus = MachineDiagnosticStatus.RUNNING;
+            reason = MachineDiagnosticSnapshot.NONE;
+        }
+        return applyRedstonePause(new MachineDiagnosticSnapshot(
+                diagnosticStatus,
+                reason,
+                cycleTicks,
+                cycleDurationTicks,
+                storedExperience,
+                output.used(),
+                output.capacity()
+        ));
+    }
+
+    @Override
+    public CompoundTag exportMachineConfiguration() {
+        return MobFarmMachineConfiguration.export(
+                super.exportMachineConfiguration(),
+                targetId,
+                enabledLootMask,
+                enabled,
+                disabledDynamicLoot
+        );
+    }
+
+    @Override
+    public boolean canApplyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        return super.canApplyMachineConfiguration(schemaVersion, configuration)
+                && MobFarmMachineConfiguration.parse(
+                        configuration,
+                        MobFarmCatalog.Family.SKELETON,
+                        SkeletonFarmLoot.allEnabledMask()
+                ).isPresent();
+    }
+
+    @Override
+    public void applyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        if (!canApplyMachineConfiguration(schemaVersion, configuration)) {
+            return;
+        }
+        MobFarmMachineConfiguration.Settings settings = MobFarmMachineConfiguration.parse(
+                configuration,
+                MobFarmCatalog.Family.SKELETON,
+                SkeletonFarmLoot.allEnabledMask()
+        ).orElseThrow();
+        super.applyMachineConfiguration(schemaVersion, configuration);
+        targetId = settings.target();
+        kind = SkeletonFarmTargetCatalog.staticKind(targetId);
+        enabledLootMask = settings.lootMask();
+        enabled = settings.enabled();
+        disabledDynamicLoot.clear();
+        disabledDynamicLoot.addAll(settings.disabledLoot());
+        cycleTicks = 0;
+        hunting = false;
+        clearPendingLoot();
+        swordCacheInitialized = false;
+        activity.wake();
+        markChangedAndSync();
+    }
+
     public void extractExperience(Player player) {
+        // Player extraction and network extraction share the same stored value.
         if (level == null || level.isClientSide() || storedExperience <= 0) {
             return;
         }
@@ -170,6 +269,10 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
         storedExperience = 0;
         player.giveExperiencePoints(extracted);
         markChangedAndSync();
+    }
+
+    public ResourceHandler<FluidResource> experienceFluidHandler() {
+        return experienceFluidHandler;
     }
 
     public void toggleEnabled() {
@@ -339,6 +442,16 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
     }
 
     @Override
+    public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
+        if (insideTransaction && isOutputSlot(slot)) {
+            // Capability rollback must restore outputs even though external insertion is forbidden.
+            items.set(slot, stack);
+        } else {
+            setItem(slot, stack);
+        }
+    }
+
+    @Override
     public boolean stillValid(@NonNull Player player) {
         return Container.stillValidBlockEntity(this, player);
     }
@@ -360,7 +473,7 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
 
     @Override
     public int @NonNull [] getSlotsForFace(@NonNull Direction direction) {
-        return direction == Direction.DOWN ? OUTPUT_SLOTS : INPUT_SLOTS;
+        return direction == Direction.DOWN ? OUTPUT_SLOTS : AUTOMATION_SLOTS;
     }
 
     @Override
@@ -370,7 +483,7 @@ public final class SkeletonFarmBlockEntity extends PortableMachineBlockEntity im
 
     @Override
     public boolean canTakeItemThroughFace(int slot, @NonNull ItemStack stack, @NonNull Direction direction) {
-        return direction == Direction.DOWN && isOutputSlot(slot);
+        return isOutputSlot(slot);
     }
 
     @Override

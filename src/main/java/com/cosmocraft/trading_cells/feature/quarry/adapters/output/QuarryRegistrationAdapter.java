@@ -22,7 +22,7 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.transfer.item.WorldlyContainerWrapper;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineItemHandler;
 
 public final class QuarryRegistrationAdapter {
     public static final String QUARRY_ID = "quarry";
@@ -79,12 +79,12 @@ public final class QuarryRegistrationAdapter {
         event.registerBlockEntity(
                 Capabilities.Item.BLOCK,
                 QUARRY_BLOCK_ENTITY.get(),
-                WorldlyContainerWrapper::new
+                PortableMachineItemHandler::new
         );
         event.registerBlockEntity(
                 Capabilities.Item.BLOCK,
                 PIGLIN_QUARRY_BLOCK_ENTITY.get(),
-                WorldlyContainerWrapper::new
+                PortableMachineItemHandler::new
         );
     }
 

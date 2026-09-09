@@ -33,7 +33,7 @@ Todas las rutas Java siguientes parten de
 | Comercio | `feature/trader/` | Trader, Autotrader y trueque de piglins |
 | Criaderos | `feature/breeders/` | variantes aldeano/piglin |
 | Incubadoras | `feature/incubators/` | crecimiento de capturas |
-| Cultivos | `feature/farmer/` | `FarmerCropStackAdapter`, Fortuna, soportes y render |
+| Cultivos | `feature/farmer/` | `FarmerCropStackAdapter`, Fortuna, soportes, render y `docs/FARMER_CROP_DATAPACKS.md` |
 | Canteras | `feature/quarry/` | catalogo, herramientas y minado profundo |
 | Conversion | `feature/converter/` | infeccion, curacion, ofertas y descuentos |
 | Hierro | `feature/ironfarm/` | ciclos, salidas y multiplicadores |
@@ -41,9 +41,11 @@ Todas las rutas Java siguientes parten de
 | Zombis | `feature/zombiefarm/` | `docs/ZOMBIE_FARM.md` |
 | Saqueadores | `feature/raiderfarm/` | objetivos, estandarte ominoso, botin y XP |
 | Creepers | `feature/creeperfarm/` | normal/cargado, botin y Fragmentos de la Tormenta |
-| Granjas configurables | `feature/configuredmobfarm/` | diez familias; `docs/MOB_FARM_ROADMAP.md` |
+| Granjas configurables | `feature/configuredmobfarm/` | diecisiete familias; `docs/MOB_FARM_ROADMAP.md` |
 | Experiencia | `feature/experience/` | almacenamiento, calculo y fluido XP |
+| Logistica | `feature/logistics/` | tuberias, mejoras, reglas, canales, marcador y terminales; `docs/LOGISTICS.md` |
 | Infusor | `feature/infusion/` | `ArcaneInfuserBlockEntity`; `docs/ARCANE_INFUSER.md` |
+| Control de maquinas | `feature/machinecontrol/`, `platform/neoforge/machine/` | contratos internos y redstone; objeto Configurador retirado |
 | Toque de Seda II | `feature/silktouch/` | `SilkTouchTwo*`, `PreservedSpawner*`; `docs/SILK_TOUCH_II.md` |
 
 La estructura de capas y las dependencias permitidas estan en `ARCHITECTURE.md`.
@@ -52,7 +54,7 @@ La estructura de capas y las dependencias permitidas estan en `ARCHITECTURE.md`.
 
 | Responsabilidad | Ruta |
 | --- | --- |
-| Maquinas, persistencia y actividad | `platform/neoforge/machine/` |
+| Maquinas, persistencia, diagnostico y configuracion | `platform/neoforge/machine/`, `docs/MACHINE_INFRASTRUCTURE.md` |
 | Menus y dibujo comun | `platform/neoforge/menu/`, `platform/neoforge/client/screen/` |
 | REI opcional | `platform/neoforge/integration/rei/` |
 | Jade opcional | `platform/neoforge/integration/jade/` |
@@ -86,6 +88,7 @@ La estructura de capas y las dependencias permitidas estan en `ARCHITECTURE.md`.
 | Arquitectura Java | `checkArchitecture` |
 | Renderizado | `checkGraphicsBackendIndependence` y matriz de `docs/GRAPHICS_BACKENDS.md` |
 | Recursos, modelos o recetas | `checkProjectResources` y generador afectado con `--check` |
+| Logistica | `checkLogisticsResources`; GameTests `feature/logistics/` |
 | Persistencia o mecanica | suite GameTest afectada y `runGameTestServer` |
 | Cambio normal completo | `check` |
 | Candidata publicable | `clean releaseCheck` |

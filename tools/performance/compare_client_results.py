@@ -103,7 +103,7 @@ def compare_images(
                                 f"{before_image.size}/{after_image.size}"
                             )
                         difference = ImageChops.difference(before_image, after_image)
-                        pixels = list(difference.getdata())
+                        pixels = list(difference.get_flattened_data())
                         changed = sum(
                             1 for pixel in pixels if max(pixel) > maximum_channel_delta
                         )

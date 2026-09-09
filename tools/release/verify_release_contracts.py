@@ -81,6 +81,16 @@ def main() -> int:
             f"expected {contract['mob_farm_target_schema_version']}, got {actual_schema}"
         )
 
+    crop_schema_source = (
+        JAVA_ROOT / "feature/farmer/adapters/input/FarmerCropReloadListener.java"
+    ).read_text(encoding="utf-8")
+    actual_crop_schema = integer_constant(crop_schema_source, "SCHEMA_VERSION")
+    if actual_crop_schema != contract["farmer_crop_schema_version"]:
+        errors.append(
+            "farmer_crop schema changed: "
+            f"expected {contract['farmer_crop_schema_version']}, got {actual_crop_schema}"
+        )
+
     catalog_source = (NETWORK_ROOT / "MobFarmCatalogSyncPayload.java").read_text(encoding="utf-8")
     actual_protocol = integer_constant(catalog_source, "CURRENT_PROTOCOL_VERSION")
     if actual_protocol != contract["mob_farm_catalog_protocol_version"]:

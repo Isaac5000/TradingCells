@@ -9,7 +9,10 @@ import com.cosmocraft.trading_cells.feature.trader.domain.model.PiglinBarterCycl
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineInventoryDiagnostics;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import java.util.stream.IntStream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -230,6 +233,40 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
         return barterTicksRemaining > 0;
     }
 
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineInventoryDiagnostics.OutputUsage output = MachineInventoryDiagnostics.outputUsage(
+                this,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT
+        );
+        MachineActivityController.Activity current = activity.activity();
+        MachineDiagnosticStatus status = switch (current) {
+            case ACTIVE -> MachineDiagnosticStatus.RUNNING;
+            case BLOCKED -> MachineDiagnosticStatus.BLOCKED;
+            case INACTIVE -> MachineDiagnosticStatus.INACTIVE;
+        };
+        String reason;
+        if (current == MachineActivityController.Activity.BLOCKED) {
+            reason = "output_full";
+        } else if (!hasAdultPiglin()) {
+            reason = "worker_required";
+        } else if (findNextGoldSlot() < 0 && barterTicksRemaining <= 0) {
+            reason = "input_required";
+        } else {
+            reason = MachineDiagnosticSnapshot.NONE;
+        }
+        return applyRedstonePause(new MachineDiagnosticSnapshot(
+                status,
+                reason,
+                0,
+                0,
+                0,
+                output.used(),
+                output.capacity()
+        ));
+    }
+
     private boolean hasAdultPiglin() {
         return hasPiglin()
                 && storedPiglinData != null
@@ -365,6 +402,16 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
         items.set(slot, ItemStack.EMPTY);
         activity.wake();
         return removed;
+    }
+
+    @Override
+    public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
+        if (insideTransaction && isOutputSlot(slot)) {
+            // Rollback restores produced items without allowing external output insertion.
+            items.set(slot, stack);
+        } else {
+            setItem(slot, stack);
+        }
     }
 
     @Override

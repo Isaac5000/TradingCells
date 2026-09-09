@@ -31,7 +31,7 @@ import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.transfer.item.WorldlyContainerWrapper;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineItemHandler;
 
 public final class ArcaneInfuserRegistrationAdapter {
     public static final String ID = "arcane_infuser";
@@ -118,7 +118,7 @@ public final class ArcaneInfuserRegistrationAdapter {
         event.registerBlockEntity(
                 Capabilities.Item.BLOCK,
                 BLOCK_ENTITY.get(),
-                WorldlyContainerWrapper::new
+                PortableMachineItemHandler::new
         );
         event.registerBlockEntity(
                 Capabilities.Fluid.BLOCK,

@@ -8,16 +8,26 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 
 ## Estado actual
 
-- Version publica: `1.0.0` para Minecraft `26.2.0` y NeoForge `26.2.0.57`.
+- Version de desarrollo no publicada: `1.0.0` para Minecraft `26.2.0` y
+  NeoForge `26.2.0.57`.
 - Java 25 y Gradle Wrapper 9.5; `gradlew` esta registrado como ejecutable.
-- La validacion automatica mas reciente se documento el `2026-08-31` en
-  `docs/releases/1.0.0-validation.md`: dos JAR identicos y 26/26 GameTests. La
-  matriz manual y la CI del commit definitivo siguen abiertas.
-- Cambios recientes añadieron granjas de Saqueadores/Creepers y optimizaciones de
-  render y servidor. El arbol actual incorpora ademas diez familias configurables
-  y un libro de recetas propio para el Infusor; 26/26 GameTests pasan. Las bases
-  de Artropodos y Fantasmas usan musgo palido, el suelo de Slimes es opaco y el
-  render del Ghast dispone de un desplazamiento vertical propio.
+- La referencia reproducible anterior se documento el `2026-08-31` en
+  `docs/releases/1.0.0-validation.md`: dos JAR identicos con 26 GameTests. Es
+  evidencia historica anterior a los hitos actuales. El arbol de desarrollo del
+  `2026-09-09` pasa `clean releaseCheck`, incluido `check` y 93/93 GameTests.
+  Los terminales pasan clics reales y scroll en OpenGL/Vulkan con REI/Jade.
+  Evidencia y JAR de desarrollo en `docs/LOGISTICS.md`; la matriz manual,
+  reproducibilidad final y CI del commit definitivo siguen abiertas.
+- El arbol actual incorpora diecisiete familias configurables, el recetario del
+  Infusor, cultivos por datapack, diagnostico comun y modos de redstone persistentes.
+  El objeto Configurador se ha retirado por peticion expresa.
+  La sustitucion del Controlador y la red experimental de XP por logistica
+  universal esta en desarrollo; estado y validacion en `docs/LOGISTICS.md`.
+  Texturas de tuberias por tipo, uniones/animacion continuas, caras internas
+  omitidas y migracion a una mejora cerradas. Editor por niveles, reparto por
+  recurso, marcador de inventarios, reglas avanzadas y autocompletado acotado
+  implementados y comprobados con clics reales en OpenGL/Vulkan.
+  Pendientes: escala de redes, topologia compartida y memoria de canales.
 
 ## Arquitectura
 
@@ -63,23 +73,31 @@ responsables distintos.
 
 Las features registradas son `captures`, `combat`, `trader`, `breeders`,
 `incubators`, `farmer`, `quarry`, `converter`, `ironfarm`, `skeletonfarm`,
-`zombiefarm`, `raiderfarm`, `creeperfarm`, `experience`, `infusion` y `silktouch`.
+`zombiefarm`, `raiderfarm`, `creeperfarm`, `experience`, `logistics`,
+  `infusion` y `silktouch`; `machinecontrol` conserva contratos internos.
 `configuredmobfarm` implementa por composicion Artropodos, Slimes, Guardianes,
-Piglins, Blazes, Ghasts, Endermen, Shulkers, Breezes y Phantoms.
+Piglins, Blazes, Ghasts, Endermen, Shulkers, Breezes, Phantoms, Animales y Peces.
+Tambien implementa Acuaticas, Monturas, Anfibios, Abejas y Creakings.
 `platform/neoforge/mobfarm` mantiene el catalogo dinamico comun; las cuatro
-familias historicas conservan su implementacion y las diez nuevas comparten una
-Block Entity configurable sin compartir IDs persistentes.
+familias historicas conservan su implementacion y las diecisiete configurables
+comparten una Block Entity sin compartir IDs persistentes.
 
 ## Funcionalidades implementadas
 
 - Captura, liberacion, cria, incubacion, comercio manual/automatico y trueque.
 - Cultivos y Canteras para aldeanos y piglins con herramientas, Fortuna/Eficiencia,
-  catalogos dinamicos, salidas parciales y persistencia.
+  catalogos dinamicos, salidas parciales y persistencia. Los cultivos aceptan
+  descriptores aditivos `schema_version: 1` mediante snapshots inmutables.
 - Conversion de aldeanos, Granja de Hierro y granjas de Esqueletos, Zombis,
   Saqueadores, Creepers, Artropodos, Slimes, Guardianes, Piglins, Blazes, Ghasts,
-  Endermen, Shulkers, Breezes y Phantoms con filtros, objetivos ampliables y XP.
+  Endermen, Shulkers, Breezes, Phantoms, Animales, Peces, Acuaticas, Monturas,
+  Anfibios, Abejas y Creakings con filtros, objetivos ampliables y XP. Los Vexes
+  forman parte de Saqueadores.
 - Almacen y fluido de XP, Infusor Arcano con recetario categorizado y recetas
   posicionales dispersas, y encantamientos propios.
+- Tres modos de redstone y contratos internos de configuracion. La logistica conserva
+  capacidades de XP por fluido, sin distribuidor ni tuberia exclusiva de XP.
+  Sus tuberias no cargan chunks ni dependen de redstone.
 - Toque de Seda II sobre el encantamiento vanilla, bloques especiales, generadores
   preservados, pruebas/Arcas repetibles y control persistente por redstone.
 - Integraciones opcionales REI y Jade; clientes OpenGL y Vulkan.
@@ -100,6 +118,9 @@ Block Entity configurable sin compartir IDs persistentes.
 - El render usa abstracciones Minecraft/Blaze3D. No hay ramas OpenGL/Vulkan.
 - Los GameTests verifican contratos observables y se distribuyen por feature; no
   deben acoplarse a metodos internos que puedan moverse entre versiones.
+- Las veintiuna granjas de entidades exponen automatizacion real: entrada desde
+  arriba y laterales y extraccion de salidas desde cualquier cara. La restauracion
+  transaccional de salidas no permite inserciones externas en ellas.
 - Las optimizaciones se aceptan desde 3 % local o 10 % estructural, sin regresion
   primaria superior al 1 % y con plantilla identica.
 
@@ -205,11 +226,25 @@ Control rapido de tooling: `python tools/check_portability.py`. Evidencia final:
 - Ejecutar y adjuntar `docs/RELEASE_CHECKLIST.md` antes de publicar.
 - Repetir dos `clean releaseCheck`, comparar JAR y registrar nueva evidencia.
 - Ejecutar las plantillas de rendimiento activas, bloqueadas, automatizadas,
-  multijugador, granjas y REI antes de una optimizacion estructural.
+  multijugador, granjas y REI antes de otra optimizacion estructural. Ya existen
+  referencias reales para 1.024 maquinas diagnosticadas y una red de 1.024 tubos.
 - Futuras mecanicas estan aisladas en `docs/ROADMAP.md`.
 
 ## Ultimos cambios relevantes
 
+- `2026-09-09`: tapas negras estaticas en conexiones a maquinas, arrastre completo
+  de mejoras sin bloquear clics vacios/llenos y texto protegido frente a atajos de
+  inventario. XP bidireccional por las seis caras verificado con tuberias reales.
+  `clean releaseCheck` con 93 GameTests; capturas OpenGL/Vulkan en `docs/LOGISTICS.md`.
+- `2026-09-08`: una mejora por cara con perfil propio y funciones acumulativas;
+  cuatro modos de reparto (items cercano, resto equitativo por defecto), reglas
+  avanzadas y marcador de inventarios; editor y autocompletado con memoria acotada
+  por consulta. `clean releaseCheck` con 92 GameTests; rendimiento extremo pendiente.
+- `2026-09-04`: diagnostico comun, Controlador, Configurador, redstone, red de XP,
+  cinco familias configurables nuevas y Vexes; 47 GameTests y baselines reales de
+  1.024 bloques.
+- `2026-09-02`: Animales y Peces amplian a doce las familias configurables, con
+  once objetivos vanilla, tags dinamicos y recetas de Infusor.
 - `2026-08-30`: diez familias configurables de granjas, recetas y Spawn Eggs;
   recetario lila del Infusor con colocacion exacta; inventario futuro de criaturas.
 - `2026-08-29`: herramientas de rendimiento portables, control automatico de

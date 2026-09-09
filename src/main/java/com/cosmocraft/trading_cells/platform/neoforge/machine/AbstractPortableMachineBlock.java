@@ -69,6 +69,17 @@ public abstract class AbstractPortableMachineBlock<T extends PortableMachineBloc
     }
 
     @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos, Direction direction) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        return blockEntity instanceof PortableMachineBlockEntity machine ? machine.comparatorOutput() : 0;
+    }
+
+    @Override
     protected boolean propagatesSkylightDown(BlockState state) {
         return true;
     }
@@ -112,7 +123,7 @@ public abstract class AbstractPortableMachineBlock<T extends PortableMachineBloc
             return null;
         }
         return createTickerHelper(type, machineType(), (_, _, _, machine) ->
-                machine.processTick()
+                machine.processServerTick()
         );
     }
 

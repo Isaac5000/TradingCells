@@ -918,8 +918,46 @@ public final class TradingCellsReiDisplays {
             case SHULKER -> items.add(Items.SHULKER_SHELL);
             case BREEZE -> items.add(Items.BREEZE_ROD);
             case PHANTOM -> items.add(Items.PHANTOM_MEMBRANE);
+            case LIVESTOCK -> {
+                switch (targetPath) {
+                    case "cow", "mooshroom" -> {
+                        items.add(Items.BEEF);
+                        items.add(Items.LEATHER);
+                    }
+                    case "sheep" -> {
+                        items.add(Items.MUTTON);
+                    }
+                    case "pig" -> items.add(Items.PORKCHOP);
+                    case "chicken" -> {
+                        items.add(Items.CHICKEN);
+                        items.add(Items.FEATHER);
+                    }
+                    case "rabbit" -> {
+                        items.add(Items.RABBIT);
+                        items.add(Items.RABBIT_HIDE);
+                        items.add(Items.RABBIT_FOOT);
+                    }
+                    default -> {
+                        // Datapack loot remains authoritative for goats and external targets.
+                    }
+                }
+            }
+            case FISH -> {
+                switch (targetPath) {
+                    case "cod" -> items.add(Items.COD);
+                    case "salmon" -> items.add(Items.SALMON);
+                    case "tropical_fish" -> items.add(Items.TROPICAL_FISH);
+                    case "pufferfish" -> items.add(Items.PUFFERFISH);
+                    default -> {
+                        // External targets expose their loaded loot through the catalog.
+                    }
+                }
+            }
             case PIGLIN -> {
                 // Equipment is inserted above; no guaranteed table drop exists.
+            }
+            case AQUATIC, MOUNT, AMPHIBIAN, BEE, CREAKING -> {
+                // Loaded loot tables remain authoritative for these families.
             }
         }
     }

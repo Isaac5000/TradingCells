@@ -13,6 +13,11 @@ mantiene su ritmo normal.
 | `timers.villagerInfiniteTrades` | `true` | booleano | Evita que se agoten ofertas en Trader y Autotrader. |
 | `production.farmerDamageHoes` | `true` | booleano | Permite que un ciclo completado desgaste la azada respetando Irrompibilidad y los encantamientos propios del mod. |
 | `production.ironFarmMultiplierBonus` | `0` | `0-1024` | Se suma a los multiplicadores base `x1`, `x2` y `x3`. |
+| `logistics.operationsPerDimensionTick` | `1024` | `1-1000000` | Presupuesto compartido de operaciones logisticas. |
+| `logistics.infiniteOperationsPerFaceTick` | `64` | `1-65536` | Presupuesto por cara con mejora de netherita; conserva la clave interna existente. |
+| `logistics.topologyVisitsPerTick` | `4096` | `64-1000000` | Visitas de topologia compartidas; el resto continua despues. |
+| `logistics.terminalEndpointsPerTick` | `256` | `16-65536` | Lecturas de capacidades compartidas entre terminales abiertos. |
+| `logistics.terminalRefreshTicks` | `20` | `1-1200` | Intervalo de actualizacion de terminales abiertos. |
 | `capturers.durability` | `10` | `1-32767` | Liberaciones máximas compartidas por capturadores normales de aldeanos y piglins. |
 
 Cambiar una opcion no altera IDs ni el formato NBT. Para comparar rendimiento o

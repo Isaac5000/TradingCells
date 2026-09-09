@@ -6,6 +6,12 @@ import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureCompositi
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.application.port.input.PiglinBarterUseCase;
 import com.cosmocraft.trading_cells.feature.trader.domain.model.PiglinBarterCycle;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineDiagnosticSource;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineConfigurationPort;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineRedstoneConfiguration;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineRedstoneMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -39,7 +45,8 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
-public class PiglinBarteringCellBlockEntity extends BlockEntity implements WorldlyContainer {
+public class PiglinBarteringCellBlockEntity extends BlockEntity
+        implements WorldlyContainer, MachineDiagnosticSource, MachineConfigurationPort {
     private static final String PIGLIN_DATA_TAG = "StoredPiglin";
     private static final String GOLD_BUFFER_TAG = "GoldBuffer";
     private static final String OUTPUT_BUFFER_TAG = "OutputBuffer";
@@ -56,12 +63,17 @@ public class PiglinBarteringCellBlockEntity extends BlockEntity implements World
     private ItemStack outputBuffer = ItemStack.EMPTY;
     private int barterTicksRemaining = 0;
     private @Nullable CompoundTag preparedBlockDropData;
+    private MachineRedstoneMode redstoneMode = MachineRedstoneMode.IGNORE;
+    private int lastComparatorOutput = -1;
 
     public PiglinBarteringCellBlockEntity(BlockPos pos, BlockState blockState) {
         super(TraderRegistrationAdapter.PIGLIN_BARTERING_CELL_BLOCK_ENTITY.get(), pos, blockState);
     }
 
     void processTick(Level level) {
+        if (isPausedByRedstone()) {
+            return;
+        }
         if (!needsServerTick()) {
             return;
         }
@@ -81,6 +93,59 @@ public class PiglinBarteringCellBlockEntity extends BlockEntity implements World
 
     public boolean isBartering() {
         return barterTicksRemaining > 0;
+    }
+
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineDiagnosticStatus status;
+        String reason;
+        if (isBartering()) {
+            status = MachineDiagnosticStatus.RUNNING;
+            reason = MachineDiagnosticSnapshot.NONE;
+        } else if (!hasPiglin()) {
+            status = MachineDiagnosticStatus.INACTIVE;
+            reason = "worker_required";
+        } else if (!outputBuffer.isEmpty()) {
+            status = MachineDiagnosticStatus.BLOCKED;
+            reason = "output_full";
+        } else if (goldBuffer.isEmpty() || !goldBuffer.is(Items.GOLD_INGOT)) {
+            status = MachineDiagnosticStatus.INACTIVE;
+            reason = "input_required";
+        } else {
+            status = MachineDiagnosticStatus.RUNNING;
+            reason = MachineDiagnosticSnapshot.NONE;
+        }
+        return MachineRedstoneConfiguration.applyPause(isPausedByRedstone(), new MachineDiagnosticSnapshot(
+                status,
+                reason,
+                0,
+                0,
+                0,
+                outputBuffer.getCount(),
+                outputBuffer.isEmpty() ? getMaxStackSize() : outputBuffer.getMaxStackSize()
+        ));
+    }
+
+    @Override
+    public CompoundTag exportMachineConfiguration() {
+        return MachineRedstoneConfiguration.export(redstoneMode);
+    }
+
+    @Override
+    public boolean canApplyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        return MachineRedstoneConfiguration.isValid(schemaVersion, configuration);
+    }
+
+    @Override
+    public void applyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        if (canApplyMachineConfiguration(schemaVersion, configuration)) {
+            redstoneMode = MachineRedstoneConfiguration.fromConfiguration(configuration);
+            markChangedAndSync();
+        }
+    }
+
+    public int comparatorOutput() {
+        return machineDiagnosticSnapshot().outputFull() ? 15 : 0;
     }
 
     private boolean needsServerTick() {
@@ -336,6 +401,7 @@ public class PiglinBarteringCellBlockEntity extends BlockEntity implements World
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
+        redstoneMode = MachineRedstoneConfiguration.load(input);
         storedPiglinData = input.read(PIGLIN_DATA_TAG, CompoundTag.CODEC).orElse(null);
         if (storedPiglinData == null || storedPiglinData.isEmpty()) {
             storedPiglinData = null;
@@ -357,6 +423,7 @@ public class PiglinBarteringCellBlockEntity extends BlockEntity implements World
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
+        MachineRedstoneConfiguration.save(output, redstoneMode);
         if (storedPiglinData != null && !storedPiglinData.isEmpty()) {
             output.store(PIGLIN_DATA_TAG, CompoundTag.CODEC, storedPiglinData);
         }
@@ -409,7 +476,16 @@ public class PiglinBarteringCellBlockEntity extends BlockEntity implements World
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+            int comparatorOutput = comparatorOutput();
+            if (comparatorOutput != lastComparatorOutput) {
+                lastComparatorOutput = comparatorOutput;
+                level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+            }
         }
+    }
+
+    private boolean isPausedByRedstone() {
+        return level != null && redstoneMode.pauses(level.hasNeighborSignal(worldPosition));
     }
 
     @Override

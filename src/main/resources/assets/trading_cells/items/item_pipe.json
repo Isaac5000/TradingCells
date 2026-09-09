@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "trading_cells:block/logistics/item_pipe/item_pipe_inventory"
+  }
+}

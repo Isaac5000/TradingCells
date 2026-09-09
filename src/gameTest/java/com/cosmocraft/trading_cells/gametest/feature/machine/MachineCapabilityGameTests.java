@@ -43,10 +43,10 @@ public final class MachineCapabilityGameTests {
                         GameTestFixtures.TEST_POS,
                         side
                 );
-                helper.assertValueEqual(
-                        handler.size(),
-                        quarry.getSlotsForFace(side).length,
-                        "Quarry item slots on " + side
+                helper.assertTrue(
+                        handler.size() >= Math.max(quarry.getSlotsForFace(side).length,
+                                quarry.getSlotsForFace(Direction.DOWN).length),
+                        "Quarry exposes sided inputs and production outputs on " + side
                 );
             }
         }

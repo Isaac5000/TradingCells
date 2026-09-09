@@ -2,6 +2,7 @@ package com.cosmocraft.trading_cells.gametest.feature.farmer;
 
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestFixtures;
+import com.cosmocraft.trading_cells.gametest.shared.BlockEntityStateFixtures;
 import java.util.List;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerCropStackAdapter;
 import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerBlockEntity;
@@ -28,9 +29,47 @@ public final class FarmerGameTests {
     public static List<GameTestCase> tests() {
         return List.of(
             new GameTestCase("villager_crop_catalog", 20, FarmerGameTests::villagerCropCatalog),
+            new GameTestCase("farmer_crop_datapack_snapshot", 20,
+                    FarmerGameTests::farmerCropDatapackSnapshot),
             new GameTestCase("farmer_partial_output_capacity", 20, FarmerGameTests::farmerPartialOutputCapacity),
             new GameTestCase("farmer_fortune_matrix", 20, FarmerGameTests::farmerFortuneMatrix)
         );
+    }
+
+    private static void farmerCropDatapackSnapshot(GameTestHelper helper) {
+        ItemStack deadBush = new ItemStack(Items.DEAD_BUSH);
+        helper.assertTrue(FarmerCropStackAdapter.isDynamicCrop(FarmerKind.VILLAGER, deadBush),
+                "The valid GameTest crop descriptor must be loaded");
+        helper.assertTrue(
+                FarmerCropStackAdapter.cropState(FarmerKind.VILLAGER, deadBush, 20, 100)
+                        .is(Blocks.DEAD_BUSH),
+                "The descriptor crop block must drive rendering"
+        );
+        helper.assertTrue(FarmerCropStackAdapter.soilState(FarmerKind.VILLAGER, deadBush).is(Blocks.SAND),
+                "The descriptor support block must drive the farm base");
+        List<ItemStack> drops = FarmerCropStackAdapter.dynamicHarvest(
+                helper.getLevel(),
+                helper.absolutePos(GameTestFixtures.TEST_POS),
+                FarmerKind.VILLAGER,
+                deadBush,
+                new ItemStack(Items.WOODEN_HOE),
+                3,
+                false
+        );
+        helper.assertTrue(drops.size() == 1
+                        && drops.getFirst().is(Items.STICK)
+                        && drops.getFirst().getCount() == 4,
+                "The descriptor output must apply Fortune without registry scans per cycle");
+        helper.assertTrue(FarmerCropStackAdapter.isSupported(FarmerKind.VILLAGER,
+                        new ItemStack(Items.WHEAT_SEEDS)),
+                "An invalid neighboring descriptor must not remove the vanilla fallback");
+        ItemStack deadFireCoral = new ItemStack(Items.DEAD_FIRE_CORAL);
+        helper.assertTrue(FarmerCropStackAdapter.isDynamicCrop(FarmerKind.PIGLIN, deadFireCoral),
+                "Piglin crop descriptors must be present in the startup snapshot");
+        helper.assertTrue(FarmerCropStackAdapter.soilState(FarmerKind.PIGLIN, deadFireCoral)
+                        .is(Blocks.BLACKSTONE),
+                "Piglin crop descriptors must preserve their support block");
+        helper.succeed();
     }
 
     private static void farmerFortuneMatrix(GameTestHelper helper) {
@@ -112,7 +151,7 @@ public final class FarmerGameTests {
         villagerFarmer.setItem(FarmerBlockEntity.WORKER_SLOT, GameTestFixtures.adultVillagerCapture(helper));
         villagerFarmer.setItem(FarmerBlockEntity.CROP_SLOT, new ItemStack(Items.WHEAT_SEEDS));
         villagerFarmer.setItem(FarmerBlockEntity.HOE_SLOT, new ItemStack(Items.WOODEN_HOE));
-        fillFarmerOutputsExceptFirst(villagerFarmer);
+        fillFarmerOutputsExceptFirst(helper, villagerFarmer);
 
         completeFarmerCycle(villagerFarmer);
         helper.assertTrue(
@@ -134,14 +173,14 @@ public final class FarmerGameTests {
                 "Villager Farmer must pause when no possible output can fit"
         );
         villagerFarmer.setItem(FarmerBlockEntity.CROP_SLOT, new ItemStack(Items.MANGROVE_PROPAGULE));
-        fillFarmerOutputsExceptFirst(villagerFarmer);
+        fillFarmerOutputsExceptFirst(helper, villagerFarmer);
         completeFarmerCycle(villagerFarmer);
         helper.assertTrue(
                 villagerFarmer.getItem(FarmerBlockEntity.FIRST_OUTPUT_SLOT).is(Items.MANGROVE_LOG),
                 "Dynamic villager crops must insert the part of their harvest that still fits"
         );
-        villagerFarmer.setItem(FarmerBlockEntity.CROP_SLOT, new ItemStack(Items.RED_MUSHROOM));
-        prepareEmptyDynamicHarvest(villagerFarmer);
+        villagerFarmer.setItem(FarmerBlockEntity.CROP_SLOT, new ItemStack(Items.SHORT_GRASS));
+        fillFarmerOutputs(helper, villagerFarmer);
         villagerFarmer.dataAccess().set(0, villagerFarmer.growthDurationTicks() - 1);
         villagerFarmer.processTick();
         helper.assertValueEqual(
@@ -155,7 +194,7 @@ public final class FarmerGameTests {
         piglinFarmer.setItem(FarmerBlockEntity.WORKER_SLOT, GameTestFixtures.adultPiglinCapture(helper));
         piglinFarmer.setItem(FarmerBlockEntity.CROP_SLOT, new ItemStack(Items.CRIMSON_FUNGUS));
         piglinFarmer.setItem(FarmerBlockEntity.HOE_SLOT, new ItemStack(Items.WOODEN_HOE));
-        fillFarmerOutputsExceptFirst(piglinFarmer);
+        fillFarmerOutputsExceptFirst(helper, piglinFarmer);
         completeFarmerCycle(piglinFarmer);
         helper.assertTrue(
                 piglinFarmer.getItem(FarmerBlockEntity.FIRST_OUTPUT_SLOT).is(Items.CRIMSON_STEM),
@@ -169,42 +208,33 @@ public final class FarmerGameTests {
         farmer.processTick();
     }
 
-    private static void fillFarmerOutputsExceptFirst(FarmerBlockEntity farmer) {
-        try {
-            var field = FarmerBlockEntity.class.getDeclaredField("items");
-            field.setAccessible(true);
-            List<ItemStack> items = (List<ItemStack>) field.get(farmer);
-            items.set(FarmerBlockEntity.FIRST_OUTPUT_SLOT, ItemStack.EMPTY);
-            for (int slot = FarmerBlockEntity.FIRST_OUTPUT_SLOT + 1;
-                 slot < FarmerBlockEntity.CONTAINER_SIZE;
-                 slot++) {
-                items.set(slot, new ItemStack(Items.COBBLESTONE, 64));
-            }
-        } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("Could not prepare Farmer outputs", exception);
-        }
+    private static void fillFarmerOutputsExceptFirst(GameTestHelper helper, FarmerBlockEntity farmer) {
+        BlockEntityStateFixtures.clearIndexedSlots(
+                helper,
+                farmer,
+                "Slot",
+                FarmerBlockEntity.FIRST_OUTPUT_SLOT,
+                1
+        );
+        BlockEntityStateFixtures.fillIndexedSlots(
+                helper,
+                farmer,
+                "Slot",
+                FarmerBlockEntity.FIRST_OUTPUT_SLOT + 1,
+                FarmerBlockEntity.OUTPUT_SLOT_COUNT - 1,
+                new ItemStack(Items.COBBLESTONE, 64)
+        );
     }
 
-    private static void prepareEmptyDynamicHarvest(FarmerBlockEntity farmer) {
-        try {
-            var itemsField = FarmerBlockEntity.class.getDeclaredField("items");
-            itemsField.setAccessible(true);
-            List<ItemStack> items = (List<ItemStack>) itemsField.get(farmer);
-            for (int slot = FarmerBlockEntity.FIRST_OUTPUT_SLOT;
-                 slot < FarmerBlockEntity.CONTAINER_SIZE;
-                 slot++) {
-                items.set(slot, new ItemStack(Items.COBBLESTONE, 64));
-            }
-
-            var harvestField = FarmerBlockEntity.class.getDeclaredField("pendingDynamicHarvest");
-            harvestField.setAccessible(true);
-            harvestField.set(farmer, List.of());
-            var readyField = FarmerBlockEntity.class.getDeclaredField("pendingDynamicHarvestReady");
-            readyField.setAccessible(true);
-            readyField.setBoolean(farmer, true);
-        } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("Could not prepare an empty dynamic harvest", exception);
-        }
+    private static void fillFarmerOutputs(GameTestHelper helper, FarmerBlockEntity farmer) {
+        BlockEntityStateFixtures.fillIndexedSlots(
+                helper,
+                farmer,
+                "Slot",
+                FarmerBlockEntity.FIRST_OUTPUT_SLOT,
+                FarmerBlockEntity.OUTPUT_SLOT_COUNT,
+                new ItemStack(Items.COBBLESTONE, 64)
+        );
     }
 
     private static void villagerCropCatalog(GameTestHelper helper) {

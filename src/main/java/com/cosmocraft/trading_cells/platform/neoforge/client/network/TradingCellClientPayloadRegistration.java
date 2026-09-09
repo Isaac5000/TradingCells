@@ -8,11 +8,14 @@ import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarm
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenu;
 import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmMenu;
+import com.cosmocraft.trading_cells.feature.logistics.adapters.input.NetworkTerminalMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellExperiencePayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.AutotraderMenuSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellMenuSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.QuarryCatalogSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.MobFarmCatalogSyncPayload;
+import com.cosmocraft.trading_cells.platform.neoforge.network.NetworkTerminalSyncPayload;
+import com.cosmocraft.trading_cells.platform.neoforge.network.NetworkCraftingSyncPayload;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 
 public final class TradingCellClientPayloadRegistration {
@@ -20,6 +23,20 @@ public final class TradingCellClientPayloadRegistration {
     }
 
     public static void onRegisterClientPayloads(RegisterClientPayloadHandlersEvent event) {
+        event.register(com.cosmocraft.trading_cells.platform.neoforge.network.PipeChannelSuggestionsPayload.PAYLOAD_TYPE, (payload, context) -> {
+            if (context.player().containerMenu instanceof com.cosmocraft.trading_cells.feature.logistics.adapters.input.PipeConfigurationMenu menu
+                    && menu.containerId == payload.containerId()) { menu.applyChannelSuggestions(payload); }
+        });
+        event.register(com.cosmocraft.trading_cells.platform.neoforge.network.PipeMenuSyncPayload.PAYLOAD_TYPE, (payload, context) -> {
+            if (context.player().containerMenu instanceof com.cosmocraft.trading_cells.feature.logistics.adapters.input.PipeConfigurationMenu menu
+                    && menu.containerId == payload.containerId()) { menu.applyServerState(payload); }
+        });
+        event.register(NetworkCraftingSyncPayload.PAYLOAD_TYPE, (payload, context) -> {
+            if (context.player().containerMenu instanceof NetworkTerminalMenu menu
+                    && menu.containerId == payload.containerId()) {
+                menu.applyCraftingState(payload);
+            }
+        });
         event.register(TradingCellExperiencePayload.PAYLOAD_TYPE, (payload, context) -> {
             TradingCellClientExperienceState.update(payload.containerId(), payload.experience());
             if (context.player().containerMenu instanceof VillagerTradingCellMenu menu
@@ -84,6 +101,17 @@ public final class TradingCellClientPayloadRegistration {
             } else if (context.player().containerMenu instanceof ConfiguredMobFarmMenu menu
                     && menu.containerId == payload.containerId()) {
                 menu.applyCatalogSnapshot(payload);
+            }
+        });
+        event.register(NetworkTerminalSyncPayload.PAYLOAD_TYPE, (payload, context) -> {
+            if (context.player().containerMenu instanceof NetworkTerminalMenu menu
+                    && menu.containerId == payload.containerId()) {
+                menu.applyServerState(payload);
+            }
+        });
+        event.register(com.cosmocraft.trading_cells.platform.neoforge.network.ConfiguredFarmLootPreviewPayload.PAYLOAD_TYPE, (payload, context) -> {
+            if (context.player().containerMenu instanceof ConfiguredMobFarmMenu menu && menu.containerId == payload.containerId()) {
+                menu.applyLootPreview(payload);
             }
         });
     }

@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "trading_cells:item/infinite_pipe_upgrade"
+      },
+      {
+        "type": "minecraft:special",
+        "base": "trading_cells:item/infinite_pipe_upgrade",
+        "model": {
+          "type": "trading_cells:upgrade_badge",
+          "badge": "pipe"
+        }
+      }
+    ]
+  }
+}

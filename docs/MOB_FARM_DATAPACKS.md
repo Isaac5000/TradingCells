@@ -33,7 +33,11 @@ data/<namespace>/trading_cells/mob_farm_target/<id>.json
   `trading_cells:guardian`, `trading_cells:piglin`,
   `trading_cells:blaze`, `trading_cells:ghast`,
   `trading_cells:enderman`, `trading_cells:shulker`,
-  `trading_cells:breeze` or `trading_cells:phantom`.
+  `trading_cells:breeze`, `trading_cells:phantom`,
+  `trading_cells:livestock`, `trading_cells:fish`,
+  `trading_cells:aquatic`, `trading_cells:mount`,
+  `trading_cells:amphibian`, `trading_cells:bee` or
+  `trading_cells:creaking`.
 - `entity_type`: registered entity used by the target.
 - `generator_item`: item shown as the target generator/icon.
 - `order`: ascending selector order; ties use the entity identifier.

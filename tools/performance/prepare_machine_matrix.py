@@ -5,11 +5,15 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import re
 import shutil
 
 from run_server_benchmark import free_tcp_port, prepare_template, read_gradle_properties
 from template_contract import scenario_definition, template_fingerprint, write_manifest
 from platform_tools import configure_utf8_stdio
+
+
+IDENTIFIER_PATTERN = re.compile(r"^[a-z0-9_.-]+:[a-z0-9_./-]+$")
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,6 +30,15 @@ def parse_args() -> argparse.Namespace:
         metavar=("X", "Y", "Z"),
         required=True,
         help="Configured source Block Entity. Repeat to create a mixed matrix.",
+    )
+    parser.add_argument(
+        "--target-block",
+        action="append",
+        default=[],
+        help=(
+            "Optional replacement block for each --source. The preparer keeps the "
+            "source worker and sword while creating a real instance of this farm variant."
+        ),
     )
     parser.add_argument("--origin", nargs=3, type=int, default=(-213, -60, -212))
     parser.add_argument("--size", nargs=3, type=int, default=(9, 5, 9), metavar=("X", "Y", "Z"))
@@ -45,6 +58,20 @@ def clone_command(source: tuple[int, int, int], destination: tuple[int, int, int
     return f"clone {sx} {sy} {sz} {sx} {sy} {sz} {dx} {dy} {dz} replace force"
 
 
+def replacement_commands(
+    source: tuple[int, int, int],
+    destination: tuple[int, int, int],
+    block_id: str,
+) -> list[str]:
+    sx, sy, sz = source
+    dx, dy, dz = destination
+    return [
+        f"setblock {dx} {dy} {dz} {block_id}",
+        f"item replace block {dx} {dy} {dz} container.0 from block {sx} {sy} {sz} container.0",
+        f"item replace block {dx} {dy} {dz} container.1 from block {sx} {sy} {sz} container.1",
+    ]
+
+
 def matrix_commands(args: argparse.Namespace) -> list[str]:
     origin_x, origin_y, origin_z = args.origin
     size_x, size_y, size_z = args.size
@@ -52,6 +79,11 @@ def matrix_commands(args: argparse.Namespace) -> list[str]:
         raise ValueError("Matrix dimensions must be positive")
 
     sources = [tuple(value) for value in args.source]
+    replacements = list(args.target_block)
+    if replacements and len(replacements) != len(sources):
+        raise ValueError("Repeat --target-block once for every --source, or omit it entirely")
+    if any(not IDENTIFIER_PATTERN.fullmatch(block_id) for block_id in replacements):
+        raise ValueError("Each --target-block must be a namespaced Minecraft identifier")
     stage_origin = (origin_x - 32, origin_y, origin_z - 32)
     stages = [
         (stage_origin[0] + index, stage_origin[1], stage_origin[2])
@@ -83,7 +115,11 @@ def matrix_commands(args: argparse.Namespace) -> list[str]:
                     origin_y + offset_y,
                     origin_z + offset_z,
                 )
-                commands.append(clone_command(stages[index % len(stages)], destination))
+                source_index = index % len(stages)
+                stage = stages[source_index]
+                commands.append(clone_command(stage, destination))
+                if replacements:
+                    commands.extend(replacement_commands(stage, destination, replacements[source_index]))
                 index += 1
     commands.extend(args.setup_command)
     commands.extend(f"setblock {x} {y} {z} minecraft:air" for x, y, z in stages)

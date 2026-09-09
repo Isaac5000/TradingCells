@@ -12,7 +12,7 @@ import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellExperie
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellMenuSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.trading.MerchantOfferComparator;
 import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandler;
-import com.cosmocraft.trading_cells.platform.neoforge.registration.ExperienceFluidRegistration;
+import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandlers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
@@ -42,6 +42,9 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineDiagnosticSource;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
@@ -58,7 +61,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - Minecraft fixes this hierarchy and BlockEntity uses identity, not value-based equals.
+public class VillagerTradingCellBlockEntity extends BlockEntity implements MachineDiagnosticSource { // NOSONAR - Minecraft fixes this hierarchy and BlockEntity uses identity, not value-based equals.
     private static final String CURE_DISCOUNT_TAG = "TradingCellsCureDiscount";
     private static final String LEGACY_VILLAGER_DATA_TAG = "StoredVillager";
     private static final String ENTITY_KIND_TAG = "StoredEntityKind";
@@ -78,12 +81,9 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
     private static final Map<UUID, GlobalPos> OPEN_TRADING_CELLS_BY_PLAYER = new HashMap<>();
 
     private final VillagerTraderUseCase villagerTradeService = FeatureComposition.villagerTrader();
-    private final ExperienceFluidHandler experienceFluidHandler = new ExperienceFluidHandler(
-            () -> FluidResource.of(ExperienceFluidRegistration.SOURCE.get()),
+    private final ExperienceFluidHandler experienceFluidHandler = ExperienceFluidHandlers.source(
             this::getStoredExperienceForFluid,
             this::setStoredExperienceFromFluid,
-            () -> Integer.MAX_VALUE,
-            false,
             this::markExperienceFluidChanged
     );
     private @Nullable StoredEntityKind storedEntityKind;
@@ -179,6 +179,19 @@ public class VillagerTradingCellBlockEntity extends BlockEntity { // NOSONAR - M
 
     public int storedExperience() {
         return storedExperience;
+    }
+
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        return new MachineDiagnosticSnapshot(
+                hasStoredEntity() ? MachineDiagnosticStatus.INACTIVE : MachineDiagnosticStatus.BLOCKED,
+                hasStoredEntity() ? MachineDiagnosticSnapshot.NONE : "worker_required",
+                0,
+                0,
+                storedExperience,
+                0,
+                0
+        );
     }
 
     public boolean hasVillager() {

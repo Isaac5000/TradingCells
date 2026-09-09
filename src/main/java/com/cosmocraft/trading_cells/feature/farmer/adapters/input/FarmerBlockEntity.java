@@ -10,8 +10,11 @@ import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKin
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineInventoryDiagnostics;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import java.util.List;
 import java.util.stream.IntStream;
 import net.minecraft.core.BlockPos;
@@ -68,6 +71,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
     private FarmerCrop cachedCrop = FarmerCrop.NONE;
     private boolean cachedDynamicCrop;
     private boolean cropCacheInitialized;
+    private int cachedCropCatalogRevision = -1;
     private ItemStack cachedHoe = ItemStack.EMPTY;
     private double cachedHoeSpeed;
     private double cachedHoeTierPosition;
@@ -139,6 +143,42 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
     }
 
     @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineInventoryDiagnostics.OutputUsage output = MachineInventoryDiagnostics.outputUsage(
+                this,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT
+        );
+        MachineActivityController.Activity current = activity.activity();
+        MachineDiagnosticStatus diagnosticStatus = switch (current) {
+            case ACTIVE -> MachineDiagnosticStatus.RUNNING;
+            case BLOCKED -> MachineDiagnosticStatus.BLOCKED;
+            case INACTIVE -> MachineDiagnosticStatus.INACTIVE;
+        };
+        String reason;
+        if (current == MachineActivityController.Activity.BLOCKED) {
+            reason = "output_full";
+        } else if (current == MachineActivityController.Activity.INACTIVE
+                && !isAdultWorkerUncached(items.get(WORKER_SLOT))) {
+            reason = "worker_required";
+        } else if (current == MachineActivityController.Activity.INACTIVE
+                && !FarmerCropStackAdapter.isSupported(kind, items.get(CROP_SLOT))) {
+            reason = "input_required";
+        } else {
+            reason = MachineDiagnosticSnapshot.NONE;
+        }
+        return applyRedstonePause(new MachineDiagnosticSnapshot(
+                diagnosticStatus,
+                reason,
+                growthTicks,
+                growthDurationTicks,
+                0,
+                output.used(),
+                output.capacity()
+        ));
+    }
+
+    @Override
     public void processTick() {
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
@@ -155,9 +195,10 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
         if (!cachedDynamicCrop || !canCultivate) {
             clearPendingDynamicHarvest();
         } else if (completingCycle && !pendingDynamicHarvestReady) {
-            pendingDynamicHarvest = FarmerCropStackAdapter.dynamicVillagerHarvest(
+            pendingDynamicHarvest = FarmerCropStackAdapter.dynamicHarvest(
                     serverLevel,
                     worldPosition,
+                    kind,
                     items.get(CROP_SLOT),
                     items.get(HOE_SLOT),
                     cachedFortuneLevel,
@@ -306,6 +347,16 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
             updateGrowthDuration();
         }
         return removed;
+    }
+
+    @Override
+    public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
+        if (insideTransaction && isOutputSlot(slot)) {
+            // Rollback restores produced items without allowing external output insertion.
+            items.set(slot, stack);
+        } else {
+            setItem(slot, stack);
+        }
     }
 
     @Override
@@ -558,14 +609,17 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
 
     private void refreshCropCache() {
         ItemStack cropStack = items.get(CROP_SLOT);
-        if (cropCacheInitialized && ItemStack.isSameItemSameComponents(cachedCropStack, cropStack)) {
+        int catalogRevision = FarmerCropStackAdapter.catalogRevision();
+        if (cropCacheInitialized
+                && cachedCropCatalogRevision == catalogRevision
+                && ItemStack.isSameItemSameComponents(cachedCropStack, cropStack)) {
             return;
         }
         cachedCropStack = cropStack.copy();
         cachedCrop = FarmerCropStackAdapter.from(kind, cropStack);
         cachedDynamicCrop = cachedCrop == FarmerCrop.NONE
-                && kind == FarmerKind.VILLAGER
-                && FarmerCropStackAdapter.isDynamicVillagerCrop(cropStack);
+                && FarmerCropStackAdapter.isDynamicCrop(kind, cropStack);
+        cachedCropCatalogRevision = catalogRevision;
         cropCacheInitialized = true;
     }
 

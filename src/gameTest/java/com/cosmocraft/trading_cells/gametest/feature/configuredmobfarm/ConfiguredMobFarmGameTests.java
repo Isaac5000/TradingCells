@@ -8,8 +8,15 @@ import com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.Confi
 import com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmLoot;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestFixtures;
+import com.cosmocraft.trading_cells.gametest.shared.BlockEntityStateFixtures;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmTargetReloadListener;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -20,6 +27,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /** Cross-family contracts for the shared configurable mob-farm implementation. */
 public final class ConfiguredMobFarmGameTests {
@@ -34,6 +42,18 @@ public final class ConfiguredMobFarmGameTests {
                         ConfiguredMobFarmGameTests::menuLootContracts),
                 new GameTestCase("configured_mob_farm_cycles_and_persistence", 20,
                         ConfiguredMobFarmGameTests::cyclesAndPersistence),
+                new GameTestCase("configured_mob_farm_activity_states", 20,
+                        ConfiguredMobFarmGameTests::activityStates),
+                new GameTestCase("configured_mob_farm_output_states", 20,
+                        ConfiguredMobFarmGameTests::outputStates),
+                new GameTestCase("livestock_and_fish_real_loot", 20,
+                        ConfiguredMobFarmGameTests::livestockAndFishRealLoot),
+                new GameTestCase("new_configured_families_real_loot", 20,
+                        ConfiguredMobFarmGameTests::newConfiguredFamiliesRealLoot),
+                new GameTestCase("mob_farm_invalid_descriptor_isolation", 20,
+                        ConfiguredMobFarmGameTests::invalidDescriptorIsolation),
+                new GameTestCase("configured_mob_farm_real_sided_transfers", 20,
+                        ConfiguredMobFarmGameTests::realSidedTransfers),
                 new GameTestCase("configured_mob_farm_piglin_equipment", 20,
                         ConfiguredMobFarmGameTests::piglinEquipment)
         );
@@ -61,14 +81,73 @@ public final class ConfiguredMobFarmGameTests {
                     GameTestFixtures.TEST_POS,
                     Direction.DOWN
             );
-            helper.assertValueEqual(input.size(), 2, kind + " automated input slots");
+            helper.assertValueEqual(input.size(), ConfiguredMobFarmBlockEntity.CONTAINER_SIZE, kind + " exposed automation slots");
             helper.assertValueEqual(output.size(), ConfiguredMobFarmBlockEntity.OUTPUT_SLOT_COUNT,
                     kind + " automated output slots");
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                ResourceHandler<ItemResource> sidedInput = helper.requireCapability(
+                        Capabilities.Item.BLOCK,
+                        GameTestFixtures.TEST_POS,
+                        side
+                );
+                helper.assertValueEqual(sidedInput.size(), ConfiguredMobFarmBlockEntity.CONTAINER_SIZE,
+                        kind + " horizontal automation slots on " + side);
+            }
         }
 
         assertTarget(helper, ConfiguredMobFarmKind.SLIME, "minecraft:sulfur_cube", true);
         assertTarget(helper, ConfiguredMobFarmKind.GHAST, "minecraft:happy_ghast", true);
         assertTarget(helper, ConfiguredMobFarmKind.PIGLIN, "minecraft:hoglin", false);
+        for (String target : List.of("cow", "mooshroom", "sheep", "pig", "chicken", "rabbit", "goat")) {
+            assertTarget(helper, ConfiguredMobFarmKind.LIVESTOCK, "minecraft:" + target, true);
+        }
+        assertTarget(helper, ConfiguredMobFarmKind.LIVESTOCK, "minecraft:hoglin", false);
+        for (String target : List.of("cod", "salmon", "tropical_fish", "pufferfish")) {
+            assertTarget(helper, ConfiguredMobFarmKind.FISH, "minecraft:" + target, true);
+        }
+        for (String target : List.of("squid", "glow_squid", "dolphin", "nautilus")) {
+            assertTarget(helper, ConfiguredMobFarmKind.AQUATIC, "minecraft:" + target, true);
+        }
+        for (String target : List.of("horse", "donkey", "mule", "camel", "llama", "trader_llama")) {
+            assertTarget(helper, ConfiguredMobFarmKind.MOUNT, "minecraft:" + target, true);
+        }
+        for (String target : List.of("axolotl", "frog", "tadpole", "turtle")) {
+            assertTarget(helper, ConfiguredMobFarmKind.AMPHIBIAN, "minecraft:" + target, true);
+        }
+        assertTarget(helper, ConfiguredMobFarmKind.BEE, "minecraft:bee", true);
+        assertTarget(helper, ConfiguredMobFarmKind.CREAKING, "minecraft:creaking", true);
+        helper.succeed();
+    }
+
+    private static void invalidDescriptorIsolation(GameTestHelper helper) {
+        Map<Identifier, JsonElement> resources = new LinkedHashMap<>();
+        Identifier validId = Identifier.fromNamespaceAndPath("verification", "valid_fish");
+        resources.put(validId, JsonParser.parseString("""
+                {
+                  "schema_version": 1,
+                  "family": "trading_cells:fish",
+                  "entity_type": "minecraft:salmon",
+                  "generator_item": "minecraft:salmon_spawn_egg",
+                  "order": 20
+                }
+                """));
+        resources.put(
+                Identifier.fromNamespaceAndPath("verification", "invalid_fish"),
+                JsonParser.parseString("""
+                        {
+                          "schema_version": -1,
+                          "family": "trading_cells:fish",
+                          "entity_type": "minecraft:cod",
+                          "generator_item": "minecraft:cod_spawn_egg",
+                          "order": 10
+                        }
+                        """)
+        );
+        helper.assertValueEqual(
+                MobFarmTargetReloadListener.validDescriptorIds(resources),
+                List.of(validId),
+                "An invalid descriptor must not discard a valid neighbor"
+        );
         helper.succeed();
     }
 
@@ -157,6 +236,16 @@ public final class ConfiguredMobFarmGameTests {
             farm.setItem(ConfiguredMobFarmBlockEntity.WORKER_SLOT, worker);
             farm.setItem(ConfiguredMobFarmBlockEntity.SWORD_SLOT, new ItemStack(Items.WOODEN_SWORD));
             farm.dataAccess().set(3, 0);
+            int persistedProgress = Math.max(1, farm.cycleDurationTicks() / 2);
+            farm.dataAccess().set(0, persistedProgress);
+            ConfiguredMobFarmBlockEntity inProgress = reload(helper, farm);
+            helper.assertValueEqual(inProgress.cycleTicks(), persistedProgress,
+                    kind + " persisted progress");
+            helper.assertTrue(ItemStack.isSameItemSameComponents(
+                    inProgress.getItem(ConfiguredMobFarmBlockEntity.SWORD_SLOT),
+                    new ItemStack(Items.WOODEN_SWORD)
+            ), kind + " persisted sword");
+
             farm.dataAccess().set(0, farm.cycleDurationTicks() - 1);
             farm.processTick();
             helper.assertTrue(farm.dataAccess().get(4) > 0,
@@ -166,12 +255,302 @@ public final class ConfiguredMobFarmGameTests {
             helper.assertValueEqual(restored.selectedKind(), kind, kind + " persisted family");
             helper.assertValueEqual(restored.selectedTargetId(), selected, kind + " persisted target");
             helper.assertValueEqual(restored.dataAccess().get(3), 0, kind + " persisted loot filters");
+            helper.assertValueEqual(restored.dataAccess().get(4), farm.dataAccess().get(4),
+                    kind + " persisted XP");
             helper.assertTrue(ItemStack.isSameItemSameComponents(
                     restored.getItem(ConfiguredMobFarmBlockEntity.WORKER_SLOT),
                     worker
             ), kind + " persisted worker");
         }
         helper.succeed();
+    }
+
+    private static void activityStates(GameTestHelper helper) {
+        ItemStack worker = GameTestFixtures.adultVillagerCapture(helper);
+        for (ConfiguredMobFarmKind kind : ConfiguredMobFarmKind.values()) {
+            helper.setBlock(GameTestFixtures.TEST_POS, ConfiguredMobFarmRegistrationAdapter.block(kind).get());
+            ConfiguredMobFarmBlockEntity farm = farm(helper);
+
+            farm.processTick();
+            helper.assertValueEqual(farm.cycleTicks(), 0, kind + " without worker or sword");
+
+            farm.setItem(ConfiguredMobFarmBlockEntity.WORKER_SLOT, worker);
+            farm.processTick();
+            helper.assertValueEqual(farm.cycleTicks(), 0, kind + " without sword");
+
+            farm.setItem(ConfiguredMobFarmBlockEntity.SWORD_SLOT, new ItemStack(Items.WOODEN_SWORD));
+            farm.processTick();
+            helper.assertTrue(farm.cycleTicks() > 0, kind + " active progress");
+
+            int pausedAt = farm.cycleTicks();
+            farm.toggleEnabled();
+            farm.processTick();
+            helper.assertValueEqual(farm.cycleTicks(), pausedAt, kind + " paused progress");
+
+            ConfiguredMobFarmBlockEntity paused = reload(helper, farm);
+            helper.assertValueEqual(paused.dataAccess().get(8), 0, kind + " persisted paused state");
+        }
+        helper.succeed();
+    }
+
+    private static void realSidedTransfers(GameTestHelper helper) {
+        for (ConfiguredMobFarmKind kind : ConfiguredMobFarmKind.values()) {
+            for (Direction side : List.of(
+                    Direction.UP,
+                    Direction.NORTH,
+                    Direction.SOUTH,
+                    Direction.WEST,
+                    Direction.EAST
+            )) {
+                helper.setBlock(GameTestFixtures.TEST_POS, ConfiguredMobFarmRegistrationAdapter.block(kind).get());
+                ConfiguredMobFarmBlockEntity farm = farm(helper);
+                ItemStack worker = GameTestFixtures.adultVillagerCapture(helper);
+                ResourceHandler<ItemResource> handler = helper.requireCapability(
+                        Capabilities.Item.BLOCK,
+                        GameTestFixtures.TEST_POS,
+                        side
+                );
+                try (Transaction transaction = Transaction.openRoot()) {
+                    helper.assertValueEqual(
+                            handler.insert(0, ItemResource.of(worker), 1, transaction),
+                            1,
+                            kind + " worker insertion from " + side
+                    );
+                    helper.assertValueEqual(
+                            handler.insert(1, ItemResource.of(Items.WOODEN_SWORD), 1, transaction),
+                            1,
+                            kind + " sword insertion from " + side
+                    );
+                    transaction.commit();
+                }
+                helper.assertTrue(!farm.getItem(ConfiguredMobFarmBlockEntity.WORKER_SLOT).isEmpty(),
+                        kind + " inserted worker from " + side);
+                helper.assertTrue(farm.getItem(ConfiguredMobFarmBlockEntity.SWORD_SLOT).is(Items.WOODEN_SWORD),
+                        kind + " inserted sword from " + side);
+                farm.clearContent();
+            }
+
+            helper.setBlock(GameTestFixtures.TEST_POS, ConfiguredMobFarmRegistrationAdapter.block(kind).get());
+            ConfiguredMobFarmBlockEntity farm = farm(helper);
+            ResourceHandler<ItemResource> bottom = helper.requireCapability(
+                    Capabilities.Item.BLOCK,
+                    GameTestFixtures.TEST_POS,
+                    Direction.DOWN
+            );
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(
+                        bottom.insert(ItemResource.of(Items.WOODEN_SWORD), 1, transaction),
+                        0,
+                        kind + " rejects insertion from below"
+                );
+            }
+
+            farm.setItem(ConfiguredMobFarmBlockEntity.WORKER_SLOT, GameTestFixtures.adultVillagerCapture(helper));
+            farm.setItem(ConfiguredMobFarmBlockEntity.SWORD_SLOT, new ItemStack(Items.WOODEN_SWORD));
+            Identifier physicalTarget = physicalLootTarget(kind);
+            if (physicalTarget == null) {
+                farm.dataAccess().set(0, farm.cycleDurationTicks() - 1);
+                farm.processTick();
+                helper.assertTrue(farm.dataAccess().get(4) > 0,
+                        kind + " XP-only target completed without an output slot");
+                helper.assertValueEqual(firstOccupiedOutput(farm), -1,
+                        kind + " XP-only target invented an item output");
+                continue;
+            }
+            farm.selectTarget(physicalTarget);
+            produceOneOutput(helper, kind, farm);
+            int outputSlot = firstOccupiedOutput(farm);
+            ItemStack output = farm.getItem(outputSlot).copy();
+            int handlerSlot = outputSlot - ConfiguredMobFarmBlockEntity.FIRST_OUTPUT_SLOT;
+            try (Transaction transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(
+                        bottom.extract(handlerSlot, ItemResource.of(output), 1, transaction),
+                        1,
+                        kind + " output extraction from below"
+                );
+                transaction.commit();
+            }
+        }
+        helper.succeed();
+    }
+
+    private static void outputStates(GameTestHelper helper) {
+        ItemStack worker = GameTestFixtures.adultVillagerCapture(helper);
+        for (ConfiguredMobFarmKind kind : ConfiguredMobFarmKind.values()) {
+            helper.setBlock(GameTestFixtures.TEST_POS, ConfiguredMobFarmRegistrationAdapter.block(kind).get());
+            ConfiguredMobFarmBlockEntity farm = farm(helper);
+            Identifier physicalTarget = physicalLootTarget(kind);
+            if (physicalTarget != null) {
+                farm.selectTarget(physicalTarget);
+            }
+            farm.setItem(ConfiguredMobFarmBlockEntity.WORKER_SLOT, worker);
+            farm.setItem(ConfiguredMobFarmBlockEntity.SWORD_SLOT, new ItemStack(Items.WOODEN_SWORD));
+            BlockEntityStateFixtures.fillIndexedSlots(
+                    helper,
+                    farm,
+                    "Slot",
+                    ConfiguredMobFarmBlockEntity.FIRST_OUTPUT_SLOT,
+                    ConfiguredMobFarmBlockEntity.OUTPUT_SLOT_COUNT,
+                    new ItemStack(Items.COBBLESTONE, 64)
+            );
+
+            if (physicalTarget == null) {
+                farm.dataAccess().set(0, farm.cycleDurationTicks() - 1);
+                farm.processTick();
+                helper.assertTrue(farm.dataAccess().get(4) > 0,
+                        kind + " XP-only cycle must continue with full item output");
+                continue;
+            }
+
+            farm.processTick();
+            helper.assertValueEqual(farm.cycleTicks(), 0, kind + " full output progress");
+            helper.assertValueEqual(farm.dataAccess().get(4), 0, kind + " full output XP");
+
+            farm.removeItem(ConfiguredMobFarmBlockEntity.FIRST_OUTPUT_SLOT, 64);
+            farm.dataAccess().set(0, farm.cycleDurationTicks() - 1);
+            farm.processTick();
+            helper.assertTrue(farm.dataAccess().get(4) > 0,
+                    kind + " resumes with one available output slot");
+        }
+        helper.succeed();
+    }
+
+    private static void livestockAndFishRealLoot(GameTestHelper helper) {
+        var player = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        int containerId = 200;
+        for (ConfiguredMobFarmKind kind : List.of(
+                ConfiguredMobFarmKind.LIVESTOCK,
+                ConfiguredMobFarmKind.FISH
+        )) {
+            for (var target : ConfiguredMobFarmTargetCatalog.targets(kind)) {
+                helper.setBlock(GameTestFixtures.TEST_POS, ConfiguredMobFarmRegistrationAdapter.block(kind).get());
+                ConfiguredMobFarmBlockEntity farm = farm(helper);
+                farm.clearContent();
+                farm.selectTarget(target.entityTypeId());
+                farm.setItem(ConfiguredMobFarmBlockEntity.WORKER_SLOT,
+                        GameTestFixtures.adultVillagerCapture(helper));
+                farm.setItem(ConfiguredMobFarmBlockEntity.SWORD_SLOT, new ItemStack(Items.NETHERITE_SWORD));
+
+                boolean naturallyEmpty = target.entityTypeId().equals(Identifier.withDefaultNamespace("goat"));
+                if (naturallyEmpty) {
+                    farm.dataAccess().set(0, farm.cycleDurationTicks() - 1);
+                    farm.processTick();
+                    helper.assertTrue(farm.dataAccess().get(4) > 0,
+                            "Goat must complete its death-loot cycle as XP-only");
+                    helper.assertValueEqual(firstOccupiedOutput(farm), -1,
+                            "Goat must not invent a vanilla death drop");
+                } else {
+                    produceOneOutput(helper, kind, farm);
+                }
+
+                ConfiguredMobFarmMenu menu = (ConfiguredMobFarmMenu) farm.createMenu(
+                        containerId++,
+                        player.getInventory(),
+                        player
+                );
+                if (!menu.dynamicLootOptions().isEmpty()) {
+                    ItemStack disabled = menu.dynamicLootOptions().getFirst();
+                    Identifier disabledId = BuiltInRegistries.ITEM.getKey(disabled.getItem());
+                    farm.toggleDynamicLoot(disabledId);
+                    ConfiguredMobFarmBlockEntity restored = reload(helper, farm);
+                    helper.assertTrue(restored.disabledDynamicLoot().contains(disabledId),
+                            kind + " persisted disabled loot " + disabledId);
+                    ConfiguredMobFarmMenu reopened = (ConfiguredMobFarmMenu) restored.createMenu(
+                            containerId++,
+                            player.getInventory(),
+                            player
+                    );
+                    helper.assertTrue(!reopened.isDynamicLootEnabled(disabled),
+                            kind + " reopened menu retained disabled loot " + disabledId);
+                }
+            }
+        }
+        helper.succeed();
+    }
+
+    private static void newConfiguredFamiliesRealLoot(GameTestHelper helper) {
+        for (ConfiguredMobFarmKind kind : List.of(
+                ConfiguredMobFarmKind.AQUATIC,
+                ConfiguredMobFarmKind.MOUNT,
+                ConfiguredMobFarmKind.AMPHIBIAN,
+                ConfiguredMobFarmKind.BEE,
+                ConfiguredMobFarmKind.CREAKING
+        )) {
+            for (var target : ConfiguredMobFarmTargetCatalog.targets(kind)) {
+                helper.setBlock(GameTestFixtures.TEST_POS, ConfiguredMobFarmRegistrationAdapter.block(kind).get());
+                ConfiguredMobFarmBlockEntity farm = farm(helper);
+                farm.selectTarget(target.entityTypeId());
+                farm.setItem(ConfiguredMobFarmBlockEntity.WORKER_SLOT,
+                        GameTestFixtures.adultVillagerCapture(helper));
+                farm.setItem(ConfiguredMobFarmBlockEntity.SWORD_SLOT, new ItemStack(Items.NETHERITE_SWORD));
+
+                if (isXpOnlyTarget(target.entityTypeId())) {
+                    farm.dataAccess().set(0, farm.cycleDurationTicks() - 1);
+                    farm.processTick();
+                    helper.assertTrue(farm.dataAccess().get(4) > 0,
+                            target.entityTypeId() + " must complete an XP-only cycle");
+                    helper.assertValueEqual(firstOccupiedOutput(farm), -1,
+                            target.entityTypeId() + " must not invent a death drop");
+                } else {
+                    produceOneOutput(helper, kind, farm);
+                    helper.assertTrue(farm.dataAccess().get(4) > 0,
+                            target.entityTypeId() + " real-loot cycle must also store XP");
+                }
+            }
+        }
+        helper.succeed();
+    }
+
+    private static void produceOneOutput(
+            GameTestHelper helper,
+            ConfiguredMobFarmKind kind,
+            ConfiguredMobFarmBlockEntity farm
+    ) {
+        for (int cycle = 0; cycle < 100 && firstOccupiedOutput(farm) < 0; cycle++) {
+            farm.dataAccess().set(0, farm.cycleDurationTicks() - 1);
+            farm.processTick();
+        }
+        helper.assertTrue(firstOccupiedOutput(farm) >= 0, kind + " produced no extractable output");
+    }
+
+    private static int firstOccupiedOutput(ConfiguredMobFarmBlockEntity farm) {
+        for (int slot = ConfiguredMobFarmBlockEntity.FIRST_OUTPUT_SLOT;
+                slot < ConfiguredMobFarmBlockEntity.CONTAINER_SIZE;
+                slot++) {
+            if (!farm.getItem(slot).isEmpty()) {
+                return slot;
+            }
+        }
+        return -1;
+    }
+
+    private static Identifier physicalLootTarget(ConfiguredMobFarmKind kind) {
+        return switch (kind) {
+            case ARTHROPOD -> Identifier.withDefaultNamespace("spider");
+            case SLIME -> Identifier.withDefaultNamespace("slime");
+            case GUARDIAN -> Identifier.withDefaultNamespace("guardian");
+            case PIGLIN -> Identifier.withDefaultNamespace("piglin");
+            case BLAZE -> Identifier.withDefaultNamespace("blaze");
+            case GHAST -> Identifier.withDefaultNamespace("ghast");
+            case ENDERMAN -> Identifier.withDefaultNamespace("enderman");
+            case SHULKER -> Identifier.withDefaultNamespace("shulker");
+            case BREEZE -> Identifier.withDefaultNamespace("breeze");
+            case PHANTOM -> Identifier.withDefaultNamespace("phantom");
+            case LIVESTOCK -> Identifier.withDefaultNamespace("cow");
+            case FISH -> Identifier.withDefaultNamespace("cod");
+            case AQUATIC -> Identifier.withDefaultNamespace("squid");
+            case MOUNT -> Identifier.withDefaultNamespace("horse");
+            case AMPHIBIAN -> Identifier.withDefaultNamespace("turtle");
+            case BEE, CREAKING -> null;
+        };
+    }
+
+    private static boolean isXpOnlyTarget(Identifier targetId) {
+        return targetId.equals(Identifier.withDefaultNamespace("axolotl"))
+                || targetId.equals(Identifier.withDefaultNamespace("frog"))
+                || targetId.equals(Identifier.withDefaultNamespace("tadpole"))
+                || targetId.equals(Identifier.withDefaultNamespace("bee"))
+                || targetId.equals(Identifier.withDefaultNamespace("creaking"));
     }
 
     private static void piglinEquipment(GameTestHelper helper) {

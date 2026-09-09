@@ -21,6 +21,7 @@ import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.Co
 import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
+import com.cosmocraft.trading_cells.feature.logistics.adapters.output.LogisticsRegistrationAdapter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
@@ -38,6 +39,12 @@ public final class CreativeTabRegistration {
                     .displayItems((parameters, output) -> {
                         output.accept(ExperienceStorageRegistrationAdapter.ITEM.get());
                         output.accept(ArcaneInfuserRegistrationAdapter.ITEM.get());
+                        LogisticsRegistrationAdapter.pipeItems().forEach(item -> output.accept(item.get()));
+                        LogisticsRegistrationAdapter.upgradeItems().forEach(item -> output.accept(item.get()));
+                        output.accept(LogisticsRegistrationAdapter.WRENCH_ITEM.get());
+                        output.accept(LogisticsRegistrationAdapter.TARGET_SELECTOR_ITEM.get());
+                        output.accept(LogisticsRegistrationAdapter.TERMINAL_ITEM.get());
+                        output.accept(LogisticsRegistrationAdapter.CRAFTING_TERMINAL_ITEM.get());
                         output.accept(CombatRegistrationAdapter.STORM_SHARD_ITEM.get());
                         output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_COPPER_UPGRADE_ITEM.get());
                         output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_IRON_UPGRADE_ITEM.get());

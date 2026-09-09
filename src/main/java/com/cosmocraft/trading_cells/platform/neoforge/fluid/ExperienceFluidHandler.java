@@ -18,6 +18,7 @@ public final class ExperienceFluidHandler extends SnapshotJournal<Integer>
     private final IntConsumer amountSetter;
     private final IntSupplier capacityGetter;
     private final boolean acceptsInput;
+    private final boolean permitsExtraction;
     private final Runnable committedChange;
 
     public ExperienceFluidHandler(
@@ -26,6 +27,7 @@ public final class ExperienceFluidHandler extends SnapshotJournal<Integer>
             IntConsumer amountSetter,
             IntSupplier capacityGetter,
             boolean acceptsInput,
+            boolean permitsExtraction,
             Runnable committedChange
     ) {
         this.resourceSupplier = Objects.requireNonNull(resourceSupplier);
@@ -33,6 +35,7 @@ public final class ExperienceFluidHandler extends SnapshotJournal<Integer>
         this.amountSetter = Objects.requireNonNull(amountSetter);
         this.capacityGetter = Objects.requireNonNull(capacityGetter);
         this.acceptsInput = acceptsInput;
+        this.permitsExtraction = permitsExtraction;
         this.committedChange = Objects.requireNonNull(committedChange);
     }
 
@@ -95,7 +98,7 @@ public final class ExperienceFluidHandler extends SnapshotJournal<Integer>
     ) {
         checkIndex(index);
         TransferPreconditions.checkNonEmptyNonNegative(resource, requestedAmount);
-        if (!matches(resource) || requestedAmount == 0) {
+        if (!permitsExtraction || !matches(resource) || requestedAmount == 0) {
             return 0;
         }
         int extracted = Math.min(requestedAmount, amount());

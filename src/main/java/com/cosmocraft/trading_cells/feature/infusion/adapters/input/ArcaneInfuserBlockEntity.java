@@ -10,8 +10,10 @@ import com.cosmocraft.trading_cells.feature.infusion.domain.model.ArcaneInfusion
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.experience.PlayerExperienceTransfer;
 import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandler;
+import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandlers;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
-import com.cosmocraft.trading_cells.platform.neoforge.registration.ExperienceFluidRegistration;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -80,12 +82,10 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
     private final ArcaneInfusionUseCase service = FeatureComposition.arcaneInfusion();
     private final RecipeManager.CachedCheck<ArcaneInfusionInput, ArcaneInfusionRecipe> recipeCheck =
             RecipeManager.createCheck(ArcaneInfuserRegistrationAdapter.RECIPE_TYPE.get());
-    private final ExperienceFluidHandler fluidHandler = new ExperienceFluidHandler(
-            () -> FluidResource.of(ExperienceFluidRegistration.SOURCE.get()),
+    private final ExperienceFluidHandler fluidHandler = ExperienceFluidHandlers.destination(
             this::storedExperience,
             this::setStoredExperienceRaw,
             () -> EXPERIENCE_CAPACITY,
-            true,
             this::experienceChanged
     );
     private int storedExperience;
@@ -93,6 +93,11 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
     private @Nullable RecipeManager cachedPreviewManager;
     private @Nullable ArcaneInfusionRecipe cachedPreviewRecipe;
     private ItemStack cachedPreviewResult = ItemStack.EMPTY;
+
+    @Override
+    public boolean supportsRedstoneControl() {
+        return false;
+    }
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -202,6 +207,32 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
 
     public int storedExperience() {
         return storedExperience;
+    }
+
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        int state = outputState();
+        ItemStack output = items.get(OUTPUT_SLOT);
+        MachineDiagnosticStatus diagnosticStatus = switch (state) {
+            case OUTPUT_STATE_MANUAL_READY -> MachineDiagnosticStatus.RUNNING;
+            case OUTPUT_STATE_PHYSICAL -> MachineDiagnosticStatus.BLOCKED;
+            default -> MachineDiagnosticStatus.INACTIVE;
+        };
+        String reason = switch (state) {
+            case OUTPUT_STATE_INSUFFICIENT_EXPERIENCE -> "missing_experience";
+            case OUTPUT_STATE_PHYSICAL -> "output_full";
+            case OUTPUT_STATE_EMPTY -> "missing_recipe";
+            default -> MachineDiagnosticSnapshot.NONE;
+        };
+        return new MachineDiagnosticSnapshot(
+                diagnosticStatus,
+                reason,
+                0,
+                0,
+                storedExperience,
+                output.getCount(),
+                output.isEmpty() ? getMaxStackSize() : output.getMaxStackSize()
+        );
     }
 
     public ResourceHandler<FluidResource> fluidHandler() {

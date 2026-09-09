@@ -163,12 +163,12 @@ final class ConfiguredMobFarmLootHelpPanel {
         List<Entry> refreshed = new ArrayList<>();
         for (ItemStack stack : menu.dynamicLootOptions()) {
             if (menu.isDynamicLootEnabled(stack)) {
-                var knownDrop = ConfiguredMobFarmLootAdapter.currentDynamicCycleDrop(
+                var knownDrop = menu.previewDrop(stack).or(() -> ConfiguredMobFarmLootAdapter.currentDynamicCycleDrop(
                         menu.selectedTargetId(),
                         stack,
                         looting,
                         kills
-                );
+                ));
                 if (knownDrop.isPresent() && previewAvailable) {
                     ConfiguredMobFarmDropRules.BaseDrop drop = knownDrop.orElseThrow();
                     refreshed.add(new Entry(
@@ -189,7 +189,7 @@ final class ConfiguredMobFarmLootHelpPanel {
     }
 
     private static int dynamicState(ConfiguredMobFarmMenu menu) {
-        int result = menu.selectedTargetId().hashCode();
+        int result = 31 * menu.selectedTargetId().hashCode() + menu.lootPreviewRevision();
         for (ItemStack stack : menu.dynamicLootOptions()) {
             result = 31 * result + stack.getItem().hashCode();
             result = 31 * result + Boolean.hashCode(menu.isDynamicLootEnabled(stack));

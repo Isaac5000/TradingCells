@@ -11,6 +11,7 @@ import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerTooltipE
 import com.cosmocraft.trading_cells.feature.incubators.adapters.output.IncubatorRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.logistics.adapters.output.LogisticsRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.combat.adapters.input.CombatTooltipEventAdapter;
@@ -66,6 +67,7 @@ public class Registration {
     public static void init(IEventBus modEventBus) {
         loadFeatures(modEventBus);
         ExperienceFluidCapabilityRegistration.register(modEventBus);
+        MachineItemCapabilityRegistration.register(modEventBus);
 
         BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
@@ -92,14 +94,15 @@ public class Registration {
         IncubatorRegistrationAdapter.load();
         ArcaneInfuserRegistrationAdapter.load(modEventBus);
         ExperienceStorageRegistrationAdapter.load();
+        LogisticsRegistrationAdapter.load(modEventBus);
         FarmerRegistrationAdapter.load();
         IronFarmRegistrationAdapter.load();
-        SkeletonFarmRegistrationAdapter.load();
-        RaiderFarmRegistrationAdapter.load();
-        CreeperFarmRegistrationAdapter.load();
+        SkeletonFarmRegistrationAdapter.load(modEventBus);
+        RaiderFarmRegistrationAdapter.load(modEventBus);
+        CreeperFarmRegistrationAdapter.load(modEventBus);
         ConfiguredMobFarmRegistrationAdapter.load(modEventBus);
         SilkTouchTwoRegistrationAdapter.load();
-        ZombieFarmRegistrationAdapter.load();
+        ZombieFarmRegistrationAdapter.load(modEventBus);
         QuarryRegistrationAdapter.load(modEventBus);
         CreativeTabRegistration.load();
         FarmerTooltipEventAdapter.register(modEventBus);

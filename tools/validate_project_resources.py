@@ -26,6 +26,8 @@ ENTITY_FARM_BLOCKS = {
     "enderman_farm",
     "ghast_farm",
     "guardian_farm",
+    "fish_farm",
+    "livestock_farm",
     "phantom_farm",
     "piglin_farm",
     "raider_farm",
@@ -43,6 +45,8 @@ ENTITY_FARM_BASE_TEXTURES = {
     "enderman_farm": "minecraft:block/end_stone",
     "ghast_farm": "minecraft:block/soul_soil",
     "guardian_farm": "minecraft:block/prismarine_bricks",
+    "fish_farm": "minecraft:block/sand",
+    "livestock_farm": "minecraft:block/hay_block_top",
     "phantom_farm": "minecraft:block/pale_moss_block",
     "piglin_farm": "minecraft:block/polished_blackstone",
     "raider_farm": "minecraft:block/dark_oak_planks",
@@ -56,6 +60,8 @@ ENTITY_FARM_RECIPE_BASES = {
     for key, value in ENTITY_FARM_BASE_TEXTURES.items()
 }
 ENTITY_FARM_RECIPE_BASES["slime_farm"] = "minecraft:slime_block"
+ENTITY_FARM_RECIPE_BASES["fish_farm"] = "minecraft:sand"
+ENTITY_FARM_RECIPE_BASES["livestock_farm"] = "minecraft:hay_block"
 CONFIGURED_FARM_UPPER_INGREDIENTS = {
     "arthropod_farm": (
         "minecraft:cave_spider_spawn_egg",
@@ -98,6 +104,20 @@ CONFIGURED_FARM_UPPER_INGREDIENTS = {
         "minecraft:prismarine_crystals",
         "minecraft:elder_guardian_spawn_egg",
         "minecraft:guardian_spawn_egg",
+    ),
+    "fish_farm": (
+        "minecraft:cod_spawn_egg",
+        "minecraft:fishing_rod",
+        "minecraft:tropical_fish_spawn_egg",
+        "minecraft:pufferfish_spawn_egg",
+        "minecraft:salmon_spawn_egg",
+    ),
+    "livestock_farm": (
+        "minecraft:cow_spawn_egg",
+        "minecraft:sheep_spawn_egg",
+        "minecraft:pig_spawn_egg",
+        "minecraft:chicken_spawn_egg",
+        "minecraft:rabbit_spawn_egg",
     ),
     "phantom_farm": (
         "minecraft:phantom_membrane",
@@ -933,6 +953,25 @@ def validate_mob_farm_examples(project_root: Path, errors: list[str]) -> None:
                 errors.append(f"{invalid}: invalid example must remain deliberately unsupported")
 
 
+def validate_farmer_crop_examples(project_root: Path, errors: list[str]) -> None:
+    example = (
+        project_root
+        / "docs/examples/farmer_crop_datapacks/data/example/trading_cells/farmer_crop/dead_bush.json"
+    )
+    if not example.is_file():
+        errors.append(f"{example}: missing public farmer crop datapack example")
+        return
+    try:
+        document = load_json(example)
+    except ValidationFailure as error:
+        errors.append(str(error))
+        return
+    if not isinstance(document, dict) or document.get("schema_version") != 1:
+        errors.append(f"{example}: public crop example must use schema_version 1")
+    if document.get("kind") not in {"villager", "piglin"}:
+        errors.append(f"{example}: public crop example must declare a supported kind")
+
+
 def main() -> int:
     args = parse_args()
     project_root = args.root.resolve()
@@ -961,6 +1000,7 @@ def main() -> int:
     validate_mob_farm_targets(roots, parsed_json, errors)
     validate_rei_categories(project_root, roots, parsed_json, errors)
     validate_mob_farm_examples(project_root, errors)
+    validate_farmer_crop_examples(project_root, errors)
 
     if errors:
         print("Resource validation failed:\n - " + "\n - ".join(errors), file=sys.stderr)

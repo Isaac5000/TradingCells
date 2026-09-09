@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "pattern": [
+    " I ",
+    "ICI",
+    " R "
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "C": "minecraft:compass",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "id": "trading_cells:pipe_target_selector",
+    "count": 1
+  }
+}

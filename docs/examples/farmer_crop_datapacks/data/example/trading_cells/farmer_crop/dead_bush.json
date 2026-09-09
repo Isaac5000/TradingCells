@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "kind": "villager",
+  "input": "minecraft:dead_bush",
+  "block": "minecraft:dead_bush",
+  "support": "minecraft:sand",
+  "growth_style": "scaled",
+  "render_support": "floor",
+  "visual_stages": 6,
+  "outputs": [
+    {
+      "item": "minecraft:stick",
+      "base_count": 1,
+      "fortune_count": 1
+    }
+  ]
+}

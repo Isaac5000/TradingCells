@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "trading_cells:block/network_terminal"
+    },
+    "facing=south": {
+      "model": "trading_cells:block/network_terminal",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "trading_cells:block/network_terminal",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "trading_cells:block/network_terminal",
+      "y": 90
+    }
+  }
+}

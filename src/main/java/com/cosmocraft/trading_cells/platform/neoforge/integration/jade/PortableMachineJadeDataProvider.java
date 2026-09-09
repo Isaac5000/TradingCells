@@ -1,13 +1,7 @@
 package com.cosmocraft.trading_cells.platform.neoforge.integration.jade;
 
-import com.cosmocraft.trading_cells.feature.breeders.adapters.input.BreederBlockEntity;
-import com.cosmocraft.trading_cells.feature.converter.adapters.input.ConverterBlockEntity;
 import com.cosmocraft.trading_cells.feature.experience.adapters.input.ExperienceStorageBlockEntity;
-import com.cosmocraft.trading_cells.feature.farmer.adapters.input.FarmerBlockEntity;
-import com.cosmocraft.trading_cells.feature.incubators.adapters.input.IncubatorBlockEntity;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserBlockEntity;
-import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmBlockEntity;
-import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryBlockEntity;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.AutotraderBlockEntity;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.VillagerTradingCellBlockEntity;
@@ -16,9 +10,10 @@ import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarm
 import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmBlockEntity;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineDiagnosticSource;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.inventory.ContainerData;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IServerDataProvider;
 
@@ -72,42 +67,11 @@ public final class PortableMachineJadeDataProvider implements IServerDataProvide
     }
 
     private static Progress progress(Object target) {
-        return switch (target) {
-            case FarmerBlockEntity farmer -> new Progress(
-                    farmer.growthTicks(),
-                    farmer.growthDurationTicks()
-            );
-            case QuarryBlockEntity quarry -> fromData(quarry.dataAccess(), 0, 1);
-            case IronFarmBlockEntity ironFarm -> fromData(ironFarm.dataAccess(), 0, 3);
-            case BreederBlockEntity breeder -> fromData(breeder.dataAccess(), 0, 3);
-            case IncubatorBlockEntity incubator -> fromData(incubator.dataAccess(), 0, 1);
-            case ConverterBlockEntity converter -> fromData(converter.dataAccess(), 1, 3);
-            case SkeletonFarmBlockEntity farm -> new Progress(
-                    farm.cycleTicks(),
-                    farm.cycleDurationTicks()
-            );
-            case ZombieFarmBlockEntity farm -> new Progress(
-                    farm.cycleTicks(),
-                    farm.cycleDurationTicks()
-            );
-            case RaiderFarmBlockEntity farm -> new Progress(
-                    farm.cycleTicks(),
-                    farm.cycleDurationTicks()
-            );
-            case CreeperFarmBlockEntity farm -> new Progress(
-                    farm.cycleTicks(),
-                    farm.cycleDurationTicks()
-            );
-            case ConfiguredMobFarmBlockEntity farm -> new Progress(
-                    farm.cycleTicks(),
-                    farm.cycleDurationTicks()
-            );
-            default -> Progress.EMPTY;
-        };
-    }
-
-    private static Progress fromData(ContainerData data, int currentIndex, int maximumIndex) {
-        return new Progress(data.get(currentIndex), data.get(maximumIndex));
+        if (!(target instanceof MachineDiagnosticSource source)) {
+            return Progress.EMPTY;
+        }
+        MachineDiagnosticSnapshot snapshot = source.machineDiagnosticSnapshot();
+        return new Progress(snapshot.progress(), snapshot.progressMaximum());
     }
 
     private record Progress(int current, int maximum) {

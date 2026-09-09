@@ -10,6 +10,8 @@ import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureCompositi
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -115,6 +117,34 @@ public final class ConverterBlockEntity extends PortableMachineBlockEntity imple
 
     public ItemStack copyDisplayVillagerStack() {
         return items.get(VILLAGER_SLOT).copy();
+    }
+
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineDiagnosticStatus diagnosticStatus;
+        String reason;
+        if (curedReady) {
+            diagnosticStatus = MachineDiagnosticStatus.BLOCKED;
+            reason = "output_full";
+        } else if (stage.isProcessing()) {
+            diagnosticStatus = MachineDiagnosticStatus.RUNNING;
+            reason = MachineDiagnosticSnapshot.NONE;
+        } else if (!hasStoredVillager()) {
+            diagnosticStatus = MachineDiagnosticStatus.INACTIVE;
+            reason = "worker_required";
+        } else {
+            diagnosticStatus = MachineDiagnosticStatus.INACTIVE;
+            reason = "input_required";
+        }
+        return applyRedstonePause(new MachineDiagnosticSnapshot(
+                diagnosticStatus,
+                reason,
+                stageTicks,
+                converterService.durationTicks(stage),
+                0,
+                curedReady ? 1 : 0,
+                1
+        ));
     }
 
     @Override

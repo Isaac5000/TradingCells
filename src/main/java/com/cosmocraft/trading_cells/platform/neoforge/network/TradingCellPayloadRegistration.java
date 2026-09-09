@@ -49,10 +49,26 @@ public final class TradingCellPayloadRegistration {
                 ArcaneInfuserTransferPayload.STREAM_CODEC,
                 ArcaneInfuserTransferPayload::handle
         );
+        registrar.playToServer(
+                PipeConfigurationPayload.PAYLOAD_TYPE,
+                PipeConfigurationPayload.STREAM_CODEC,
+                PipeConfigurationPayload::handle
+        );
+        registrar.playToServer(
+                NetworkTerminalActionPayload.PAYLOAD_TYPE,
+                NetworkTerminalActionPayload.STREAM_CODEC,
+                NetworkTerminalActionPayload::handle
+        );
         registrar.playToClient(TradingCellExperiencePayload.PAYLOAD_TYPE, TradingCellExperiencePayload.STREAM_CODEC);
         registrar.playToClient(TradingCellMenuSyncPayload.PAYLOAD_TYPE, TradingCellMenuSyncPayload.STREAM_CODEC);
         registrar.playToClient(AutotraderMenuSyncPayload.PAYLOAD_TYPE, AutotraderMenuSyncPayload.STREAM_CODEC);
         registrar.playToClient(QuarryCatalogSyncPayload.PAYLOAD_TYPE, QuarryCatalogSyncPayload.STREAM_CODEC);
         registrar.playToClient(MobFarmCatalogSyncPayload.PAYLOAD_TYPE, MobFarmCatalogSyncPayload.STREAM_CODEC);
+        registrar.playToClient(NetworkTerminalSyncPayload.PAYLOAD_TYPE, NetworkTerminalSyncPayload.STREAM_CODEC);
+        registrar.playToClient(NetworkCraftingSyncPayload.PAYLOAD_TYPE, NetworkCraftingSyncPayload.STREAM_CODEC);
+        registrar.playToClient(PipeMenuSyncPayload.PAYLOAD_TYPE, PipeMenuSyncPayload.STREAM_CODEC);
+        registrar.playToClient(PipeChannelSuggestionsPayload.PAYLOAD_TYPE, PipeChannelSuggestionsPayload.STREAM_CODEC);
+        registrar.playToServer(PipeChannelQueryPayload.PAYLOAD_TYPE, PipeChannelQueryPayload.STREAM_CODEC, PipeChannelQueryPayload::handle);
+        registrar.playToClient(ConfiguredFarmLootPreviewPayload.PAYLOAD_TYPE, ConfiguredFarmLootPreviewPayload.STREAM_CODEC);
     }
 }

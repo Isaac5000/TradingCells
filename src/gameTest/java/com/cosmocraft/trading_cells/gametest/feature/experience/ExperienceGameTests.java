@@ -56,6 +56,23 @@ public final class ExperienceGameTests {
         }
         helper.assertValueEqual(storage.storedExperience(), 100, "Committed XP extraction");
 
+        for (var side : net.minecraft.core.Direction.values()) {
+            var sided = helper.requireCapability(Capabilities.Fluid.BLOCK, GameTestFixtures.TEST_POS, side);
+            try (var transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(sided.insert(0, experience, 70, transaction), 70, "XP input on " + side);
+                transaction.commit();
+            }
+            try (var transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(sided.extract(0, experience, 70, transaction), 70, "XP output on " + side);
+            }
+            helper.assertValueEqual(storage.storedExperience(), 170, "Sided extraction rollback on " + side);
+            try (var transaction = Transaction.openRoot()) {
+                helper.assertValueEqual(sided.extract(0, experience, 70, transaction), 70, "XP output on " + side);
+                transaction.commit();
+            }
+            helper.assertValueEqual(storage.storedExperience(), 100, "Sided XP conservation on " + side);
+        }
+
         CompoundTag saved = storage.saveWithFullMetadata(helper.getLevel().registryAccess());
         BlockEntity loaded = BlockEntity.loadStatic(
                 helper.absolutePos(GameTestFixtures.TEST_POS),
@@ -82,6 +99,15 @@ public final class ExperienceGameTests {
             transaction.commit();
         }
         helper.assertValueEqual(infuser.storedExperience(), 30, "Infuser XP storage");
+        try (Transaction transaction = Transaction.openRoot()) {
+            helper.assertValueEqual(
+                    infuserFluid.extract(0, experience, 1, transaction),
+                    0,
+                    "Infuser must be an XP destination only"
+            );
+            transaction.commit();
+        }
+        helper.assertValueEqual(infuser.storedExperience(), 30, "Rejected Infuser XP extraction");
 
         assertOutputOnlyFluid(helper, TraderRegistrationAdapter.VILLAGER_TRADER_BLOCK.get(), experience);
         assertOutputOnlyFluid(helper, AutotraderRegistrationAdapter.AUTOTRADER_BLOCK.get(), experience);

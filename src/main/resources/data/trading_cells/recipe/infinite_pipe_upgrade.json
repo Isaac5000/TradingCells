@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "pattern": [
+    "MRM",
+    "RUR",
+    "MRM"
+  ],
+  "key": {
+    "M": "minecraft:netherite_ingot",
+    "R": "minecraft:redstone",
+    "U": "trading_cells:ultimate_pipe_upgrade"
+  },
+  "result": {
+    "id": "trading_cells:infinite_pipe_upgrade",
+    "count": 1
+  }
+}

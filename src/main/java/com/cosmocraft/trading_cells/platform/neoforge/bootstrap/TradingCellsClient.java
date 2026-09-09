@@ -9,6 +9,8 @@ import com.cosmocraft.trading_cells.feature.experience.adapters.output.client.Ex
 import com.cosmocraft.trading_cells.feature.incubators.adapters.output.client.IncubatorClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfuserClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client.IronFarmClientRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.LogisticsPipeClientInteractionAdapter;
+import com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.LogisticsClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.QuarryClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.SkeletonFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.client.RaiderFarmClientRegistrationAdapter;
@@ -24,6 +26,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.common.NeoForge;
 // NeoForge event bus listener for RenderHand removed: we rely on model-driven special renderers now.
 
 // Only client side
@@ -32,8 +35,10 @@ public class TradingCellsClient {
 
     public TradingCellsClient(ModContainer container) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        NeoForge.EVENT_BUS.addListener(LogisticsPipeClientInteractionAdapter::onRightClickBlock);
         var modBus = container.getEventBus();
         if (modBus != null) {
+            modBus.addListener(LogisticsClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(TradingCellClientPayloadRegistration::onRegisterClientPayloads);
             modBus.addListener(ExperienceFluidClientRegistration::onRegisterFluidModels);
             modBus.addListener(CapturerClientEvent::onRegisterSpecialModelRenderer);

@@ -26,7 +26,7 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.transfer.item.WorldlyContainerWrapper;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineItemHandler;
 
 public final class ConfiguredMobFarmRegistrationAdapter {
     public static final String TYPE_ID = "configured_mob_farm";
@@ -87,7 +87,7 @@ public final class ConfiguredMobFarmRegistrationAdapter {
         event.registerBlockEntity(
                 Capabilities.Item.BLOCK,
                 BLOCK_ENTITY.get(),
-                WorldlyContainerWrapper::new
+                PortableMachineItemHandler::new
         );
     }
 }

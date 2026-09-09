@@ -11,7 +11,12 @@ import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmWeaponSnaps
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.OrderedOutputInserter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineInventoryDiagnostics;
+import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandler;
+import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandlers;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,6 +27,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -43,6 +49,8 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
 public final class ConfiguredMobFarmBlockEntity extends PortableMachineBlockEntity implements WorldlyContainer, MenuProvider {
     public static final int WORKER_SLOT = 0;
@@ -77,9 +85,17 @@ public final class ConfiguredMobFarmBlockEntity extends PortableMachineBlockEnti
     private static final SoundEvent SHULKER_DEATH_SOUND = shortRange(SoundEvents.SHULKER_DEATH);
     private static final SoundEvent BREEZE_DEATH_SOUND = shortRange(SoundEvents.BREEZE_DEATH);
     private static final SoundEvent PHANTOM_DEATH_SOUND = shortRange(SoundEvents.PHANTOM_DEATH);
+    private static final SoundEvent LIVESTOCK_DEATH_SOUND = shortRange(SoundEvents.GENERIC_DEATH);
+    private static final SoundEvent FISH_DEATH_SOUND = shortRange(SoundEvents.COD_DEATH);
+    private static final SoundEvent AQUATIC_DEATH_SOUND = shortRange(SoundEvents.GENERIC_DEATH);
+    private static final SoundEvent MOUNT_DEATH_SOUND = shortRange(SoundEvents.GENERIC_DEATH);
+    private static final SoundEvent AMPHIBIAN_DEATH_SOUND = shortRange(SoundEvents.GENERIC_DEATH);
+    private static final SoundEvent BEE_DEATH_SOUND = shortRange(SoundEvents.GENERIC_DEATH);
+    private static final SoundEvent CREAKING_DEATH_SOUND = shortRange(SoundEvents.GENERIC_DEATH);
     private static final int[] INPUT_SLOTS = new int[]{WORKER_SLOT, SWORD_SLOT};
     private static final int[] OUTPUT_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, CONTAINER_SIZE).toArray();
 
+    private static final int[] AUTOMATION_SLOTS = java.util.stream.IntStream.range(0, CONTAINER_SIZE).toArray();
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
     private final ConfiguredMobFarmUseCase rules = FeatureComposition.configuredMobFarm();
     private final MachineActivityController activity = new MachineActivityController();
@@ -90,6 +106,11 @@ public final class ConfiguredMobFarmBlockEntity extends PortableMachineBlockEnti
     private int cycleTicks;
     private int cycleDurationTicks = rules.effectiveCycleTicks(0.0D, 0);
     private int storedExperience;
+    private final ExperienceFluidHandler experienceFluidHandler = ExperienceFluidHandlers.source(
+            () -> storedExperience,
+            value -> storedExperience = Math.max(0, value),
+            this::markChangedAndSync
+    );
     private boolean enabled = true;
     private boolean hunting;
     private List<ItemStack> pendingLoot = List.of();
@@ -172,7 +193,126 @@ public final class ConfiguredMobFarmBlockEntity extends PortableMachineBlockEnti
         return cycleDurationTicks;
     }
 
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineInventoryDiagnostics.OutputUsage output = MachineInventoryDiagnostics.outputUsage(
+                this,
+                FIRST_OUTPUT_SLOT,
+                OUTPUT_SLOT_COUNT
+        );
+        MachineDiagnosticStatus status;
+        String reason;
+        if (!enabled) {
+            status = MachineDiagnosticStatus.PAUSED;
+            reason = "manual";
+        } else if (!isAdultVillager(items.get(WORKER_SLOT))) {
+            status = MachineDiagnosticStatus.INACTIVE;
+            reason = "worker_required";
+        } else if (!MobFarmSwordTierCatalog.isSupported(items.get(SWORD_SLOT))) {
+            status = MachineDiagnosticStatus.INACTIVE;
+            reason = "tool_required";
+        } else if (hasGeneratableLoot() && output.full()) {
+            status = MachineDiagnosticStatus.BLOCKED;
+            reason = "output_full";
+        } else {
+            status = MachineDiagnosticStatus.RUNNING;
+            reason = MachineDiagnosticSnapshot.NONE;
+        }
+        return applyRedstonePause(new MachineDiagnosticSnapshot(
+                status,
+                reason,
+                cycleTicks,
+                cycleDurationTicks,
+                storedExperience,
+                output.used(),
+                output.capacity()
+        ));
+    }
+
+    @Override
+    public CompoundTag exportMachineConfiguration() {
+        CompoundTag configuration = super.exportMachineConfiguration();
+        configuration.putString(TARGET_TAG, targetId.toString());
+        configuration.putInt(LOOT_MASK_TAG, enabledLootMask);
+        configuration.putBoolean(ENABLED_TAG, enabled);
+        List<Identifier> sortedDisabled = disabledDynamicLoot.stream().sorted().toList();
+        configuration.putInt(DISABLED_DYNAMIC_LOOT_COUNT_TAG, sortedDisabled.size());
+        for (int index = 0; index < sortedDisabled.size(); index++) {
+            configuration.putString(DISABLED_DYNAMIC_LOOT_TAG_PREFIX + index, sortedDisabled.get(index).toString());
+        }
+        return configuration;
+    }
+
+    @Override
+    public boolean canApplyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        if (!super.canApplyMachineConfiguration(schemaVersion, configuration)) {
+            return false;
+        }
+        Identifier configuredTarget = Identifier.tryParse(configuration.getStringOr(TARGET_TAG, ""));
+        if (configuredTarget == null || !ConfiguredMobFarmTargetCatalog.isKnownTarget(kind, configuredTarget)) {
+            return false;
+        }
+        int mask = configuration.getIntOr(LOOT_MASK_TAG, -1);
+        if ((mask & ~ConfiguredMobFarmLoot.allEnabledMask()) != 0 || mask < 0) {
+            return false;
+        }
+        int disabledCount = configuration.getIntOr(DISABLED_DYNAMIC_LOOT_COUNT_TAG, -1);
+        if (disabledCount < 0 || disabledCount > 2_048) {
+            return false;
+        }
+        Set<Identifier> available = ConfiguredMobFarmTargetCatalog.dynamicLoot(kind, configuredTarget).stream()
+                .map(ItemStack::getItem)
+                .map(BuiltInRegistries.ITEM::getKey)
+                .collect(java.util.stream.Collectors.toSet());
+        for (int index = 0; index < disabledCount; index++) {
+            Identifier itemId = Identifier.tryParse(configuration.getStringOr(
+                    DISABLED_DYNAMIC_LOOT_TAG_PREFIX + index,
+                    ""
+            ));
+            if (itemId == null || !available.contains(itemId)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void applyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        if (!canApplyMachineConfiguration(schemaVersion, configuration)) {
+            return;
+        }
+        Identifier configuredTarget = Identifier.parse(configuration.getStringOr(TARGET_TAG, ""));
+        int configuredMask = configuration.getIntOr(LOOT_MASK_TAG, ConfiguredMobFarmLoot.allEnabledMask());
+        boolean configuredEnabled = configuration.getBooleanOr(ENABLED_TAG, true);
+        int disabledCount = configuration.getIntOr(DISABLED_DYNAMIC_LOOT_COUNT_TAG, 0);
+        Set<Identifier> configuredDisabled = new HashSet<>();
+        for (int index = 0; index < disabledCount; index++) {
+            configuredDisabled.add(Identifier.parse(configuration.getStringOr(
+                    DISABLED_DYNAMIC_LOOT_TAG_PREFIX + index,
+                    ""
+            )));
+        }
+
+        boolean resetCycle = !targetId.equals(configuredTarget)
+                || enabledLootMask != configuredMask
+                || !disabledDynamicLoot.equals(configuredDisabled);
+        targetId = configuredTarget;
+        enabledLootMask = configuredMask;
+        enabled = configuredEnabled;
+        disabledDynamicLoot.clear();
+        disabledDynamicLoot.addAll(configuredDisabled);
+        if (resetCycle) {
+            cycleTicks = 0;
+            clearPendingLoot();
+            swordCacheInitialized = false;
+        }
+        activity.wake();
+        super.applyMachineConfiguration(schemaVersion, configuration);
+        markChangedAndSync();
+    }
+
     public void extractExperience(Player player) {
+        // Player extraction and network extraction share the same stored value.
         if (level == null || level.isClientSide() || storedExperience <= 0) {
             return;
         }
@@ -180,6 +320,10 @@ public final class ConfiguredMobFarmBlockEntity extends PortableMachineBlockEnti
         storedExperience = 0;
         player.giveExperiencePoints(extracted);
         markChangedAndSync();
+    }
+
+    public ResourceHandler<FluidResource> experienceFluidHandler() {
+        return experienceFluidHandler;
     }
 
     public void toggleEnabled() {
@@ -349,6 +493,16 @@ public final class ConfiguredMobFarmBlockEntity extends PortableMachineBlockEnti
     }
 
     @Override
+    public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
+        if (insideTransaction && isOutputSlot(slot)) {
+            // Capability rollback must restore outputs even though external insertion is forbidden.
+            items.set(slot, stack);
+        } else {
+            setItem(slot, stack);
+        }
+    }
+
+    @Override
     public boolean stillValid(@NonNull Player player) {
         return Container.stillValidBlockEntity(this, player);
     }
@@ -370,7 +524,7 @@ public final class ConfiguredMobFarmBlockEntity extends PortableMachineBlockEnti
 
     @Override
     public int @NonNull [] getSlotsForFace(@NonNull Direction direction) {
-        return direction == Direction.DOWN ? OUTPUT_SLOTS : INPUT_SLOTS;
+        return direction == Direction.DOWN ? OUTPUT_SLOTS : AUTOMATION_SLOTS;
     }
 
     @Override
@@ -380,7 +534,7 @@ public final class ConfiguredMobFarmBlockEntity extends PortableMachineBlockEnti
 
     @Override
     public boolean canTakeItemThroughFace(int slot, @NonNull ItemStack stack, @NonNull Direction direction) {
-        return direction == Direction.DOWN && isOutputSlot(slot);
+        return isOutputSlot(slot);
     }
 
     @Override
@@ -522,6 +676,13 @@ public final class ConfiguredMobFarmBlockEntity extends PortableMachineBlockEnti
                     case SHULKER -> SHULKER_DEATH_SOUND;
                     case BREEZE -> BREEZE_DEATH_SOUND;
                     case PHANTOM -> PHANTOM_DEATH_SOUND;
+                    case LIVESTOCK -> LIVESTOCK_DEATH_SOUND;
+                    case FISH -> FISH_DEATH_SOUND;
+                    case AQUATIC -> AQUATIC_DEATH_SOUND;
+                    case MOUNT -> MOUNT_DEATH_SOUND;
+                    case AMPHIBIAN -> AMPHIBIAN_DEATH_SOUND;
+                    case BEE -> BEE_DEATH_SOUND;
+                    case CREAKING -> CREAKING_DEATH_SOUND;
                 },
                 SoundSource.BLOCKS,
                 DEATH_SOUND_VOLUME,

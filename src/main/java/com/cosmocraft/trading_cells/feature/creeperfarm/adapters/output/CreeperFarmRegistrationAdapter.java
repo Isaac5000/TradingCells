@@ -17,6 +17,10 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineItemHandler;
 
 public final class CreeperFarmRegistrationAdapter {
     public static final String ID = "creeper_farm";
@@ -45,7 +49,11 @@ public final class CreeperFarmRegistrationAdapter {
     private CreeperFarmRegistrationAdapter() {
     }
 
-    public static void load() {
-        // Forces class loading so all DeferredRegister entries are created.
+    public static void load(IEventBus modEventBus) {
+        modEventBus.addListener(CreeperFarmRegistrationAdapter::onRegisterCapabilities);
+    }
+
+    private static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
     }
 }

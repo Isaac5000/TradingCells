@@ -7,6 +7,12 @@ import com.cosmocraft.trading_cells.feature.breeders.application.port.input.Bree
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineDiagnosticSource;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineConfigurationPort;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineRedstoneConfiguration;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineRedstoneMode;
 import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import net.minecraft.core.BlockPos;
@@ -35,7 +41,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public abstract class BreederBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider {
+public abstract class BreederBlockEntity extends BlockEntity
+        implements WorldlyContainer, MenuProvider, MachineDiagnosticSource, MachineConfigurationPort {
     public static final int FOOD_SLOT = 0;
     public static final int PARENT_A_SLOT = 1;
     public static final int PARENT_B_SLOT = 2;
@@ -73,6 +80,8 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     private boolean cachedParentAValid;
     private boolean cachedParentBValid;
     private BreederFood cachedFood = BreederFood.NONE;
+    private MachineRedstoneMode redstoneMode = MachineRedstoneMode.IGNORE;
+    private int lastComparatorOutput = -1;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -132,7 +141,63 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         return dataAccess;
     }
 
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineActivityController.Activity current = activity.activity();
+        MachineDiagnosticStatus status = switch (current) {
+            case ACTIVE -> MachineDiagnosticStatus.RUNNING;
+            case BLOCKED -> MachineDiagnosticStatus.BLOCKED;
+            case INACTIVE -> MachineDiagnosticStatus.INACTIVE;
+        };
+        String reason;
+        if (pendingBabies > 0) {
+            reason = "output_full";
+        } else if (!isValidAdultParent(items.get(PARENT_A_SLOT))
+                || !isValidAdultParent(items.get(PARENT_B_SLOT))) {
+            reason = "worker_required";
+        } else if (eligibleFood() == BreederFood.NONE) {
+            reason = "input_required";
+        } else {
+            reason = MachineDiagnosticSnapshot.NONE;
+        }
+        ItemStack output = items.get(FILLED_CAPTURER_SLOT);
+        return MachineRedstoneConfiguration.applyPause(isPausedByRedstone(), new MachineDiagnosticSnapshot(
+                status,
+                reason,
+                breedTicks,
+                breederService.durationTicks(kind),
+                0,
+                output.getCount(),
+                output.isEmpty() ? getMaxStackSize() : output.getMaxStackSize()
+        ));
+    }
+
+    @Override
+    public CompoundTag exportMachineConfiguration() {
+        return MachineRedstoneConfiguration.export(redstoneMode);
+    }
+
+    @Override
+    public boolean canApplyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        return MachineRedstoneConfiguration.isValid(schemaVersion, configuration);
+    }
+
+    @Override
+    public void applyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        if (canApplyMachineConfiguration(schemaVersion, configuration)) {
+            redstoneMode = MachineRedstoneConfiguration.fromConfiguration(configuration);
+            markChangedAndSync();
+        }
+    }
+
+    public int comparatorOutput() {
+        return machineDiagnosticSnapshot().outputFull() ? 15 : 0;
+    }
+
     void processTick() {
+        if (isPausedByRedstone()) {
+            return;
+        }
         if (activity.remainsInactive() || activity.remainsBlocked()) {
             return;
         }
@@ -445,6 +510,16 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     }
 
     @Override
+    public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
+        if (insideTransaction && slot == FILLED_CAPTURER_SLOT) {
+            // Rollback restores produced items without allowing external output insertion.
+            items.set(slot, stack);
+        } else {
+            setItem(slot, stack);
+        }
+    }
+
+    @Override
     public void setItem(int slot, @NonNull ItemStack stack) {
         if (!isValidSlot(slot) || slot == BABY_PREVIEW_SLOT) {
             return;
@@ -525,6 +600,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
+        redstoneMode = MachineRedstoneConfiguration.load(input);
         items.clear();
         for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
             if (slot == BABY_PREVIEW_SLOT) {
@@ -558,6 +634,7 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
+        MachineRedstoneConfiguration.save(output, redstoneMode);
         for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
             if (slot != BABY_PREVIEW_SLOT && !items.get(slot).isEmpty()) {
                 output.store(SLOT_TAG_PREFIX + slot, ItemStack.CODEC, items.get(slot));
@@ -595,7 +672,16 @@ public abstract class BreederBlockEntity extends BlockEntity implements WorldlyC
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+            int comparatorOutput = comparatorOutput();
+            if (comparatorOutput != lastComparatorOutput) {
+                lastComparatorOutput = comparatorOutput;
+                level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+            }
         }
+    }
+
+    private boolean isPausedByRedstone() {
+        return level != null && redstoneMode.pauses(level.hasNeighborSignal(worldPosition));
     }
 
     private void refreshBreedingInputs() {

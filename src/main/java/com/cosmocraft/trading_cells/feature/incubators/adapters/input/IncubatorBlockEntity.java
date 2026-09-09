@@ -6,6 +6,12 @@ import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKin
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineActivityController;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineDiagnosticSource;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineConfigurationPort;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineRedstoneConfiguration;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineRedstoneMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -32,7 +38,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public abstract class IncubatorBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider {
+public abstract class IncubatorBlockEntity extends BlockEntity
+        implements WorldlyContainer, MenuProvider, MachineDiagnosticSource, MachineConfigurationPort {
     public static final int INPUT_SLOT = 0;
     public static final int OUTPUT_SLOT = 1;
     public static final int CONTAINER_SIZE = 2;
@@ -51,6 +58,8 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
     private boolean inputCacheInitialized;
     private boolean cachedBabyInput;
     private @Nullable CompoundTag preparedBlockDropData;
+    private MachineRedstoneMode redstoneMode = MachineRedstoneMode.IGNORE;
+    private int lastComparatorOutput = -1;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -89,7 +98,62 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         return dataAccess;
     }
 
+    @Override
+    public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        MachineActivityController.Activity current = activity.activity();
+        MachineDiagnosticStatus status = switch (current) {
+            case ACTIVE -> MachineDiagnosticStatus.RUNNING;
+            case BLOCKED -> MachineDiagnosticStatus.BLOCKED;
+            case INACTIVE -> MachineDiagnosticStatus.INACTIVE;
+        };
+        String reason;
+        if (items.get(INPUT_SLOT).isEmpty()) {
+            reason = "input_required";
+        } else if (!isBabyInput()) {
+            reason = "invalid_input";
+        } else if (!items.get(OUTPUT_SLOT).isEmpty()) {
+            reason = "output_full";
+        } else {
+            reason = MachineDiagnosticSnapshot.NONE;
+        }
+        ItemStack output = items.get(OUTPUT_SLOT);
+        return MachineRedstoneConfiguration.applyPause(isPausedByRedstone(), new MachineDiagnosticSnapshot(
+                status,
+                reason,
+                incubationTicks,
+                incubatorService.durationTicks(kind),
+                0,
+                output.getCount(),
+                output.isEmpty() ? getMaxStackSize() : output.getMaxStackSize()
+        ));
+    }
+
+    @Override
+    public CompoundTag exportMachineConfiguration() {
+        return MachineRedstoneConfiguration.export(redstoneMode);
+    }
+
+    @Override
+    public boolean canApplyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        return MachineRedstoneConfiguration.isValid(schemaVersion, configuration);
+    }
+
+    @Override
+    public void applyMachineConfiguration(int schemaVersion, CompoundTag configuration) {
+        if (canApplyMachineConfiguration(schemaVersion, configuration)) {
+            redstoneMode = MachineRedstoneConfiguration.fromConfiguration(configuration);
+            markChangedAndSync();
+        }
+    }
+
+    public int comparatorOutput() {
+        return machineDiagnosticSnapshot().outputFull() ? 15 : 0;
+    }
+
     void processTick() {
+        if (isPausedByRedstone()) {
+            return;
+        }
         if (activity.remainsInactive() || activity.remainsBlocked()) {
             return;
         }
@@ -225,6 +289,16 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
     }
 
     @Override
+    public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
+        if (insideTransaction && slot == OUTPUT_SLOT) {
+            // Rollback restores produced items without allowing external output insertion.
+            items.set(slot, stack);
+        } else {
+            setItem(slot, stack);
+        }
+    }
+
+    @Override
     public void setItem(int slot, @NonNull ItemStack stack) {
         if (slot == OUTPUT_SLOT && stack.isEmpty()) {
             items.set(OUTPUT_SLOT, ItemStack.EMPTY);
@@ -288,6 +362,7 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
+        redstoneMode = MachineRedstoneConfiguration.load(input);
         items.set(INPUT_SLOT, input.read(INPUT_TAG, ItemStack.CODEC).orElse(ItemStack.EMPTY));
         items.set(OUTPUT_SLOT, input.read(OUTPUT_TAG, ItemStack.CODEC).orElse(ItemStack.EMPTY));
         incubationTicks = Math.clamp(
@@ -303,6 +378,7 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
+        MachineRedstoneConfiguration.save(output, redstoneMode);
         if (!items.get(INPUT_SLOT).isEmpty()) {
             output.store(INPUT_TAG, ItemStack.CODEC, items.get(INPUT_SLOT));
         }
@@ -328,7 +404,16 @@ public abstract class IncubatorBlockEntity extends BlockEntity implements Worldl
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+            int comparatorOutput = comparatorOutput();
+            if (comparatorOutput != lastComparatorOutput) {
+                lastComparatorOutput = comparatorOutput;
+                level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+            }
         }
+    }
+
+    private boolean isPausedByRedstone() {
+        return level != null && redstoneMode.pauses(level.hasNeighborSignal(worldPosition));
     }
 
     private void clearStoredContents() {

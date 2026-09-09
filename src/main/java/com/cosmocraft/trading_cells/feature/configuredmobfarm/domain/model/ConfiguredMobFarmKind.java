@@ -10,7 +10,14 @@ public enum ConfiguredMobFarmKind {
     ENDERMAN("enderman"),
     SHULKER("shulker"),
     BREEZE("breeze"),
-    PHANTOM("phantom");
+    PHANTOM("phantom"),
+    LIVESTOCK("livestock"),
+    FISH("fish"),
+    AQUATIC("aquatic"),
+    MOUNT("mount"),
+    AMPHIBIAN("amphibian"),
+    BEE("bee"),
+    CREAKING("creaking");
 
     private final String path;
 

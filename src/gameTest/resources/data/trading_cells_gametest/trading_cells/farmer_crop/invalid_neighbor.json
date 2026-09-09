@@ -1,0 +1,7 @@
+{
+  "schema_version": 999,
+  "kind": "villager",
+  "input": "minecraft:stone",
+  "block": "minecraft:stone",
+  "support": "minecraft:stone"
+}

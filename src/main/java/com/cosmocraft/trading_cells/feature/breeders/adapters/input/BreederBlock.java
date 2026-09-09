@@ -70,6 +70,17 @@ public abstract class BreederBlock<T extends BreederBlockEntity> extends BaseEnt
     }
 
     @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos, Direction direction) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        return blockEntity instanceof BreederBlockEntity breeder ? breeder.comparatorOutput() : 0;
+    }
+
+    @Override
     protected boolean propagatesSkylightDown(BlockState state) {
         return true;
     }

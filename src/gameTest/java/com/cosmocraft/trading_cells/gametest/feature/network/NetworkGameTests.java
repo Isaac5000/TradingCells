@@ -19,9 +19,12 @@ import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellExperie
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellMenuSyncPayload;
 import io.netty.buffer.Unpooled;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 import java.util.function.Consumer;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -34,6 +37,7 @@ import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.MerchantOffers;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import net.neoforged.neoforge.network.connection.ConnectionType;
 
 /** Behaviour-oriented GameTests for Network. */
@@ -245,6 +249,7 @@ public final class NetworkGameTests {
                 ),
                 "Autotrader menu sync"
         );
+
         helper.succeed();
     }
 

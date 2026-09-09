@@ -64,6 +64,13 @@ public final class ConfiguredMobFarmMenu extends AbstractContainerMenu {
     private Identifier selectedTargetId;
     private final Set<Identifier> disabledDynamicLoot = new HashSet<>();
     private int catalogRevision = -1;
+    private final Player owner;
+    private Identifier previewTarget;
+    private ItemStack previewSword = ItemStack.EMPTY;
+    private int previewKills = -1;
+    private int previewCatalog = -1;
+    private java.util.Map<Identifier, com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmDropRules.BaseDrop> lootPreview = java.util.Map.of();
+    private int lootPreviewRevision;
 
     public ConfiguredMobFarmMenu(int containerId, Inventory inventory) {
         this(containerId, inventory, new SimpleContainer(MACHINE_SLOT_COUNT), new SimpleContainerData(9));
@@ -79,6 +86,7 @@ public final class ConfiguredMobFarmMenu extends AbstractContainerMenu {
         checkContainerSize(container, MACHINE_SLOT_COUNT);
         checkContainerDataCount(data, 9);
         this.container = container;
+        this.owner = inventory.player;
         this.data = data;
         this.registries = inventory.player.registryAccess();
         ConfiguredMobFarmKind initialKind = ConfiguredMobFarmKind.fromId(data.get(2));
@@ -126,6 +134,39 @@ public final class ConfiguredMobFarmMenu extends AbstractContainerMenu {
 
     public int catalogRevision() {
         return catalogRevision;
+    }
+
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+        if (!(owner instanceof net.minecraft.server.level.ServerPlayer player)
+                || !(container instanceof ConfiguredMobFarmBlockEntity farm)
+                || !(farm.getLevel() instanceof net.minecraft.server.level.ServerLevel level)) { return; }
+        ItemStack sword = getSlot(ConfiguredMobFarmBlockEntity.SWORD_SLOT).getItem();
+        if (farm.selectedTargetId().equals(previewTarget) && ItemStack.matches(sword, previewSword)
+                && previewKills == simulatedKills() && previewCatalog == MobFarmCatalog.revision()) { return; }
+        previewTarget = farm.selectedTargetId();
+        previewSword = sword.copy();
+        previewKills = simulatedKills();
+        previewCatalog = MobFarmCatalog.revision();
+        lootPreview = ConfiguredMobFarmLootPreview.calculate(level, previewTarget, sword, lootingLevel(), previewKills);
+        lootPreviewRevision++;
+        if (player.connection != null) {
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                    new com.cosmocraft.trading_cells.platform.neoforge.network.ConfiguredFarmLootPreviewPayload(containerId, previewTarget, lootPreview));
+        }
+    }
+
+    public void applyLootPreview(com.cosmocraft.trading_cells.platform.neoforge.network.ConfiguredFarmLootPreviewPayload payload) {
+        previewTarget = payload.target();
+        lootPreview = payload.drops();
+        lootPreviewRevision++;
+    }
+
+    public int lootPreviewRevision() { return lootPreviewRevision; }
+
+    public java.util.Optional<com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmDropRules.BaseDrop> previewDrop(ItemStack item) {
+        return selectedTargetId.equals(previewTarget) ? java.util.Optional.ofNullable(lootPreview.get(BuiltInRegistries.ITEM.getKey(item.getItem()))) : java.util.Optional.empty();
     }
 
     public Set<Identifier> disabledDynamicLootIds() {

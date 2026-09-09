@@ -70,6 +70,17 @@ public abstract class IncubatorBlock<T extends IncubatorBlockEntity> extends Bas
     }
 
     @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos, Direction direction) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        return blockEntity instanceof IncubatorBlockEntity incubator ? incubator.comparatorOutput() : 0;
+    }
+
+    @Override
     protected boolean propagatesSkylightDown(BlockState state) {
         return true;
     }
