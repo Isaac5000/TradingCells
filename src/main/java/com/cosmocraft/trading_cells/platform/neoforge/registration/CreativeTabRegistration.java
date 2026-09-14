@@ -14,11 +14,7 @@ import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryEnchantm
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.combat.adapters.api.CombatEnchantments;
 import com.cosmocraft.trading_cells.feature.combat.adapters.output.CombatRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.RaiderFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.CreeperFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.ConfiguredMobFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.output.LogisticsRegistrationAdapter;
@@ -122,13 +118,12 @@ public final class CreativeTabRegistration {
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> FARMS_TAB =
             Registration.CREATIVE_MODE_TABS.register("farms_tab", () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + TradingCells.MOD_ID + ".farms"))
-                    .icon(() -> SkeletonFarmRegistrationAdapter.ITEM.get().getDefaultInstance())
+                    .icon(() -> MobFarmRegistrationAdapter.ITEM.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
-                        output.accept(SkeletonFarmRegistrationAdapter.ITEM.get());
-                        output.accept(ZombieFarmRegistrationAdapter.ITEM.get());
-                        output.accept(RaiderFarmRegistrationAdapter.ITEM.get());
-                        output.accept(CreeperFarmRegistrationAdapter.ITEM.get());
-                        ConfiguredMobFarmRegistrationAdapter.items().forEach(item -> output.accept(item.get()));
+                        output.accept(MobFarmRegistrationAdapter.ITEM.get());
+                        output.accept(MobFarmRegistrationAdapter.WORKBENCH_ITEM.get());
+                        output.accept(MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get());
+                        MobFarmRegistrationAdapter.UPGRADES.forEach(item -> output.accept(item.get()));
                     })
                     .build());
 

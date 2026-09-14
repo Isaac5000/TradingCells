@@ -3,13 +3,13 @@
   "category": "misc",
   "show_notification": false,
   "pattern": [
-    "MRM",
-    "RUR",
-    "MRM"
+    "CMC",
+    "MUM",
+    "CMC"
   ],
   "key": {
+    "C": "minecraft:copper_ingot",
     "M": "minecraft:copper_ingot",
-    "R": "minecraft:redstone",
     "U": "minecraft:hopper"
   },
   "result": {

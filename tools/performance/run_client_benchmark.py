@@ -48,7 +48,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--template-directory", type=Path)
     parser.add_argument("--quick-play-world")
     parser.add_argument("--language", help="Minecraft language for visual checks, for example es_es.")
-    parser.add_argument("--ui-fixture", choices=("pipe", "rules", "interactions", "crafting", "materials", "connections", "caps"),
+    parser.add_argument("--ui-fixture", choices=("pipe", "rules", "interactions", "crafting", "materials", "connections", "caps", "terminals", "simulation", "essences", "simulation-models"),
                         help="Install a logistics UI fixture in the disposable cloned world; not a performance baseline.")
     parser.add_argument("--output-directory", type=Path)
     parser.add_argument("--without-rei", action="store_true")
@@ -265,7 +265,7 @@ def run_once(
     row = read_summary(summary_file)
     verify_backend(row, args.backend)
     verify_dimensions(row, args.width, args.height)
-    if args.open_block and args.ui_fixture not in ("connections", "caps") and not row.get("screen_class", ""):
+    if args.open_block and args.ui_fixture not in ("connections", "caps", "terminals", "simulation-models") and not row.get("screen_class", ""):
         raise RuntimeError(
             "The configured block did not leave a container screen open; "
             f"got {row.get('screen_class', '')!r}"

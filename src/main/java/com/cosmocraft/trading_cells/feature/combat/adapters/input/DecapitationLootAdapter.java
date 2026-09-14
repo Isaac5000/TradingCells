@@ -78,7 +78,8 @@ public final class DecapitationLootAdapter {
         MODDED_HEAD_CACHE.clear();
     }
 
-    private static ItemStack headFor(LivingEntity victim) {
+    /** Shared by world drops and detached simulations, including conventionally named modded heads. */
+    public static ItemStack headFor(LivingEntity victim) {
         if (victim instanceof Player player) {
             return playerHead(player.getGameProfile());
         }

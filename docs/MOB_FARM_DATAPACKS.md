@@ -72,6 +72,44 @@ Charged Creepers are a code-owned synthetic variant of their vanilla entity
 type. A descriptor can add a registered modded entity, but cannot create
 another synthetic state variant by itself.
 
+## Runtime entity loot boundary
+
+`platform/neoforge/mobfarm/MobFarmLootTables` owns detached entity creation and
+native loot-table execution for all farm adapters. `roll` accepts a concrete
+`LivingEntity`, resolves its current `getLootTable()` (including saved
+`DeathLootTable` state), and invokes Minecraft's loaded loot pipeline. It does
+not construct a table path from the entity ID or require catalog membership.
+Player-kill context and the supplied weapon are applied for the roll; the shared
+fake player's previous weapon is restored even when a table or consumer fails.
+
+Call on the server thread with a detached entity only. A future capture adapter
+can restore entity state on that detached instance before calling this boundary.
+No live entity is spawned or removed by the executor. Per-kill batches preserve
+the existing ordering of table rolls, equipment rolls and farm-specific filters.
+The historical fixed Skeleton Farm drops and external-table fallback policies
+remain unchanged. Catalog discovery still uses type defaults for filter snapshots;
+it is not the authority for the runtime roll of a supplied entity instance.
+
+The general simulation farm now restores a bounded essence snapshot into that
+detached instance. `MobFarmSimulationLoot` composes its native table with combat
+heads, charged-creeper shards and the historical equipment/ominous rewards.
+It never rerolls the default type table. Each supplement is skipped if that same
+item already appeared in the native batch for that kill. Alternative weapons
+remain mutually exclusive; equipment probabilities and damage ranges retain the
+legacy profiles. Ordinary native drops, including custom tables, remain dynamic.
+
+The simulation menu combines table references, supplement IDs and bounded observed
+loot. Observed IDs survive weapon wear, weapon replacement and save/reload, but
+are reset for a different creature module. Disabled filters apply after native
+and supplemental rolls and do not suppress earned XP. Probability previews use
+the same supplement profiles, without random sampling, and retain unknown values
+when a native table cannot be analysed safely.
+
+The old adapters keep their original generation policies while their registered
+blocks migrate to the general farm. Full rework status, including remaining
+capture-interaction and compatibility checks, is tracked in
+[`ENTITY_SIMULATION_REWORK.md`](ENTITY_SIMULATION_REWORK.md).
+
 ## Examples
 
 The folders under `docs/examples/mob_farm_datapacks/` contain:

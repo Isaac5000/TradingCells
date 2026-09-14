@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {"rolls": 1, "entries": [{"type": "minecraft:item", "name": "minecraft:golden_axe"}]},
+    {"rolls": 1, "entries": [{"type": "minecraft:item", "name": "minecraft:ominous_bottle"}]},
+    {"rolls": 1, "entries": [{"type": "minecraft:item", "name": "minecraft:white_banner"}]}
+  ]
+}

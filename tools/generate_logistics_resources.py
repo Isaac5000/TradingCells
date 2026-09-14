@@ -201,26 +201,31 @@ def resources():
                            ("advanced", "gold_ingot", "gold"), ("ultimate", "diamond", "diamond"), ("infinite", "netherite_ingot", "netherite")):
         name = tier + "_pipe_upgrade"
         put(f"{ASSETS}/models/item/{name}.json", {"parent": "minecraft:item/generated",
-            "textures": {"layer0": f"trading_cells:item/upgrades/{texture}_upgrade"}})
-        put(f"{ASSETS}/items/{name}.json", {"model": {"type": "minecraft:composite", "models": [
-            {"type": "minecraft:model", "model": f"trading_cells:item/{name}"},
-            {"type": "minecraft:special", "base": f"trading_cells:item/{name}",
-             "model": {"type": "trading_cells:upgrade_badge", "badge": "pipe"}}]}})
-        recipe(name, ["MRM", "RUR", "MRM"], {
-            "M": "minecraft:" + material, "R": "minecraft:redstone", "U": previous})
+            "textures": {"layer0": f"trading_cells:item/upgrades/pipe/{texture}_upgrade"}})
+        item(name, f"trading_cells:item/{name}")
+        corners = "popped_chorus_fruit" if texture == "diamond" else material
+        recipe(name, ["CMC", "MUM", "CMC"], {
+            "C": "minecraft:" + corners, "M": "minecraft:" + material, "U": previous})
         previous = "trading_cells:" + name
 
     for crafting in (False, True):
         name = "network_crafting_terminal" if crafting else "network_terminal"
         cube = element([0, 0, 0], [16, 16, 16])
         for side, face in cube["faces"].items():
-            face["uv"] = atlas_uv(cube, side, 1 if side == "up" else 2 if side == "north" else 0)
-        put(f"{ASSETS}/models/block/{name}.json", {"parent": "minecraft:block/block",
-            "textures": {"pipe": f"trading_cells:block/logistics/{name}",
-                         "particle": f"trading_cells:block/logistics/{name}"}, "elements": [cube]})
+            face["uv"] = [0, 0, 16, 16]
+        # The opaque housing backs the transparent icon; the offset avoids coplanar flicker.
+        panel = {"from": [0, 16.01, 0], "to": [16, 16.01, 16],
+                 "faces": {"up": {"uv": [0, 0, 16, 16], "rotation": 180,
+                                  "texture": "#panel", "cullface": "up"}}}
+        put(f"{ASSETS}/models/block/{name}.json", {"parent": "minecraft:block/block", "render_type": "minecraft:cutout",
+            "textures": {"pipe": "trading_cells:block/logistics/network_terminal_body",
+                         "panel": f"trading_cells:block/logistics/{name}_front",
+                         "particle": "trading_cells:block/logistics/network_terminal_body"}, "elements": [cube, panel]})
         put(f"{ASSETS}/blockstates/{name}.json", {"variants": {
             "facing=" + side: {"model": f"trading_cells:block/{name}", **rotation}
             for side, rotation in rotations.items() if side not in ("up", "down")}})
+        # Inventory and hand rendering use the full block, including its top panel.
+        put(f"{ASSETS}/models/item/{name}.json", {"parent": f"trading_cells:block/{name}"})
         item(name, f"trading_cells:block/{name}")
         loot(name)
     recipe("network_terminal", ["IGI", "PCP", "IRI"], {
@@ -271,6 +276,20 @@ def seed_textures(archive):
             atlas.save(path)
 
 
+def resource_matches(relative: str, actual: bytes, expected: bytes) -> bool:
+    if not relative.endswith(".png"):
+        return actual == expected
+    # PNG compression can vary between platforms without changing any pixels.
+    try:
+        with Image.open(BytesIO(actual)) as committed, Image.open(BytesIO(expected)) as generated:
+            return (committed.format == "PNG"
+                    and committed.size == generated.size
+                    and committed.n_frames == generated.n_frames
+                    and committed.convert("RGBA").tobytes() == generated.convert("RGBA").tobytes())
+    except OSError:
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
@@ -294,7 +313,7 @@ def main():
     for relative, content in generated.items():
         path = ROOT / relative
         if options.check:
-            if not path.exists() or path.read_bytes() != content:
+            if not path.is_file() or not resource_matches(relative, path.read_bytes(), content):
                 stale.append(relative)
         else:
             path.parent.mkdir(parents=True, exist_ok=True)

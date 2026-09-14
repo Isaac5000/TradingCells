@@ -5,6 +5,7 @@
   "key": {
     "C": "minecraft:crying_obsidian",
     "E": "minecraft:enchanting_table",
+    "S": "minecraft:end_stone",
     "X": {
       "neoforge:ingredient_type": "neoforge:components",
       "items": "trading_cells:experience_storage",
@@ -16,7 +17,7 @@
   "pattern": [
     "CEC",
     "CXC",
-    "CCC"
+    "CSC"
   ],
   "result": {
     "count": 1,

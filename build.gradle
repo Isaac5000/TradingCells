@@ -696,11 +696,40 @@ tasks.register('checkVillagerTradeGuiTextures', Exec) {
     inputs.dir('src/main/resources/assets/trading_cells/textures/gui/sprites')
 }
 
+tasks.register('testLogisticsResourceValidation', Exec) {
+    group = 'verification'
+    description = 'Tests portable PNG comparison and detection of changed logistics resources.'
+    commandLine pythonExecutable, '-m', 'unittest', 'discover', '-s', 'tools', '-p', 'test_logistics_resources.py'
+    inputs.files('tools/test_logistics_resources.py', 'tools/generate_logistics_resources.py', 'tools/generate_family_upgrades.py')
+    inputs.dir('tools/assets/upgrade_bases')
+    inputs.dir('src/main/resources/assets/trading_cells/textures/item/upgrades')
+    inputs.dir('src/main/resources/assets/trading_cells/items')
+}
+
 tasks.register('checkLogisticsResources', Exec) {
     group = 'verification'
     description = 'Checks reproducible logistics models, sprites and recipes.'
+    dependsOn tasks.named('testLogisticsResourceValidation')
+    dependsOn tasks.named('checkUpgradeFamilyTextures')
     commandLine pythonExecutable, 'tools/generate_logistics_resources.py', '--check'
     inputs.file('tools/generate_logistics_resources.py')
+    inputs.dir('src/main/resources')
+}
+
+tasks.register('checkUpgradeFamilyTextures', Exec) {
+    group = 'verification'
+    description = 'Validates palette-only upgrade families and terminal icons.'
+    commandLine pythonExecutable, 'tools/generate_family_upgrades.py', '--check'
+    inputs.file('tools/generate_family_upgrades.py')
+    inputs.dir('tools/assets/upgrade_bases')
+    inputs.dir('src/main/resources/assets/trading_cells/textures/item')
+}
+
+tasks.register('checkMobSimulationResources', Exec) {
+    group = 'verification'
+    description = 'Validates general mob-farm models, modules and upgrade recipes.'
+    commandLine pythonExecutable, 'tools/generate_mob_simulation_resources.py', '--check'
+    inputs.file('tools/generate_mob_simulation_resources.py')
     inputs.dir('src/main/resources')
 }
 
@@ -713,6 +742,15 @@ tasks.register('checkProjectResources', Exec) {
     if (file('src/generated/resources').isDirectory()) {
         inputs.dir('src/generated/resources')
     }
+}
+
+tasks.register('testRecipeResources', Exec) {
+    group = 'verification'
+    description = 'Checks current Minecraft egg coverage, recipe requirements and retired farm recipes.'
+    dependsOn tasks.named('createMinecraftArtifacts')
+    commandLine pythonExecutable, '-B', '-m', 'unittest', 'discover', '-s', 'tools', '-p', 'test_recipe_resources.py'
+    inputs.files('tools/test_recipe_resources.py', 'tools/validate_project_resources.py', 'tools/generate_logistics_resources.py')
+    inputs.dir('src/main/resources/data/trading_cells/recipe')
 }
 
 tasks.register('checkReleaseContracts', Exec) {
@@ -824,7 +862,9 @@ tasks.named('check').configure {
     dependsOn tasks.named('checkMachineGuiTextures')
     dependsOn tasks.named('checkVillagerTradeGuiTextures')
     dependsOn tasks.named('checkProjectResources')
+    dependsOn tasks.named('testRecipeResources')
     dependsOn tasks.named('checkLogisticsResources')
+    dependsOn tasks.named('checkMobSimulationResources')
     dependsOn tasks.named('checkReleaseContracts')
     dependsOn tasks.named('checkPortability')
     dependsOn tasks.named('checkPublishedJarContents')

@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input;
 
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmLootTables;
+
 import com.cosmocraft.trading_cells.feature.zombiefarm.application.port.input.ZombieFarmUseCase;
 import com.cosmocraft.trading_cells.feature.combat.domain.model.DecapitationRules;
 import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmDropRules;
@@ -12,17 +14,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.neoforge.common.util.FakePlayerFactory;
 
 public final class ZombieFarmLootAdapter {
     private ZombieFarmLootAdapter() {
@@ -88,39 +84,8 @@ public final class ZombieFarmLootAdapter {
             ServerLevel level,
             ItemStack sword
     ) {
-        LivingEntity target = createTarget(level, targetId);
-        if (target == null || target.getLootTable().isEmpty()) {
-            return List.of();
-        }
-        FakePlayer attacker = FakePlayerFactory.getMinecraft(level);
-        ItemStack previousWeapon = attacker.getMainHandItem().copy();
-        List<List<ItemStack>> batches = new ArrayList<>(Math.max(1, kills));
-        try {
-            attacker.setItemSlot(EquipmentSlot.MAINHAND, sword.copy());
-            target.setLastHurtByPlayer(attacker, 100);
-            for (int kill = 0; kill < Math.max(1, kills); kill++) {
-                List<ItemStack> batch = new ArrayList<>();
-                target.dropFromLootTable(
-                        level,
-                        level.damageSources().playerAttack(attacker),
-                        true,
-                        target.getLootTable().orElseThrow(),
-                        stack -> batch.add(stack.copy())
-                );
-                batches.add(List.copyOf(batch));
-            }
-            return List.copyOf(batches);
-        } catch (RuntimeException | LinkageError ignored) {
-            return List.of();
-        } finally {
-            attacker.setItemSlot(EquipmentSlot.MAINHAND, previousWeapon);
-        }
-    }
-
-    private static LivingEntity createTarget(ServerLevel level, Identifier targetId) {
-        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(targetId).orElse(null);
-        Entity entity = type == null ? null : type.create(level, EntitySpawnReason.LOAD);
-        return entity instanceof LivingEntity living ? living : null;
+        LivingEntity target = MobFarmLootTables.createTarget(level, targetId);
+        return MobFarmLootTables.batches(level, target, sword, Math.max(1, kills));
     }
 
     private static void addFilteredTableDrops(

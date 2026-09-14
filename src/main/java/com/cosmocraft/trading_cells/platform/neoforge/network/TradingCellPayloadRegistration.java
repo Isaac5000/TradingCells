@@ -70,5 +70,7 @@ public final class TradingCellPayloadRegistration {
         registrar.playToClient(PipeChannelSuggestionsPayload.PAYLOAD_TYPE, PipeChannelSuggestionsPayload.STREAM_CODEC);
         registrar.playToServer(PipeChannelQueryPayload.PAYLOAD_TYPE, PipeChannelQueryPayload.STREAM_CODEC, PipeChannelQueryPayload::handle);
         registrar.playToClient(ConfiguredFarmLootPreviewPayload.PAYLOAD_TYPE, ConfiguredFarmLootPreviewPayload.STREAM_CODEC);
+        registrar.playToClient(MobSimulationLootPayload.PAYLOAD_TYPE, MobSimulationLootPayload.STREAM_CODEC, MobSimulationLootPayload::handle);
+        registrar.playToServer(MobSimulationFilterPayload.PAYLOAD_TYPE, MobSimulationFilterPayload.STREAM_CODEC, MobSimulationFilterPayload::handle);
     }
 }

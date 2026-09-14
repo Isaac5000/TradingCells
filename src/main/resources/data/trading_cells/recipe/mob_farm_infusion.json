@@ -1,0 +1,47 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "category": "production",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:iron_block",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:diamond_sword",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:iron_block",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:iron_bars",
+      "count": 1
+    },
+    {
+      "ingredient": "trading_cells:experience_storage",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:iron_bars",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:quartz_block",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:amethyst_block",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:quartz_block",
+      "count": 1
+    }
+  ],
+  "experience": 50000,
+  "result": {
+    "type": "item",
+    "item": "trading_cells:mob_farm"
+  }
+}

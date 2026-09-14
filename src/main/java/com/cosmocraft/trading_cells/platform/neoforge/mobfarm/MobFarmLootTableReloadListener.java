@@ -6,8 +6,9 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -19,6 +20,8 @@ import net.minecraft.util.profiling.ProfilerFiller;
 
 /** Retains only item and item-tag references needed to describe loaded entity loot tables. */
 final class MobFarmLootTableReloadListener extends SimpleJsonResourceReloadListener<JsonElement> {
+    private static final int MAX_JSON_NODES = 16_384;
+    private static final int MAX_LINKED_TABLES = 256;
     private static final Codec<JsonElement> JSON_CODEC = Codec.PASSTHROUGH.xmap(
             dynamic -> dynamic.convert(JsonOps.INSTANCE).getValue(),
             element -> new Dynamic<>(JsonOps.INSTANCE, element)
@@ -40,14 +43,10 @@ final class MobFarmLootTableReloadListener extends SimpleJsonResourceReloadListe
             ResourceManager resourceManager,
             ProfilerFiller profiler
     ) {
-        Map<Identifier, List<LootReference>> refreshed = new LinkedHashMap<>();
+        Map<Identifier, TableReferences> direct = new LinkedHashMap<>();
         resources.forEach((id, json) -> {
             try {
-                List<LootReference> references = new ArrayList<>();
-                collectReferences(json, references);
-                if (!references.isEmpty()) {
-                    refreshed.put(id, List.copyOf(references));
-                }
+                direct.put(id, collectReferences(json));
             } catch (RuntimeException exception) {
                 TradingCells.LOGGER.warn(
                         "Could not inspect loot table '{}'; its dynamic mob-farm filters will be omitted.",
@@ -56,32 +55,55 @@ final class MobFarmLootTableReloadListener extends SimpleJsonResourceReloadListe
                 );
             }
         });
+        Map<Identifier, List<LootReference>> refreshed = new LinkedHashMap<>();
+        direct.keySet().forEach(id -> {
+            var pending = new ArrayDeque<Identifier>();
+            var visited = new LinkedHashSet<Identifier>();
+            var references = new LinkedHashSet<LootReference>();
+            pending.add(id);
+            while (!pending.isEmpty() && visited.size() < MAX_LINKED_TABLES) {
+                Identifier next = pending.removeFirst();
+                if (!visited.add(next)) { continue; }
+                TableReferences table = direct.get(next);
+                if (table == null) { continue; }
+                references.addAll(table.items());
+                table.tables().stream().filter(link -> !visited.contains(link)).forEach(pending::addLast);
+            }
+            if (!pending.isEmpty()) {
+                TradingCells.LOGGER.warn("Mob-farm filter inspection reached the linked-table limit for '{}'", id);
+            }
+            refreshed.put(id, List.copyOf(references));
+        });
         REFERENCES.set(Map.copyOf(refreshed));
     }
 
-    private static void collectReferences(JsonElement element, List<LootReference> result) {
-        if (element.isJsonArray()) {
-            element.getAsJsonArray().forEach(child -> collectReferences(child, result));
-            return;
+    private static TableReferences collectReferences(JsonElement root) {
+        var items = new LinkedHashSet<LootReference>();
+        var tables = new LinkedHashSet<Identifier>();
+        var pending = new ArrayDeque<JsonElement>();
+        pending.add(root);
+        int nodes = 0;
+        while (!pending.isEmpty()) {
+            if (++nodes > MAX_JSON_NODES) { throw new IllegalArgumentException("Loot table inspection limit exceeded"); }
+            JsonElement element = pending.removeFirst();
+            if (element.isJsonArray()) {
+                element.getAsJsonArray().forEach(pending::addLast);
+            } else if (element.isJsonObject()) {
+                JsonObject object = element.getAsJsonObject();
+                String type = string(object, "type");
+                Identifier id = Identifier.tryParse(string(object, "name"));
+                if (id != null && (type.equals("minecraft:item") || type.equals("item"))) {
+                    items.add(new LootReference(id, false));
+                } else if (id != null && (type.equals("minecraft:tag") || type.equals("tag"))) {
+                    items.add(new LootReference(id, true));
+                } else if (type.equals("minecraft:loot_table") || type.equals("loot_table")) {
+                    Identifier table = Identifier.tryParse(string(object, "value"));
+                    if (table != null) { tables.add(table); }
+                }
+                object.entrySet().forEach(entry -> pending.addLast(entry.getValue()));
+            }
         }
-        if (!element.isJsonObject()) {
-            return;
-        }
-        JsonObject object = element.getAsJsonObject();
-        String type = string(object, "type");
-        Identifier id = Identifier.tryParse(string(object, "name"));
-        if (id != null && type.endsWith(":item")) {
-            addDistinct(result, new LootReference(id, false));
-        } else if (id != null && type.endsWith(":tag")) {
-            addDistinct(result, new LootReference(id, true));
-        }
-        object.entrySet().forEach(entry -> collectReferences(entry.getValue(), result));
-    }
-
-    private static void addDistinct(List<LootReference> references, LootReference candidate) {
-        if (!references.contains(candidate)) {
-            references.add(candidate);
-        }
+        return new TableReferences(List.copyOf(items), List.copyOf(tables));
     }
 
     private static String string(JsonObject object, String key) {
@@ -91,4 +113,6 @@ final class MobFarmLootTableReloadListener extends SimpleJsonResourceReloadListe
 
     record LootReference(Identifier id, boolean tag) {
     }
+
+    private record TableReferences(List<LootReference> items, List<Identifier> tables) { }
 }

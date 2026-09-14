@@ -227,8 +227,7 @@ public final class LogisticsNetworkManager {
             var pipe = loadedPipe(BlockPos.of(search.nodes.next()));
             if (pipe == null) { continue; }
             for (Direction side : Direction.values()) {
-                if (pipe.face(side).mode() == PipeSideMode.NONE) { continue; }
-                var profile = pipe.face(side).effectiveProfile(search.type);
+                var profile = pipe.face(side).profile(search.type);
                 search.offer(profile.channel());
                 for (var rule : profile.filters()) { search.offer(rule.routeChannel()); }
             }

@@ -3,13 +3,13 @@
   "category": "misc",
   "show_notification": false,
   "pattern": [
-    "MRM",
-    "RUR",
-    "MRM"
+    "CMC",
+    "MUM",
+    "CMC"
   ],
   "key": {
+    "C": "minecraft:gold_ingot",
     "M": "minecraft:gold_ingot",
-    "R": "minecraft:redstone",
     "U": "trading_cells:improved_pipe_upgrade"
   },
   "result": {

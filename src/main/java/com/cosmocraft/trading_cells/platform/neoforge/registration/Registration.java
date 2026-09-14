@@ -101,6 +101,7 @@ public class Registration {
         RaiderFarmRegistrationAdapter.load(modEventBus);
         CreeperFarmRegistrationAdapter.load(modEventBus);
         ConfiguredMobFarmRegistrationAdapter.load(modEventBus);
+        com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.load(modEventBus);
         SilkTouchTwoRegistrationAdapter.load();
         ZombieFarmRegistrationAdapter.load(modEventBus);
         QuarryRegistrationAdapter.load(modEventBus);

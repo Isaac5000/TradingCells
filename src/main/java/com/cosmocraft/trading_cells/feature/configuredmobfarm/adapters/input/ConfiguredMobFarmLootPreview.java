@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmDropRules.BaseDrop;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmLootTables;
 import com.google.gson.*;
 import com.mojang.serialization.JsonOps;
 import java.util.*;
@@ -32,9 +33,12 @@ public final class ConfiguredMobFarmLootPreview {
     }
 
     public static Map<Identifier, BaseDrop> calculate(ServerLevel level, Identifier targetId, ItemStack sword, int looting, int kills) {
-        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(targetId).orElse(null);
-        Entity entity = type == null ? null : type.create(level, EntitySpawnReason.LOAD);
-        if (!(entity instanceof LivingEntity target) || target.getLootTable().isEmpty()) { return Map.of(); }
+        LivingEntity target = MobFarmLootTables.createTarget(level, targetId);
+        return calculate(level, target, sword, looting, kills);
+    }
+
+    public static Map<Identifier, BaseDrop> calculate(ServerLevel level, LivingEntity target, ItemStack sword, int looting, int kills) {
+        if (target == null || target.getLootTable().isEmpty()) { return Map.of(); }
         var attacker = FakePlayerFactory.getMinecraft(level);
         ItemStack previous = attacker.getMainHandItem().copy();
         try {
@@ -140,9 +144,13 @@ public final class ConfiguredMobFarmLootPreview {
             if (chance != 1) { throw new IllegalArgumentException("Conditional loot function"); }
             switch (function.get("function").getAsString()) {
                 case "minecraft:set_count" -> {
-                    int[] range = range(function.get("count"));
-                    Summary count = new Summary(Math.max(1, range[0]), range[1], range[0] == 0 ? 1.0 / (range[1] + 1) : 0);
-                    result.replaceAll((id, old) -> function.has("add") && function.get("add").getAsBoolean() ? old.plus(count) : count);
+                    int[] range = range(function.get("count"), true);
+                    boolean add = function.has("add") && function.get("add").getAsBoolean();
+                    if (add && range[0] < 0) { throw new IllegalArgumentException("Subtractive count function"); }
+                    // ItemStack exposes nonpositive counts as zero before a later looting increase.
+                    double zero = range[0] > 0 ? 0 : Math.min(1, (1.0 - range[0]) / (range[1] - range[0] + 1.0));
+                    Summary count = new Summary(Math.max(1, range[0]), Math.max(0, range[1]), zero);
+                    result.replaceAll((id, old) -> add ? old.plus(count) : count);
                 }
                 case "minecraft:enchanted_count_increase" -> {
                     if (looting == 0) { continue; }
@@ -201,15 +209,21 @@ public final class ConfiguredMobFarmLootPreview {
     }
 
     private static int[] range(JsonElement value) {
-        if (value == null) { return new int[]{1, 1}; }
-        if (value.isJsonPrimitive()) { int count = value.getAsInt(); return checkedRange(count, count); }
-        JsonObject number = value.getAsJsonObject();
-        if (!number.get("type").getAsString().equals("minecraft:uniform")) { throw new IllegalArgumentException("Unknown number provider"); }
-        return checkedRange(number.get("min").getAsInt(), number.get("max").getAsInt());
+        return range(value, false);
     }
 
-    private static int[] checkedRange(int minimum, int maximum) {
-        if (minimum < 0 || maximum < minimum || maximum > 1024) { throw new IllegalArgumentException("Unbounded preview"); }
+    private static int[] range(JsonElement value, boolean allowNegative) {
+        if (value == null) { return new int[]{1, 1}; }
+        if (value.isJsonPrimitive()) { int count = value.getAsInt(); return checkedRange(count, count, allowNegative); }
+        JsonObject number = value.getAsJsonObject();
+        if (!number.get("type").getAsString().equals("minecraft:uniform")) { throw new IllegalArgumentException("Unknown number provider"); }
+        return checkedRange(number.get("min").getAsInt(), number.get("max").getAsInt(), allowNegative);
+    }
+
+    private static int[] checkedRange(int minimum, int maximum, boolean allowNegative) {
+        if (minimum < (allowNegative ? -1024 : 0) || maximum < minimum || maximum > 1024) {
+            throw new IllegalArgumentException("Unbounded preview");
+        }
         return new int[]{minimum, maximum};
     }
 

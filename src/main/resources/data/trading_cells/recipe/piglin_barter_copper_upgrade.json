@@ -5,7 +5,7 @@
   "key": {
     "C": "minecraft:copper_ingot",
     "N": "minecraft:copper_nugget",
-    "R": "minecraft:redstone"
+    "R": "minecraft:gold_ingot"
   },
   "pattern": [
     "NCN",

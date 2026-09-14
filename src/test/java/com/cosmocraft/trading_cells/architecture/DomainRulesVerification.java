@@ -13,11 +13,13 @@ public final class DomainRulesVerification {
         ConverterDomainVerification.verify();
         IronFarmDomainVerification.verify();
         MobFarmDomainVerification.verify();
+        MobSimulationDomainVerification.verify();
         SkeletonFarmDomainVerification.verify();
         ZombieFarmDomainVerification.verify();
         QuarryDomainVerification.verify();
         CapturerDomainVerification.verify();
         ScreenLayoutDomainVerification.verify();
         InfusionExperienceDomainVerification.verify();
+        LogisticsPresentationVerification.verify();
     }
 }

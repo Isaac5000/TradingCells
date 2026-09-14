@@ -1,7 +1,7 @@
 package com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.CreeperFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.LegacyMobFarmBlock;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
 
-public final class CreeperFarmBlock extends AbstractPortableMachineBlock<CreeperFarmBlockEntity> {
+public final class CreeperFarmBlock extends LegacyMobFarmBlock<CreeperFarmBlockEntity> {
     public static final MapCodec<CreeperFarmBlock> CODEC = simpleCodec(CreeperFarmBlock::new);
 
     public CreeperFarmBlock(Properties properties) {

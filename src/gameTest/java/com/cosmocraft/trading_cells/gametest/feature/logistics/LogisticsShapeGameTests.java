@@ -36,6 +36,11 @@ public final class LogisticsShapeGameTests {
                 helper.assertTrue(!Shapes.joinIsNotEmpty(extracting.getShape(helper.getLevel(), pos),
                         extracting.getCollisionShape(helper.getLevel(), pos), BooleanOp.NOT_SAME),
                         "Selection and collision agree");
+                helper.assertTrue(!Shapes.joinIsNotEmpty(extracting.getShape(helper.getLevel(), pos),
+                        extracting.getVisualShape(helper.getLevel(), pos, net.minecraft.world.phys.shapes.CollisionContext.empty()), BooleanOp.NOT_SAME),
+                        "Third-person camera uses the physical pipe geometry");
+                helper.assertTrue(extracting.getCollisionShape(helper.getLevel(), pos)
+                        == extracting.getCollisionShape(helper.getLevel(), pos), "Collision geometry is cached, not rebuilt on query");
             }
         }
         helper.succeed();

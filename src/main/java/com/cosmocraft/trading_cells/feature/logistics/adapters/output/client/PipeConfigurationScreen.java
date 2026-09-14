@@ -62,7 +62,7 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
         menu.setRuleEditing(editor != null);
         if (editor != null) {
             editor.init(font, leftPos, topPos, this::addRenderableWidget, this::closeRule);
-            completion = new PipeChannelCompletion(menu, selected, editor.channelField(), editor.parentChannel());
+            completion = new PipeChannelCompletion(menu, selected, editor.channelField(), editor.parentChannel(), () -> draft.profile(selected));
             return;
         }
         var tier = draft.upgradeTier();
@@ -121,7 +121,7 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
         channel = addRenderableWidget(new EditBox(font, leftPos + 204, topPos + 179, 158, 18, label("channel")));
         channel.setMaxLength(PipeFilterRule.MAX_CHANNEL_LENGTH); channel.setValue(profile.channel());
         gate(channel, tier.allowsChannels(), PipeUpgradeTier.ADVANCED);
-        completion = new PipeChannelCompletion(menu, selected, channel, "");
+        completion = new PipeChannelCompletion(menu, selected, channel, "", () -> draft.profile(selected));
         button(label("copy"), 204, 202, 76, ignored -> { storeFields(); minecraft.keyboardHandler.setClipboard(PipeConfigurationClipboard.copy(draft)); });
         button(label("paste"), 284, 202, 78, ignored -> {
             storeFields(); draft = PipeConfigurationClipboard.paste(minecraft.keyboardHandler.getClipboard(), draft); rebuildWidgets();

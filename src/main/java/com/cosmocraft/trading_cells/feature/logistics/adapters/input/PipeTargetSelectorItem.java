@@ -1,19 +1,21 @@
 package com.cosmocraft.trading_cells.feature.logistics.adapters.input;
 
+import com.cosmocraft.trading_cells.feature.logistics.adapters.api.LogisticsResourceAdapters;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeRuleTarget;
 import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
-import net.neoforged.neoforge.capabilities.Capabilities;
 import org.jspecify.annotations.Nullable;
 
 public final class PipeTargetSelectorItem extends Item {
@@ -28,16 +30,21 @@ public final class PipeTargetSelectorItem extends Item {
         var pos = context.getClickedPos();
         if (player == null || player.isSpectator() || !level.mayInteract(player, pos)
                 || !player.mayUseItemAt(pos, context.getClickedFace(), stack)) { return InteractionResult.FAIL; }
-        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
-        boolean compatible = level.getCapability(Capabilities.Item.BLOCK, pos, null) != null;
-        for (Direction side : Direction.values()) {
-            if (compatible) { break; }
-            compatible = level.getCapability(Capabilities.Item.BLOCK, pos, side) != null;
-        }
-        if (!compatible) { return InteractionResult.FAIL; }
+        if (!(level instanceof ServerLevel serverLevel)) { return InteractionResult.SUCCESS; }
+        if (!isCompatibleTarget(serverLevel, pos)) { return InteractionResult.FAIL; }
         setTarget(stack, new PipeRuleTarget(level.dimension().identifier().toString(), pos.getX(), pos.getY(), pos.getZ()));
         player.sendOverlayMessage(Component.translatable("item.trading_cells.pipe_target_selector.saved", pos.getX(), pos.getY(), pos.getZ()));
         return InteractionResult.CONSUME;
+    }
+
+    private static boolean isCompatibleTarget(ServerLevel level, BlockPos pos) {
+        for (var adapter : LogisticsResourceAdapters.all()) {
+            if (LogisticsNetworkManager.findHandler(adapter, level, pos, null) != null) { return true; }
+            for (Direction side : Direction.values()) {
+                if (LogisticsNetworkManager.findHandler(adapter, level, pos, side) != null) { return true; }
+            }
+        }
+        return false;
     }
 
     public static void setTarget(ItemStack stack, PipeRuleTarget target) {

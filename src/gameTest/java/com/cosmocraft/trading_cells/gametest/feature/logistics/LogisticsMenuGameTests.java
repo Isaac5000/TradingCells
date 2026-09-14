@@ -22,8 +22,42 @@ public final class LogisticsMenuGameTests {
     public static List<GameTestCase> tests() {
         return List.of(new GameTestCase("logistics_terminal_cursor_and_crafting", 160, LogisticsMenuGameTests::cursor),
                 new GameTestCase("logistics_terminal_pending_route", 160, LogisticsMenuGameTests::pendingRoute),
+                new GameTestCase("logistics_terminal_matching_inventory_deposit", 160, LogisticsMenuGameTests::matchingDeposit),
                 new GameTestCase("logistics_copy_partial_invalid_fields", 20, LogisticsMenuGameTests::clipboard),
                 new GameTestCase("logistics_horizontal_farm_extraction", 100, LogisticsMenuGameTests::horizontalFarm));
+    }
+
+    private static void matchingDeposit(GameTestHelper helper) {
+        var storage = barrel(helper, SOURCE, Items.DIAMOND, 0);
+        helper.setBlock(ORIGIN.east(), LogisticsRegistrationAdapter.TERMINAL_BLOCK.get());
+        var terminal = helper.getBlockEntity(ORIGIN.east(), NetworkTerminalBlockEntity.class);
+        var pipe = pipe(helper, ORIGIN, PipeKind.ITEM);
+        pipe.setMode(Direction.WEST, PipeSideMode.INSERT);
+        var player = connectedPlayer(helper, GameType.SURVIVAL);
+        player.setPos(Vec3.atCenterOf(terminal.getBlockPos()));
+        var menu = new NetworkTerminalMenu(18, player.getInventory(), terminal, player, false);
+        player.containerMenu = menu;
+        player.getInventory().setItem(0, new ItemStack(Items.DIAMOND, 23));
+        player.getInventory().setItem(9, new ItemStack(Items.DIAMOND, 47));
+        player.getInventory().setItem(10, new ItemStack(Items.EMERALD, 13));
+        var named = new ItemStack(Items.DIAMOND, 7);
+        named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Keep"));
+        player.getInventory().setItem(11, named);
+        player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.DIAMOND, 5));
+        menu.setCarried(new ItemStack(Items.STICK, 3));
+        menu.handleAction(player, new NetworkTerminalActionPayload(menu.containerId, NetworkTerminalActionPayload.Action.INSERT_INVENTORY,
+                LogisticsResourceType.ITEM, 0, "", InteractionHand.MAIN_HAND, null, Identifier.parse("minecraft:diamond"),
+                com.cosmocraft.trading_cells.feature.logistics.adapters.neoforge.LogisticsComponentData
+                        .fingerprint(new ItemStack(Items.DIAMOND).getComponentsPatch()), Long.MAX_VALUE));
+        helper.startSequence().thenWaitUntil(() -> {
+            menu.broadcastChanges();
+            helper.assertValueEqual(count(storage, Items.DIAMOND), 70, "Bulk matching deposit resumes once network is ready");
+        }).thenExecute(() -> {
+            helper.assertValueEqual(player.getInventory().getItem(11), named, "Named variant is not selected by bare item");
+            helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 13, "Other resource stays in inventory");
+            helper.assertValueEqual(player.getOffhandItem().getCount(), 5, "Bulk deposit excludes offhand");
+            helper.assertTrue(menu.getCarried().is(Items.STICK) && menu.getCarried().getCount() == 3, "Bulk deposit leaves cursor intact");
+        }).thenSucceed();
     }
 
     private static void pendingRoute(GameTestHelper helper) {

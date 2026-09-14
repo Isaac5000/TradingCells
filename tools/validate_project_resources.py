@@ -55,98 +55,8 @@ ENTITY_FARM_BASE_TEXTURES = {
     "slime_farm": "trading_cells:block/slime_block_opaque",
     "zombie_farm": "minecraft:block/pale_moss_block",
 }
-ENTITY_FARM_RECIPE_BASES = {
-    key: value.replace("minecraft:block/", "minecraft:")
-    for key, value in ENTITY_FARM_BASE_TEXTURES.items()
-}
-ENTITY_FARM_RECIPE_BASES["slime_farm"] = "minecraft:slime_block"
-ENTITY_FARM_RECIPE_BASES["fish_farm"] = "minecraft:sand"
-ENTITY_FARM_RECIPE_BASES["livestock_farm"] = "minecraft:hay_block"
-CONFIGURED_FARM_UPPER_INGREDIENTS = {
-    "arthropod_farm": (
-        "minecraft:cave_spider_spawn_egg",
-        "minecraft:string",
-        "minecraft:spider_spawn_egg",
-        "minecraft:endermite_spawn_egg",
-        "minecraft:silverfish_spawn_egg",
-    ),
-    "blaze_farm": (
-        "minecraft:blaze_powder",
-        "minecraft:blaze_spawn_egg",
-        "minecraft:blaze_powder",
-        "minecraft:blaze_rod",
-        "minecraft:blaze_rod",
-    ),
-    "breeze_farm": (
-        "minecraft:wind_charge",
-        "minecraft:breeze_spawn_egg",
-        "minecraft:wind_charge",
-        "minecraft:breeze_rod",
-        "minecraft:breeze_rod",
-    ),
-    "enderman_farm": (
-        "minecraft:chorus_fruit",
-        "minecraft:enderman_spawn_egg",
-        "minecraft:chorus_fruit",
-        "minecraft:ender_pearl",
-        "minecraft:ender_pearl",
-    ),
-    "ghast_farm": (
-        "minecraft:ghast_tear",
-        "minecraft:fire_charge",
-        "minecraft:ghast_tear",
-        "minecraft:ghast_spawn_egg",
-        "minecraft:happy_ghast_spawn_egg",
-    ),
-    "guardian_farm": (
-        "minecraft:prismarine_crystals",
-        "minecraft:heart_of_the_sea",
-        "minecraft:prismarine_crystals",
-        "minecraft:elder_guardian_spawn_egg",
-        "minecraft:guardian_spawn_egg",
-    ),
-    "fish_farm": (
-        "minecraft:cod_spawn_egg",
-        "minecraft:fishing_rod",
-        "minecraft:tropical_fish_spawn_egg",
-        "minecraft:pufferfish_spawn_egg",
-        "minecraft:salmon_spawn_egg",
-    ),
-    "livestock_farm": (
-        "minecraft:cow_spawn_egg",
-        "minecraft:sheep_spawn_egg",
-        "minecraft:pig_spawn_egg",
-        "minecraft:chicken_spawn_egg",
-        "minecraft:rabbit_spawn_egg",
-    ),
-    "phantom_farm": (
-        "minecraft:phantom_membrane",
-        "minecraft:phantom_spawn_egg",
-        "minecraft:phantom_membrane",
-        "minecraft:phantom_membrane",
-        "minecraft:phantom_membrane",
-    ),
-    "piglin_farm": (
-        "minecraft:gold_ingot",
-        "minecraft:crossbow",
-        "minecraft:gold_ingot",
-        "minecraft:piglin_brute_spawn_egg",
-        "minecraft:piglin_spawn_egg",
-    ),
-    "shulker_farm": (
-        "minecraft:end_rod",
-        "minecraft:shulker_spawn_egg",
-        "minecraft:end_rod",
-        "minecraft:shulker_shell",
-        "minecraft:shulker_shell",
-    ),
-    "slime_farm": (
-        "minecraft:slime_ball",
-        "minecraft:sulfur_cube_spawn_egg",
-        "minecraft:slime_ball",
-        "minecraft:magma_cube_spawn_egg",
-        "minecraft:slime_spawn_egg",
-    ),
+LEGACY_ENTITY_FARM_BLOCKS = ENTITY_FARM_BLOCKS | {
+    "aquatic_farm", "mount_farm", "amphibian_farm", "bee_farm", "creaking_farm",
 }
 CRAFTING_RECIPE_TYPES = {
     "minecraft:crafting_shaped",
@@ -505,304 +415,60 @@ def validate_recipes(
 def validate_entity_farm_recipes(
     roots: list[Path], parsed_json: dict[Path, Any], errors: list[str]
 ) -> None:
-    for block_id in sorted(ENTITY_FARM_BLOCKS):
-        recipe_path = find_resource(
-            roots, Path(f"data/trading_cells/recipe/{block_id}_infusion.json")
-        )
-        if recipe_path is None:
-            errors.append(f"missing entity-farm infusion recipe: {block_id}")
-            continue
-        recipe = parsed_json.get(recipe_path)
-        ingredients = recipe.get("ingredients") if isinstance(recipe, dict) else None
-        if not isinstance(ingredients, list) or len(ingredients) != 9:
-            errors.append(f"{recipe_path}: entity-farm infusion must contain nine slots")
-            continue
+    for block_id in sorted(LEGACY_ENTITY_FARM_BLOCKS):
+        path = find_resource(roots, Path(f"data/trading_cells/recipe/{block_id}_infusion.json"))
+        if path is not None:
+            errors.append(f"{path}: replaced entity-farm recipe must not be published")
 
-        ingredient_ids = [
-            entry.get("ingredient") if isinstance(entry, dict) else None
-            for entry in ingredients
-        ]
-        if ingredient_ids[4] != "trading_cells:experience_storage":
-            errors.append(f"{recipe_path}: center slot must contain Experience Storage")
-        if ingredient_ids[6] != "minecraft:spawner":
-            errors.append(f"{recipe_path}: bottom-left slot must contain a Spawner")
-        if ingredient_ids[8] != "minecraft:iron_block":
-            errors.append(f"{recipe_path}: bottom-right slot must contain an Iron Block")
-        expected_base = ENTITY_FARM_RECIPE_BASES[block_id]
-        if ingredient_ids[7] != expected_base:
-            errors.append(f"{recipe_path}: bottom base must contain {expected_base}")
+    path = find_resource(roots, Path("data/trading_cells/recipe/mob_farm_infusion.json"))
+    recipe = parsed_json.get(path) if path else None
+    expected = (
+        "minecraft:iron_block", "minecraft:diamond_sword", "minecraft:iron_block",
+        "minecraft:iron_bars", "trading_cells:experience_storage", "minecraft:iron_bars",
+        "minecraft:quartz_block", "minecraft:amethyst_block", "minecraft:quartz_block",
+    )
+    if recipe != {
+        "type": "trading_cells:arcane_infusion", "category": "production",
+        "ingredients": [{"ingredient": item, "count": 1} for item in expected],
+        "experience": 50_000, "result": {"type": "item", "item": "trading_cells:mob_farm"},
+    }:
+        errors.append(f"{path}: general entity-farm infusion must match its simulation recipe")
 
-        expected_upper = CONFIGURED_FARM_UPPER_INGREDIENTS.get(block_id)
-        if expected_upper is not None:
-            actual_upper = tuple(ingredient_ids[index] for index in (0, 1, 2, 3, 5))
-            if actual_upper != expected_upper:
-                errors.append(
-                    f"{recipe_path}: configured-farm upper ingredients do not match its family pattern"
-                )
-
-        if block_id == "creeper_farm":
-            upper_corners = ingredient_ids[0], ingredient_ids[2]
-            if upper_corners != ("minecraft:gunpowder", "minecraft:gunpowder"):
-                errors.append(f"{recipe_path}: both upper corners must contain gunpowder")
-
-    configured_generator_patterns = {
-        "spider_spawn_egg_infusion": (
-            (
-                "minecraft:string",
-                "minecraft:fermented_spider_eye",
-                "minecraft:string",
-                "minecraft:spider_eye",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:spider_eye",
-                "minecraft:string",
-                "minecraft:fermented_spider_eye",
-                "minecraft:string",
-            ),
-            "minecraft:spider_spawn_egg",
-        ),
-        "cave_spider_spawn_egg_infusion": (
-            (
-                "minecraft:string",
-                "minecraft:poisonous_potato",
-                "minecraft:string",
-                "minecraft:spider_eye",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:spider_eye",
-                "minecraft:string",
-                "minecraft:poisonous_potato",
-                "minecraft:string",
-            ),
-            "minecraft:cave_spider_spawn_egg",
-        ),
-        "endermite_spawn_egg_infusion": (
-            (
-                "minecraft:end_stone",
-                "minecraft:ender_pearl",
-                "minecraft:end_stone",
-                "minecraft:purpur_block",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:purpur_block",
-                "minecraft:end_stone",
-                "minecraft:chorus_fruit",
-                "minecraft:end_stone",
-            ),
-            "minecraft:endermite_spawn_egg",
-        ),
-        "silverfish_spawn_egg_infusion": (
-            (
-                "minecraft:stone",
-                "minecraft:stone",
-                "minecraft:stone",
-                "minecraft:stone",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:stone",
-                "minecraft:stone",
-                "minecraft:stone",
-                "minecraft:stone",
-            ),
-            "minecraft:silverfish_spawn_egg",
-        ),
-        "slime_spawn_egg_infusion": (
-            (
-                "minecraft:slime_ball",
-                "minecraft:slime_ball",
-                "minecraft:slime_ball",
-                "minecraft:slime_ball",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:slime_ball",
-                "minecraft:slime_ball",
-                "minecraft:slime_ball",
-                "minecraft:slime_ball",
-            ),
-            "minecraft:slime_spawn_egg",
-        ),
-        "sulfur_cube_spawn_egg_infusion": (
-            (
-                "minecraft:slime_ball",
-                "minecraft:sulfur",
-                "minecraft:slime_ball",
-                "minecraft:sulfur",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:sulfur",
-                "minecraft:slime_ball",
-                "minecraft:sulfur",
-                "minecraft:slime_ball",
-            ),
-            "minecraft:sulfur_cube_spawn_egg",
-        ),
-        "magma_cube_spawn_egg_infusion": (
-            (
-                "minecraft:magma_block",
-                "minecraft:magma_block",
-                "minecraft:magma_block",
-                "minecraft:magma_cream",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:magma_cream",
-                "minecraft:magma_block",
-                "minecraft:magma_block",
-                "minecraft:magma_block",
-            ),
-            "minecraft:magma_cube_spawn_egg",
-        ),
-        "guardian_spawn_egg_infusion": (
-            (
-                "minecraft:prismarine_shard",
-                "minecraft:prismarine_crystals",
-                "minecraft:prismarine_shard",
-                "minecraft:cod",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:cod",
-                "minecraft:prismarine_shard",
-                "minecraft:prismarine_crystals",
-                "minecraft:prismarine_shard",
-            ),
-            "minecraft:guardian_spawn_egg",
-        ),
-        "elder_guardian_spawn_egg_infusion": (
-            (
-                "minecraft:prismarine_crystals",
-                "minecraft:wet_sponge",
-                "minecraft:prismarine_crystals",
-                "minecraft:prismarine_shard",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:prismarine_shard",
-                "minecraft:prismarine_crystals",
-                "minecraft:wet_sponge",
-                "minecraft:prismarine_crystals",
-            ),
-            "minecraft:elder_guardian_spawn_egg",
-        ),
-        "piglin_brute_spawn_egg_infusion": (
-            (
-                "minecraft:golden_axe",
-                "minecraft:gold_block",
-                "minecraft:golden_axe",
-                "minecraft:bone_block",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:bone_block",
-                "minecraft:blackstone",
-                "minecraft:blackstone",
-                "minecraft:blackstone",
-            ),
-            "minecraft:piglin_brute_spawn_egg",
-        ),
-        "blaze_spawn_egg_infusion": (
-            (
-                "minecraft:blaze_rod",
-                "minecraft:blaze_powder",
-                "minecraft:blaze_rod",
-                "minecraft:blaze_powder",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:blaze_powder",
-                "minecraft:blaze_rod",
-                "minecraft:blaze_powder",
-                "minecraft:blaze_rod",
-            ),
-            "minecraft:blaze_spawn_egg",
-        ),
-        "enderman_spawn_egg_infusion": (
-            (
-                "minecraft:ender_pearl",
-                "minecraft:crying_obsidian",
-                "minecraft:ender_pearl",
-                "minecraft:crying_obsidian",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:crying_obsidian",
-                "minecraft:ender_pearl",
-                "minecraft:crying_obsidian",
-                "minecraft:ender_pearl",
-            ),
-            "minecraft:enderman_spawn_egg",
-        ),
-        "shulker_spawn_egg_infusion": (
-            (
-                "minecraft:chorus_fruit",
-                "minecraft:shulker_shell",
-                "minecraft:chorus_fruit",
-                "minecraft:end_stone",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:end_stone",
-                "minecraft:chorus_fruit",
-                "minecraft:shulker_shell",
-                "minecraft:chorus_fruit",
-            ),
-            "minecraft:shulker_spawn_egg",
-        ),
-        "breeze_spawn_egg_infusion": (
-            (
-                "minecraft:breeze_rod",
-                "minecraft:wind_charge",
-                "minecraft:breeze_rod",
-                "minecraft:wind_charge",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:wind_charge",
-                "minecraft:breeze_rod",
-                "minecraft:wind_charge",
-                "minecraft:breeze_rod",
-            ),
-            "minecraft:breeze_spawn_egg",
-        ),
-        "phantom_spawn_egg_infusion": (
-            (
-                "minecraft:phantom_membrane",
-                "minecraft:phantom_membrane",
-                "minecraft:phantom_membrane",
-                "minecraft:phantom_membrane",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:phantom_membrane",
-                "minecraft:phantom_membrane",
-                "minecraft:phantom_membrane",
-                "minecraft:phantom_membrane",
-            ),
-            "minecraft:phantom_spawn_egg",
-        ),
-        "ghast_spawn_egg_infusion": (
-            (
-                "minecraft:ghast_tear",
-                "minecraft:fire_charge",
-                "minecraft:ghast_tear",
-                "minecraft:gunpowder",
-                "#trading_cells:arcane_infusion_eggs",
-                "minecraft:gunpowder",
-                "minecraft:soul_sand",
-                "minecraft:lava_bucket",
-                "minecraft:soul_sand",
-            ),
-            "minecraft:ghast_spawn_egg",
-        ),
-        "happy_ghast_spawn_egg_infusion": (
-            (
-                "minecraft:ghast_tear",
-                "minecraft:snowball",
-                "minecraft:ghast_tear",
-                "minecraft:white_wool",
-                "minecraft:dried_ghast",
-                "minecraft:white_wool",
-                "minecraft:sand",
-                "minecraft:water_bucket",
-                "minecraft:sand",
-            ),
-            "minecraft:happy_ghast_spawn_egg",
-        ),
-    }
-    for recipe_id, (expected_ingredients, result_item) in configured_generator_patterns.items():
-        recipe_path = find_resource(
-            roots, Path(f"data/trading_cells/recipe/{recipe_id}.json")
-        )
-        recipe = parsed_json.get(recipe_path) if recipe_path is not None else None
-        ingredients = recipe.get("ingredients") if isinstance(recipe, dict) else None
-        result = recipe.get("result") if isinstance(recipe, dict) else None
-        if not isinstance(ingredients, list) or len(ingredients) != 9:
-            errors.append(f"{recipe_path}: configured generator infusion must contain nine slots")
-            continue
-        ingredient_ids = tuple(
-            entry.get("ingredient") if isinstance(entry, dict) else None
-            for entry in ingredients
-        )
-        if ingredient_ids != expected_ingredients:
-            errors.append(f"{recipe_path}: configured generator ingredients do not match its pattern")
-        if not isinstance(result, dict) or result.get("item") != result_item:
-            errors.append(f"{recipe_path}: result must be {result_item}")
+    signatures: dict[tuple[str, ...], Path] = {}
+    for root in roots:
+        for path in sorted((root / "data/trading_cells/recipe").glob("*_spawn_egg_infusion.json")):
+            recipe = parsed_json.get(path)
+            if not isinstance(recipe, dict):
+                errors.append(f"{path}: spawn-egg recipe must be an object")
+                continue
+            entity = path.name.removesuffix("_spawn_egg_infusion.json")
+            if recipe.get("type") != "trading_cells:arcane_infusion" or recipe.get("category") != "generators":
+                errors.append(f"{path}: spawn egg must use the generators infusion category")
+            if recipe.get("result") != {"type": "item", "item": f"minecraft:{entity}_spawn_egg"}:
+                errors.append(f"{path}: spawn-egg output must match its entity")
+            xp = recipe.get("experience")
+            if type(xp) is not int or xp <= 0 or xp % 10:
+                errors.append(f"{path}: spawn-egg XP must be positive and a multiple of ten")
+            ingredients = recipe.get("ingredients")
+            if (not isinstance(ingredients, list) or len(ingredients) != 9
+                    or any(not isinstance(slot, dict) or set(slot) != {"ingredient", "count"}
+                           or slot.get("count") != 1 or not isinstance(slot.get("ingredient"), str)
+                           for slot in ingredients)):
+                errors.append(f"{path}: spawn egg requires nine single-item slots")
+                continue
+            ids = tuple(slot["ingredient"] for slot in ingredients)
+            if ids[4] != "#trading_cells:arcane_infusion_eggs":
+                errors.append(f"{path}: center slot must contain the infusion egg tag")
+            materials = {ids[index] for index in range(9) if index != 4}
+            if (not 1 <= len(materials) <= 2
+                    or any(not item.startswith("minecraft:") or item.endswith("_spawn_egg") for item in materials)
+                    or len({ids[index] for index in (0, 2, 6, 8)}) != 1
+                    or len({ids[index] for index in (1, 3, 5, 7)}) != 1):
+                errors.append(f"{path}: spawn-egg materials must form one or two symmetric rings")
+            signature = tuple(sorted(ids))
+            if signature in signatures:
+                errors.append(f"{path}: duplicate spawn-egg materials from {signatures[signature]}")
+            signatures[signature] = path
 
 
 def validate_mob_farm_targets(

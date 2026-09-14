@@ -3,6 +3,8 @@ package com.cosmocraft.trading_cells.feature.logistics.adapters.output.client;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.input.PipeConfigurationMenu;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.LogisticsResourceType;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeFilterRule;
+import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeResourceProfile;
+import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeChannelChoices;
 import com.cosmocraft.trading_cells.platform.neoforge.network.PipeChannelQueryPayload;
 import java.util.List;
 import net.minecraft.client.gui.Font;
@@ -18,11 +20,13 @@ final class PipeChannelCompletion {
     private final LogisticsResourceType type;
     private final EditBox field;
     private final String parent;
+    private final java.util.function.Supplier<PipeResourceProfile> profile;
     private String pending = "", requested;
-    private int delay, first;
+    private int delay, first, awaiting;
 
-    PipeChannelCompletion(PipeConfigurationMenu menu, LogisticsResourceType type, EditBox field, String parent) {
-        this.menu = menu; this.type = type; this.field = field; this.parent = parent;
+    PipeChannelCompletion(PipeConfigurationMenu menu, LogisticsResourceType type, EditBox field, String parent,
+                          java.util.function.Supplier<PipeResourceProfile> profile) {
+        this.menu = menu; this.type = type; this.field = field; this.parent = parent; this.profile = profile;
     }
 
     void tick() {
@@ -30,8 +34,10 @@ final class PipeChannelCompletion {
         String prefix = PipeFilterRule.searchPrefix(parent.isEmpty() ? field.getValue() : parent + "/" + field.getValue());
         if (!prefix.equals(pending)) { pending = prefix; delay = 5; first = 0; }
         if (delay > 0) { delay--; return; }
-        if (!prefix.equals(requested)) {
-            requested = prefix;
+        var response = menu.channelSuggestions();
+        boolean acknowledged = response != null && response.resource() == type && response.prefix().equals(prefix);
+        if (!prefix.equals(requested) || !acknowledged && ++awaiting >= 20) {
+            requested = prefix; awaiting = 0;
             ClientPacketDistributor.sendToServer(new PipeChannelQueryPayload(menu.containerId, type, prefix, true));
         }
     }
@@ -42,8 +48,13 @@ final class PipeChannelCompletion {
 
     private List<String> choices() {
         var result = menu.channelSuggestions();
-        return field.isFocused() && requested != null && result != null && result.resource() == type && result.prefix().equals(requested)
-                ? result.channels() : List.of();
+        if (!field.isFocused()) { return List.of(); }
+        String prefix = PipeFilterRule.searchPrefix(parent.isEmpty() ? field.getValue() : parent + "/" + field.getValue());
+        var remote = result != null && result.resource() == type && result.prefix().equals(prefix)
+                ? result.channels() : List.<String>of();
+        var choices = PipeChannelChoices.merge(prefix, remote, profile.get());
+        first = Math.clamp(first, 0, Math.max(0, choices.size() - 5));
+        return choices;
     }
 
     boolean click(double x, double y) {

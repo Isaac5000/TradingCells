@@ -1,0 +1,18 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "trading_cells:item/entity_module"
+      },
+      {
+        "type": "minecraft:special",
+        "base": "trading_cells:item/entity_module",
+        "model": {
+          "type": "trading_cells:entity_module"
+        }
+      }
+    ]
+  }
+}

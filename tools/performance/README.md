@@ -21,6 +21,17 @@ comprobar su tapa desde una camara interior. Ambas fixtures usan copias desechab
 copia desechable cinco mallas con codos, T, cruces y brazos verticales y captura
 la escena desde `--camera`, sin abrir una pantalla. Tambien conserva una segunda
 captura para comprobar la animacion. Nunca modifica el mundo original.
+`materials` incluye las tres familias completas de mejoras y ambos terminales.
+`terminals` coloca los dos terminales orientados hacia el sur para comprobar sus
+paneles superiores, laterales y carcasa opaca desde una camara oblicua, sin abrir un menu.
+`simulation` comprueba el menu de la granja general y muestra sus diez mejoras
+y varios modulos con criaturas. `essences` comprueba la mesa de sintesis.
+`simulation-models` coloca seis granjas con creeper, vaca, warden, ghast, bacalao
+y dragon, ademas de sus modulos en la barra; comprueba que hay renderizadores y
+que un tipo inexistente conserva la base vacia. Espera la sincronizacion del
+inventario antes de validar los datos y no abre un menu.
+`crafting` comprueba tambien Shift doble clic con un item en el cursor, dos
+pilas iguales y una variante con nombre que debe permanecer en el inventario.
 
 Requieren Python 3.11 o posterior y un JDK 25 accesible mediante `JAVA_HOME` o
 `PATH`. En los ejemplos, `python` representa ese interprete; en sistemas donde

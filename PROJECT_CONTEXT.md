@@ -14,7 +14,8 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 - La referencia reproducible anterior se documento el `2026-08-31` en
   `docs/releases/1.0.0-validation.md`: dos JAR identicos con 26 GameTests. Es
   evidencia historica anterior a los hitos actuales. El arbol de desarrollo del
-  `2026-09-09` pasa `clean releaseCheck`, incluido `check` y 93/93 GameTests.
+  `2026-09-10` pasa `releaseCheck`, incluido `check`, 100/100 GameTests y
+  14 pruebas Python de recursos.
   Los terminales pasan clics reales y scroll en OpenGL/Vulkan con REI/Jade.
   Evidencia y JAR de desarrollo en `docs/LOGISTICS.md`; la matriz manual,
   reproducibilidad final y CI del commit definitivo siguen abiertas.
@@ -78,7 +79,9 @@ Las features registradas son `captures`, `combat`, `trader`, `breeders`,
 `configuredmobfarm` implementa por composicion Artropodos, Slimes, Guardianes,
 Piglins, Blazes, Ghasts, Endermen, Shulkers, Breezes, Phantoms, Animales y Peces.
 Tambien implementa Acuaticas, Monturas, Anfibios, Abejas y Creakings.
-`platform/neoforge/mobfarm` mantiene el catalogo dinamico comun; las cuatro
+`platform/neoforge/mobfarm` mantiene el catalogo dinamico comun y ejecuta loot
+tables desde entidades concretas con `MobFarmLootTables`; la futura entrada
+manual de entidades no esta implementada. Las cuatro
 familias historicas conservan su implementacion y las diecisiete configurables
 comparten una Block Entity sin compartir IDs persistentes.
 
@@ -232,6 +235,11 @@ Control rapido de tooling: `python tools/check_portability.py`. Evidencia final:
 
 ## Ultimos cambios relevantes
 
+- `2026-09-10`: mejoras por familia con recoloreado sin ruido y originales
+  conservados; iconos de terminales, margen del editor, canales guardados,
+  cantidades es/en ajustadas al slot, tooltip normal/avanzado y deposito con
+  Shift doble clic. `releaseCheck` con 97 GameTests; pruebas visuales en
+  `docs/LOGISTICS.md`. La matriz manual y la publicacion definitiva siguen abiertas.
 - `2026-09-09`: tapas negras estaticas en conexiones a maquinas, arrastre completo
   de mejoras sin bloquear clics vacios/llenos y texto protegido frente a atajos de
   inventario. XP bidireccional por las seis caras verificado con tuberias reales.

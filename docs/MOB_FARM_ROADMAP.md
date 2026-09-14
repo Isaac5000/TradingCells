@@ -43,6 +43,13 @@ datapacks o mods.
 
 ## Candidatos para futuras granjas
 
+La preparacion tecnica para granjas libres vive en `MobFarmLootTables`: acepta
+una entidad separada del mundo con su estado restaurado y resuelve su loot table
+real sin depender de una familia. Las granjas actuales reutilizan este ejecutor,
+pero conservan sus objetivos, filtros y drops especiales. No hay todavia slots
+para entidades capturadas ni nuevas mecanicas de captura. Contrato y limites en
+`MOB_FARM_DATAPACKS.md`, apartado "Runtime entity loot boundary".
+
 | Prioridad | Familia propuesta | Criaturas | Motivo o separacion |
 | --- | --- | --- | --- |
 | Baja | Sniffers | Sniffer | Granja individual orientada a excavacion, no a muerte directa. |

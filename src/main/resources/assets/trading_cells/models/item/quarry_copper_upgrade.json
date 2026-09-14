@@ -1,1 +1,1 @@
-{"parent":"minecraft:item/generated","textures":{"layer0":"trading_cells:item/upgrades/copper_upgrade"}}
+{"parent":"minecraft:item/generated","textures":{"layer0":"trading_cells:item/upgrades/quarry/copper_upgrade"}}

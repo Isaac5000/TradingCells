@@ -1,8 +1,10 @@
 {
   "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
   "textures": {
-    "pipe": "trading_cells:block/logistics/network_crafting_terminal",
-    "particle": "trading_cells:block/logistics/network_crafting_terminal"
+    "pipe": "trading_cells:block/logistics/network_terminal_body",
+    "panel": "trading_cells:block/logistics/network_crafting_terminal_front",
+    "particle": "trading_cells:block/logistics/network_terminal_body"
   },
   "elements": [
     {
@@ -20,56 +22,81 @@
         "down": {
           "texture": "#pipe",
           "uv": [
-            0.0,
-            0.0,
-            8.0,
-            8.0
+            0,
+            0,
+            16,
+            16
           ]
         },
         "up": {
           "texture": "#pipe",
           "uv": [
-            8.0,
-            0.0,
-            16.0,
-            8.0
+            0,
+            0,
+            16,
+            16
           ]
         },
         "north": {
           "texture": "#pipe",
           "uv": [
-            0.0,
-            8.0,
-            8.0,
-            16.0
+            0,
+            0,
+            16,
+            16
           ]
         },
         "south": {
           "texture": "#pipe",
           "uv": [
-            0.0,
-            0.0,
-            8.0,
-            8.0
+            0,
+            0,
+            16,
+            16
           ]
         },
         "west": {
           "texture": "#pipe",
           "uv": [
-            0.0,
-            0.0,
-            8.0,
-            8.0
+            0,
+            0,
+            16,
+            16
           ]
         },
         "east": {
           "texture": "#pipe",
           "uv": [
-            0.0,
-            0.0,
-            8.0,
-            8.0
+            0,
+            0,
+            16,
+            16
           ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        16.01,
+        0
+      ],
+      "to": [
+        16,
+        16.01,
+        16
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "rotation": 180,
+          "texture": "#panel",
+          "cullface": "up"
         }
       }
     }

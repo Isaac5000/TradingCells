@@ -1,6 +1,9 @@
 package com.cosmocraft.trading_cells.gametest.feature.logistics;
 
+import com.cosmocraft.trading_cells.feature.logistics.adapters.input.PipeTargetSelectorItem;
+import com.cosmocraft.trading_cells.feature.logistics.adapters.output.LogisticsRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeKind;
+import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeRuleTarget;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeSideMode;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import java.util.List;
@@ -9,9 +12,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -40,6 +47,10 @@ public final class LogisticsCapabilityGameTests {
                 STORES.containsKey(pos) ? STORES.get(pos).fluids : null, Blocks.GOLD_BLOCK);
         event.registerBlock(Capabilities.Energy.BLOCK, (level, pos, state, entity, side) ->
                 STORES.containsKey(pos) ? STORES.get(pos).energy : null, Blocks.GOLD_BLOCK);
+        event.registerBlock(Capabilities.Fluid.BLOCK, (level, pos, state, entity, side) ->
+                side == null && STORES.containsKey(pos) ? STORES.get(pos).fluids : null, Blocks.IRON_BLOCK);
+        event.registerBlock(Capabilities.Energy.BLOCK, (level, pos, state, entity, side) ->
+                side == Direction.NORTH && STORES.containsKey(pos) ? STORES.get(pos).energy : null, Blocks.DIAMOND_BLOCK);
     }
 
     public static List<GameTestCase> tests() {
@@ -48,8 +59,46 @@ public final class LogisticsCapabilityGameTests {
                 new GameTestCase("logistics_fluid_shared_by_default", 100, helper -> sharedResource(helper, PipeKind.FLUID)),
                 new GameTestCase("logistics_gas_shared_by_default", 100, helper -> sharedResource(helper, PipeKind.GAS)),
                 new GameTestCase("logistics_universal_four_resources", 100, LogisticsCapabilityGameTests::universal),
+                new GameTestCase("logistics_target_marker_resource_capabilities", 20, LogisticsCapabilityGameTests::resourceMarker),
                 new GameTestCase("logistics_external_capability_invalidation", 250,
                         LogisticsCapabilityGameTests::invalidation));
+    }
+
+    private static void resourceMarker(GameTestHelper helper) {
+        var player = connectedPlayer(helper, GameType.SURVIVAL);
+        var stack = LogisticsRegistrationAdapter.TARGET_SELECTOR_ITEM.get().getDefaultInstance();
+        player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+        var pos = helper.absolutePos(SOURCE);
+        player.setPos(Vec3.atCenterOf(pos.south()));
+        var storage = new Storage();
+        STORES.put(pos, storage);
+        var expected = new PipeRuleTarget(helper.getLevel().dimension().identifier().toString(), pos.getX(), pos.getY(), pos.getZ());
+        var previous = new PipeRuleTarget(expected.dimension(), pos.getX() + 1, pos.getY(), pos.getZ());
+        try {
+            for (var block : List.of(Blocks.IRON_BLOCK, Blocks.DIAMOND_BLOCK)) {
+                helper.setBlock(SOURCE, block);
+                helper.assertTrue(helper.getLevel().getCapability(Capabilities.Item.BLOCK, pos, null) == null,
+                        "External provider exposes no item inventory");
+                PipeTargetSelectorItem.setTarget(stack, previous);
+                var result = player.gameMode.useItemOn(player, helper.getLevel(), stack, InteractionHand.MAIN_HAND,
+                        new BlockHitResult(Vec3.atCenterOf(pos), Direction.SOUTH, pos, false));
+                helper.assertTrue(result.consumesAction(), "Non-item provider is selectable while empty");
+                helper.assertValueEqual(PipeTargetSelectorItem.target(stack), expected,
+                        "Finds unsided fluids and energy exposed only on another face");
+                helper.assertValueEqual(stack.getCount(), 1, "External selection does not consume the marker");
+            }
+            STORES.remove(pos);
+            helper.getLevel().invalidateCapabilities(pos);
+            PipeTargetSelectorItem.setTarget(stack, previous);
+            player.gameMode.useItemOn(player, helper.getLevel(), stack, InteractionHand.MAIN_HAND,
+                    new BlockHitResult(Vec3.atCenterOf(pos), Direction.SOUTH, pos, false));
+            helper.assertValueEqual(PipeTargetSelectorItem.target(stack), previous,
+                    "A block without its capability does not overwrite the target");
+        } finally {
+            STORES.remove(pos);
+            helper.getLevel().invalidateCapabilities(pos);
+        }
+        helper.succeed();
     }
 
     private static void universal(GameTestHelper helper) {

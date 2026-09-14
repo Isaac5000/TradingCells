@@ -11,6 +11,8 @@ son Python 3.11+ portable y resuelven rutas desde `__file__` o argumentos.
 | `generate_machine_gui.py --check` | `checkMachineGuiTextures` |
 | `generate_villager_trade_gui.py --check` | `checkVillagerTradeGuiTextures` |
 | `generate_logistics_resources.py --check` | `checkLogisticsResources`; incluye `verify_pipe_models.py` |
+| `test_logistics_resources.py` | `testLogisticsResourceValidation`; regresiones de comparacion PNG, integrada en `checkLogisticsResources` |
+| `generate_family_upgrades.py --check` | `checkUpgradeFamilyTextures`; quince variantes de color y dos terminales, integrada en `checkLogisticsResources` |
 | `validate_project_resources.py` | `checkProjectResources` |
 | `release/verify_release_contracts.py` | `checkReleaseContracts` |
 | `release/record_release_evidence.py` | `recordReleaseEvidence` |
@@ -25,9 +27,17 @@ son Python 3.11+ portable y resuelven rutas desde `__file__` o argumentos.
   genera una vista PNG/GIF. Fotogramas de 32x32 con escala/fase comunes.
 - `generate_logistics_resources.py`: modelos organizados por tipo, recetas y
   llave de 16x16. No sobrescribe los PNG editables de bloques.
+- `generate_family_upgrades.py --write`: recolorea una base de cobre por familia
+  usando rampas de luminancia de las paletas originales. Conserva coordenadas y
+  transparencia; no modifica las cinco mejoras originales. Fuentes y prompts
+  en `assets/upgrade_bases/README.md`. `--preview <PNG>` muestra todos los niveles.
 
 Los generadores antiguos de capturadores se retiraron porque no reproducian los
 PNG actuales. No recrearlos sin una fuente visual canonica nueva.
+
+La comprobacion de PNG generados compara dimensiones, fotogramas y pixeles RGBA,
+no los bytes comprimidos, que pueden variar entre plataformas. Los JSON conservan
+la comparacion exacta; las diferencias reales de color y transparencia se rechazan.
 
 ## Rendimiento
 

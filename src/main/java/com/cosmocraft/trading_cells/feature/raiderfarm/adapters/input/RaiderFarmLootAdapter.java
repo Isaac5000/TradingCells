@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input;
 
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmLootTables;
+
 import com.cosmocraft.trading_cells.feature.raiderfarm.application.port.input.RaiderFarmUseCase;
 import com.cosmocraft.trading_cells.feature.raiderfarm.domain.model.RaiderFarmDropRules;
 import com.cosmocraft.trading_cells.feature.raiderfarm.domain.model.RaiderFarmKind;
@@ -14,17 +16,11 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.OminousBottleAmplifier;
-import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.neoforge.common.util.FakePlayerFactory;
 
 /** Executes the selected raider's real loot table and filters its concrete results. */
 public final class RaiderFarmLootAdapter {
@@ -86,40 +82,8 @@ public final class RaiderFarmLootAdapter {
             ServerLevel level,
             ItemStack sword
     ) {
-        LivingEntity target = createTarget(level, targetId);
-        if (target == null || target.getLootTable().isEmpty()) {
-            return List.of();
-        }
-        FakePlayer attacker = FakePlayerFactory.getMinecraft(level);
-        ItemStack previousWeapon = attacker.getMainHandItem().copy();
-        List<List<ItemStack>> batches = new ArrayList<>(kills);
-        try {
-            attacker.setItemSlot(EquipmentSlot.MAINHAND, sword.copy());
-            target.setLastHurtByPlayer(attacker, 100);
-            for (int kill = 0; kill < kills; kill++) {
-                List<ItemStack> batch = new ArrayList<>();
-                target.dropFromLootTable(
-                        level,
-                        level.damageSources().playerAttack(attacker),
-                        true,
-                        target.getLootTable().orElseThrow(),
-                        stack -> batch.add(stack.copy())
-                );
-                batches.add(List.copyOf(batch));
-            }
-            return List.copyOf(batches);
-        } catch (RuntimeException | LinkageError ignored) {
-            return List.of();
-        } finally {
-            attacker.setItemSlot(EquipmentSlot.MAINHAND, previousWeapon);
-        }
-    }
-
-    private static LivingEntity createTarget(ServerLevel level, Identifier targetId) {
-        Identifier entityTypeId = RaiderFarmTargetCatalog.entityTypeId(targetId);
-        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(entityTypeId).orElse(null);
-        Entity entity = type == null ? null : type.create(level, EntitySpawnReason.LOAD);
-        return entity instanceof LivingEntity living ? living : null;
+        LivingEntity target = MobFarmLootTables.createTarget(level, RaiderFarmTargetCatalog.entityTypeId(targetId));
+        return MobFarmLootTables.batches(level, target, sword, Math.max(1, kills));
     }
 
     private static void addEquipmentDrop(

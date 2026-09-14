@@ -5,7 +5,7 @@ import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuse
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserMenu;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionRecipe;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestFixtures;
 import com.cosmocraft.trading_cells.platform.neoforge.registration.ExperienceFluidRegistration;
@@ -54,32 +54,16 @@ public final class ArcaneInfuserGameTests {
                 ArcaneInfuserBlockEntity.class
         );
 
-        setInputs(infuser,
-                Items.GHAST_TEAR, Items.SNOWBALL, Items.GHAST_TEAR,
-                item("minecraft:white_wool"), Items.DRIED_GHAST, item("minecraft:white_wool"),
-                Items.SAND, Items.WATER_BUCKET, Items.SAND);
-        insertExperience(helper, infuser, 280);
-        ItemStack result = infuser.visibleResult();
-        helper.assertTrue(result.is(Items.HAPPY_GHAST_SPAWN_EGG),
-                "The Happy Ghast recipe must be available");
-        helper.assertTrue(infuser.takeVisibleResult(result),
-                "The Happy Ghast result must be craftable");
-        helper.assertTrue(infuser.getItem(ArcaneInfuserBlockEntity.BOTTOM_SLOT).is(Items.BUCKET),
-                "A water bucket must leave its empty bucket in the same slot");
-
-        infuser.clearContent();
-        setInputs(infuser,
-                Items.GHAST_TEAR, Items.FIRE_CHARGE, Items.GHAST_TEAR,
-                Items.GUNPOWDER, Items.EGG, Items.GUNPOWDER,
-                Items.SOUL_SAND, Items.LAVA_BUCKET, Items.SOUL_SAND);
-        insertExperience(helper, infuser, 280);
-        result = infuser.visibleResult();
-        helper.assertTrue(result.is(Items.GHAST_SPAWN_EGG),
-                "The Ghast recipe must be available");
-        helper.assertTrue(infuser.takeVisibleResult(result),
-                "The Ghast result must be craftable");
-        helper.assertTrue(infuser.getItem(ArcaneInfuserBlockEntity.BOTTOM_SLOT).is(Items.BUCKET),
-                "A lava bucket must leave its empty bucket in the same slot");
+        for (Item bucket : List.of(Items.WATER_BUCKET, Items.LAVA_BUCKET)) {
+            infuser.clearContent();
+            infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_SLOT, new ItemStack(bucket));
+            insertExperience(helper, infuser, 10);
+            ItemStack result = infuser.visibleResult();
+            helper.assertTrue(result.is(Items.COBBLESTONE), "Dedicated container-remainder fixture must match");
+            helper.assertTrue(infuser.takeVisibleResult(result), "Bucket fixture must be craftable");
+            helper.assertTrue(infuser.getItem(ArcaneInfuserBlockEntity.BOTTOM_SLOT).is(Items.BUCKET),
+                    "Every filled bucket must leave its empty bucket in the same slot");
+        }
         helper.succeed();
     }
 
@@ -193,25 +177,25 @@ public final class ArcaneInfuserGameTests {
         );
         infuser.setItem(
                 ArcaneInfuserBlockEntity.TOP_LEFT_SLOT,
-                new ItemStack(Items.SKELETON_SPAWN_EGG)
+                new ItemStack(Items.IRON_BLOCK)
         );
-        infuser.setItem(ArcaneInfuserBlockEntity.TOP_SLOT, new ItemStack(Items.PARCHED_SPAWN_EGG));
+        infuser.setItem(ArcaneInfuserBlockEntity.TOP_SLOT, new ItemStack(Items.DIAMOND_SWORD));
         infuser.setItem(
                 ArcaneInfuserBlockEntity.TOP_RIGHT_SLOT,
-                new ItemStack(Items.WITHER_SKELETON_SPAWN_EGG)
+                new ItemStack(Items.IRON_BLOCK)
         );
-        infuser.setItem(ArcaneInfuserBlockEntity.LEFT_SLOT, new ItemStack(Items.STRAY_SPAWN_EGG));
+        infuser.setItem(ArcaneInfuserBlockEntity.LEFT_SLOT, new ItemStack(Items.IRON_BARS));
         infuser.setItem(
                 ArcaneInfuserBlockEntity.CENTER_SLOT,
                 new ItemStack(ExperienceStorageRegistrationAdapter.ITEM.get())
         );
-        infuser.setItem(ArcaneInfuserBlockEntity.RIGHT_SLOT, new ItemStack(Items.BOGGED_SPAWN_EGG));
-        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_LEFT_SLOT, new ItemStack(Items.SPAWNER));
-        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_SLOT, new ItemStack(Items.PALE_MOSS_BLOCK));
-        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_RIGHT_SLOT, new ItemStack(Items.IRON_BLOCK));
+        infuser.setItem(ArcaneInfuserBlockEntity.RIGHT_SLOT, new ItemStack(Items.IRON_BARS));
+        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_LEFT_SLOT, new ItemStack(Items.QUARTZ_BLOCK));
+        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_SLOT, new ItemStack(Items.AMETHYST_BLOCK));
+        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_RIGHT_SLOT, new ItemStack(Items.QUARTZ_BLOCK));
 
         helper.assertTrue(
-                infuser.visibleResult().is(SkeletonFarmRegistrationAdapter.ITEM.get()),
+                infuser.visibleResult().is(MobFarmRegistrationAdapter.ITEM.get()),
                 "The entity-farm recipe must accept Experience Storage in its center"
         );
         infuser.setItem(ArcaneInfuserBlockEntity.CENTER_SLOT, new ItemStack(Items.DIRT));

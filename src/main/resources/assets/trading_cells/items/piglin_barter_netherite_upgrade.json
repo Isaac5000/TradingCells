@@ -1,9 +1,6 @@
 {
   "model": {
-    "type": "minecraft:composite",
-    "models": [
-      {"type": "minecraft:model", "model": "trading_cells:item/piglin_barter_netherite_upgrade"},
-      {"type": "minecraft:special", "base": "trading_cells:item/piglin_barter_netherite_upgrade", "model": {"type": "trading_cells:upgrade_badge", "badge": "barter"}}
-    ]
+    "type": "minecraft:model",
+    "model": "trading_cells:item/piglin_barter_netherite_upgrade"
   }
 }

@@ -11,6 +11,7 @@ import com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.Arca
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client.IronFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.LogisticsPipeClientInteractionAdapter;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.LogisticsClientRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.MobFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.QuarryClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.SkeletonFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.client.RaiderFarmClientRegistrationAdapter;
@@ -71,6 +72,9 @@ public class TradingCellsClient {
             modBus.addListener(CreeperFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(CreeperFarmClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(ConfiguredMobFarmClientRegistrationAdapter::onRegisterMenuScreens);
+            modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterMenuScreens);
+            modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterRenderers);
+            modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterSpecialModelRenderers);
             modBus.addListener(ConfiguredMobFarmClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(ZombieFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(ZombieFarmClientRegistrationAdapter::onRegisterRenderers);

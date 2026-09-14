@@ -63,7 +63,9 @@ public final class LogisticsUpgradeGameTests {
         player.getInventory().setItem(9, upgrade(PipeUpgradeTier.ULTIMATE));
         helper.assertFalse(menu.quickMoveStack(player, 1).isEmpty(), "Real shift-click inserts speed upgrade");
         helper.assertTrue(menu.getSlot(0).hasItem(), "Single upgrade slot populated");
-        helper.assertValueEqual(menu.slots.size(), 37, "Exactly one upgrade slot and player inventory");
+        helper.assertValueEqual(menu.slots.size(), 42, "One upgrade slot, player inventory, armor and offhand");
+        helper.assertValueEqual(menu.getSlot(37).y, menu.getSlot(1).y - 14, "Equipment uses the standard inventory alignment");
+        helper.assertValueEqual(menu.getSlot(41).y, menu.getSlot(28).y, "Offhand aligns with hotbar");
         player.getInventory().setItem(10, upgrade(PipeUpgradeTier.BASIC));
         helper.assertTrue(menu.quickMoveStack(player, 2).isEmpty(), "A second upgrade cannot be inserted");
         long rate = PipeUpgradeTier.ULTIMATE.rate(LogisticsResourceType.ENERGY);

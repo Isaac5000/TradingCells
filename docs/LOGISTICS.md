@@ -11,8 +11,10 @@ aceptacion pendiente; no sustituye la matriz final de publicacion.
   o desconecta fisicamente el brazo que apunta a otra tuberia. Solo cuenta la
   mano usada para la interaccion.
 - `pipe_target_selector`: clic derecho registra dimension y coordenadas de un
-  bloque con inventario. Su tooltip muestra x/y/z en cian. El editor copia el
-  destino desde un slot fantasma sin consumir el objeto.
+  bloque con capacidad compatible de objetos, fluidos (incluida XP), gases o
+  energia, segun los adaptadores de la red. Consulta las seis caras y la capacidad
+  sin cara; admite depositos vacios y no carga chunks. Su tooltip muestra x/y/z
+  en cian. El editor copia el destino desde un slot fantasma sin consumir el objeto.
 - `INSERT` es el valor inicial junto a una capacidad compatible. `EXTRACT`
   muestra un marco; `NONE` oculta la conexion a la maquina.
 - La prioridad acepta todo `int`: gana el mayor. Dentro de la misma prioridad,
@@ -23,6 +25,8 @@ aceptacion pendiente; no sustituye la matriz final de publicacion.
   desactivado, whitelist o blacklist. El nivel instalado habilita las funciones
   de la tabla siguiente; las opciones superiores quedan inactivas, sin borrar
   los datos guardados de un perfil antiguo.
+  Desactivado conserva las reglas pero no filtra; una whitelist vacia, en cambio,
+  rechaza todo. Por eso se mantienen ambas opciones.
 - El editor guarda al cerrar. Copiar/pegar incluye prioridad, canales, filtros
   y activacion por recurso; ignora campos invalidos individualmente. No copia
   mejoras fisicas ni cambia el modo de la conexion.
@@ -75,7 +79,16 @@ mensajes tardios de una mejora retirada no sobreescriben el perfil basico.
   incluyendo margen para las dos filas parcialmente visibles al desplazar.
   El acceso manual usa conexiones INSERT y EXTRACT; dichos modos distinguen
   la automatizacion. Cubos/recipientes se colocan en un slot real y vuelven al
-  jugador al cerrar. Clic en el recurso retira; el boton junto al recipiente deposita.
+  jugador al cerrar. Clic en el recurso retira y lo selecciona; las dos flechas
+  junto al recipiente permiten insertar o retirar el recurso seleccionado.
+  Shift desde el inventario coloca el recipiente en ese slot. Para items,
+  Shift deposita una pila y Shift con doble clic deposita todas las pilas con
+  el mismo item y componentes, dejando intactos cursor, armadura y mano secundaria.
+  El tooltip usa la informacion normal del item; F3+H habilita detalles avanzados.
+  La cantidad se destaca en cian y conserva el valor entero completo localizado.
+  Los totales y payloads usan `long` con sumas saturadas. El contador del slot se
+  reduce para no exceder sus limites; en espanol mantiene millones hasta 999999M
+  y usa B desde 10^12, frente a B desde 10^9 en ingles.
   La cuadricula virtual no almacena objetos. Clic en el resultado fabrica al
   cursor; Shift fabrica mientras caben los resultados y quedan ingredientes.
   Cada receta con sus restos es atomica; las recetas ya terminadas se conservan.
@@ -120,7 +133,12 @@ carpeta por tipo: `item_pipe/`, `fluid_pipe/`, `gas_pipe/`, `energy_pipe/` y
 `universal_pipe/`. Cada una contiene el tramo y las 16 combinaciones de uniones,
 con fotogramas de 32x32 apilados en PNG y sus `.mcmeta`. La base gris comun
 `pipe_base.png` y los terminales permanecen en la carpeta raiz. Los terminales
-conservan sus atlas 2x2 de celdas de 16x16. Modelos por tipo en
+usan la carcasa opaca de 64x64 `network_terminal_body.png` y su icono propio
+en la cara superior, separado ligeramente para evitar parpadeo. El panel gira
+con la orientacion del bloque; el frontal y los laterales muestran la rejilla.
+Los nombres de las texturas `*_front.png` se conservan, aunque ahora se usan
+arriba. Los atlas antiguos
+se conservan sin uso. Modelos por tipo en
 `models/block/logistics/<tipo>/`; blockstates e items mantienen sus IDs.
 
 Las animaciones comparten ocho fotogramas de cuatro ticks, sin interpolacion ni
@@ -130,7 +148,7 @@ Solo hay aclarado en bordes externos. Se omiten tapas entre tuberias y caras del
 nucleo/collar ocultas por conexiones. Las conexiones INSERT/EXTRACT a maquinas
 conservan su tapa, con culling vanilla: visible junto a cristal o formas parciales
 y descartable junto a una cara opaca completa. No hay BER, ticker ni animacion por instancia:
-los sprites se comparten en el atlas. El badge de mejoras usa el primer fotograma.
+los sprites se comparten en el atlas.
 
 `pipe_cap.png` es la tapa comun de 32x32, negra y mas oscura hacia el centro,
 totalmente opaca y sin `.mcmeta`. `generate_pipe_textures.py --write-cap` permite
@@ -140,7 +158,20 @@ regenerar solo esa textura sin sobrescribir los cinco disenos editables.
 las texturas editables. Solo `generate_pipe_textures.py --write` sobrescribe todos
 los sprites de tuberias. La llave de 16x16 se reproduce con el generador de modelos.
 
+Las mejoras tienen una carpeta propia por familia bajo `textures/item/upgrades/`:
+`quarry/`, `piglin_barter/` y `pipe/`. Cada una conserva exactamente el dibujo de
+cobre en sus cinco niveles, cambiando solo la paleta. Los cinco PNG originales
+siguen en la raiz. Los quince items usan solo su modelo de textura, sin los
+antiguos simbolos superpuestos de pico, lingote o tuberia. Los terminales comparten
+carcasa de cobre y acero; cada panel superior reutiliza su icono de inventario.
+`generate_family_upgrades.py` reproduce estas variantes desde
+las bases de `tools/assets/upgrade_bases/`, sin generar ruido por mezclar dibujos.
+
 ## Editor y canales
+
+La inversion individual usa los mismos iconos del menu principal: papel para
+permitir y carbon para bloquear, teniendo en cuenta el modo de la lista.
+El tooltip indica si sigue o invierte la lista; el control no cambia las reglas.
 
 El editor usa iconos de recursos solo en la universal; los cuatro pueden operar
 simultaneamente. La lista permite seleccionar, crear, editar y quitar reglas.
@@ -153,7 +184,7 @@ subcanales, con 256 caracteres en total y hasta 16 segmentos. El prefijo general
 se muestra separado y no se duplica al completar un subcanal. Cambiar el canal
 general actualiza los prefijos de sus reglas; se rechaza un cambio que recortaria
 un destino. Destino y canal se deben cumplir simultaneamente. Las coordenadas
-permanecen aunque el almacen desaparezca; otro inventario compatible colocado en
+permanecen aunque el almacen desaparezca; otro deposito compatible colocado en
 el mismo sitio vuelve a ser valido sin editar la regla.
 
 El autocompletado trabaja solo con el menu abierto y el campo activo. La consulta
@@ -162,6 +193,8 @@ con cinco visibles. Recorre hasta 32 nodos por avance dentro del presupuesto de
 topologia compartido. No copia los nodos del grafo ni materializa todas las cadenas
 de la red. Cerrar/cambiar consulta libera su recorrido; una busqueda no deja
 trabajo de topologia propio ejecutandose despues de cerrar el menu.
+Incluye los canales guardados en caras y perfiles desactivados, y mezcla el
+borrador local para ofrecer reglas todavia no confirmadas al servidor.
 
 Esto acota la memoria adicional de busqueda, no la memoria total de una red:
 los perfiles de las tuberias cargadas siguen guardando cadenas y las rutas siguen
@@ -178,6 +211,56 @@ Rutas de mantenimiento bajo `feature/logistics/`:
 
 ## Validacion registrada
 
+- 2026-09-10, paneles superiores: por peticion del usuario las pantallas de ambos
+  terminales pasan del frontal a la cara superior. Se conservan los mismos PNG,
+  la carcasa y la orientacion horizontal; los lados solo muestran la rejilla.
+  La prueba del modelo exige una unica cara `up` para el panel y comprueba su
+  orientacion, separacion de la carcasa y culling superior. `releaseCheck` pasa
+  con 100/100 GameTests y 14 pruebas Python. Capturas reales con los paneles
+  arriba en `artifacts/terminal-top-panels-{opengl,vulkan}-20260910/`, sin modelos
+  rechazados ni texturas ausentes. JAR de desarrollo SHA-256:
+  `E48C0226FA9E6AF630E21171A2AEABDC4A48E5C6E242701F0BF3737AD743DDCD`.
+
+- 2026-09-10, terminales colocados y estructura de granjas: `releaseCheck`
+  pasa con 100/100 GameTests y 14 pruebas Python. Los dos bloques usan carcasa
+  nueva opaca y frontales propios de 64x64. Las copias de frontal son identicas
+  a los iconos, pero pertenecen al atlas de bloques, no al atlas de items.
+  Editor con icono de inversion, guardado y reapertura comprobados en
+  `artifacts/pipe-rule-icons-opengl-20260910/`. Terminales verificados en
+  `artifacts/terminal-blocks-{opengl,vulkan}-20260910-verified/`.
+  La prueba inicial sin sufijo `verified` detecto un atlas incompatible y se
+  conserva solo como diagnostico del problema corregido.
+  JAR de desarrollo SHA-256:
+  `C925863768B19E55F82A6E981C95E2C9F0D6ABFB560562BBA985FC98615861C2`.
+
+- 2026-09-10, retirada de superposiciones: los quince modelos de mejoras usan
+  solo su imagen propia; el generador ya no restaura los badges. `releaseCheck`
+  vuelve a pasar con 97/97 GameTests y 13 pruebas Python, incluida la ausencia
+  de capas adicionales en las tres familias. JAR de desarrollo SHA-256:
+  `5A82C454B743C73F79542DF658D222DE978544BF9A61B2032CBD41991C3BC236`.
+- 2026-09-10: `releaseCheck`, incluido `check`, pasa con 97/97 GameTests y
+  12 pruebas Python de recursos. Se verifican totales `long`, cantidades compactas
+  es/en, limites del texto, canales guardados desactivados, deposito masivo por
+  item y componentes, y geometria compartida de seleccion/colision/camara.
+  La hitbox no se ha ampliado: usa las formas exactas cacheadas existentes;
+  no se ha demostrado un fallo de colision que justifique un cambio de coste.
+  Texturas de mejoras revisadas en el inventario real OpenGL y Vulkan en
+  `artifacts/upgrade-materials-{opengl,vulkan}-20260910/`; el area de las tres
+  filas de mejoras es identica pixel a pixel entre backends. Quince variantes sin ruido
+  anadido, con silueta y orden de luminosidad comprobados automaticamente.
+  Editor avanzado y autocompletado Vulkan en
+  `artifacts/pipe-rule-layout-vulkan-20260910-verified/`; margen inferior visible.
+  Terminal OpenGL en `artifacts/terminal-shortcuts-opengl-20260910/`: recogida,
+  crafteo, scroll y Shift doble clic con otro item en el cursor, conservando
+  variantes con nombre. Las fixtures corrigen dos coordenadas antiguas y actuan
+  solo sobre copias desechables. No certifican la matriz manual completa ni FPS.
+  JAR de desarrollo SHA-256:
+  `9B537E50A4266635D2D0CD3DA6BF9490946350B56D64405754CFCE5425F03D4C`.
+- 2026-09-09: selector ampliado a los adaptadores de recursos de la red.
+  `checkLogisticsResources` y `releaseCheck` (incluido `check`) correctos, con
+  95/95 GameTests. Las regresiones nuevas reproducen el fallo anterior y verifican
+  XP vacia desde seis caras y ambas manos, prioridad sobre el menu, permisos,
+  fluidos sin cara y energia limitada a otra cara, sin consumir el marcador.
 - 2026-09-09: `check` y 93/93 GameTests en
   `artifacts/pipe-cap-interaction-check-20260909.log`; `clean releaseCheck`
   y 93/93 en `artifacts/pipe-fixes-release-20260909.log`. El validador recorre

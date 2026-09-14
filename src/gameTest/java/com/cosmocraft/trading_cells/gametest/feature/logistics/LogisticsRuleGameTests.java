@@ -3,11 +3,13 @@ package com.cosmocraft.trading_cells.gametest.feature.logistics;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.input.*;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.output.LogisticsRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.*;
+import com.cosmocraft.trading_cells.feature.experience.adapters.output.ExperienceStorageRegistrationAdapter;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import java.util.List;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.UseOnContext;
@@ -15,6 +17,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import static com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsTestFixtures.*;
 
 public final class LogisticsRuleGameTests {
@@ -23,8 +26,30 @@ public final class LogisticsRuleGameTests {
     public static List<GameTestCase> tests() {
         return List.of(new GameTestCase("logistics_advanced_rule_roundtrip", 20, LogisticsRuleGameTests::roundtrip),
                 new GameTestCase("logistics_bounded_channel_search", 100, LogisticsRuleGameTests::channels),
+                new GameTestCase("logistics_saved_channel_completion", 100, LogisticsRuleGameTests::savedChannels),
                 new GameTestCase("logistics_target_and_channel_replacement", 200, LogisticsRuleGameTests::targetRoute),
-                new GameTestCase("logistics_target_marker_inventory_only", 20, LogisticsRuleGameTests::marker));
+                new GameTestCase("logistics_target_marker_inventory_only", 20, LogisticsRuleGameTests::marker),
+                new GameTestCase("logistics_target_marker_experience_storage", 20, LogisticsRuleGameTests::experienceMarker));
+    }
+
+    private static void savedChannels(GameTestHelper helper) {
+        var pipe = pipe(helper, ORIGIN, PipeKind.UNIVERSAL);
+        pipe.setUpgradeTier(Direction.NORTH, PipeUpgradeTier.ULTIMATE);
+        var settings = pipe.face(Direction.NORTH).copy();
+        settings.setMode(PipeSideMode.NONE, true);
+        settings.setProfile(LogisticsResourceType.ITEM, new PipeResourceProfile(false, "le", List.of(
+                new PipeFilterRule(PipeFilterRule.Action.ALLOW, PipeFilterRule.MatchKind.ID, "minecraft:diamond",
+                        PipeFilterRule.ComponentMatch.IGNORE, "", "lel")), PipeResourceProfile.FilterMode.OFF));
+        pipe.applyFaceConfiguration(Direction.NORTH, settings);
+        var manager = network(helper);
+        var search = manager.searchChannels(pipe.getBlockPos(), LogisticsResourceType.ITEM, "le");
+        helper.startSequence().thenWaitUntil(() -> {
+            manager.advanceChannelSearch(search);
+            helper.assertTrue(search.complete(), "Saved channel search completes");
+        }).thenExecute(() -> {
+            helper.assertValueEqual(search.results(), List.of("le", "lel"), "Suggestions include saved disabled faces and rules");
+            manager.closeChannelSearch(search);
+        }).thenSucceed();
     }
 
     private static void channels(GameTestHelper helper) {
@@ -137,6 +162,47 @@ public final class LogisticsRuleGameTests {
                     helper.assertValueEqual(count(helper.getBlockEntity(TARGET, net.minecraft.world.level.block.entity.BarrelBlockEntity.class), Items.DIAMOND), 8, "Exact conservation");
                     helper.assertValueEqual(pipe.face(Direction.WEST).profile(LogisticsResourceType.ITEM).filters().getFirst().target(), target, "Coordinates never erased");
                 }).thenSucceed();
+    }
+
+    private static void experienceMarker(GameTestHelper helper) {
+        helper.setBlock(SOURCE, ExperienceStorageRegistrationAdapter.BLOCK.get());
+        var pos = helper.absolutePos(SOURCE);
+        var level = helper.getLevel();
+        helper.assertTrue(level.getCapability(Capabilities.Item.BLOCK, pos, null) == null,
+                "XP storage has no item inventory");
+        helper.assertTrue(level.getCapability(Capabilities.Fluid.BLOCK, pos, null) != null,
+                "Empty XP storage exposes its fluid capability");
+        var player = connectedPlayer(helper, GameType.SURVIVAL);
+        var expected = new PipeRuleTarget(level.dimension().identifier().toString(), pos.getX(), pos.getY(), pos.getZ());
+        var previous = new PipeRuleTarget(expected.dimension(), pos.getX() + 1, pos.getY(), pos.getZ());
+        for (InteractionHand hand : InteractionHand.values()) {
+            var otherHand = hand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+            var stack = LogisticsRegistrationAdapter.TARGET_SELECTOR_ITEM.get().getDefaultInstance();
+            player.setItemInHand(hand, stack);
+            player.setItemInHand(otherHand, new ItemStack(Items.STICK));
+            for (Direction side : Direction.values()) {
+                PipeTargetSelectorItem.setTarget(stack, previous);
+                player.setPos(Vec3.atCenterOf(pos.relative(side)));
+                var hit = new BlockHitResult(Vec3.atCenterOf(pos), side, pos, false);
+                var result = player.gameMode.useItemOn(player, level, stack, hand, hit);
+                helper.assertTrue(result.consumesAction(), "XP selection consumes the interaction");
+                helper.assertValueEqual(PipeTargetSelectorItem.target(stack), expected, "Either hand records XP storage from every face");
+                helper.assertTrue(player.containerMenu == player.inventoryMenu, "Selection takes priority over opening the machine");
+                helper.assertTrue(player.getItemInHand(otherHand).is(Items.STICK), "Other hand stays unchanged");
+                helper.assertValueEqual(stack.getCount(), 1, "XP selection does not consume the marker");
+            }
+        }
+        var stack = player.getOffhandItem();
+        var item = (PipeTargetSelectorItem) stack.getItem();
+        for (GameType mode : List.of(GameType.ADVENTURE, GameType.SPECTATOR)) {
+            player.setGameMode(mode);
+            PipeTargetSelectorItem.setTarget(stack, previous);
+            var result = item.onItemUseFirst(stack, new UseOnContext(player, InteractionHand.OFF_HAND,
+                    new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false)));
+            helper.assertValueEqual(result, InteractionResult.FAIL, "Selector still enforces permissions");
+            helper.assertValueEqual(PipeTargetSelectorItem.target(stack), previous, "Denied selection preserves the previous target");
+        }
+        helper.succeed();
     }
 
     private static void marker(GameTestHelper helper) {

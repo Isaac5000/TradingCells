@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " IA",
+    " BR",
+    "I  "
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "A": "minecraft:amethyst_shard",
+    "B": "minecraft:glass_bottle",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "id": "trading_cells:essence_extractor",
+    "count": 1
+  },
+  "show_notification": false
+}

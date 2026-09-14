@@ -1,19 +1,6 @@
 {
   "model": {
-    "type": "minecraft:composite",
-    "models": [
-      {
-        "type": "minecraft:model",
-        "model": "trading_cells:item/improved_pipe_upgrade"
-      },
-      {
-        "type": "minecraft:special",
-        "base": "trading_cells:item/improved_pipe_upgrade",
-        "model": {
-          "type": "trading_cells:upgrade_badge",
-          "badge": "pipe"
-        }
-      }
-    ]
+    "type": "minecraft:model",
+    "model": "trading_cells:item/improved_pipe_upgrade"
   }
 }

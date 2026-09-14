@@ -18,17 +18,7 @@ import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client.Iron
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.PiglinQuarryScreen;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.VillagerQuarryScreen;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.SkeletonFarmScreen;
-import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.RaiderFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.client.RaiderFarmScreen;
-import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.CreeperFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.client.CreeperFarmScreen;
-import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.ConfiguredMobFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.client.ConfiguredMobFarmScreen;
-import com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmKind;
-import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.client.ZombieFarmScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.LegacyMobFarmBlock;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
@@ -48,6 +38,8 @@ import me.shedaniel.rei.forge.REIPluginClient;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.BlockItem;
 
 @REIPluginClient
 public final class TradingCellsReiClientPlugin implements REIClientPlugin {
@@ -67,16 +59,6 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
             category("conversion");
     public static final CategoryIdentifier<TradingCellsReiDisplay> IRON_FARM =
             category("iron_farm");
-    public static final CategoryIdentifier<TradingCellsReiDisplay> SKELETON_FARM =
-            category("skeleton_farm");
-    public static final CategoryIdentifier<TradingCellsReiDisplay> ZOMBIE_FARM =
-            category("zombie_farm");
-    public static final CategoryIdentifier<TradingCellsReiDisplay> RAIDER_FARM =
-            category("raider_farm");
-    public static final CategoryIdentifier<TradingCellsReiDisplay> CREEPER_FARM =
-            category("creeper_farm");
-    public static final CategoryIdentifier<TradingCellsReiDisplay> CONFIGURED_MOB_FARM =
-            category("configured_mob_farm");
     public static final CategoryIdentifier<TradingCellsReiDisplay> DECAPITATION_SMITHING =
             category("decapitation_smithing");
     public static final CategoryIdentifier<TradingCellsReiDisplay> PIGLIN_BARTERING =
@@ -136,31 +118,6 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         IronFarmRegistrationAdapter.IRON_FARM_ITEM.get()
                 ),
                 new TradingCellsReiCategory(
-                        SKELETON_FARM,
-                        "category.trading_cells.skeleton_farm",
-                        SkeletonFarmRegistrationAdapter.ITEM.get()
-                ),
-                new TradingCellsReiCategory(
-                        ZOMBIE_FARM,
-                        "category.trading_cells.zombie_farm",
-                        ZombieFarmRegistrationAdapter.ITEM.get()
-                ),
-                new TradingCellsReiCategory(
-                        RAIDER_FARM,
-                        "category.trading_cells.raider_farm",
-                        RaiderFarmRegistrationAdapter.ITEM.get()
-                ),
-                new TradingCellsReiCategory(
-                        CREEPER_FARM,
-                        "category.trading_cells.creeper_farm",
-                        CreeperFarmRegistrationAdapter.ITEM.get()
-                ),
-                new TradingCellsReiCategory(
-                        CONFIGURED_MOB_FARM,
-                        "category.trading_cells.configured_mob_farm",
-                        ConfiguredMobFarmRegistrationAdapter.item(ConfiguredMobFarmKind.ARTHROPOD).get()
-                ),
-                new TradingCellsReiCategory(
                         DECAPITATION_SMITHING,
                         "category.trading_cells.decapitation_smithing",
                         Items.SMITHING_TABLE
@@ -216,13 +173,6 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         );
         registry.addWorkstations(CONVERSION, EntryStacks.of(ConverterRegistrationAdapter.CONVERTER_ITEM.get()));
         registry.addWorkstations(IRON_FARM, EntryStacks.of(IronFarmRegistrationAdapter.IRON_FARM_ITEM.get()));
-        registry.addWorkstations(SKELETON_FARM, EntryStacks.of(SkeletonFarmRegistrationAdapter.ITEM.get()));
-        registry.addWorkstations(ZOMBIE_FARM, EntryStacks.of(ZombieFarmRegistrationAdapter.ITEM.get()));
-        registry.addWorkstations(RAIDER_FARM, EntryStacks.of(RaiderFarmRegistrationAdapter.ITEM.get()));
-        registry.addWorkstations(CREEPER_FARM, EntryStacks.of(CreeperFarmRegistrationAdapter.ITEM.get()));
-        ConfiguredMobFarmRegistrationAdapter.items().forEach(item ->
-                registry.addWorkstations(CONFIGURED_MOB_FARM, EntryStacks.of(item.get()))
-        );
         registry.addWorkstations(DECAPITATION_SMITHING, EntryStacks.of(Items.SMITHING_TABLE));
         registry.addWorkstations(
                 PIGLIN_BARTERING,
@@ -267,14 +217,6 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         registry.configure(PIGLIN_FARMING, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(CONVERSION, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(IRON_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
-        registry.configure(SKELETON_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
-        registry.configure(ZOMBIE_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
-        registry.configure(RAIDER_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
-        registry.configure(CREEPER_FARM, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
-        registry.configure(
-                CONFIGURED_MOB_FARM,
-                configuration -> configuration.setQuickCraftingEnabledByDefault(false)
-        );
         registry.configure(
                 DECAPITATION_SMITHING,
                 configuration -> configuration.setQuickCraftingEnabledByDefault(false)
@@ -356,56 +298,6 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
         );
         registry.registerContainerClickArea(
                 new Rectangle(
-                        SkeletonFarmScreen.RECIPE_VIEWER_X,
-                        SkeletonFarmScreen.RECIPE_VIEWER_Y,
-                        SkeletonFarmScreen.RECIPE_VIEWER_WIDTH,
-                        SkeletonFarmScreen.RECIPE_VIEWER_HEIGHT
-                ),
-                SkeletonFarmScreen.class,
-                SKELETON_FARM
-        );
-        registry.registerContainerClickArea(
-                new Rectangle(
-                        ZombieFarmScreen.RECIPE_VIEWER_X,
-                        ZombieFarmScreen.RECIPE_VIEWER_Y,
-                        ZombieFarmScreen.RECIPE_VIEWER_WIDTH,
-                        ZombieFarmScreen.RECIPE_VIEWER_HEIGHT
-                ),
-                ZombieFarmScreen.class,
-                ZOMBIE_FARM
-        );
-        registry.registerContainerClickArea(
-                new Rectangle(
-                        RaiderFarmScreen.RECIPE_VIEWER_X,
-                        RaiderFarmScreen.RECIPE_VIEWER_Y,
-                        RaiderFarmScreen.RECIPE_VIEWER_WIDTH,
-                        RaiderFarmScreen.RECIPE_VIEWER_HEIGHT
-                ),
-                RaiderFarmScreen.class,
-                RAIDER_FARM
-        );
-        registry.registerContainerClickArea(
-                new Rectangle(
-                        CreeperFarmScreen.RECIPE_VIEWER_X,
-                        CreeperFarmScreen.RECIPE_VIEWER_Y,
-                        CreeperFarmScreen.RECIPE_VIEWER_WIDTH,
-                        CreeperFarmScreen.RECIPE_VIEWER_HEIGHT
-                ),
-                CreeperFarmScreen.class,
-                CREEPER_FARM
-        );
-        registry.registerContainerClickArea(
-                new Rectangle(
-                        ConfiguredMobFarmScreen.RECIPE_VIEWER_X,
-                        ConfiguredMobFarmScreen.RECIPE_VIEWER_Y,
-                        ConfiguredMobFarmScreen.RECIPE_VIEWER_WIDTH,
-                        ConfiguredMobFarmScreen.RECIPE_VIEWER_HEIGHT
-                ),
-                ConfiguredMobFarmScreen.class,
-                CONFIGURED_MOB_FARM
-        );
-        registry.registerContainerClickArea(
-                new Rectangle(
                         VillagerQuarryScreen.RECIPE_VIEWER_X,
                         VillagerQuarryScreen.RECIPE_VIEWER_Y,
                         VillagerQuarryScreen.RECIPE_VIEWER_WIDTH,
@@ -438,6 +330,8 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
 
     @Override
     public void registerEntries(EntryRegistry registry) {
+        registry.removeEntryIf(entry -> entry.getValue() instanceof ItemStack stack
+                && stack.getItem() instanceof BlockItem item && item.getBlock() instanceof LegacyMobFarmBlock);
         registry.removeEntry(EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTER_QUALITY_UPGRADE_ITEM.get()));
         registry.removeEntry(EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTER_YIELD_UPGRADE_ITEM.get()));
         registry.removeEntry(EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTER_HYBRID_UPGRADE_ITEM.get()));

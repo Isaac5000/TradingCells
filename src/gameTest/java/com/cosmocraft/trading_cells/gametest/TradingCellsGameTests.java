@@ -67,6 +67,10 @@ public final class TradingCellsGameTests {
         tests.addAll(IronFarmGameTests.tests());
         tests.addAll(QuarryGameTests.tests());
         tests.addAll(MobFarmGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobFarmLootTableGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationLootGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationCatalogGameTests.tests());
         tests.addAll(ConfiguredMobFarmGameTests.tests());
         tests.addAll(ExperienceGameTests.tests());
         tests.addAll(MachineControlGameTests.tests());

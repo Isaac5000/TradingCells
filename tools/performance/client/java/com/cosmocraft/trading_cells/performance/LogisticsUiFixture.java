@@ -28,6 +28,7 @@ final class LogisticsUiFixture {
     private LogisticsUiFixture() { }
 
     static void inspect(net.minecraft.client.Minecraft minecraft) {
+        if (MobSimulationUiFixture.active()) { MobSimulationUiFixture.inspect(minecraft); return; }
         if (worldScene()) {
             return;
         }
@@ -49,7 +50,7 @@ final class LogisticsUiFixture {
             return;
         }
         if (!(screen instanceof com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.NetworkTerminalScreen terminal)
-                || System.nanoTime() < nextAction || phase >= 8) { return; }
+                || System.nanoTime() < nextAction || phase >= 12) { return; }
         var menu = terminal.getMenu();
         if (checkStarted == 0) { checkStarted = System.nanoTime(); }
         if (System.nanoTime() - checkStarted > 30_000_000_000L) {
@@ -105,6 +106,30 @@ final class LogisticsUiFixture {
                 if (menu.page() != 1 || menu.entries().size() < 80) { return; }
                 System.out.println("Logistics smooth-scroll window covers both partial boundary rows");
             }
+            case 8 -> click(screen, left + 45, top + 34);
+            case 9 -> {
+                if (menu.selectedType() != LogisticsResourceType.ITEM) { return; }
+                click(screen, left + 92, top + 162);
+            }
+            case 10 -> {
+                if (!menu.getCarried().is(Items.STICK)) { return; }
+                var event = new net.minecraft.client.input.MouseButtonEvent(left + 20, top + 162,
+                        new net.minecraft.client.input.MouseButtonInfo(0, 1));
+                screen.mouseClicked(event, false);
+                screen.mouseReleased(event);
+                screen.mouseClicked(event, true);
+                screen.mouseReleased(event);
+            }
+            case 11 -> {
+                if (!menu.getSlot(0).getItem().isEmpty() || !menu.getSlot(1).getItem().isEmpty()) { return; }
+                if (!menu.getCarried().is(Items.STICK) || menu.getCarried().getCount() != 3
+                        || !menu.getSlot(2).getItem().is(Items.EMERALD) || menu.getSlot(2).getItem().getCount() != 5
+                        || !menu.getSlot(3).getItem().has(net.minecraft.core.component.DataComponents.CUSTOM_NAME)) {
+                    throw new IllegalStateException("Shift double-click changed the cursor or a different item variant");
+                }
+                click(screen, left + 92, top + 162);
+                System.out.println("Terminal Shift double-click deposits matching stacks with a carried item and preserves variants");
+            }
             default -> { }
         }
         phase++;
@@ -112,15 +137,17 @@ final class LogisticsUiFixture {
     }
 
     static boolean readyForCapture() {
+        if (MobSimulationUiFixture.active()) { return MobSimulationUiFixture.ready(); }
         if (worldScene()) { return scenePrepared; }
         if (System.getProperty("trading_cells.performance.client.uiFixture", "").equals("interactions")) { return PipeInteractionUiFixture.ready(); }
         if (System.getProperty("trading_cells.performance.client.uiFixture", "").equals("rules")) { return phase >= 8; }
-        return System.getProperty("trading_cells.performance.client.uiFixture", "").equals("crafting") ? phase >= 8 : phase >= 2;
+        return System.getProperty("trading_cells.performance.client.uiFixture", "").equals("crafting") ? phase >= 12 : phase >= 2;
     }
 
     static boolean worldScene() {
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
-        return fixture.equals("connections") || fixture.equals("caps");
+        return fixture.equals("connections") || fixture.equals("caps") || fixture.equals("terminals")
+                || fixture.equals("simulation-models");
     }
 
     private static void checkPipeEditor(com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.PipeConfigurationScreen screen) {
@@ -164,12 +191,12 @@ final class LogisticsUiFixture {
                             if (box.getY() == top + 112) { box.setValue("metales"); }
                         });
                 click(screen, left + 326, top + 82);
-                click(screen, left + 280, top + 216);
-                click(screen, left + 128, top + 168);
+                click(screen, left + 214, top + 211);
+                click(screen, left + 152, top + 168);
                 if (!(menu.getCarried().getItem() instanceof PipeTargetSelectorItem)) { throw new IllegalStateException("Marker pickup failed"); }
                 click(screen, left + 212, top + 172);
                 if (!(menu.getCarried().getItem() instanceof PipeTargetSelectorItem)) { throw new IllegalStateException("Ghost destination consumed marker"); }
-                click(screen, left + 128, top + 168);
+                click(screen, left + 152, top + 168);
                 click(screen, left + 320, top + 238);
                 phase++;
             } else {
@@ -182,7 +209,7 @@ final class LogisticsUiFixture {
             screen.children().stream().filter(child -> child instanceof net.minecraft.client.gui.components.EditBox)
                     .map(child -> (net.minecraft.client.gui.components.EditBox) child).forEach(box -> {
                         if (box.getY() == top + 28) { box.setValue("100000"); }
-                        if (box.getY() == top + 185) { box.setValue("almacen"); }
+                        if (box.getY() == top + 179) { box.setValue("almacen"); }
                     });
             click(screen, left + 25, top + 118);
             click(screen, left + 223, top + 133);
@@ -214,6 +241,7 @@ final class LogisticsUiFixture {
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
         if (fixture.isEmpty() || !PREPARED.add(player.getUUID())) { return; }
         var level = player.level();
+        if (MobSimulationUiFixture.active()) { MobSimulationUiFixture.prepare(player, pos); return; }
         if (fixture.equals("caps")) {
             for (BlockPos target : BlockPos.betweenClosed(pos.offset(-2, -1, -3), pos.offset(2, 2, 2))) {
                 level.setBlockAndUpdate(target, target.getY() == pos.getY() - 1 ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState());
@@ -232,6 +260,16 @@ final class LogisticsUiFixture {
             for (BlockPos target : BlockPos.betweenClosed(pos.offset(-2, -1, -2), pos.offset(28, 5, 7))) {
                 level.setBlockAndUpdate(target, target.getY() == pos.getY() - 1
                         ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState());
+            }
+            if (fixture.equals("terminals")) {
+                level.setBlockAndUpdate(pos, LogisticsRegistrationAdapter.TERMINAL_BLOCK.get().defaultBlockState()
+                        .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
+                level.setBlockAndUpdate(pos.east(2), LogisticsRegistrationAdapter.CRAFTING_TERMINAL_BLOCK.get().defaultBlockState()
+                        .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
+                player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+                scenePrepared = true;
+                return;
             }
             int index = 0;
             for (PipeKind kind : PipeKind.values()) {
@@ -269,6 +307,15 @@ final class LogisticsUiFixture {
         for (int index = 0; index < 5; index++) {
             player.getInventory().setItem(9 + index, LogisticsRegistrationAdapter.upgradeItem(PipeUpgradeTier.values()[index + 1]).get().getDefaultInstance());
         }
+        if (fixture.equals("crafting")) {
+            player.getInventory().setItem(9, new ItemStack(Items.DIAMOND, 7));
+            player.getInventory().setItem(10, new ItemStack(Items.DIAMOND, 11));
+            player.getInventory().setItem(11, new ItemStack(Items.EMERALD, 5));
+            var named = new ItemStack(Items.DIAMOND, 3);
+            named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Keep"));
+            player.getInventory().setItem(12, named);
+            player.getInventory().setItem(13, new ItemStack(Items.STICK, 3));
+        }
         if (fixture.equals("rules")) {
             var marker = LogisticsRegistrationAdapter.TARGET_SELECTOR_ITEM.get().getDefaultInstance();
             BlockPos target = pos.west(2);
@@ -278,10 +325,19 @@ final class LogisticsUiFixture {
         if (fixture.equals("materials")) {
             int index = 0;
             for (PipeKind kind : PipeKind.values()) {
-                player.getInventory().setItem(9 + index, LogisticsRegistrationAdapter.pipeBlock(kind).get().asItem().getDefaultInstance());
-                player.getInventory().setItem(18 + index, LogisticsRegistrationAdapter.upgradeItem(PipeUpgradeTier.values()[index + 1]).get().getDefaultInstance());
+                player.getInventory().setItem(index + 1, LogisticsRegistrationAdapter.pipeBlock(kind).get().asItem().getDefaultInstance());
+                player.getInventory().setItem(27 + index, LogisticsRegistrationAdapter.upgradeItem(PipeUpgradeTier.values()[index + 1]).get().getDefaultInstance());
+                String material = java.util.List.of("copper", "iron", "gold", "diamond", "netherite").get(index);
+                for (int family = 0; family < 2; family++) {
+                    String id = (family == 0 ? "quarry_" : "piglin_barter_") + material + "_upgrade";
+                    var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
+                            net.minecraft.resources.Identifier.fromNamespaceAndPath("trading_cells", id));
+                    player.getInventory().setItem(9 + family * 9 + index, item.getDefaultInstance());
+                }
                 index++;
             }
+            player.getInventory().setItem(14, LogisticsRegistrationAdapter.TERMINAL_BLOCK.get().asItem().getDefaultInstance());
+            player.getInventory().setItem(15, LogisticsRegistrationAdapter.CRAFTING_TERMINAL_BLOCK.get().asItem().getDefaultInstance());
         }
         if (level.getBlockEntity(pos) instanceof LogisticsPipeBlockEntity pipe) {
             pipe.setMode(Direction.SOUTH, PipeSideMode.EXTRACT);

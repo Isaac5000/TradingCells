@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.platform.neoforge.integration.jade;
 
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -72,12 +74,7 @@ public final class PortableMachineJadeComponentProvider implements IBlockCompone
     }
 
     private static String formatRemainingTime(int ticks) {
-        int totalSeconds = Math.max(0, ticks / 20);
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return minutes > 0
-                ? minutes + "m " + seconds + "s"
-                : seconds + "s";
+        return MachineScreenUtil.formatDuration(ticks);
     }
 
     private static int progressColor(BlockAccessor accessor) {

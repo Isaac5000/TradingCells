@@ -69,7 +69,7 @@ public final class PipeConfigurationMenu extends AbstractContainerMenu {
         }
         addStandardInventorySlots(inventory, 36, 160);
         com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots
-                .create(inventory, 12, 150, 168, 186, 204, 228).forEach(this::addSlot);
+                .create(inventory, 12, 146, 164, 182, 200, 218).forEach(this::addSlot);
         trackedUpgrade = upgrades.getItem(0);
         trackedEmpty = trackedUpgrade.isEmpty();
     }

@@ -1,5 +1,6 @@
 package com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input;
 
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmLootTables;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.application.port.input.SkeletonFarmUseCase;
 import com.cosmocraft.trading_cells.feature.combat.domain.model.DecapitationRules;
 import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmDropRules;
@@ -12,17 +13,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
-import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.neoforge.common.util.FakePlayerFactory;
 
 public final class SkeletonFarmLootAdapter {
     private SkeletonFarmLootAdapter() {
@@ -111,40 +106,19 @@ public final class SkeletonFarmLootAdapter {
         if (extensions.isEmpty()) {
             return;
         }
-        LivingEntity target = createTarget(level, targetId);
+        LivingEntity target = MobFarmLootTables.createTarget(level, targetId);
         if (target == null || target.getLootTable().isEmpty()) {
             return;
         }
-        FakePlayer attacker = FakePlayerFactory.getMinecraft(level);
-        ItemStack previousWeapon = attacker.getMainHandItem().copy();
         try {
-            attacker.setItemSlot(EquipmentSlot.MAINHAND, sword.copy());
-            target.setLastHurtByPlayer(attacker, 100);
-            for (int kill = 0; kill < Math.max(1, kills); kill++) {
-                target.dropFromLootTable(
-                        level,
-                        level.damageSources().playerAttack(attacker),
-                        true,
-                        target.getLootTable().orElseThrow(),
-                        stack -> {
-                            Identifier itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
-                            if (itemId != null && extensions.contains(itemId)) {
-                                addDynamicDrop(
-                                        drops,
-                                        stack,
-                                        fallbackKind,
-                                        enabledMask,
-                                        disabledDynamicLoot,
-                                        rules
-                                );
-                            }
-                        }
-                );
-            }
+            MobFarmLootTables.roll(level, target, sword, Math.max(1, kills), (kill, stack) -> {
+                Identifier itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+                if (itemId != null && extensions.contains(itemId)) {
+                    addDynamicDrop(drops, stack, fallbackKind, enabledMask, disabledDynamicLoot, rules);
+                }
+            });
         } catch (RuntimeException | LinkageError ignored) {
             // A broken external table must not disable the fixed Skeleton Farm drops.
-        } finally {
-            attacker.setItemSlot(EquipmentSlot.MAINHAND, previousWeapon);
         }
     }
 
@@ -158,44 +132,18 @@ public final class SkeletonFarmLootAdapter {
             ItemStack sword,
             SkeletonFarmUseCase rules
     ) {
-        LivingEntity target = createTarget(level, targetId);
+        LivingEntity target = MobFarmLootTables.createTarget(level, targetId);
         if (target == null || target.getLootTable().isEmpty()) {
             return List.of();
         }
-        FakePlayer attacker = FakePlayerFactory.getMinecraft(level);
-        ItemStack previousWeapon = attacker.getMainHandItem().copy();
         List<ItemStack> drops = new ArrayList<>();
         try {
-            attacker.setItemSlot(EquipmentSlot.MAINHAND, sword.copy());
-            target.setLastHurtByPlayer(attacker, 100);
-            for (int kill = 0; kill < Math.max(1, kills); kill++) {
-                target.dropFromLootTable(
-                        level,
-                        level.damageSources().playerAttack(attacker),
-                        true,
-                        target.getLootTable().orElseThrow(),
-                        stack -> addDynamicDrop(
-                                drops,
-                                stack,
-                                fallbackKind,
-                                enabledMask,
-                                disabledDynamicLoot,
-                                rules
-                        )
-                );
-            }
+            MobFarmLootTables.roll(level, target, sword, Math.max(1, kills), (kill, stack) ->
+                    addDynamicDrop(drops, stack, fallbackKind, enabledMask, disabledDynamicLoot, rules));
         } catch (RuntimeException | LinkageError ignored) {
             return List.of();
-        } finally {
-            attacker.setItemSlot(EquipmentSlot.MAINHAND, previousWeapon);
         }
         return List.copyOf(drops);
-    }
-
-    private static LivingEntity createTarget(ServerLevel level, Identifier targetId) {
-        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(targetId).orElse(null);
-        Entity entity = type == null ? null : type.create(level, EntitySpawnReason.LOAD);
-        return entity instanceof LivingEntity living ? living : null;
     }
 
     private static void addDynamicDrop(

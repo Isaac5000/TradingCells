@@ -1,7 +1,7 @@
 package com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.LegacyMobFarmBlock;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
 
-public final class SkeletonFarmBlock extends AbstractPortableMachineBlock<SkeletonFarmBlockEntity> {
+public final class SkeletonFarmBlock extends LegacyMobFarmBlock<SkeletonFarmBlockEntity> {
     public static final MapCodec<SkeletonFarmBlock> CODEC = simpleCodec(SkeletonFarmBlock::new);
 
     public SkeletonFarmBlock(Properties properties) {

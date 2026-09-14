@@ -3,13 +3,13 @@
   "category": "misc",
   "show_notification": false,
   "pattern": [
-    "MRM",
-    "RUR",
-    "MRM"
+    "CMC",
+    "MUM",
+    "CMC"
   ],
   "key": {
+    "C": "minecraft:popped_chorus_fruit",
     "M": "minecraft:diamond",
-    "R": "minecraft:redstone",
     "U": "trading_cells:advanced_pipe_upgrade"
   },
   "result": {

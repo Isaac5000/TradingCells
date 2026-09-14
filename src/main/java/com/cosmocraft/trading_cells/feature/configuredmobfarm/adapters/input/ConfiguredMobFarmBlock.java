@@ -2,7 +2,7 @@ package com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.ConfiguredMobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmKind;
-import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.LegacyMobFarmBlock;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
 
-public final class ConfiguredMobFarmBlock extends AbstractPortableMachineBlock<ConfiguredMobFarmBlockEntity> {
+public final class ConfiguredMobFarmBlock extends LegacyMobFarmBlock<ConfiguredMobFarmBlockEntity> {
     private final ConfiguredMobFarmKind kind;
     private final MapCodec<ConfiguredMobFarmBlock> codec;
 

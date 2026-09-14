@@ -18,12 +18,14 @@ import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 final class PipeRuleEditor {
     private final LogisticsResourceType type;
     private final boolean advanced;
     private final String parent;
     private final PipeFilterRule.Action action;
+    private final boolean listAllows;
     private final Consumer<PipeFilterRule> submit;
     private PipeFilterRule.MatchKind kind;
     private PipeFilterRule.ComponentMatch match;
@@ -39,6 +41,8 @@ final class PipeRuleEditor {
     PipeRuleEditor(LogisticsResourceType type, PipeResourceProfile profile, boolean advanced, PipeFilterRule initial, Consumer<PipeFilterRule> submit) {
         this.type = type; this.advanced = advanced; this.parent = profile.channel(); this.initial = initial; this.submit = submit;
         action = initial.action(); kind = initial.matchKind(); match = initial.componentMatch(); inverted = initial.inverted(); target = initial.target();
+        listAllows = profile.filterMode() == PipeResourceProfile.FilterMode.RULES
+                ? action == PipeFilterRule.Action.ALLOW : profile.filterMode() != PipeResourceProfile.FilterMode.BLACKLIST;
     }
 
     void init(Font font, int left, int top, Consumer<AbstractWidget> widgets, Runnable cancel) {
@@ -67,15 +71,20 @@ final class PipeRuleEditor {
         String route = initial.routeChannel();
         channel.setValue(channelText != null ? channelText : parent.isEmpty() ? route : route.startsWith(parent + "/") ? route.substring(parent.length() + 1) : "");
         channel.active = advanced && remaining > 0; widgets.accept(channel);
-        var invertButton = Button.builder(label(inverted ? "rule.inverted" : "rule.inherit"), button -> {
-            inverted = !inverted; button.setMessage(label(inverted ? "rule.inverted" : "rule.inherit"));
-        }).bounds(left + 204, top + 208, 158, 18).build();
+        var invertButton = new PipeEditorIcons.IconButton(left + 204, top + 201, 20,
+                inversionIcon(), label(inverted ? "rule.inverted" : "rule.inherit"), false, button -> {
+                    inverted = !inverted;
+                    button.setMessage(label(inverted ? "rule.inverted" : "rule.inherit"));
+                    button.setTooltip(Tooltip.create(button.getMessage()));
+                    ((PipeEditorIcons.IconButton) button).setIcon(inversionIcon());
+                });
+        invertButton.setTooltip(Tooltip.create(invertButton.getMessage()));
         invertButton.active = advanced; widgets.accept(invertButton);
         var clear = Button.builder(Component.literal("x"), button -> target = null).bounds(left + 344, top + 163, 18, 18)
                 .tooltip(Tooltip.create(label("rule.clear_target"))).build();
         clear.active = advanced; widgets.accept(clear);
-        widgets.accept(Button.builder(Component.translatable("gui.cancel"), button -> cancel.run()).bounds(left + 204, top + 230, 76, 16).build());
-        widgets.accept(Button.builder(label("rule.save"), button -> save()).bounds(left + 284, top + 230, 78, 16).build());
+        widgets.accept(Button.builder(Component.translatable("gui.cancel"), button -> cancel.run()).bounds(left + 204, top + 224, 76, 16).build());
+        widgets.accept(Button.builder(label("rule.save"), button -> save()).bounds(left + 284, top + 224, 78, 16).build());
         if (!advanced) {
             var tooltip = Tooltip.create(label("requires", Component.translatable("item.trading_cells.ultimate_pipe_upgrade")));
             components.setTooltip(tooltip); channel.setTooltip(tooltip); invertButton.setTooltip(tooltip); matchButton.setTooltip(tooltip);
@@ -149,6 +158,9 @@ final class PipeRuleEditor {
 
     private void updateIcon() {
         if (identifier != null) { icon = PipeEditorIcons.rule(type, new PipeFilterRule(action, kind, identifier.getValue(), match, "", "")); }
+    }
+    private ItemStack inversionIcon() {
+        return (listAllows != inverted ? Items.PAPER : Items.COAL).getDefaultInstance();
     }
     EditBox channelField() { return channel; }
     String parentChannel() { return parent; }

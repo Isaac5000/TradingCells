@@ -46,6 +46,8 @@
     "trading_cells:energy_pipe",
     "trading_cells:universal_pipe",
     "trading_cells:network_terminal",
-    "trading_cells:network_crafting_terminal"
+    "trading_cells:network_crafting_terminal",
+    "trading_cells:mob_farm",
+    "trading_cells:essence_workbench"
   ]
 }

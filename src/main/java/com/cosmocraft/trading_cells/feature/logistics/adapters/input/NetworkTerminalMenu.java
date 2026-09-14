@@ -232,7 +232,8 @@ public final class NetworkTerminalMenu extends AbstractContainerMenu {
             case INSERT_INVENTORY -> {
                 if (payload.resourceType() == LogisticsResourceType.ITEM
                         && selectedType == LogisticsResourceType.ITEM) {
-                    insertInventory();
+                    if (payload.resourceId() == null) { insertInventory(); }
+                    else { insertMatchingInventory(payload); }
                 }
             }
             case WITHDRAW -> {
@@ -290,7 +291,7 @@ public final class NetworkTerminalMenu extends AbstractContainerMenu {
 
     private static boolean usesNetwork(NetworkTerminalActionPayload.Action action) {
         return switch (action) {
-            case CURSOR_DEPOSIT, CURSOR_WITHDRAW, CONTAINER_DEPOSIT, CONTAINER_WITHDRAW,
+            case INSERT_INVENTORY, CURSOR_DEPOSIT, CURSOR_WITHDRAW, CONTAINER_DEPOSIT, CONTAINER_WITHDRAW,
                     CRAFT_CURSOR, CRAFT_STACK -> true;
             default -> false;
         };
@@ -342,6 +343,13 @@ public final class NetworkTerminalMenu extends AbstractContainerMenu {
         }
         ItemStack stack = slot.getItem();
         ItemStack result = stack.copy();
+        if (index < PLAYER_HOTBAR_END && selectedType != LogisticsResourceType.ITEM) {
+            if (!moveItemStackTo(stack, PLAYER_HOTBAR_END, PLAYER_HOTBAR_END + 1, false)) { return ItemStack.EMPTY; }
+            if (stack.isEmpty()) { slot.setByPlayer(ItemStack.EMPTY); } else { slot.setChanged(); }
+            return result;
+        }
+        // Virtual network slots cannot be predicted by moving items into the hotbar.
+        if (index < PLAYER_HOTBAR_END && serverPlayer == null) { return ItemStack.EMPTY; }
         if (index < PLAYER_HOTBAR_END && serverPlayer != null && terminal != null
                 && terminal.getLevel() instanceof ServerLevel level) {
             BlockPos origin = terminal.networkOrigin(LogisticsResourceType.ITEM);
@@ -567,6 +575,24 @@ public final class NetworkTerminalMenu extends AbstractContainerMenu {
                 return;
             }
         }
+    }
+
+    private void insertMatchingInventory(NetworkTerminalActionPayload payload) {
+        BlockPos origin = terminal.networkOrigin(LogisticsResourceType.ITEM);
+        if (origin == null || !(terminal.getLevel() instanceof ServerLevel level)) { return; }
+        var manager = LogisticsNetworkManager.get(level);
+        var adapter = new com.cosmocraft.trading_cells.feature.logistics.adapters.neoforge.ItemLogisticsAdapter();
+        for (int index = 0; index < PLAYER_HOTBAR_END; index++) {
+            Slot slot = slots.get(index);
+            ItemStack stack = slot.getItem();
+            if (stack.isEmpty() || !net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).equals(payload.resourceId())
+                    || !com.cosmocraft.trading_cells.feature.logistics.adapters.neoforge.LogisticsComponentData
+                    .fingerprint(stack.getComponentsPatch()).equals(payload.componentFingerprint())) { continue; }
+            var source = net.neoforged.neoforge.transfer.RangedResourceHandler.ofSingleIndex(
+                    VanillaContainerWrapper.of(slot.container), slot.getContainerSlot());
+            manager.transferIntoNetwork(origin, adapter.id(), source, stack.getCount());
+        }
+        refreshAndSend(false);
     }
 
     private void insertInventory() {

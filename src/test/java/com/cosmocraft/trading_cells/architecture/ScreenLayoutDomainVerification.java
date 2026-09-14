@@ -23,10 +23,19 @@ final class ScreenLayoutDomainVerification {
     }
 
     private static void verifyDurationFormatting() {
-        require("1m 56s".equals(MachineScreenUtil.formatDuration(2_334)),
-                "Machine and REI durations must floor 116.7 seconds to 1m 56s");
+        require("1m 57s".equals(MachineScreenUtil.formatDuration(2_334)),
+                "Machine and REI durations must round 116.7 seconds up to 1m 57s");
         require("5s".equals(MachineScreenUtil.formatDuration(100)),
                 "Durations below one minute must use the compact seconds format");
+        require(MachineScreenUtil.durationSeconds(114) == 6, "5.7 seconds must display as 6");
+        require(MachineScreenUtil.durationSeconds(1) == 1 && MachineScreenUtil.durationSeconds(19) == 1,
+                "A positive remaining duration must never display zero");
+        require(MachineScreenUtil.durationSeconds(20) == 1 && MachineScreenUtil.durationSeconds(21) == 2,
+                "Exact seconds and the following tick must round correctly");
+        require(MachineScreenUtil.durationSeconds(0) == 0 && MachineScreenUtil.durationSeconds(-1) == 0,
+                "A finished or invalid countdown has no remaining time");
+        require(MachineScreenUtil.durationSeconds(Integer.MAX_VALUE) == 107_374_183,
+                "Rounding must not overflow for the longest supported countdown");
     }
 
     private static void verifyWideMachineMenuGeometry() {

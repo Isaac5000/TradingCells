@@ -32,20 +32,21 @@ final class PipeEditorIcons {
     }
 
     static final class IconButton extends Button {
-        private final ItemStack icon;
-        private final boolean selected;
+        private ItemStack icon;
 
         IconButton(int x, int y, int size, ItemStack icon, Component message, boolean selected, OnPress press) {
             super(x, y, size, size, message, press, DEFAULT_NARRATION);
             this.icon = icon;
-            this.selected = selected;
+        }
+
+        void setIcon(ItemStack icon) {
+            this.icon = icon;
         }
 
         @Override
         protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             extractDefaultSprite(graphics);
             graphics.fakeItem(icon, getX() + (getWidth() - 16) / 2, getY() + (getHeight() - 16) / 2);
-            if (selected) { graphics.fill(getX() + 3, getY() + getHeight() - 3, getX() + getWidth() - 3, getY() + getHeight() - 2, 0xFF73CEC2); }
         }
     }
 }
