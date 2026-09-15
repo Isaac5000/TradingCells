@@ -19,11 +19,17 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
@@ -31,12 +37,129 @@ public final class MobSimulationGameTests {
     private MobSimulationGameTests() { }
     public static List<GameTestCase> tests() {
         return List.of(new GameTestCase("mob_simulation_actual_module_state", 40, MobSimulationGameTests::moduleState),
+                new GameTestCase("mob_simulation_extractor_interaction", 40, MobSimulationGameTests::extractorInteraction),
+                new GameTestCase("mob_simulation_extractor_rejections", 40, MobSimulationGameTests::extractorRejections),
+                new GameTestCase("mob_simulation_extractor_last_use", 40, MobSimulationGameTests::extractorLastUse),
+                new GameTestCase("mob_simulation_extractor_full_inventory", 40, MobSimulationGameTests::extractorFullInventory),
                 new GameTestCase("mob_simulation_workbench_atomic_cost", 40, MobSimulationGameTests::workbench),
+                new GameTestCase("mob_simulation_workbench_high_level_cost", 40, MobSimulationGameTests::highLevelWorkbench),
                 new GameTestCase("mob_simulation_pending_loot_reload", 40, MobSimulationGameTests::pending),
                 new GameTestCase("mob_simulation_filters_and_automation", 40, MobSimulationGameTests::automation),
                 new GameTestCase("mob_simulation_legacy_farm_migration", 40, MobSimulationGameTests::legacyMigration),
                 new GameTestCase("mob_simulation_legacy_pending_migration", 40, MobSimulationGameTests::legacyPending),
                 new GameTestCase("mob_simulation_paused_migration_tick", 40, MobSimulationGameTests::pausedMigration));
+    }
+
+    private static void extractorInteraction(GameTestHelper helper) {
+        for (String id : List.of("cow", "villager", "zombie", "warden")) {
+            var player = connectedPlayer(helper);
+            var tool = MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance();
+            player.setItemInHand(InteractionHand.OFF_HAND, tool);
+            player.getInventory().setItem(9, new ItemStack(Items.GLASS_BOTTLE, 2));
+            var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace(id));
+            float health = target.getHealth();
+            var uuid = target.getUUID();
+            helper.assertValueEqual(interact(player, target, InteractionHand.OFF_HAND), InteractionResult.SUCCESS,
+                    "Registered extraction handler accepts " + id);
+            helper.assertValueEqual(tool.getDamageValue(), 1, "Extraction wears the held tool once");
+            helper.assertValueEqual(player.getInventory().getItem(9).getCount(), 1, "One bottle consumed");
+            helper.assertTrue(target.isAlive() && target.getUUID().equals(uuid) && target.getHealth() == health,
+                    "Extraction preserves the living creature, identity and health");
+            ItemStack essence = extractedEssence(player);
+            helper.assertValueEqual(EntityEssenceData.entityTypeId(essence), Identifier.withDefaultNamespace(id),
+                    "The extracted essence belongs to the interacted creature");
+            helper.assertValueEqual(EntityEssenceData.isHighLevel(essence), id.equals("warden"),
+                    "Classification works through the actual extraction event");
+            interact(player, target, InteractionHand.OFF_HAND);
+            helper.assertValueEqual(essenceCount(player), 1, "Cooldown prevents repeated extraction");
+            helper.assertValueEqual(player.getInventory().getItem(9).getCount(), 1, "Cooldown preserves bottles");
+            helper.assertValueEqual(tool.getDamageValue(), 1, "Cooldown preserves durability");
+            helper.assertTrue(EntityEssenceData.createEntity(helper.getLevel(), EntityEssenceData.moduleOf(essence)) != null,
+                    "Extracted state creates a usable simulation module");
+            for (int tick = 0; tick < 40; tick++) { player.getCooldowns().tick(); }
+            helper.assertFalse(player.getCooldowns().isOnCooldown(tool), "Extractor cooldown expires after forty ticks");
+            interact(player, target, InteractionHand.OFF_HAND);
+            helper.assertValueEqual(essenceCount(player), 2, "Extraction resumes once the cooldown expires");
+        }
+        helper.succeed();
+    }
+
+    private static void extractorRejections(GameTestHelper helper) {
+        var player = connectedPlayer(helper);
+        var tool = MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance();
+        player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+        var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("cow"));
+        interact(player, target, InteractionHand.MAIN_HAND);
+        helper.assertValueEqual(essenceCount(player), 0, "Survival extraction requires a bottle");
+        helper.assertValueEqual(tool.getDamageValue(), 0, "Failed extraction does not wear the tool");
+        helper.assertFalse(player.getCooldowns().isOnCooldown(tool), "Failed extraction does not start cooldown");
+        player.getInventory().setItem(9, new ItemStack(Items.GLASS_BOTTLE, 2));
+        target.setHealth(0);
+        interact(player, target, InteractionHand.MAIN_HAND);
+        helper.assertTrue(interact(player, connectedPlayer(helper), InteractionHand.MAIN_HAND) == null,
+                "The handler does not intercept interactions with players");
+        helper.assertValueEqual(essenceCount(player), 0, "Dead entities and players cannot produce essence");
+        helper.assertValueEqual(player.getInventory().getItem(9).getCount(), 2, "Rejected targets preserve bottles");
+        player.getInventory().setItem(9, ItemStack.EMPTY);
+        player.setGameMode(GameType.CREATIVE);
+        target.setHealth(target.getMaxHealth());
+        interact(player, target, InteractionHand.MAIN_HAND);
+        helper.assertValueEqual(essenceCount(player), 1, "Creative extraction does not require bottles");
+        helper.assertValueEqual(tool.getDamageValue(), 0, "Creative extraction preserves durability");
+        helper.succeed();
+    }
+
+    private static void extractorLastUse(GameTestHelper helper) {
+        var player = connectedPlayer(helper);
+        var tool = MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance();
+        tool.setDamageValue(tool.getMaxDamage() - 1);
+        player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+        player.getInventory().setItem(9, new ItemStack(Items.GLASS_BOTTLE, 2));
+        var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("cow"));
+        interact(player, target, InteractionHand.MAIN_HAND);
+        helper.assertTrue(tool.isEmpty(), "Last use breaks the extractor");
+        helper.assertValueEqual(essenceCount(player), 1, "Last use still delivers exactly one essence");
+        var replacement = MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance();
+        helper.assertTrue(player.getCooldowns().isOnCooldown(replacement), "Tool break must not erase extractor cooldown");
+        helper.succeed();
+    }
+
+    private static void extractorFullInventory(GameTestHelper helper) {
+        var player = connectedPlayer(helper);
+        player.setPos(net.minecraft.world.phys.Vec3.atCenterOf(helper.absolutePos(GameTestFixtures.TEST_POS)));
+        for (int slot = 0; slot < 36; slot++) { player.getInventory().setItem(slot, new ItemStack(Items.STONE, 64)); }
+        player.getInventory().setItem(9, new ItemStack(Items.GLASS_BOTTLE, 2));
+        player.setItemInHand(InteractionHand.OFF_HAND, MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance());
+        var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("cow"));
+        interact(player, target, InteractionHand.OFF_HAND);
+        helper.assertValueEqual(essenceCount(player), 0, "Full inventory has no room for the essence");
+        var dropped = helper.getLevel().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(3),
+                item -> item.getItem().is(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get()));
+        helper.assertValueEqual(dropped.size(), 1, "Overflow essence drops once instead of being lost");
+        helper.assertValueEqual(dropped.getFirst().getItem().getCount(), 1, "Dropped essence count");
+        dropped.forEach(ItemEntity::discard);
+        helper.succeed();
+    }
+
+    private static @org.jspecify.annotations.Nullable InteractionResult interact(ServerPlayer player, LivingEntity target, InteractionHand hand) {
+        return CommonHooks.onInteractEntity(player, target, hand, net.minecraft.world.phys.Vec3.ZERO);
+    }
+
+    private static ItemStack extractedEssence(ServerPlayer player) {
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (stack.is(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get())) { return stack; }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    private static int essenceCount(ServerPlayer player) {
+        int count = 0;
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (stack.is(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get())) { count += stack.getCount(); }
+        }
+        return count;
     }
 
     private static PortableMachineBlockEntity legacyFarm(GameTestHelper helper, String id) {
@@ -186,6 +309,47 @@ public final class MobSimulationGameTests {
         helper.assertTrue(bench.getItem(0).isEmpty() && bench.getItem(1).isEmpty() && bench.getItem(2).isEmpty(), "One complete set consumed");
         helper.assertTrue(bench.getItem(3).is(MobFarmRegistrationAdapter.ENTITY_MODULE.get()), "Module delivered to output");
         helper.assertFalse(bench.synthesize(player), "Repeated button cannot duplicate module");
+        helper.succeed();
+    }
+
+    private static void highLevelWorkbench(GameTestHelper helper) {
+        helper.setBlock(GameTestFixtures.TEST_POS, MobFarmRegistrationAdapter.ESSENCE_WORKBENCH.get());
+        var bench = helper.getBlockEntity(GameTestFixtures.TEST_POS, EssenceWorkbenchBlockEntity.class);
+        var player = connectedPlayer(helper);
+        var center = net.minecraft.world.phys.Vec3.atCenterOf(bench.getBlockPos());
+        player.setPos(center);
+        var warden = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("warden"));
+        bench.setItem(0, EntityEssenceData.essenceOf(warden));
+        bench.setItem(1, new ItemStack(Items.AMETHYST_SHARD, 16));
+        bench.setItem(2, new ItemStack(Items.IRON_INGOT, 64));
+        player.giveExperiencePoints(3_000);
+        helper.assertFalse(bench.synthesize(player), "High-level synthesis cannot substitute iron for netherite");
+        helper.assertValueEqual(bench.getItem(2).getCount(), 64, "Wrong material is never consumed");
+        bench.setItem(2, new ItemStack(Items.NETHERITE_INGOT, 2));
+        bench.setItem(1, new ItemStack(Items.AMETHYST_SHARD, 15));
+        helper.assertFalse(bench.synthesize(player), "High-level synthesis requires all sixteen shards");
+        bench.setItem(1, new ItemStack(Items.AMETHYST_SHARD, 17));
+        player.setPos(center.add(20, 0, 0));
+        helper.assertFalse(bench.synthesize(player), "Distant requests cannot craft at the workbench");
+        player.setPos(center);
+        com.cosmocraft.trading_cells.platform.neoforge.experience.PlayerExperienceTransfer.removePoints(player, 1);
+        helper.assertFalse(bench.synthesize(player), "2999 XP is insufficient for high-level synthesis");
+        helper.assertValueEqual(bench.getItem(1).getCount(), 17, "Every failed request preserves shards");
+        helper.assertValueEqual(bench.getItem(2).getCount(), 2, "Every failed request preserves netherite");
+        helper.assertValueEqual(MinecraftExperience.totalPoints(player.experienceLevel, player.experienceProgress), 2_999,
+                "Failed requests preserve XP");
+        player.giveExperiencePoints(1);
+        helper.assertTrue(bench.synthesize(player), "Exact high-level requirements produce the module");
+        helper.assertTrue(bench.getItem(0).isEmpty(), "One essence consumed");
+        helper.assertValueEqual(bench.getItem(1).getCount(), 1, "Exactly sixteen shards consumed");
+        helper.assertValueEqual(bench.getItem(2).getCount(), 1, "Exactly one netherite ingot consumed");
+        helper.assertValueEqual(MinecraftExperience.totalPoints(player.experienceLevel, player.experienceProgress), 0,
+                "Exactly three thousand XP consumed");
+        var module = bench.getItem(3);
+        helper.assertTrue(EntityEssenceData.isHighLevel(module), "Output retains high-level classification");
+        var simulated = EntityEssenceData.createEntity(helper.getLevel(), module);
+        helper.assertTrue(simulated != null && simulated.getType() == warden.getType(), "Output restores the warden");
+        helper.assertFalse(bench.synthesize(player), "Repeated requests cannot duplicate high-level modules");
         helper.succeed();
     }
 

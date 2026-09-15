@@ -7,6 +7,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public final class EssenceWorkbenchScreen extends AbstractContainerScreen<EssenceWorkbenchMenu> {
     private Button synthesize;
@@ -39,9 +41,19 @@ public final class EssenceWorkbenchScreen extends AbstractContainerScreen<Essenc
         FittedTextRenderer.left(graphics, font, title, 12, 224, 8, 16, SimulationScreenWidgets.TEXT, true);
         Component classification = Component.translatable("gui.trading_cells.simulation." + (menu.highLevel() ? "high_level" : "normal_level"));
         FittedTextRenderer.centered(graphics, font, classification, 12, 224, 27, 13, SimulationScreenWidgets.ACCENT, false);
-        FittedTextRenderer.centered(graphics, font, Component.translatable("gui.trading_cells.simulation.requirements",
-                menu.requiredShards(), menu.requiredMaterial().getCount(), menu.experienceCost()),
-                12, 224, 73, 13, SimulationScreenWidgets.MUTED, false);
+        extractRequirement(graphics, new ItemStack(Items.AMETHYST_SHARD, menu.requiredShards()), 35, mouseX, mouseY);
+        extractRequirement(graphics, menu.requiredMaterial(), 100, mouseX, mouseY);
+        FittedTextRenderer.left(graphics, font, Component.literal(menu.experienceCost() + " XP"),
+                155, 224, 76, 13, SimulationScreenWidgets.ACCENT, false);
         graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, SimulationScreenWidgets.MUTED, false);
+    }
+
+    private void extractRequirement(GuiGraphicsExtractor graphics, ItemStack required, int x, int mouseX, int mouseY) {
+        graphics.fakeItem(required, x, 72);
+        graphics.text(font, Integer.toString(required.getCount()), x + 21, 76, SimulationScreenWidgets.MUTED, false);
+        if (mouseX >= leftPos + x && mouseX < leftPos + x + 43
+                && mouseY >= topPos + 72 && mouseY < topPos + 88) {
+            graphics.setTooltipForNextFrame(font, required, mouseX, mouseY);
+        }
     }
 }

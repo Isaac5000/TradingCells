@@ -1,5 +1,14 @@
 # Bases de mejoras
 
+Terminales, 2026-09-15: `--bake-terminal-steel` cambia solo los pixeles cobrizos
+de las dos pantallas y la carcasa compartida a una rampa de acero gris basada en
+los tonos de logistics. Conserva coordenadas, alfa, pantallas cian y rejillas.
+El resultado completo esta guardado en los tres PNG canonicos y se copia a los
+cinco PNG del mod con `--write`; no hay recoloreado durante el juego. Las fuentes
+cobrizas permanecen en `originals/terminals/` y permiten reproducir la conversion.
+Se ha usado el recoloreado determinista autorizado, no una nueva generacion de
+dibujos. La prueba de terminales compara todos los pixeles y su idempotencia.
+
 Correccion de emblemas del 2026-09-13: el mango del pico y los mangos de ambas
 espadas usan los cuatro colores opacos de `minecraft:textures/item/stick.png`
 de Minecraft 26.2. `--bake-wooden-emblems` guarda esos colores en los PNG fuente.
@@ -31,7 +40,7 @@ de dibujos diferentes, que introducia ruido. El usuario autorizo recoloreado
 determinista. Las rampas actuales proceden de las paletas originales, ordenadas
 por luminancia; no cambian una sombra por un brillo ni introducen tramado.
 
-Prompts finales normalizados:
+Prompts originales normalizados (terminales recoloreados despues a acero):
 
 - `pipe`: conservar el icono aprobado por el usuario, con marco de cobre,
   cuatro remaches y tuberia cian en T con flechas laterales.

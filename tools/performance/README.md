@@ -25,7 +25,10 @@ captura para comprobar la animacion. Nunca modifica el mundo original.
 `terminals` coloca los dos terminales orientados hacia el sur para comprobar sus
 paneles superiores, laterales y carcasa opaca desde una camara oblicua, sin abrir un menu.
 `simulation` comprueba el menu de la granja general y muestra sus diez mejoras
-y varios modulos con criaturas. `essences` comprueba la mesa de sintesis.
+y varios modulos con criaturas. Tambien contrasta las 13 entradas de creativo
+con REI y rechaza las granjas antiguas; requiere REI. `essences` comprueba la mesa
+de sintesis, retirada con Shift y requisitos insuficientes de alto nivel. Ambas
+reinician el bloque de ensayo en la copia para no heredar salidas ni pausas.
 `simulation-models` coloca seis granjas con creeper, vaca, warden, ghast, bacalao
 y dragon, ademas de sus modulos en la barra; comprueba que hay renderizadores y
 que un tipo inexistente conserva la base vacia. Espera la sincronizacion del

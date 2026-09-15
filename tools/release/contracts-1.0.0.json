@@ -4,8 +4,8 @@
   "farmer_crop_schema_version": 1,
   "mob_farm_target_schema_version": 1,
   "mob_farm_catalog_protocol_version": 1,
-  "recipe_catalog_count": 140,
-  "recipe_catalog_sha256": "D34053445410568154FE1465CF63B0617624805E3D413E5EC3326A55D02E4187",
+  "recipe_catalog_count": 153,
+  "recipe_catalog_sha256": "3A39AEF0CD2A1CEA15C8C18553B8F7375948917C2338C456EE55BC5113839270",
   "payload_ids": {
     "ArcaneInfuserTransferPayload": "arcane_infuser_transfer",
     "AutotraderMenuSyncPayload": "autotrader_menu_sync",

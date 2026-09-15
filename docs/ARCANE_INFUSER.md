@@ -62,6 +62,9 @@ encantamiento alternativo. Se aplica en yunque a las mismas herramientas que el
 Toque de Seda vanilla y permite recoger los bloques enumerados en
 [`SILK_TOUCH_II.md`](SILK_TOUCH_II.md).
 
+El resultado y su vista previa conservan el nombre vanilla de Libro encantado;
+Toque de Seda II aparece como detalle del encantamiento, no como nombre personalizado.
+
 ### Nitwit
 
 ```text

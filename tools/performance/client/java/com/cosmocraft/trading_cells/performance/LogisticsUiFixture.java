@@ -261,11 +261,19 @@ final class LogisticsUiFixture {
                 level.setBlockAndUpdate(target, target.getY() == pos.getY() - 1
                         ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState());
             }
+            // Replacing a previous fixture can drop its inventory into the new screenshot.
+            level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                    net.minecraft.world.phys.AABB.encapsulatingFullBlocks(pos.offset(-3, -2, -3), pos.offset(30, 6, 9)))
+                    .forEach(net.minecraft.world.entity.item.ItemEntity::discard);
             if (fixture.equals("terminals")) {
                 level.setBlockAndUpdate(pos, LogisticsRegistrationAdapter.TERMINAL_BLOCK.get().defaultBlockState()
                         .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
                 level.setBlockAndUpdate(pos.east(2), LogisticsRegistrationAdapter.CRAFTING_TERMINAL_BLOCK.get().defaultBlockState()
                         .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
+                for (int x = 0; x <= 2; x++) {
+                    level.setBlockAndUpdate(pos.north().east(x),
+                            LogisticsRegistrationAdapter.pipeBlock(PipeKind.UNIVERSAL).get().defaultBlockState());
+                }
                 player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                 player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
                 scenePrepared = true;

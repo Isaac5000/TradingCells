@@ -3,7 +3,64 @@
 Solicitud completa: 2026-09-11. Este documento conserva el alcance y la evidencia
 pendiente del objetivo; no sustituye los requisitos del usuario.
 
-## Punto de reanudacion: 2026-09-14
+## Punto de reanudacion: 2026-09-15
+
+- R01 terminado: carcasas y marcos de ambos terminales recoloreados a acero gris
+  de logistics, sin redibujar pantallas, mover pixeles ni alterar el alfa. Los
+  tres PNG fuente y cinco PNG del mod contienen el acabado; originales de cobre
+  conservados en `tools/assets/upgrade_bases/originals/terminals/`.
+  Modelos completos en inventario y paneles exclusivamente arriba verificados.
+  Capturas reales: `artifacts/terminal-steel-vulkan-20260915-clean/`,
+  `artifacts/terminal-steel-opengl-20260915/` y
+  `artifacts/terminal-steel-inventory-opengl-20260915-final/`. Las dos primeras
+  muestran los terminales colocados junto a tuberias; la tercera, ambos items 3D.
+  `check` y `releaseCheck` pasan con 121 GameTests, 19 pruebas de recursos
+  logistics y 23 pruebas de recetas. La nueva regresion compara pixel por pixel
+  el recoloreado, la conservacion de pantallas y su idempotencia.
+  No repetir este apartado; siguen pendientes R02 y los acabados R18/R21/R22/R24,
+  ademas de la compatibilidad y auditorias indicadas abajo.
+
+- R14: cuatro pruebas nuevas pasan por el evento real de interaccion de NeoForge:
+  extraccion de vaca/aldeano/zombi/warden sin eliminar ni herir la criatura,
+  frasco y desgaste exactos, manos principal/secundaria, cooldown de 40 ticks,
+  rechazo sin frasco/de entidades muertas/jugadores, creativo, ultimo uso y
+  desbordamiento del inventario. Corregido el cooldown al romperse el extractor:
+  ahora se registra antes del desgaste y no se asigna al stack vacio.
+- R15: mesa comprobada con clics reales en Vulkan/es_es y OpenGL/en_us a 1280x720:
+  sintesis normal, retirada Shift, clasificacion de warden y boton deshabilitado
+  cuando faltan requisitos. Los costes ahora muestran iconos concretos, cantidades
+  y XP, con tooltip de cada material, incluso si hay hierro en vez de netherita.
+  Una prueba adicional verifica sintesis de alto nivel, rechazos por distancia,
+  material, fragmentos y 2999 XP; consumo exacto de 16 fragmentos, 1 netherita y
+  3000 XP; modulo de warden restaurable y ausencia de duplicacion.
+- Validacion actual: 121/121 GameTests, `check` y `releaseCheck` aprobados.
+  Capturas y registros: `artifacts/essence-workbench-vulkan-20260914-final/` y
+  `artifacts/essence-workbench-opengl-20260914-final/`. Esta evidencia no cierra
+  las texturas pendientes ni la compatibilidad con entidades de mods externos.
+- R23: retirado el nombre personalizado del libro de Toque de Seda II en
+  `ArcaneInfusionResult`. Tanto la vista previa como el resultado fabricado
+  conservan exactamente los componentes vanilla y el encantamiento a nivel 2.
+  Nueva regresion `arcane_infuser_enchanted_book_name`; 116/116 GameTests pasan.
+  No modifica libros existentes ni nombres elegidos por jugadores. Captura
+  del tooltip en el cliente pendiente.
+- R10: retiradas las 21 recetas antiguas y sus categorias/displays de REI.
+  Los IDs registrados y la migracion se conservan. Creativo tiene 13 entradas
+  de la granja general; dos GameTests comprueban catalogo y recetas retiradas.
+  Ensayo cliente Vulkan con REI aprobado: exactamente 13 entradas compartidas
+  con creativo y ninguna granja antigua. Filtros, probabilidades, encendido y XP
+  comprobados de nuevo. Evidencia: `artifacts/mob-simulation-catalog-vulkan-20260914-final/`.
+  El ensayo reinicia el bloque de la copia e inicializa las pestanas creativas;
+  no depende de que el mundo guardado dejase la maquina encendida ni del cache
+  de una pantalla creativa que no se ha abierto.
+- GitHub: el commit se subia, pero `checkReleaseContracts` fallaba en los tres
+  sistemas por esperar 140 recetas. Catalogo revisado: 153 recetas, huella
+  `3A39AEF0CD2A1CEA15C8C18553B8F7375948917C2338C456EE55BC5113839270`.
+  Referencia actualizada sin desactivar controles. Fuentes de Minecraft
+  habilitadas tambien en CI para las 23 pruebas de recetas. Antes de R23 pasan
+  `clean build releaseCheck` normal y con `CI=true`, 115/115 GameTests.
+  La ejecucion remota del cambio sigue pendiente de subida.
+
+### Evidencia anterior de botin
 
 - R13: integrados en la granja general los extras de combate (cabezas, fragmentos
   de creeper cargado) y los perfiles heredados de equipo de esqueletos, zombis,
@@ -22,12 +79,10 @@ pendiente del objetivo; no sustituye los requisitos del usuario.
   Incluye tablas propias/enlazadas, cabezas sin duplicados, probabilidad de skull
   Wither con Saqueo/Decapitacion, fragmentos cargados, filtros persistentes,
   equipo gastado, armas alternativas, botellas/estandartes y restauracion del
-  contexto tras errores. `check --continue` conserva solo los dos fallos de
-  recetas ya documentados; dominio, arquitectura, recursos graficos, portabilidad
-  y contenido del JAR pasan. No dar R13 por cerrado globalmente: faltan tablas
-  ciclicas/extremas y la matriz con mods externos. El siguiente trabajo funcional
-  es retirar las 21 opciones antiguas de creativo/REI/recetas sin quitar sus IDs,
-  y terminar las pruebas de interaccion de extractor/mesa de esencias.
+  contexto tras errores. Los dos fallos de recetas de esa ejecucion ya estan
+  corregidos (ver punto de reanudacion). No dar R13 por cerrado globalmente:
+  faltan tablas ciclicas/extremas y la matriz con mods externos. Sigue pendiente
+  ampliar la compatibilidad de entidades externas y completar el acabado visual.
 
 - Peticion nueva: mango de pico y espadas con paleta real del palo vanilla;
   lingote/flechas de trueque dorados en todos los niveles; receta inicial de
@@ -76,13 +131,12 @@ pendiente del objetivo; no sustituye los requisitos del usuario.
   apagados o pausados por redstone. Las pruebas cubren las 21 variantes,
   trabajador, espada, 18 salidas, XP, progreso, filtros dinamicos, conversion
   unica, estado cargado del creeper y botin pendiente que se liquida una vez.
-  Los 107 GameTests pasan el 2026-09-13 a las 06:19. Todavia faltan la retirada
-  de opciones antiguas en creativo/REI/recetas y la auditoria de migracion final.
-- No repetir la implementacion de recetas cerradas abajo. Conservar una tarea
-  comun de validacion/publicacion: `check` aun falla porque diez expectativas
-  del validador conservan recetas antiguas y el contrato espera 140 recetas en
-  vez de las 174 actuales. Auditar el catalogo definitivo antes de actualizarlo;
-  aun falta retirar las recetas de las granjas sustituidas.
+  Los 107 GameTests pasan el 2026-09-13 a las 06:19. Todavia falta
+  la auditoria de migracion final; la retirada de creativo/REI/recetas ya esta
+  comprobada en el punto de reanudacion.
+- No repetir la implementacion de recetas cerradas abajo. El validador y el
+  contrato de 153 recetas ya estan actualizados; `releaseCheck` pasa. Conservar
+  la validacion final y la confirmacion de CI del commit definitivo.
 - Las texturas, la conversion de mundos y la integracion completa de la granja
   no estan terminadas. No confundir una base implementada con un cierre visual
   o funcional de todo el requisito.
@@ -99,9 +153,8 @@ pendiente del objetivo; no sustituye los requisitos del usuario.
   de la version actual y su registro en fuentes, no una lista de otra version.
 - Parte de R24: end stone en el centro inferior de la receta del infusor.
   Su textura sigue pendiente.
-- Parte de R01: los dos terminales usan el modelo completo del bloque en el
-  inventario y tienen el panel en la cara superior. Falta adaptar los tonos y
-  verificar el resultado visual completo.
+- R01: terminales completos en inventario, panel superior y tonos de logistics
+  terminados; evidencia final del 2026-09-15 en el punto de reanudacion.
 
 Evidencia del 2026-09-13: las 18 pruebas de `test_recipe_resources.py` pasan.
 Esto no certifica todavia la publicacion ni las partes graficas pendientes.
@@ -113,14 +166,13 @@ Esto no certifica todavia la publicacion ni las partes graficas pendientes.
   Reglas puras y remaches/paletas verificados; integracion final pendiente.
 - R13-R15: instantanea de esencia, modulo reutilizable, tabla real de la entidad,
   clasificacion normal/alto nivel y sintesis con consumos/XP validados en servidor.
-  Botin especial heredado integrado; faltan tablas extremas, mods externos y la
-  interaccion del extractor.
+  Botin especial heredado e interaccion del extractor verificados; faltan tablas
+  extremas y mods externos.
 - R19: XP y capacidad de extraccion, salidas transaccionales y cola persistente
   de botin implementadas. Falta la migracion completa desde granjas antiguas.
 - R20: menu con filtros, probabilidades, encendido y retirada de XP implementado.
-  Clics reales del menu de granja comprobados en OpenGL y Vulkan. La prueba
-  de la mesa se interrumpio al preparar un warden en el mundo de ensayo; su
-  preparacion se ha ajustado, pero aun no se ha repetido con exito.
+  Clics reales del menu de granja y de la mesa comprobados en OpenGL y Vulkan.
+  El fallo anterior al preparar un warden en pacifico ya esta resuelto.
 
 Evidencia anterior al ultimo ajuste: 104/104 GameTests el 2026-09-12 a las
 00:51; captura y registro en `artifacts/mob-simulation-ui-opengl-20260912/`.
@@ -133,7 +185,7 @@ y el ajuste del ensayo de esencias compilan, pero necesitan pruebas dirigidas.
 
 | ID | Requisito | Estado | Evidencia exigida |
 | --- | --- | --- | --- |
-| R01 | Terminales como bloques 3D en inventario, pantallas arriba y tonos de logistics | En curso | Modelos, paletas y capturas de inventario/mundo |
+| R01 | Terminales como bloques 3D en inventario, pantallas arriba y tonos de logistics | Terminado | PNG y regresion exacta; mundo OpenGL/Vulkan e inventario OpenGL verificados el 2026-09-15 |
 | R02 | Cuatro capturadores simetricos y homogeneos, inspirados en originales/recetas | En curso | PNG finales y comparacion visual |
 | R03 | Capturador piglin: dos blackstone en lugar de hierro | Receta terminada | Prueba dirigida pasa; validacion final comun pendiente |
 | R04 | Mejora cobre de trueque: oro en lugar de redstone | Receta terminada | Prueba dirigida pasa; validacion final comun pendiente |
@@ -142,12 +194,12 @@ y el ajuste del ensayo de esencias compilan, pero necesitan pruebas dirigidas.
 | R07 | Remaches normales en cobre/hierro/oro; lila en diamante y rojo en netherite, sin ruido ni cambios de forma | En curso | 16 pruebas de pixel y captura OpenGL pasan; matriz Vulkan pendiente |
 | R08 | Recetas distintas llama/caballo y flores de cactus para camello | Recetas terminadas | Pruebas de ingredientes y duplicados pasan |
 | R09 | Huevos vanilla completos, recetas simples coherentes y unicas, XP multiplo de 10 y costes altos para criaturas poderosas | Recetas terminadas | 88 huevos contrastados con el JAR/registro 26.2; validacion final comun pendiente |
-| R10 | Una granja general reemplaza las 21 granjas, sin perder contenido de mundos existentes | En curso | Conversion de 21 bloques y colas comprobada; creativo/REI/recetas pendientes |
+| R10 | Una granja general reemplaza las 21 granjas, sin perder contenido de mundos existentes | En curso | Conversion, creativo y recetas comprobados; REI real aprobado en Vulkan; auditoria de mundos pendientes |
 | R11 | Mejoras de espada por tier: velocidad y cantidad por ciclo como controles separados | En curso | Diez items, recetas y reglas verificados; acabado/integracion pendiente |
 | R12 | Arma se desgasta salvo Toque del Guerrero; tier/encantamientos complementan mejoras significativas | En curso | Reglas y desgaste basico verificados; cobertura final pendiente |
 | R13 | Botin dinamico real, incluidos objetivos ya adaptados y criaturas externas | En curso | Tabla real/enlazada y especiales heredados comprobados; tablas extremas y mods externos pendientes |
-| R14 | Extraccion generica de esencia de criaturas, sin lista de familias predefinida | En curso | Datos implementados; prueba de interaccion pendiente |
-| R15 | Mesa de esencias distingue normal/alto nivel y exige requisitos para crear modulo | En curso | Transaccion/XP y clasificacion comprobadas; ensayo UI pendiente |
+| R14 | Extraccion generica de esencia de criaturas, sin lista de familias predefinida | En curso | Eventos reales, consumos, cooldown, rechazos e inventario lleno comprobados; entidades externas pendientes |
+| R15 | Mesa de esencias distingue normal/alto nivel y exige requisitos para crear modulo | Funcionalidad verificada | Costes normales/altos y atomicidad comprobados; clics y capturas Vulkan/es_es y OpenGL/en_us |
 | R16 | Modulo con nombre/modelo de criatura sobre base escalonada centrada (boceto posterior sustituye la jaula) | En curso | Renderer, fallback y capturas reales pasan; variantes/vistas pendientes |
 | R17 | Granja conserva aldeano y presenta criatura sobre pedestal, no spawner | En curso | Renderer y soporte escalonado visibles en OpenGL/Vulkan; auditoria final pendiente |
 | R18 | Apariencia local de aldeano cazador de monstruos; ningun oficio ni POI nuevo | Pendiente | Textura, renderer y registro |
@@ -155,7 +207,7 @@ y el ajuste del ensayo de esencias compilan, pero necesitan pruebas dirigidas.
 | R20 | Filtros de botin con checks, probabilidades, encendido/apagado; menu estilo logistics | En curso | Interaccion real OpenGL/Vulkan comprobada; integracion final pendiente |
 | R21 | Pie de tooltip muestra solo Trading Cells, no nombre del tab | En curso | Fuente del tooltip y captura con REI |
 | R22 | Fragmento de tormenta mas elaborado y mantiene capa de energia | En curso | PNG/modelo/capa y captura |
-| R23 | Infusor: Libro encantado como nombre, Toque de Seda II en detalle, sin duplicado | En curso | Tooltip vanilla y captura |
+| R23 | Infusor: Libro encantado como nombre, Toque de Seda II en detalle, sin duplicado | Codigo terminado | Vista previa y resultado iguales a libro vanilla verificados; captura pendiente |
 | R24 | Infusor: end stone centro inferior en receta y textura | En curso | Receta, modelo/textura y captura |
 | R25 | Tiempos mostrados sin decimales y redondeados hacia arriba, sin alterar produccion | Terminado | Pruebas puras pasan y captura real muestra 6 s en vez de 5.7 s |
 

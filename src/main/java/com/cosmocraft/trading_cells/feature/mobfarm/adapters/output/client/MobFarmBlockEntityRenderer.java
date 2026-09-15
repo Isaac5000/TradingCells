@@ -26,10 +26,12 @@ import org.jspecify.annotations.Nullable;
 
 public final class MobFarmBlockEntityRenderer implements BlockEntityRenderer<MobFarmBlockEntity, MobFarmBlockEntityRenderer.State> {
     private final EntityRenderDispatcher dispatcher;
+    private final SimulationWorkerRenderer workerRenderer;
     private final Map<MobFarmBlockEntity, PreviewCache> previews = new WeakHashMap<>();
 
     public MobFarmBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         dispatcher = context.entityRenderer();
+        workerRenderer = new SimulationWorkerRenderer(context);
     }
 
     @Override public @NonNull State createRenderState() { return new State(); }
@@ -53,7 +55,7 @@ public final class MobFarmBlockEntityRenderer implements BlockEntityRenderer<Mob
     public void submit(State state, @NonNull PoseStack poseStack, @NonNull SubmitNodeCollector collector,
             @NonNull CameraRenderState camera) {
         if (state.worker != null) {
-            state.worker.submit(dispatcher, 0.5D - state.side.getStepX() * 0.22D, 0.125D,
+            workerRenderer.submit(state.worker, dispatcher, 0.5D - state.side.getStepX() * 0.22D, 0.125D,
                     0.5D - state.side.getStepZ() * 0.22D, state.lightCoords, poseStack, collector, camera);
         }
         if (state.creature != null) {

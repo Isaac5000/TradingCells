@@ -4,12 +4,15 @@ import com.cosmocraft.trading_cells.feature.experience.adapters.output.Experienc
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserBlockEntity;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserMenu;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionRecipe;
+import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionInput;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestFixtures;
 import com.cosmocraft.trading_cells.platform.neoforge.registration.ExperienceFluidRegistration;
 import java.util.List;
+import java.util.Collections;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -43,8 +46,29 @@ public final class ArcaneInfuserGameTests {
             new GameTestCase("arcane_infuser_exact_component_placement", 20,
                     ArcaneInfuserGameTests::exactComponentPlacement),
             new GameTestCase("arcane_infuser_container_remainders", 20,
-                    ArcaneInfuserGameTests::containerRemainders)
+                    ArcaneInfuserGameTests::containerRemainders),
+            new GameTestCase("arcane_infuser_enchanted_book_name", 20,
+                    ArcaneInfuserGameTests::enchantedBookName)
         );
+    }
+
+    private static void enchantedBookName(GameTestHelper helper) {
+        ArcaneInfusionRecipe recipe = (ArcaneInfusionRecipe) recipe(
+                helper, "trading_cells:silk_touch_two_infusion").value();
+        var silkTouch = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.SILK_TOUCH);
+        ItemStack vanillaBook = EnchantmentHelper.createBook(new EnchantmentInstance(silkTouch, 2));
+        var input = new ArcaneInfusionInput(Collections.nCopies(ArcaneInfusionInput.SIZE, ItemStack.EMPTY));
+        for (ItemStack book : List.of(recipe.result().displayResult(), recipe.assemble(input))) {
+            helper.assertTrue(book.is(Items.ENCHANTED_BOOK), "Result must remain a vanilla enchanted book");
+            helper.assertTrue(!book.has(DataComponents.CUSTOM_NAME), "Enchantment must not replace the book title");
+            helper.assertValueEqual(book.getHoverName(), vanillaBook.getHoverName(), "Vanilla book title");
+            helper.assertValueEqual(EnchantmentHelper.getEnchantmentsForCrafting(book).getLevel(silkTouch),
+                    2, "Silk Touch II remains in the enchantment details");
+            helper.assertTrue(ItemStack.isSameItemSameComponents(book, vanillaBook),
+                    "Display and crafted book must preserve vanilla components");
+        }
+        helper.succeed();
     }
 
     private static void containerRemainders(GameTestHelper helper) {

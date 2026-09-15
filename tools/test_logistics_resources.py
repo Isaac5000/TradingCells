@@ -12,6 +12,7 @@ from generate_logistics_resources import ASSETS, resource_matches, resources
 from generate_mob_simulation_resources import resources as simulation_resources
 from generate_family_upgrades import BASES, FAMILIES, MATERIALS, MOB_FARM_SWORD_REGIONS, TERMINAL_BODY, family_base, family_texture, generated, luminance, material_ramp, recolor, rivet_pixels
 from generate_family_upgrades import WOOD_PALETTE, fixed_emblem_pixels, wooden_emblem_pixels
+from generate_family_upgrades import TERMINALS, TERMINAL_ORIGINALS, TERMINAL_STEEL, logistics_terminal_texture
 
 
 def encoded(image: Image.Image, **options) -> bytes:
@@ -101,6 +102,27 @@ class SimulationModelTests(unittest.TestCase):
 
 
 class UpgradePaletteTests(unittest.TestCase):
+    def test_terminal_steel_is_baked_without_changing_alpha_or_screens(self):
+        for name in (*TERMINALS, TERMINAL_BODY):
+            with self.subTest(terminal=name):
+                with Image.open(TERMINAL_ORIGINALS / f"{name}.png") as source:
+                    original = source.convert("RGBA")
+                with Image.open(BASES / f"{name}.png") as source:
+                    actual = source.convert("RGBA")
+                self.assertEqual(actual.size, original.size)
+                self.assertEqual(actual.tobytes(), logistics_terminal_texture(original).tobytes())
+                self.assertEqual(actual.getchannel("A").tobytes(), original.getchannel("A").tobytes())
+                self.assertEqual(logistics_terminal_texture(actual).tobytes(), actual.tobytes())
+                changed = 0
+                for before, after in zip(original.get_flattened_data(), actual.get_flattened_data()):
+                    red, green, blue, alpha = before
+                    if alpha and red > blue * 1.2 and red > green * 1.03:
+                        self.assertIn(after[:3], TERMINAL_STEEL)
+                        changed += before != after
+                    else:
+                        self.assertEqual(after, before, "Displays, steel, indicators and transparent pixels remain exact")
+                self.assertGreater(changed, 1000)
+
     def test_only_diamond_and_netherite_have_special_rivets(self):
         for family in FAMILIES:
             base = family_base(family)

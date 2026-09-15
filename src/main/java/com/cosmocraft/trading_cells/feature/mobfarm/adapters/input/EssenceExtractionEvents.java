@@ -38,12 +38,13 @@ public final class EssenceExtractionEvents {
             player.sendOverlayMessage(Component.translatable("message.trading_cells.essence.unsupported"));
             return;
         }
+        // Keep the item's cooldown group before its final durability point can break it.
+        player.getCooldowns().addCooldown(tool, 40);
         if (!player.getAbilities().instabuild) {
             player.getInventory().removeItem(bottleSlot, 1);
             tool.hurtAndBreak(1, player, event.getHand());
         }
         if (!player.getInventory().add(essence)) { player.drop(essence, false); }
-        player.getCooldowns().addCooldown(tool, 40);
         player.getInventory().setChanged();
     }
 }

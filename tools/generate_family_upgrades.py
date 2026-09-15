@@ -16,6 +16,11 @@ MATERIALS = ("copper", "iron", "gold", "diamond", "netherite")
 FAMILIES = ("quarry", "piglin_barter", "pipe", "mob_farm_speed", "mob_farm_capacity")
 TERMINALS = ("network_terminal", "network_crafting_terminal")
 TERMINAL_BODY = "network_terminal_body"
+TERMINAL_ORIGINALS = BASES / "originals/terminals"
+# Neutral steel matching the pipe casings; the existing cyan displays stay untouched.
+TERMINAL_STEEL = ((5, 7, 9), (17, 19, 22), (32, 35, 39), (51, 55, 59),
+                  (73, 77, 82), (97, 101, 107), (116, 118, 121), (137, 139, 142),
+                  (158, 160, 163), (184, 189, 194), (211, 218, 222), (240, 244, 246))
 SPECIAL_RIVETS = {
     "diamond": ((24, 8, 39), (59, 20, 81), (99, 40, 133), (153, 75, 188),
                 (203, 120, 229), (240, 179, 251), (255, 232, 255)),
@@ -193,6 +198,30 @@ def generated():
     return result
 
 
+def logistics_terminal_texture(base):
+    result = base.copy()
+    for y in range(base.height):
+        for x in range(base.width):
+            red, green, blue, alpha = base.getpixel((x, y))
+            if alpha and red > blue * 1.2 and red > green * 1.03:
+                light = luminance((red, green, blue))
+                color = min(TERMINAL_STEEL, key=lambda rgb: abs(luminance(rgb) - light))
+                result.putpixel((x, y), (*color, alpha))
+    return result
+
+
+def bake_terminal_steel():
+    """Bake the recolor into the canonical PNGs while retaining the original drawings."""
+    TERMINAL_ORIGINALS.mkdir(parents=True, exist_ok=True)
+    for name in (*TERMINALS, TERMINAL_BODY):
+        original = TERMINAL_ORIGINALS / f"{name}.png"
+        if not original.exists():
+            with Image.open(BASES / f"{name}.png") as source:
+                source.save(original)
+        with Image.open(original) as source:
+            logistics_terminal_texture(source.convert("RGBA")).save(BASES / f"{name}.png")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--import-base", nargs=2, metavar=("FAMILY", "IMAGE"))
@@ -205,11 +234,14 @@ def main():
     parser.add_argument("--extract-background", action="store_true")
     parser.add_argument("--bake-mob-farm-sword", action="store_true")
     parser.add_argument("--bake-wooden-emblems", action="store_true")
+    parser.add_argument("--bake-terminal-steel", action="store_true")
     args = parser.parse_args()
     if args.bake_mob_farm_sword:
         bake_mob_farm_sword()
     if args.bake_wooden_emblems:
         bake_wooden_emblems()
+    if args.bake_terminal_steel:
+        bake_terminal_steel()
     if args.import_base:
         family, path = args.import_base
         if family not in (*FAMILIES, *TERMINALS, TERMINAL_BODY):

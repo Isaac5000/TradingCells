@@ -8,9 +8,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Locale;
 import java.util.Optional;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
@@ -19,7 +17,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 
 /** Data-driven result operation for an Arcane Infusion recipe. */
@@ -137,14 +134,7 @@ public record ArcaneInfusionResult(
 
     private ItemStack enchantedBook() {
         Holder<Enchantment> enchantmentHolder = enchantment.orElseThrow();
-        ItemStack book = EnchantmentHelper.createBook(new EnchantmentInstance(enchantmentHolder, level));
-        if (level >= 2 && enchantmentHolder.is(Enchantments.SILK_TOUCH)) {
-            book.set(
-                    DataComponents.CUSTOM_NAME,
-                    Component.translatable("item.trading_cells.silk_touch_two_book")
-            );
-        }
-        return book;
+        return EnchantmentHelper.createBook(new EnchantmentInstance(enchantmentHolder, level));
     }
 
     private ItemStack displayInputBook(Holder<Enchantment> input) {

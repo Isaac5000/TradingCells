@@ -44,6 +44,8 @@ final class MobSimulationUiFixture {
         level.getServer().setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
         player.getInventory().clearContent();
         if (mode().equals("simulation-models")) { prepareModels(player, pos); return; }
+        // A reused template may already contain the same block with paused or occupied state.
+        level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
         var cow = EntityTypes.COW.create(level, EntitySpawnReason.LOAD);
         ItemStack essence = EntityEssenceData.essenceOf(cow);
         if (mode().equals("essences")) {
@@ -198,6 +200,10 @@ final class MobSimulationUiFixture {
         }
         var registry = me.shedaniel.rei.api.client.registry.entry.EntryRegistry.getInstance();
         if (registry.isReloading() || registry.size() == 0) { return false; }
+        var level = Minecraft.getInstance().level;
+        if (level == null) { return false; }
+        // The fixture opens a machine directly, so the creative screen has not initialized its tabs.
+        net.minecraft.world.item.CreativeModeTabs.tryRebuildTabContents(level.enabledFeatures(), true, level.registryAccess());
         var items = registry.getEntryStacks().map(entry -> entry.getValue())
                 .filter(value -> value instanceof ItemStack).map(value -> ((ItemStack) value).getItem()).toList();
         if (items.stream().anyMatch(item -> item instanceof net.minecraft.world.item.BlockItem block
@@ -205,8 +211,11 @@ final class MobSimulationUiFixture {
             throw new IllegalStateException("REI still lists replaced entity farms");
         }
         var creative = com.cosmocraft.trading_cells.platform.neoforge.registration.CreativeTabRegistration.FARMS_TAB.get().getDisplayItems();
-        if (creative.size() != 13 || creative.stream().anyMatch(stack -> !items.contains(stack.getItem()))) {
-            throw new IllegalStateException("Creative/REI missing one of the thirteen simulation entries");
+        var missing = creative.stream().filter(stack -> !items.contains(stack.getItem()))
+                .map(stack -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString()).toList();
+        if (creative.size() != 13 || !missing.isEmpty()) {
+            throw new IllegalStateException("Simulation creative entries=" + creative.size()
+                    + ", REI entries=" + items.size() + ", missing=" + missing);
         }
         System.out.println("Simulation catalog checked: 13 creative/REI entries and no legacy farm items");
         return true;

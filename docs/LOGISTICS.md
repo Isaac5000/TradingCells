@@ -163,7 +163,10 @@ Las mejoras tienen una carpeta propia por familia bajo `textures/item/upgrades/`
 cobre en sus cinco niveles, cambiando solo la paleta. Los cinco PNG originales
 siguen en la raiz. Los quince items usan solo su modelo de textura, sin los
 antiguos simbolos superpuestos de pico, lingote o tuberia. Los terminales comparten
-carcasa de cobre y acero; cada panel superior reutiliza su icono de inventario.
+carcasa de acero gris a juego con las tuberias y conservan sus pantallas cian;
+cada panel superior reutiliza su icono de inventario. El recoloreado se guarda
+en los PNG, conserva formas y alfa y mantiene los originales de cobre en
+`tools/assets/upgrade_bases/originals/terminals/`.
 `generate_family_upgrades.py` reproduce estas variantes desde
 las bases de `tools/assets/upgrade_bases/`, sin generar ruido por mezclar dibujos.
 
@@ -210,6 +213,14 @@ Rutas de mantenimiento bajo `feature/logistics/`:
   `LogisticsRuleGameTests`, `LogisticsPayloadGameTests` y suites de transporte.
 
 ## Validacion registrada
+
+- 2026-09-15, acabado de terminales: marco y carcasa de acero gris, conservando
+  las pantallas cian superiores y los modelos de inventario 3D. Recoloreado
+  determinista guardado en PNG; originales de cobre conservados. Prueba exacta
+  de pixeles y alfa; `check` y `releaseCheck` aprobados con 121 GameTests.
+  Mundo: `artifacts/terminal-steel-vulkan-20260915-clean/` y
+  `artifacts/terminal-steel-opengl-20260915/`; inventario:
+  `artifacts/terminal-steel-inventory-opengl-20260915-final/`.
 
 - 2026-09-10, paneles superiores: por peticion del usuario las pantallas de ambos
   terminales pasan del frontal a la cara superior. Se conservan los mismos PNG,

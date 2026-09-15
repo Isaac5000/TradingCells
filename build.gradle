@@ -225,8 +225,11 @@ def configurePerformanceClientRun = { run, currentProject ->
 }
 
 neoForge {
-    // Specify the version of NeoForge to use.
-    version = project.neo_version
+    enable {
+        version = project.neo_version
+        // Recipe registry tests require Minecraft sources, including on CI.
+        disableRecompilation = false
+    }
 
     mods {
         "${mod_id}" {
