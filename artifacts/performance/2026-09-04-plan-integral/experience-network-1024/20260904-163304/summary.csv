@@ -1,2 +1,0 @@
-scenario,runs,median_mean_mspt,median_p95_mspt,median_jvm_cpu_percent,median_allocation_bytes_per_second,median_packets_sent,median_packet_bytes_sent,median_chunks_written,median_profile_ticks_per_second,median_jfr_bytes,median_world_bytes
-experience-network-1024,3,0.452054,0.618039,0.229134,559240.533,0,0,9,20.133333,456084,48054034

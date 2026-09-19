@@ -1,7 +1,0 @@
-{
-  "parent": "trading_cells:item/piglin_breeder",
-  "textures": {
-    "base": "minecraft:block/netherrack",
-    "particle": "minecraft:block/polished_blackstone"
-  }
-}

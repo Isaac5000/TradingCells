@@ -1,9 +1,0 @@
-{
-  "parent": "trading_cells:block/piglin_breeder",
-  "textures": {
-    "base": "minecraft:block/red_wool",
-    "frame": "minecraft:block/blackstone",
-    "glass": "minecraft:block/tinted_glass",
-    "particle": "minecraft:block/red_wool"
-  }
-}

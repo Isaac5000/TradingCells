@@ -1,6 +1,0 @@
-{
-  "type": "trading_cells:decapitation_smithing_upgrade",
-  "show_notification": false,
-  "base": "#trading_cells:decapitation_smithing_bases",
-  "addition": "trading_cells:storm_shard"
-}

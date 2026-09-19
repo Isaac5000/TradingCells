@@ -1,2 +1,0 @@
-scenario,backend,frames,measured_seconds,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,width,height,screen_class
-logistics-1024-active,Vulkan,3979,6.000447,1.120801,0.928301,1.957300,2.294200,663.117287,1280,720,

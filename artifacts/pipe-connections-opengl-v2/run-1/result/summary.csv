@@ -1,2 +1,0 @@
-scenario,backend,frames,measured_seconds,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,width,height,screen_class
-logistics-1024-active,OpenGL,8477,6.000237,0.665528,0.607700,1.039700,1.417300,1412.777458,1600,900,

@@ -1,1 +1,0 @@
-{"model":{"type":"minecraft:composite","models":[{"type":"minecraft:model","model":"trading_cells:item/quarry_diamond_upgrade"},{"type":"minecraft:special","base":"trading_cells:item/quarry_diamond_upgrade","model":{"type":"trading_cells:upgrade_badge","badge":"quarry"}}]}}

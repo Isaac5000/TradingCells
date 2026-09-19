@@ -1,2 +1,0 @@
-scenario,backend,runs,with_rei,with_trading_cells,ui_fixture,median_mean_frame_ms,median_p50_frame_ms,median_p95_frame_ms,median_p99_frame_ms,median_frames_per_second,median_jvm_cpu_percent,median_allocation_bytes_per_second,median_resident_bytes,median_packets_sent,median_packet_bytes_sent,median_packets_received,median_packet_bytes_received
-logistics-1024-active,opengl,1,true,true,crafting,1.324134,1.1989,1.8353,2.2271,731.136162,3.8492,441089938.242,1921851392.0,0.0,0.0,0.0,0.0
