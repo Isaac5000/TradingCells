@@ -1,16 +1,13 @@
 ### Gradle ###
 .gradle/
-build/
-
-# Keep the Gradle wrapper committed
-!gradle/wrapper/gradle-wrapper.jar
+/build/
 
 ### IntelliJ IDEA ###
 .idea/
 *.iws
 *.iml
 *.ipr
-out/
+/out/
 .run/
 
 ### Eclipse ###
@@ -22,7 +19,7 @@ out/
 .settings/
 .springBeans
 .sts4-cache/
-bin/
+/bin/
 
 ### VS Code ###
 .vscode/
@@ -33,25 +30,39 @@ Thumbs.db
 desktop.ini
 
 ### Minecraft / NeoForge development ###
-run/
-runs/
-logs/
-crash-reports/
-screenshots/
-saves/
-config/
-defaultconfigs/
-local/
-repo/
+/run/
+/run-server/
+/runs/
+/logs/
+/crash-reports/
+/screenshots/
+/saves/
+/config/
+/defaultconfigs/
+/local/
+/repo/
+
+### AI / development artifacts ###
+/artifacts/
+
+### Python ###
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 ### Generated resource cache ###
 **/src/generated/**/.cache/
 
 ### Java / JVM ###
 *.class
-*.log
 hs_err_pid*
 replay_pid*
+
+### Logs ###
+*.log
 
 ### Temporary / backup files ###
 *.tmp
@@ -59,6 +70,3 @@ replay_pid*
 *.bak
 *.swp
 *~
-
-### Generated test / benchmark artifacts ###
-artifacts/
