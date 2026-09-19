@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "key": {
+    "C": "minecraft:copper_ingot",
+    "N": "minecraft:copper_nugget",
+    "R": "minecraft:redstone"
+  },
+  "pattern": [
+    "NCN",
+    "CRC",
+    "NCN"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trading_cells:piglin_barter_copper_upgrade"
+  }
+}

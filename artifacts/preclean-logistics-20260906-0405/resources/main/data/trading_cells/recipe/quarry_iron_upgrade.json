@@ -1,0 +1,5 @@
+{
+  "type":"minecraft:crafting_shaped","category":"misc","show_notification":false,
+  "key":{"B":"minecraft:iron_block","U":"trading_cells:quarry_copper_upgrade"},
+  "pattern":["BBB","BUB","BBB"],"result":{"count":1,"id":"trading_cells:quarry_iron_upgrade"}
+}

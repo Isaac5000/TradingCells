@@ -1,0 +1,49 @@
+modLoader="javafml"
+loaderVersion="[11,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="trading_cells"
+version="1.0.0"
+displayName="Trading Cells"
+description="Automates villager and piglin trading, breeding, conversion and resource production."
+iconFile="logofile.png"
+authors="Isaac"
+
+[[mixins]]
+config="trading_cells.mixins.json"
+
+[[mixins]]
+config="trading_cells.creeperfarm.mixins.json"
+
+[[mixins]]
+config="trading_cells.rei_compat.mixins.json"
+requiredMods=["architectury", "roughlyenoughitems"]
+
+[[dependencies.trading_cells]]
+modId="minecraft"
+type="required"
+versionRange="[26.2.0,26.3.0)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.trading_cells]]
+modId="roughlyenoughitems"
+type="optional"
+versionRange="[26.2.820,)"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies.trading_cells]]
+modId="jade"
+type="optional"
+versionRange="[26.2.8,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.trading_cells]]
+modId="neoforge"
+type="required"
+versionRange="[26.2.0.57,)"
+ordering="NONE"
+side="BOTH"

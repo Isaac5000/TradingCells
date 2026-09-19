@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "pattern": [
+    "MRM",
+    "RUR",
+    "MRM"
+  ],
+  "key": {
+    "M": "minecraft:iron_ingot",
+    "R": "minecraft:redstone",
+    "U": "minecraft:hopper"
+  },
+  "result": {
+    "id": "trading_cells:basic_pipe_upgrade",
+    "count": 1
+  }
+}

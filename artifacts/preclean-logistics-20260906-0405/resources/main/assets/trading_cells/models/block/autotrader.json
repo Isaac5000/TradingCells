@@ -1,0 +1,9 @@
+{
+  "parent": "trading_cells:block/villager_breeder",
+  "textures": {
+    "base": "minecraft:block/emerald_block",
+    "frame": "minecraft:block/iron_block",
+    "glass": "minecraft:block/glass",
+    "particle": "minecraft:block/emerald_block"
+  }
+}

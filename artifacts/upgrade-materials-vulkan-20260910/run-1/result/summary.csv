@@ -1,0 +1,2 @@
+scenario,backend,frames,measured_seconds,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,width,height,screen_class
+logistics-1024-active,Vulkan,593,2.001777,3.153784,2.569400,4.446200,5.931800,296.236794,1280,720,com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.PipeConfigurationScreen

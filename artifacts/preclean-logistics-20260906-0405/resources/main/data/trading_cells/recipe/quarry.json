@@ -1,0 +1,6 @@
+{
+  "type":"minecraft:crafting_shaped","category":"building","show_notification":false,
+  "key":{"G":"minecraft:glass_pane","I":"minecraft:iron_ingot","P":"minecraft:iron_pickaxe","S":"minecraft:cobblestone"},
+  "pattern":["IGI","GPG","ISI"],
+  "result":{"count":1,"id":"trading_cells:quarry"}
+}

@@ -1,0 +1,17 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "category": "generators",
+  "ingredients": [
+    {"ingredient": "minecraft:gunpowder", "count": 1},
+    {"ingredient": "minecraft:moss_block", "count": 1},
+    {"ingredient": "minecraft:gunpowder", "count": 1},
+    {"ingredient": "minecraft:tnt", "count": 1},
+    {"ingredient": "#trading_cells:arcane_infusion_eggs", "count": 1},
+    {"ingredient": "minecraft:tnt", "count": 1},
+    {"ingredient": "minecraft:gunpowder", "count": 1},
+    {"ingredient": "minecraft:flint_and_steel", "count": 1},
+    {"ingredient": "minecraft:gunpowder", "count": 1}
+  ],
+  "experience": 80,
+  "result": {"type": "item", "item": "minecraft:creeper_spawn_egg"}
+}

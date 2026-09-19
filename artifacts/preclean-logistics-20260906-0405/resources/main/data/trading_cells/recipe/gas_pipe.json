@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "pattern": [
+    "QQQ",
+    "GXG",
+    "QQQ"
+  ],
+  "key": {
+    "Q": "minecraft:quartz",
+    "G": "minecraft:glass_pane",
+    "X": "minecraft:wind_charge"
+  },
+  "result": {
+    "id": "trading_cells:gas_pipe",
+    "count": 16
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "trading_cells:block/machine_cage_frame",
+  "textures": {
+    "base": "minecraft:block/netherrack",
+    "frame": "minecraft:block/polished_blackstone_bricks",
+    "particle": "minecraft:block/polished_blackstone"
+  }
+}

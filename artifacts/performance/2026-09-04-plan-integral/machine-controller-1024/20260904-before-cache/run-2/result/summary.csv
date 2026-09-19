@@ -1,0 +1,2 @@
+scenario,backend,frames,measured_seconds,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,width,height,screen_class
+machine-controller-1024,OpenGL,7705,30.000671,3.250065,3.061500,4.552600,5.416100,256.827590,1280,720,com.cosmocraft.trading_cells.feature.machinecontroller.adapters.output.client.MachineControllerScreen

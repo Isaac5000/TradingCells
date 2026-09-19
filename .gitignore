@@ -1,75 +1,64 @@
 ### Gradle ###
-.gradle
+.gradle/
 build/
+
+# Keep the Gradle wrapper committed
 !gradle/wrapper/gradle-wrapper.jar
-!**/src/**/build/
 
 ### IntelliJ IDEA ###
 .idea/
-.fleet/
 *.iws
 *.iml
 *.ipr
 out/
-!**/src/**/out/
-
 .run/
 
 ### Eclipse ###
-.apt_generated
+.apt_generated/
 .classpath
 .eclipse/
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
-.sts4-cache
+.sts4-cache/
 bin/
-!**/src/**/bin/
 
 ### VS Code ###
 .vscode/
 
-### Mac OS ###
+### Operating systems ###
 .DS_Store
-
-### Windows ###
 Thumbs.db
-Desktop.ini
+desktop.ini
 
-### Minecraft Modding ###
+### Minecraft / NeoForge development ###
 run/
-run-server/
-!**/src/**/run/
-**/src/generated/**/.cache/
-repo/
-!**/src/**/repo/
+runs/
 logs/
-artifacts/
+crash-reports/
+screenshots/
+saves/
+config/
+defaultconfigs/
+local/
+repo/
 
-### Python ###
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.venv/
-venv/
-.coverage
-coverage.xml
-htmlcov/
+### Generated resource cache ###
+**/src/generated/**/.cache/
 
-### Local secrets and temporary files ###
-.env
-.env.*
-!.env.example
+### Java / JVM ###
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+
+### Temporary / backup files ###
 *.tmp
+*.temp
 *.bak
 *.swp
 *~
 
-### JVM profiling and crash dumps ###
-*.jfr
-*.hprof
-hs_err_pid*.log
-replay_pid*.log
+### Generated test / benchmark artifacts ###
+artifacts/

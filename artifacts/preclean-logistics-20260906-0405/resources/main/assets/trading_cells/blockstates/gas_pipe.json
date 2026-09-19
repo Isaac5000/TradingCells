@@ -1,0 +1,115 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "trading_cells:block/gas_pipe"
+      }
+    },
+    {
+      "when": {
+        "north": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_arm"
+      }
+    },
+    {
+      "when": {
+        "north": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_extract"
+      }
+    },
+    {
+      "when": {
+        "south": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_arm",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "south": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_extract",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "west": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_arm",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "west": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_extract",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "east": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_arm",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "east": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_extract",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "up": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_arm",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "up": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_extract",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "down": "pipe|insert|extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_arm",
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "down": "extract"
+      },
+      "apply": {
+        "model": "trading_cells:block/gas_pipe_extract",
+        "x": 90
+      }
+    }
+  ]
+}

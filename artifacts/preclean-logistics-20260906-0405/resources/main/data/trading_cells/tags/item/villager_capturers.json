@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "trading_cells:villager_capturer",
+    "trading_cells:unbreakable_villager_capturer"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "trading_cells:item/infinite_pipe_upgrade"
+  }
+}

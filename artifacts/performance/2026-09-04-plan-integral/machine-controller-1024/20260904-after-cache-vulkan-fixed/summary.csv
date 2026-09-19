@@ -1,0 +1,2 @@
+scenario,backend,runs,with_rei,with_trading_cells,median_mean_frame_ms,median_p50_frame_ms,median_p95_frame_ms,median_p99_frame_ms,median_frames_per_second,median_jvm_cpu_percent,median_allocation_bytes_per_second,median_resident_bytes,median_packets_sent,median_packet_bytes_sent,median_packets_received,median_packet_bytes_received
+machine-controller-1024,vulkan,3,false,true,1.847397,1.6427,3.3376,4.7233,363.999343,1.949057,170526166.54,1987706880.0,1024.0,8621.0,1024.0,8621.0

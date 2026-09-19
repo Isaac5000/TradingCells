@@ -1,0 +1,6 @@
+{
+  "type":"minecraft:crafting_shaped","category":"building","show_notification":false,
+  "key":{"B":"minecraft:netherrack","G":"minecraft:glass_pane","I":"minecraft:iron_ingot","P":"minecraft:iron_pickaxe"},
+  "pattern":["IGI","GPG","IBI"],
+  "result":{"count":1,"id":"trading_cells:piglin_quarry"}
+}

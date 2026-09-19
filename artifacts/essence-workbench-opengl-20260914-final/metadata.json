@@ -1,0 +1,49 @@
+{
+  "created_utc": "2026-09-14T20:29:43.463288+00:00",
+  "git_commit": "c30842c9332a449240166b7d4c3c035edaf492df",
+  "git_dirty": true,
+  "minecraft_version": "26.2.0",
+  "neo_version": "26.2.0.57",
+  "backend_requested": "opengl",
+  "scenario": "logistics-1024-active",
+  "runs": 1,
+  "warmup_seconds": 2.0,
+  "measure_seconds": 2.0,
+  "resolution": "1280x720",
+  "with_rei": true,
+  "with_trading_cells": true,
+  "quick_play_world": "world",
+  "ui_fixture": "essences",
+  "language": "en_us",
+  "camera": [
+    4097.5,
+    -58.8,
+    4099.6,
+    170.0,
+    32.0
+  ],
+  "open_block": [
+    4095,
+    -60,
+    4096
+  ],
+  "template_directory": "C:\\Users\\Isaac\\Desktop\\ProgramarMinecraft\\TradingCells\\artifacts\\mob-simulation-pedestals-ui-vulkan-20260913\\run-1\\game",
+  "template_manifest": {
+    "schema_version": 1,
+    "category": "client",
+    "scenario": "logistics-1024-active",
+    "minecraft_version": "26.2.0",
+    "neo_version": "26.2.0.57",
+    "expected": {
+      "pipes": 1024,
+      "state": "active"
+    },
+    "workload_sha256": "",
+    "notes": "1024 connected universal pipes, one XP source and infuser; passive terminal at 4095,-60,4096."
+  },
+  "template_manifest_name": "trading-cells-performance.json",
+  "template_fingerprint": "fe546c8ac88d7d8086302334f939216b378a48841e968884e5a530ae8eb17518",
+  "operating_system": "Windows-11-10.0.22631-SP0",
+  "processor": "Intel64 Family 6 Model 167 Stepping 1, GenuineIntel",
+  "graphics_adapters": []
+}

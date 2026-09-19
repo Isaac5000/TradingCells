@@ -1,0 +1,2 @@
+scenario,backend,frames,measured_seconds,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,width,height,screen_class
+logistics-1024-active,OpenGL,712,2.000946,2.877350,2.527000,3.602000,4.220200,355.831709,1280,720,com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.EssenceWorkbenchScreen

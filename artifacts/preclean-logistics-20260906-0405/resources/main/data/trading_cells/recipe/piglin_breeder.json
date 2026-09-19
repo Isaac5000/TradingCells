@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "show_notification": false,
+  "key": {
+    "B": "minecraft:stripped_crimson_stem",
+    "P": "minecraft:blackstone",
+    "R": "minecraft:red_bed",
+    "T": "minecraft:black_stained_glass_pane"
+  },
+  "pattern": [
+    "PTP",
+    "TRT",
+    "PBP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trading_cells:piglin_breeder"
+  }
+}

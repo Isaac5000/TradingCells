@@ -1,0 +1,13 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      { "type": "minecraft:model", "model": "trading_cells:item/farmer" },
+      {
+        "type": "minecraft:special",
+        "base": "trading_cells:item/farmer",
+        "model": { "type": "trading_cells:block_entity_item" }
+      }
+    ]
+  }
+}

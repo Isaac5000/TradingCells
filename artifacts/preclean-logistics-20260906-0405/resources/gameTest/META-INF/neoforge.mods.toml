@@ -1,0 +1,16 @@
+modLoader="javafml"
+loaderVersion="[11,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="trading_cells_gametest"
+version="1.0.0"
+displayName="Trading Cells GameTests"
+description="Development-only integration tests for Trading Cells."
+
+[[dependencies.trading_cells_gametest]]
+modId="trading_cells"
+type="required"
+versionRange="[1.0.0]"
+ordering="AFTER"
+side="SERVER"

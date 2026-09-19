@@ -1,0 +1,7 @@
+{
+  "id":"trading_cells:diamond","kind":"overworld","minimum_upgrade":"diamond",
+  "minimum_pickaxe_speed":6.0,"weights":[0,0,0,0,150,300],
+  "minimum_amount":1,"maximum_amount":1,"normal_result":"minecraft:diamond",
+  "silk_result":"minecraft:diamond_ore","deep_silk_result":"minecraft:deepslate_diamond_ore",
+  "fortune":true,"rock":false,"dynamic":false,"source_mod":"minecraft","pool":"normal"
+}

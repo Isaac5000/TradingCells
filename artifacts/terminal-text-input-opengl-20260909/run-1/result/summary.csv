@@ -1,0 +1,2 @@
+scenario,backend,frames,measured_seconds,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,width,height,screen_class
+logistics-1024-active,OpenGL,2205,4.000825,1.710662,1.522100,2.404500,3.604700,551.136273,1280,720,com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.NetworkTerminalScreen

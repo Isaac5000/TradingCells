@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "show_notification": false,
+  "key": {
+    "N": "minecraft:netherite_ingot",
+    "P": "minecraft:blackstone",
+    "T": "minecraft:black_stained_glass_pane"
+  },
+  "pattern": [
+    "PTP",
+    "T T",
+    "PNP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trading_cells:netherite_piglin_bartering_cell"
+  }
+}

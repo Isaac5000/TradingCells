@@ -1,0 +1,11 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.cosmocraft.trading_cells.platform.neoforge.integration.rei.mixin",
+  "plugin": "com.cosmocraft.trading_cells.platform.neoforge.integration.rei.mixin.TradingCellsReiMixinPlugin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "ArchitecturyEventHandlerMixin",
+    "ReiDisplayWidthMixin"
+  ]
+}

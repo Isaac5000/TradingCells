@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "show_notification": false,
+  "key": {
+    "H": "minecraft:iron_ingot",
+    "C": "minecraft:glass",
+    "P": "minecraft:ender_pearl"
+  },
+  "pattern": [
+    "HHH",
+    "CPC",
+    "HHH"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trading_cells:villager_capturer"
+  }
+}

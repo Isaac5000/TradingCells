@@ -1,0 +1,18 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "ingredients": [
+    {"ingredient": "minecraft:feather", "count": 1},
+    {"ingredient": "minecraft:green_dye", "count": 1},
+    {"ingredient": "minecraft:feather", "count": 1},
+    {"ingredient": "minecraft:phantom_membrane", "count": 1},
+    {"ingredient": "#trading_cells:villager_capturers", "count": 1},
+    {"ingredient": "minecraft:phantom_membrane", "count": 1},
+    {"ingredient": "minecraft:feather", "count": 1},
+    {"ingredient": "minecraft:clock", "count": 1},
+    {"ingredient": "minecraft:feather", "count": 1}
+  ],
+  "experience": 5000,
+  "result": {
+    "type": "nitwit_villager"
+  }
+}

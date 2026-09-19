@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "kind": "villager",
+  "input": "minecraft:short_grass",
+  "block": "minecraft:short_grass",
+  "support": "minecraft:grass_block",
+  "growth_style": "scaled",
+  "render_support": "floor",
+  "outputs": [
+    {
+      "item": "minecraft:short_grass",
+      "requires_silk_touch": true
+    }
+  ]
+}

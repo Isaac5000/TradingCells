@@ -1,0 +1,21 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "category": "equipment",
+  "ingredients": [
+    {"ingredient": "minecraft:potato", "count": 1},
+    {"ingredient": "minecraft:chorus_flower", "count": 1},
+    {"ingredient": "minecraft:beetroot", "count": 1},
+    {"ingredient": "minecraft:totem_of_undying", "count": 1},
+    {"ingredient": "minecraft:book", "count": 1},
+    {"ingredient": "minecraft:nether_star", "count": 1},
+    {"ingredient": "minecraft:wheat", "count": 1},
+    {"ingredient": "minecraft:netherite_block", "count": 1},
+    {"ingredient": "minecraft:carrot", "count": 1}
+  ],
+  "experience": 15000,
+  "result": {
+    "type": "enchanted_book",
+    "enchantment": "trading_cells:farmers_touch",
+    "level": 1
+  }
+}

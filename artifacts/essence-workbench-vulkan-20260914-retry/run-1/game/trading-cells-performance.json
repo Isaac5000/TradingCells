@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "category": "client",
+  "scenario": "logistics-1024-active",
+  "minecraft_version": "26.2.0",
+  "neo_version": "26.2.0.57",
+  "expected": {
+    "pipes": 1024,
+    "state": "active"
+  },
+  "workload_sha256": "",
+  "notes": "1024 connected universal pipes, one XP source and infuser; passive terminal at 4095,-60,4096."
+}

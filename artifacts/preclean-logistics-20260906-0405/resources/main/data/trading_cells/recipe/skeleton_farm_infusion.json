@@ -1,0 +1,20 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "category": "production",
+  "ingredients": [
+    {"ingredient": "minecraft:skeleton_spawn_egg", "count": 1},
+    {"ingredient": "minecraft:parched_spawn_egg", "count": 1},
+    {"ingredient": "minecraft:wither_skeleton_spawn_egg", "count": 1},
+    {"ingredient": "minecraft:stray_spawn_egg", "count": 1},
+    {"ingredient": "trading_cells:experience_storage", "count": 1},
+    {"ingredient": "minecraft:bogged_spawn_egg", "count": 1},
+    {"ingredient": "minecraft:spawner", "count": 1},
+    {"ingredient": "minecraft:pale_moss_block", "count": 1},
+    {"ingredient": "minecraft:iron_block", "count": 1}
+  ],
+  "experience": 50000,
+  "result": {
+    "type": "item",
+    "item": "trading_cells:skeleton_farm"
+  }
+}

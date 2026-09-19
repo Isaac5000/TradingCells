@@ -1,0 +1,2 @@
+scenario,backend,runs,with_rei,with_trading_cells,median_mean_frame_ms,median_p50_frame_ms,median_p95_frame_ms,median_p99_frame_ms,median_frames_per_second,median_jvm_cpu_percent,median_allocation_bytes_per_second,median_resident_bytes,median_packets_sent,median_packet_bytes_sent,median_packets_received,median_packet_bytes_received
+machine-controller-1024,opengl,3,false,true,3.851987,2.9364,8.602,10.0743,222.296607,2.141398,105539449.831,1840424960.0,941.0,5389.0,941.0,5389.0

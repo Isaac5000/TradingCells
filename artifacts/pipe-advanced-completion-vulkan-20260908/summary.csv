@@ -1,0 +1,2 @@
+scenario,backend,runs,with_rei,with_trading_cells,ui_fixture,median_mean_frame_ms,median_p50_frame_ms,median_p95_frame_ms,median_p99_frame_ms,median_frames_per_second,median_jvm_cpu_percent,median_allocation_bytes_per_second,median_resident_bytes,median_packets_sent,median_packet_bytes_sent,median_packets_received,median_packet_bytes_received
+logistics-1024-active,vulkan,1,true,true,rules,1.446056,1.293999,1.9394,2.7645,597.760836,2.563687,312855676.254,1812676608.0,0.0,0.0,0.0,0.0

@@ -1,0 +1,2 @@
+run,scenario,backend,frames,measured_seconds,mean_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,frames_per_second,width,height,screen_class,jvm_cpu_percent,allocation_bytes_per_second,resident_bytes,packets_sent,packet_bytes_sent,packets_received,packet_bytes_received,jfr_file,screenshot_file
+1,logistics-1024-active,Vulkan,3140,2.000248,0.471017,0.268800,1.028700,1.931200,1569.805109,1280,720,,3.441375,261081237.926,1944571904,0,0,0,0,run-1\client.jfr,run-1\result\capture.png

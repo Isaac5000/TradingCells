@@ -1,0 +1,20 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "category": "generators",
+  "ingredients": [
+    {"ingredient": "minecraft:sandstone", "count": 1},
+    {"ingredient": "minecraft:rotten_flesh", "count": 1},
+    {"ingredient": "minecraft:sand", "count": 1},
+    {"ingredient": "minecraft:cactus", "count": 1},
+    {"ingredient": "#trading_cells:arcane_infusion_eggs", "count": 1},
+    {"ingredient": "minecraft:cactus", "count": 1},
+    {"ingredient": "minecraft:sand", "count": 1},
+    {"ingredient": "minecraft:iron_spear", "count": 1},
+    {"ingredient": "minecraft:sandstone", "count": 1}
+  ],
+  "experience": 100,
+  "result": {
+    "type": "item",
+    "item": "minecraft:husk_spawn_egg"
+  }
+}

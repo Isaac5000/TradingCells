@@ -1,0 +1,12 @@
+{
+  "parent": "trading_cells:block/villager_breeder",
+  "textures": {
+    "base": "minecraft:block/cobblestone",
+    "base_left": "minecraft:block/cobblestone",
+    "base_center": "minecraft:block/lava_still",
+    "base_right": "minecraft:block/cobblestone",
+    "frame": "minecraft:block/iron_block",
+    "glass": "minecraft:block/glass",
+    "particle": "minecraft:block/cobblestone"
+  }
+}

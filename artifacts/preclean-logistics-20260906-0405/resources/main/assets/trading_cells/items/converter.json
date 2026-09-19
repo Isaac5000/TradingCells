@@ -1,0 +1,13 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      { "type": "minecraft:model", "model": "trading_cells:item/converter" },
+      {
+        "type": "minecraft:special",
+        "base": "trading_cells:item/converter",
+        "model": { "type": "trading_cells:block_entity_item" }
+      }
+    ]
+  }
+}

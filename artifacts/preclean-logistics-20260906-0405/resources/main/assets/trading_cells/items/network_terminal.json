@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "trading_cells:block/network_terminal"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "category": "server",
+  "scenario": "experience-network-1024",
+  "minecraft_version": "26.2.0",
+  "neo_version": "26.2.0.57",
+  "expected": {
+    "pipes": 1024,
+    "distributors": 1,
+    "sources": 1,
+    "destinations": 1
+  },
+  "workload_sha256": "",
+  "notes": "Generated experience-network stress template at (4096, -60, 4096)."
+}

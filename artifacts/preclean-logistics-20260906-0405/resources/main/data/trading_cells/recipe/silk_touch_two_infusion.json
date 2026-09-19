@@ -1,0 +1,23 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "category": "equipment",
+  "ingredients": [
+    {"ingredient": "minecraft:echo_shard", "count": 1},
+    {"ingredient": "minecraft:amethyst_shard", "count": 1},
+    {"ingredient": "minecraft:echo_shard", "count": 1},
+    {"ingredient": "minecraft:turtle_egg", "count": 1},
+    {"ingredient": "minecraft:enchanted_book", "count": 1},
+    {"ingredient": "minecraft:turtle_egg", "count": 1},
+    {"ingredient": "minecraft:echo_shard", "count": 1},
+    {"ingredient": "minecraft:nether_star", "count": 1},
+    {"ingredient": "minecraft:echo_shard", "count": 1}
+  ],
+  "experience": 75000,
+  "result": {
+    "type": "enchanted_book",
+    "enchantment": "minecraft:silk_touch",
+    "level": 2,
+    "input_enchantment": "minecraft:silk_touch",
+    "input_level": 1
+  }
+}

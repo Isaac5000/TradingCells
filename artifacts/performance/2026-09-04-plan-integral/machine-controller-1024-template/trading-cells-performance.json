@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "category": "client",
+  "scenario": "machine-controller-1024",
+  "minecraft_version": "26.2.0",
+  "neo_version": "26.2.0.57",
+  "expected": {
+    "machines": 1024,
+    "scan_radius": 32,
+    "menu_entries": 1024
+  },
+  "workload_sha256": "",
+  "notes": "Generated machine-controller stress template at (4096, -60, 4096). Open block: 4111,-59,4111."
+}

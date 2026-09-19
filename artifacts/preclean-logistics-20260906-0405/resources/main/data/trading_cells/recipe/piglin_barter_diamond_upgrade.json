@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "key": {
+    "C": "minecraft:popped_chorus_fruit",
+    "D": "minecraft:diamond",
+    "U": "trading_cells:piglin_barter_gold_upgrade"
+  },
+  "pattern": [
+    "CDC",
+    "DUD",
+    "CDC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "trading_cells:piglin_barter_diamond_upgrade"
+  }
+}
