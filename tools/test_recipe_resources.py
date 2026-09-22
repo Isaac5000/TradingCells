@@ -246,6 +246,36 @@ class SpecificRecipeTests(unittest.TestCase):
             "components": {"!minecraft:block_entity_data": {}},
         })
 
+    def test_infuser_end_stone_is_visible_in_world_and_inventory_models(self):
+        models = RESOURCE_ROOT / ASSETS / "models"
+        for name, parent in (("arcane_infuser", "villager_breeder"), ("arcane_infuser_frame", "machine_cage_frame")):
+            with self.subTest(model=name):
+                model = read_json(models / "block" / f"{name}.json")
+                self.assertEqual(model["parent"], f"trading_cells:block/{parent}")
+                self.assertEqual(model["textures"]["base_center"], "minecraft:block/end_stone")
+                for part in ("base", "base_left", "base_right"):
+                    self.assertEqual(model["textures"][part], "minecraft:block/end_stone")
+                self.assertEqual(model["textures"]["frame"], "minecraft:block/crying_obsidian")
+                geometry = read_json(models / "block" / f"{parent}.json")
+                center = [element for element in geometry["elements"]
+                          if element["faces"].get("up", {}).get("texture") == "#base_center"]
+                self.assertEqual(len(center), 1)
+                self.assertEqual(center[0]["from"], [6, 0, 2])
+                self.assertEqual(center[0]["to"], [10, 2, 14])
+        self.assertEqual(read_json(models / "item/arcane_infuser.json")["parent"], "trading_cells:block/arcane_infuser")
+
+    def test_simulation_black_concrete_recipes_preserve_other_materials(self):
+        grid = crafting_grid(read_json(RECIPES / "essence_workbench.json"))
+        self.assertEqual(grid, ["minecraft:black_concrete", "minecraft:black_concrete", "minecraft:black_concrete",
+                                "minecraft:black_concrete", "minecraft:crafting_table", "minecraft:black_concrete",
+                                "minecraft:black_concrete", None, "minecraft:black_concrete"])
+        farm = read_json(RECIPES / "mob_farm_infusion.json")
+        self.assertEqual(farm["ingredients"], [{"ingredient": item, "count": 1} for item in (
+            "minecraft:iron_block", "minecraft:black_concrete", "minecraft:iron_block",
+            "minecraft:black_concrete", "trading_cells:experience_storage", "minecraft:black_concrete",
+            "minecraft:quartz_block", "minecraft:black_concrete", "minecraft:quartz_block")])
+        self.assertEqual(farm["experience"], 50_000)
+
     def test_all_pipe_tiers_use_their_material_and_keep_the_upgrade_chain(self):
         generated = resources()
         previous = "minecraft:hopper"

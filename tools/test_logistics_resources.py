@@ -1,6 +1,7 @@
 """Regression checks for portable generated-resource comparisons."""
 
 from io import BytesIO
+import hashlib
 import json
 from pathlib import Path
 import unittest
@@ -9,9 +10,11 @@ from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
 from generate_logistics_resources import ASSETS, resource_matches, resources
-from generate_mob_simulation_resources import resources as simulation_resources
+from generate_mob_simulation_resources import outlined_union, resources as simulation_resources
+from generate_pipe_textures import TEXTURES as PIPE_TEXTURES, blend
 from generate_family_upgrades import BASES, FAMILIES, MATERIALS, MOB_FARM_SWORD_REGIONS, TERMINAL_BODY, family_base, family_texture, generated, luminance, material_ramp, recolor, rivet_pixels
 from generate_family_upgrades import WOOD_PALETTE, fixed_emblem_pixels, wooden_emblem_pixels
+from generate_family_upgrades import ORIGINALS, emblem_pixels, quarry_frame
 from generate_family_upgrades import TERMINALS, TERMINAL_ORIGINALS, TERMINAL_STEEL, logistics_terminal_texture
 
 
@@ -75,6 +78,67 @@ class LogisticsResourceTests(unittest.TestCase):
         self.assertFalse(resource_matches("model.json", b'{"a": 1}', b'{"a":1}'))
 
 
+class ItemSpriteTests(unittest.TestCase):
+    def test_capturers_keep_a_symmetric_outline_and_structural_star_handle(self):
+        root = Path(__file__).resolve().parents[1] / f"src/main/resources/{ASSETS}/textures/item"
+        for prefix in ("", "unbreakable_"):
+            bounds = []
+            for mob in ("villager", "piglin"):
+                with Image.open(root / f"{prefix}{mob}_capturer.png") as image:
+                    self.assertEqual(image.size, (64, 64))
+                    alpha = image.convert("RGBA").getchannel("A")
+                self.assertEqual(set(alpha.get_flattened_data()), {0, 255})
+                bounds.append(alpha.getbbox())
+                asymmetric = sum(alpha.getpixel((x, y)) != alpha.getpixel((63 - x, y))
+                                 for x in range(32) for y in range(64))
+                self.assertLessEqual(asymmetric, 8)
+                if prefix:
+                    self.assertEqual(alpha.getpixel((31, 10)), 0, "Handle must contain an actual open center")
+                    self.assertEqual(alpha.getpixel((31, 3)), 255, "Star's upper point must extend beyond its arms")
+                    self.assertEqual(alpha.getpixel((26, 8)), 255)
+                    self.assertEqual(alpha.getpixel((26, 3)), 0)
+            self.assertEqual(bounds[0], bounds[1])
+
+    def test_storm_shard_keeps_its_special_energy_layer_over_the_new_sprite(self):
+        root = Path(__file__).resolve().parents[1] / f"src/main/resources/{ASSETS}"
+        with Image.open(root / "textures/item/storm_shard.png") as image:
+            self.assertEqual(image.size, (64, 64))
+            self.assertEqual(set(image.getchannel("A").get_flattened_data()), {0, 255})
+        model = json.loads((root / "items/storm_shard.json").read_text(encoding="utf-8"))["model"]
+        self.assertEqual(model["type"], "minecraft:composite")
+        self.assertEqual(model["models"][1]["model"]["type"], "trading_cells:storm_shard_charge")
+
+
+class PipePaletteTests(unittest.TestCase):
+    def test_all_pipe_items_move_toward_the_palm_without_changing_scale(self):
+        generated = resources()
+        for kind in ("item", "fluid", "gas", "energy", "universal"):
+            model = json.loads(generated[f"{ASSETS}/models/block/logistics/{kind}_pipe/{kind}_pipe_inventory.json"])
+            for hand in ("thirdperson_righthand", "thirdperson_lefthand"):
+                self.assertEqual(model["display"][hand], {"rotation": [75, 45, 0],
+                                 "translation": [0, 0.5, 0], "scale": [0.375, 0.375, 0.375]})
+
+    def test_item_pipe_recolors_only_the_original_white_conduit(self):
+        original = hashlib.sha256()
+        reverse = {(235, 192, 43, 255): (191, 195, 199, 255)}
+        for strength in (0.25, 0.9):
+            reverse[blend((156, 116, 22), (255, 232, 93), strength)] = blend(
+                (132, 140, 149), (224, 229, 232), strength)
+        paths = sorted((PIPE_TEXTURES / "item_pipe").glob("*.png"))
+        self.assertEqual(len(paths), 17)
+        for path in paths:
+            with Image.open(path) as source:
+                image = source.convert("RGBA")
+            self.assertEqual(image.size, (32, 256))
+            pixels = list(image.get_flattened_data())
+            self.assertTrue(any(pixel in reverse for pixel in pixels))
+            image.putdata([reverse.get(pixel, pixel) for pixel in pixels])
+            original.update(path.name.encode() + b"\0")
+            original.update(image.tobytes())
+        # Original RGBA sprites, before this palette-only change; includes every animation frame.
+        self.assertEqual(original.hexdigest(), "d6882e3ad9fe2e122f6fc5c2d66cd57daf21abbc7d1c37ea4eebb2e2c269c41f")
+
+
 class SimulationModelTests(unittest.TestCase):
     def test_entity_previews_keep_the_baked_pedestal(self):
         generated = simulation_resources()
@@ -87,21 +151,118 @@ class SimulationModelTests(unittest.TestCase):
                     {"type": "minecraft:special", "base": f"trading_cells:{base}",
                      "model": {"type": f"trading_cells:{renderer}"}}]})
         farm = json.loads(generated["assets/trading_cells/models/block/mob_farm.json"])
-        self.assertEqual(farm["elements"][-1]["from"], [9, 3, 5])
-        self.assertEqual(farm["elements"][-1]["to"], [13, 4.5, 11])
+        self.assertTrue(any(part["from"][1] == part["to"][1] == 4.5 and "up" in part["faces"]
+                            for part in farm["elements"]))
         self.assertNotIn("spawner", json.dumps(farm))
         module = json.loads(generated["assets/trading_cells/models/item/entity_module.json"])
-        self.assertEqual(len(module["elements"]), 2, "Only two base tiers, no enclosing posts or roof")
-        for element in module["elements"]:
-            self.assertEqual(element["from"][0] + element["to"][0], 16)
-            self.assertEqual(element["from"][2] + element["to"][2], 16)
-        self.assertEqual(module["elements"][-1]["to"][1], 3.5)
+        self.assertEqual(module["elements"], outlined_union(
+            [([1, 0, 1], [15, 1.5, 15]), ([3, 1.5, 3], [13, 3.5, 13])], "base"))
         for hand in ("firstperson_righthand", "firstperson_lefthand"):
-            self.assertEqual(module["display"][hand]["translation"], [0, 5.5, 0])
-            self.assertEqual(module["display"][hand]["scale"], [0.32, 0.32, 0.32])
+            self.assertEqual(module["display"][hand]["translation"], [-1, 3.5, 3])
+            self.assertEqual(module["display"][hand]["scale"], [0.48, 0.48, 0.48])
+        for hand in ("thirdperson_righthand", "thirdperson_lefthand"):
+            self.assertEqual(module["display"][hand]["rotation"], [70, 0, 0])
+            self.assertEqual(module["display"][hand]["translation"], [0, 2.75, 3])
+            self.assertEqual(module["display"][hand]["scale"], [0.4, 0.4, 0.4])
+
+    def test_simulation_surfaces_keep_distinct_materials(self):
+        generated = simulation_resources()
+        for path in ("block/mob_farm", "block/essence_workbench", "item/entity_module"):
+            with self.subTest(model=path):
+                model = json.loads(generated[f"assets/trading_cells/models/{path}.json"])
+                self.assertEqual(model["textures"]["base"], "minecraft:block/black_concrete")
+                self.assertEqual(model["textures"]["edge"], "trading_cells:block/logistics/fluid_pipe/fluid_pipe")
+                self.assertLessEqual(len(model["elements"]), 330, "Union meshing must keep a bounded static quad count")
+                for element in model["elements"]:
+                    self.assertEqual(len(element["faces"]), 1)
+                    for direction, face in element["faces"].items():
+                        if face["texture"] == "#edge":
+                            self.assertEqual(face["uv"][1::2], [7, 9])
+                            self.assertFalse(element["shade"])
+                        else:
+                            self.assertEqual(face["texture"], "#base")
+
+    def test_coplanar_joins_have_no_blue_seams_or_internal_faces(self):
+        split = outlined_union([([0, 0, 0], [4, 8, 4]), ([4, 0, 0], [8, 8, 4])], "base")
+        self.assertEqual(split, outlined_union([([0, 0, 0], [8, 8, 4])], "base"))
+        stacked = outlined_union([([0, 0, 0], [4, 2, 4]), ([0, 2, 0], [4, 8, 4])], "base")
+        self.assertEqual(stacked, outlined_union([([0, 0, 0], [4, 8, 4])], "base"))
+
+    def test_outlined_faces_cover_original_bounds_without_overlapping(self):
+        start, end = [1, 2, 3], [15, 3.5, 13]
+        elements = outlined_union([(start, end)], "base")
+        for axis, directions in ((0, ("west", "east")), (1, ("down", "up")), (2, ("north", "south"))):
+            u, v = [coordinate for coordinate in range(3) if coordinate != axis]
+            for face, plane in zip(directions, (start[axis], end[axis])):
+                parts = [part for part in elements if face in part["faces"]]
+                area = 0
+                for index, part in enumerate(parts):
+                    first, last = part["from"], part["to"]
+                    self.assertEqual(first[axis], plane)
+                    self.assertEqual(last[axis], plane)
+                    self.assertTrue(all(start[i] <= first[i] <= last[i] <= end[i] for i in range(3)))
+                    area += (last[u] - first[u]) * (last[v] - first[v])
+                    for other in parts[:index]:
+                        overlap_u = min(last[u], other["to"][u]) - max(first[u], other["from"][u])
+                        overlap_v = min(last[v], other["to"][v]) - max(first[v], other["from"][v])
+                        self.assertFalse(overlap_u > 0 and overlap_v > 0, "Coplanar borders must not overlap")
+                self.assertAlmostEqual(area, (end[u] - start[u]) * (end[v] - start[v]))
 
 
 class UpgradePaletteTests(unittest.TestCase):
+    def test_all_families_share_exact_quarry_frames_and_baked_emblems(self):
+        images = generated()
+        quarry = family_base("quarry")
+        frame = quarry_frame(quarry)
+        for material in MATERIALS:
+            expected_frame = family_texture(frame, material)
+            for family in FAMILIES:
+                with self.subTest(material=material, family=family):
+                    base = family_base(family)
+                    mask = emblem_pixels(family, base)
+                    self.assertGreater(len(mask), 200)
+                    self.assertTrue(all(14 <= x < 51 and 15 <= y < 49 for x, y in mask))
+                    result = images[ORIGINALS / family / f"{material}_upgrade.png"]
+                    self.assertEqual(result.getchannel("A").tobytes(), quarry.getchannel("A").tobytes())
+                    for y in range(64):
+                        for x in range(64):
+                            expected = base if (x, y) in mask else expected_frame
+                            self.assertEqual(result.getpixel((x, y)), expected.getpixel((x, y)), (x, y))
+                    for point in wooden_emblem_pixels(family):
+                        self.assertEqual(result.getpixel(point), base.getpixel(point))
+        self.assertEqual(images[ORIGINALS / "quarry/copper_upgrade.png"].tobytes(), quarry.tobytes())
+        for material in MATERIALS:
+            speed = images[ORIGINALS / "mob_farm_speed" / f"{material}_upgrade.png"]
+            capacity = images[ORIGINALS / "mob_farm_capacity" / f"{material}_upgrade.png"]
+            for bounds in MOB_FARM_SWORD_REGIONS:
+                self.assertEqual(speed.crop(bounds).tobytes(), capacity.crop(bounds).tobytes())
+
+    def test_barter_emblem_excludes_copper_fragments_without_holes_in_gold(self):
+        base = family_base("piglin_barter")
+        mask = emblem_pixels("piglin_barter", base)
+        images = generated()
+        # These panel texels were accidentally included by the old polygon crop.
+        background = ((18, 20), (20, 18), (44, 24), (20, 30), (20, 32),
+                      (43, 33), (43, 36), (18, 39), (44, 43), (28, 40))
+        gold = {(x, y) for y in range(31, 35) for x in range(22, 41)}
+        gold.update(((22, 18), (28, 16), (34, 19), (41, 24), (28, 37),
+                     (42, 38), (42, 43), (25, 46), (35, 47)))
+        self.assertTrue(gold <= mask, "Gold highlights and orange shadows must remain solid")
+        self.assertTrue(set(background).isdisjoint(mask))
+        for point in mask:
+            red, green, _, _ = base.getpixel(point)
+            self.assertFalse(red >= 110 and green <= red * 0.30,
+                             f"Copper panel fragment copied at {point}")
+        frame = quarry_frame(family_base("quarry"))
+        for material in MATERIALS:
+            with self.subTest(material=material):
+                icon = images[ORIGINALS / "piglin_barter" / f"{material}_upgrade.png"]
+                expected_frame = family_texture(frame, material)
+                for point in background:
+                    self.assertEqual(icon.getpixel(point), expected_frame.getpixel(point), point)
+                for point in gold:
+                    self.assertEqual(icon.getpixel(point), base.getpixel(point), point)
+
     def test_terminal_steel_is_baked_without_changing_alpha_or_screens(self):
         for name in (*TERMINALS, TERMINAL_BODY):
             with self.subTest(terminal=name):
@@ -214,7 +375,9 @@ class UpgradePaletteTests(unittest.TestCase):
 
     def test_sprite_transparency_and_opaque_block_housing(self):
         images = generated()
-        self.assertEqual(len(images), 30)
+        self.assertEqual(len(images), 28)
+        self.assertFalse(any(path.parent.name == "item" for path in images),
+                         "Terminal items use block models, not duplicate item PNGs")
         for path, image in images.items():
             with self.subTest(texture=path.name):
                 self.assertEqual(image.size, (64, 64))

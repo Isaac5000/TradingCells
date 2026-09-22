@@ -26,9 +26,16 @@ public final class MobFarmLootTables {
         int looting = com.cosmocraft.trading_cells.feature.combat.adapters.api.CombatEnchantments
                 .lootingLevel(sword, level.registryAccess());
         var result = new java.util.LinkedHashMap<Identifier, DropSummary>();
-        com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmLootPreview
-                .calculate(level, target, sword, looting, kills).forEach((id, drop) -> result.put(id,
+        var analysis = com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmLootPreview
+                .analyse(level, target, sword, looting, kills);
+        analysis.drops().forEach((id, drop) -> result.put(id,
                         new DropSummary(drop.probabilityPartsPerMillion(), drop.minimumAmount(), drop.maximumAmount())));
+        // Missing entries in a fully analysed table are impossible, not unknown.
+        if (target != null) {
+            for (Identifier id : filterItems(target)) {
+                result.putIfAbsent(id, new DropSummary(analysis.complete() ? 0 : -1, 0, 0));
+            }
+        }
         return java.util.Map.copyOf(result);
     }
 

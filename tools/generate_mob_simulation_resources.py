@@ -1,6 +1,7 @@
 """Generate the repeatable models and recipes for the general entity simulation system."""
 
 import argparse
+from collections import defaultdict
 import json
 from pathlib import Path
 
@@ -10,16 +11,63 @@ DATA = "data/trading_cells"
 MATERIALS = ("copper", "iron", "gold", "diamond", "netherite")
 
 
-def cube(start, end, texture):
-    return {"from": start, "to": end, "faces": {
-        face: {"texture": f"#{texture}"} for face in ("north", "south", "east", "west", "up", "down")}}
-
-
 def block_model(elements):
     return {"parent": "minecraft:block/block", "textures": {
-        "frame": "trading_cells:block/logistics/pipe_base",
-        "panel": "trading_cells:block/logistics/pipe_cap",
-        "particle": "trading_cells:block/logistics/pipe_base"}, "elements": elements}
+        "base": "minecraft:block/black_concrete",
+        "edge": "trading_cells:block/logistics/fluid_pipe/fluid_pipe",
+        "particle": "minecraft:block/black_concrete"}, "elements": elements}
+
+
+def outlined_union(boxes, body):
+    """Bake only the union's exterior, then merge coplanar cells into rectangles."""
+    voxels = set()
+    for start, end in boxes:
+        for x in range(round(start[0] * 4), round(end[0] * 4)):
+            for y in range(round(start[1] * 4), round(end[1] * 4)):
+                for z in range(round(start[2] * 4), round(end[2] * 4)):
+                    voxels.add((x, y, z))
+    surfaces = defaultdict(set)
+    for point in voxels:
+        for axis, low, high in ((0, "west", "east"), (1, "down", "up"), (2, "north", "south")):
+            u, v = [coordinate for coordinate in range(3) if coordinate != axis]
+            for step, face in ((-1, low), (1, high)):
+                neighbor = list(point)
+                neighbor[axis] += step
+                if tuple(neighbor) not in voxels:
+                    plane = point[axis] + (step > 0)
+                    surfaces[axis, face, plane].add((point[u], point[v]))
+    result = []
+    for (axis, face, plane), surface in sorted(surfaces.items()):
+        u, v = [coordinate for coordinate in range(3) if coordinate != axis]
+        regions = defaultdict(set)
+        for x, y in surface:
+            edge = any((x + dx, y + dy) not in surface for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)))
+            regions["edge" if edge else body].add((x, y))
+        for texture, remaining in sorted(regions.items()):
+            while remaining:
+                left, bottom = min(remaining)
+                right = left + 1
+                while (right, bottom) in remaining:
+                    right += 1
+                upper = bottom + 1
+                while all((x, upper) in remaining for x in range(left, right)):
+                    upper += 1
+                remaining.difference_update((x, y) for x in range(left, right) for y in range(bottom, upper))
+                first, last = [0, 0, 0], [0, 0, 0]
+                first[axis] = last[axis] = plane / 4
+                first[u], last[u], first[v], last[v] = left / 4, right / 4, bottom / 4, upper / 4
+                face_data = {"texture": f"#{texture}"}
+                element = {"from": first, "to": last, "faces": {face: face_data}}
+                if texture == "edge":
+                    # Sample only the pipe's blue conduit; its existing atlas animation is shared.
+                    vertical = upper - bottom > right - left
+                    face_data["uv"] = [bottom / 4 if vertical else left / 4, 7,
+                                       upper / 4 if vertical else right / 4, 9]
+                    if vertical:
+                        face_data["rotation"] = 90
+                    element["shade"] = False
+                result.append(element)
+    return result
 
 
 def resources():
@@ -39,22 +87,23 @@ def resources():
             {"type": "minecraft:special", "base": f"trading_cells:{model}",
              "model": {"type": f"trading_cells:{renderer}"}}]}})
 
-    frame = [cube([0, 0, 0], [16, 2, 16], "frame")]
+    frame_boxes = [([0, 0, 0], [16, 2, 16])]
     for x in (0, 14):
         for z in (0, 14):
-            frame.append(cube([x, 2, z], [x + 2, 16, z + 2], "frame"))
+            frame_boxes.append(([x, 2, z], [x + 2, 16, z + 2]))
     for z in (0, 14):
-        frame.append(cube([2, 14, z], [14, 16, z + 2], "frame"))
+        frame_boxes.append(([2, 14, z], [14, 16, z + 2]))
     for x in (0, 14):
-        frame.append(cube([x, 14, 2], [x + 2, 16, 14], "frame"))
-    frame.extend([cube([8, 2, 4], [14, 3, 12], "frame"), cube([9, 3, 5], [13, 4.5, 11], "frame")])
+        frame_boxes.append(([x, 14, 2], [x + 2, 16, 14]))
+    frame_boxes.extend([([8, 2, 4], [14, 3, 12]), ([9, 3, 5], [13, 4.5, 11])])
+    frame = outlined_union(frame_boxes, "base")
     add(f"{ASSETS}/models/block/mob_farm.json", block_model(frame))
 
-    table = [cube([1, 10, 1], [15, 13, 15], "frame"), cube([3, 13, 3], [13, 14, 13], "panel")]
+    table_boxes = [([1, 10, 1], [15, 13, 15]), ([3, 13, 3], [13, 14, 13])]
     for x in (2, 12):
         for z in (2, 12):
-            table.append(cube([x, 0, z], [x + 2, 10, z + 2], "frame"))
-    add(f"{ASSETS}/models/block/essence_workbench.json", block_model(table))
+            table_boxes.append(([x, 0, z], [x + 2, 10, z + 2]))
+    add(f"{ASSETS}/models/block/essence_workbench.json", block_model(outlined_union(table_boxes, "base")))
     for name in ("mob_farm", "essence_workbench"):
         add(f"{ASSETS}/blockstates/{name}.json", {"variants": {
             f"facing={facing}": {"model": f"trading_cells:block/{name}", "y": index * 90}
@@ -67,11 +116,14 @@ def resources():
             "entries": [{"type": "minecraft:item", "name": f"trading_cells:{name}"}],
             "conditions": [{"condition": "minecraft:survives_explosion"}]}]})
 
-    pedestal = [cube([1, 0, 1], [15, 1.5, 15], "frame"), cube([3, 1.5, 3], [13, 3.5, 13], "frame")]
+    pedestal = outlined_union([([1, 0, 1], [15, 1.5, 15]), ([3, 1.5, 3], [13, 3.5, 13])], "base")
     module_model = block_model(pedestal)
+    module_model["textures"]["particle"] = "#base"
     module_model["display"] = {
-        hand: {"rotation": [0, yaw, 0], "translation": [0, 5.5, 0], "scale": [0.32, 0.32, 0.32]}
+        hand: {"rotation": [0, yaw, 0], "translation": [-1, 3.5, 3], "scale": [0.48, 0.48, 0.48]}
         for hand, yaw in (("firstperson_righthand", 135), ("firstperson_lefthand", 225))}
+    for hand in ("thirdperson_righthand", "thirdperson_lefthand"):
+        module_model["display"][hand] = {"rotation": [70, 0, 0], "translation": [0, 2.75, 3], "scale": [0.4, 0.4, 0.4]}
     add(f"{ASSETS}/models/item/entity_module.json", module_model)
     entity_item("entity_module", "item/entity_module", "entity_module")
     for name, texture in (("entity_essence", "minecraft:item/experience_bottle"),
@@ -95,14 +147,14 @@ def resources():
                     "P": previous}, "result": {"id": f"trading_cells:{name}", "count": 1}})
 
     add(f"{DATA}/recipe/essence_workbench.json", {"type": "minecraft:crafting_shaped", "category": "misc",
-        "pattern": ["IAI", "RCR", "I I"], "key": {"I": "minecraft:iron_ingot", "A": "minecraft:amethyst_block",
-        "R": "minecraft:redstone", "C": "minecraft:crafting_table"}, "result": {"id": "trading_cells:essence_workbench", "count": 1}})
+        "pattern": ["BBB", "BCB", "B B"], "key": {"B": "minecraft:black_concrete",
+        "C": "minecraft:crafting_table"}, "result": {"id": "trading_cells:essence_workbench", "count": 1}})
     add(f"{DATA}/recipe/essence_extractor.json", {"type": "minecraft:crafting_shaped", "category": "equipment",
         "pattern": [" IA", " BR", "I  "], "key": {"I": "minecraft:iron_ingot", "A": "minecraft:amethyst_shard",
         "B": "minecraft:glass_bottle", "R": "minecraft:redstone"}, "result": {"id": "trading_cells:essence_extractor", "count": 1}})
-    farm_inputs = ("minecraft:iron_block", "minecraft:diamond_sword", "minecraft:iron_block",
-                   "minecraft:iron_bars", "trading_cells:experience_storage", "minecraft:iron_bars",
-                   "minecraft:quartz_block", "minecraft:amethyst_block", "minecraft:quartz_block")
+    farm_inputs = ("minecraft:iron_block", "minecraft:black_concrete", "minecraft:iron_block",
+                   "minecraft:black_concrete", "trading_cells:experience_storage", "minecraft:black_concrete",
+                   "minecraft:quartz_block", "minecraft:black_concrete", "minecraft:quartz_block")
     add(f"{DATA}/recipe/mob_farm_infusion.json", {"type": "trading_cells:arcane_infusion", "category": "production",
         "ingredients": [{"ingredient": item, "count": 1} for item in farm_inputs], "experience": 50_000,
         "result": {"type": "item", "item": "trading_cells:mob_farm"}})

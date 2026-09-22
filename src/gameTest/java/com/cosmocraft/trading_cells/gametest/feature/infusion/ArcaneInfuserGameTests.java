@@ -203,19 +203,19 @@ public final class ArcaneInfuserGameTests {
                 ArcaneInfuserBlockEntity.TOP_LEFT_SLOT,
                 new ItemStack(Items.IRON_BLOCK)
         );
-        infuser.setItem(ArcaneInfuserBlockEntity.TOP_SLOT, new ItemStack(Items.DIAMOND_SWORD));
+        infuser.setItem(ArcaneInfuserBlockEntity.TOP_SLOT, new ItemStack(item("minecraft:black_concrete")));
         infuser.setItem(
                 ArcaneInfuserBlockEntity.TOP_RIGHT_SLOT,
                 new ItemStack(Items.IRON_BLOCK)
         );
-        infuser.setItem(ArcaneInfuserBlockEntity.LEFT_SLOT, new ItemStack(Items.IRON_BARS));
+        infuser.setItem(ArcaneInfuserBlockEntity.LEFT_SLOT, new ItemStack(item("minecraft:black_concrete")));
         infuser.setItem(
                 ArcaneInfuserBlockEntity.CENTER_SLOT,
                 new ItemStack(ExperienceStorageRegistrationAdapter.ITEM.get())
         );
-        infuser.setItem(ArcaneInfuserBlockEntity.RIGHT_SLOT, new ItemStack(Items.IRON_BARS));
+        infuser.setItem(ArcaneInfuserBlockEntity.RIGHT_SLOT, new ItemStack(item("minecraft:black_concrete")));
         infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_LEFT_SLOT, new ItemStack(Items.QUARTZ_BLOCK));
-        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_SLOT, new ItemStack(Items.AMETHYST_BLOCK));
+        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_SLOT, new ItemStack(item("minecraft:black_concrete")));
         infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_RIGHT_SLOT, new ItemStack(Items.QUARTZ_BLOCK));
 
         helper.assertTrue(

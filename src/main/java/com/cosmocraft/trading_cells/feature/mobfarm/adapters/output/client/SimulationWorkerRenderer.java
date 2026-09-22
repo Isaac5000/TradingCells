@@ -2,6 +2,7 @@ package com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.npc.VillagerModel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -20,10 +21,12 @@ final class SimulationWorkerRenderer implements RenderLayerParent<VillagerRender
             "trading_cells", "textures/entity/simulation_worker.png");
     private final VillagerModel model;
     private final CrossedArmsItemLayer<VillagerRenderState, VillagerModel> heldItem;
+    private final boolean hasTexture;
 
     SimulationWorkerRenderer(BlockEntityRendererProvider.Context context) {
         model = new VillagerModel(context.bakeLayer(ModelLayers.VILLAGER));
         heldItem = new CrossedArmsItemLayer<>(this);
+        hasTexture = Minecraft.getInstance().getResourceManager().getResource(TEXTURE).isPresent();
     }
 
     @Override
@@ -32,8 +35,8 @@ final class SimulationWorkerRenderer implements RenderLayerParent<VillagerRender
     void submit(SimulationEntityPreview preview, EntityRenderDispatcher dispatcher,
             double x, double y, double z, int light, PoseStack poseStack,
             SubmitNodeCollector collector, CameraRenderState camera) {
-        if (!(preview.state() instanceof VillagerRenderState state)) {
-            // An optional mod can replace the villager's render-state type.
+        if (!hasTexture || !(preview.state() instanceof VillagerRenderState state)) {
+            // Keep the ordinary preview if an asset or an optional renderer is unavailable.
             preview.submit(dispatcher, x, y, z, light, poseStack, collector, camera);
             return;
         }

@@ -33,7 +33,9 @@ final class SimulationScreenWidgets {
     static Button checkButton(int x, int y, Component message, BooleanSupplier checked, Button.OnPress press) {
         Button button = new Button(x, y, 18, 18, message, press, supplier -> supplier.get()) {
             @Override protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-                extractDefaultSprite(graphics);
+                if (isHoveredOrFocused()) {
+                    graphics.fill(getX() + 2, getY() + 2, getX() + 15, getY() + 15, TEXT);
+                }
                 check(graphics, getX() + 3, getY() + 3, checked.getAsBoolean());
             }
         };

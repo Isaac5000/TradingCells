@@ -57,10 +57,10 @@ def frame(kind, index, base):
         motion = (along - phase) % SIZE
         if kind == "item":
             for y in (15, 16):
-                image.putpixel((x, y), (191, 195, 199, 255))
+                image.putpixel((x, y), (235, 192, 43, 255))
             for y in (13, 14, 17, 18):
                 brightness = 0.9 if (motion + (min(y, 31 - y) - 15) * 2) % 16 < 5 else 0.25
-                image.putpixel((x, y), blend((132, 140, 149), (224, 229, 232), brightness))
+                image.putpixel((x, y), blend((156, 116, 22), (255, 232, 93), brightness))
         elif kind == "fluid":
             for y in range(13, 19):
                 crest = (math.sin((motion + (min(y, 31 - y) - 15) * 3) * math.tau / 16) + 1) / 2

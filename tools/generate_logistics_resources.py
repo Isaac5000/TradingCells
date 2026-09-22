@@ -4,7 +4,6 @@ import json
 from io import BytesIO
 from pathlib import Path
 from PIL import Image
-from zipfile import ZipFile
 from generate_pipe_textures import validate as validate_pipe_textures
 
 ROOT = Path(__file__).resolve().parents[1] / "src/main/resources"
@@ -141,6 +140,8 @@ def resources():
         model(name + "_inventory", texture, [core], {
             "gui": {"rotation": [30, 225, 0], "translation": [0, 0, 0], "scale": [1.25, 1.25, 1.25]},
             "ground": {"translation": [0, 3, 0], "scale": [0.5, 0.5, 0.5]},
+            "thirdperson_righthand": {"rotation": [75, 45, 0], "translation": [0, 0.5, 0], "scale": [0.375, 0.375, 0.375]},
+            "thirdperson_lefthand": {"rotation": [75, 45, 0], "translation": [0, 0.5, 0], "scale": [0.375, 0.375, 0.375]},
         })
         item(name, f"{model_prefix}_inventory")
         loot(name)
@@ -239,43 +240,6 @@ def resources():
     return result
 
 
-def atlas_uv(cube, side, tile):
-    x, y, z = cube["from"]
-    a, b, c = cube["to"]
-    uv = {"down": [x, 16-c, a, 16-z], "up": [x, z, a, c],
-          "north": [16-a, 16-b, 16-x, 16-y], "south": [x, 16-b, a, 16-y],
-          "west": [z, 16-b, c, 16-y], "east": [16-c, 16-b, 16-z, 16-y]}[side]
-    return [value / 2 + (tile % 2 if index % 2 == 0 else tile // 2) * 8 for index, value in enumerate(uv)]
-
-
-EDITABLE_TEXTURES = {
-    "item_pipe": ("iron_block", "iron_block", "iron_block"),
-    "fluid_pipe": ("copper_block", "cyan_concrete", "copper_block"),
-    "gas_pipe": ("quartz_block_side", "oxidized_copper", "quartz_block_side"),
-    "energy_pipe": ("gold_block", "redstone_block", "gold_block"),
-    "universal_pipe": ("amethyst_block", "amethyst_block", "amethyst_block"),
-    "network_terminal": ("amethyst_block", "iron_block", "observer_front"),
-    "network_crafting_terminal": ("amethyst_block", "crafting_table_top", "observer_front"),
-}
-
-
-def seed_textures(archive):
-    # These PNGs are artist-owned. Seeding never overwrites an existing editable texture.
-    with ZipFile(archive) as source:
-        for name, tiles in EDITABLE_TEXTURES.items():
-            if name.endswith("_pipe"):
-                continue
-            path = ROOT / ASSETS / "textures/block/logistics" / (name + ".png")
-            if path.exists():
-                continue
-            atlas = Image.new("RGBA", (32, 32))
-            for tile, texture in enumerate((*tiles, tiles[0])):
-                image = Image.open(BytesIO(source.read(f"assets/minecraft/textures/block/{texture}.png"))).convert("RGBA")
-                atlas.paste(image.crop((0, 0, 16, 16)), ((tile % 2) * 16, (tile // 2) * 16))
-            path.parent.mkdir(parents=True, exist_ok=True)
-            atlas.save(path)
-
-
 def resource_matches(relative: str, actual: bytes, expected: bytes) -> bool:
     if not relative.endswith(".png"):
         return actual == expected
@@ -293,18 +257,8 @@ def resource_matches(relative: str, actual: bytes, expected: bytes) -> bool:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
-    parser.add_argument("--seed-textures", type=Path, metavar="MINECRAFT_JAR")
     options = parser.parse_args()
-    if options.seed_textures:
-        seed_textures(options.seed_textures)
     validate_pipe_textures()
-    for name in ("network_terminal", "network_crafting_terminal"):
-        path = ROOT / ASSETS / "textures/block/logistics" / (name + ".png")
-        if not path.exists():
-            raise SystemExit(f"Missing editable texture: {path}")
-        with Image.open(path) as texture:
-            if texture.width != texture.height or texture.width % 2:
-                raise SystemExit(f"Editable texture must contain a square 2x2 atlas: {path}")
     stale = []
     generated = resources()
     if options.check:

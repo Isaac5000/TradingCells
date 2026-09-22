@@ -1,5 +1,14 @@
 # Bases de mejoras
 
+Marcos comunes, 2026-09-21: los cinco niveles de quarry son ahora la unica
+carcasa para las cinco familias. El generador extrae cada emblema del PNG
+canonico, incluido su contorno, y lo pega sobre el mismo marco por material.
+El panel vacio reutiliza texeles limpios de quarry. Oro, madera, acero y cian
+del emblema no se recolorean. Resultado completo guardado en los 25 PNG del mod;
+ninguna composicion durante el juego. Bases originales conservadas intactas.
+La prueba compara cada pixel del marco compartido y del emblema en cada nivel.
+La composicion y el recoloreado por codigo fueron autorizados por el usuario.
+
 Terminales, 2026-09-15: `--bake-terminal-steel` cambia solo los pixeles cobrizos
 de las dos pantallas y la carcasa compartida a una rampa de acero gris basada en
 los tonos de logistics. Conserva coordenadas, alfa, pantallas cian y rejillas.
@@ -16,10 +25,9 @@ El generador protege esos pixeles y el oro del lingote/flechas de trueque al
 recolorear los tiers. Los PNG finales contienen el resultado completo, sin capas
 adicionales en el juego. La forma de los emblemas y los marcos no cambia.
 
-Fuentes canonicas de 64x64 para `generate_family_upgrades.py`. Cada familia usa
-un unico dibujo de cobre; los otros cuatro niveles solo cambian RGB. El alfa,
-las posiciones, el acero y los simbolos cian permanecen iguales. Los cinco PNG
-originales de `textures/item/upgrades/` se conservan sin cambios.
+Fuentes canonicas de 64x64 para `generate_family_upgrades.py`. Cada familia aporta
+su emblema de cobre; quarry aporta el marco comun y los otros niveles cambian
+su paleta. Los cinco PNG originales de `textures/item/upgrades/` se conservan.
 
 Correccion del 2026-09-13: cobre, hierro y oro conservan remaches normales del
 material. Solo diamante usa lila y netherite rojo, mediante una mascara limitada
@@ -74,6 +82,6 @@ un damero pintado. La importacion reduce por vecino mas cercano y normaliza
 el alfa para sprites opacos con exterior transparente.
 
 Los originales de alta resolucion son material de trabajo; el build solo
-consume estas ocho bases pequenas, las veinticinco variantes, dos iconos de terminal
-y una carcasa opaca. Los paneles superiores de bloque reutilizan los iconos aprobados
-mediante el modelo, sin volver a dibujarlos ni modificar sus pixeles.
+valida estas ocho bases pequenas. El juego consume veinticinco variantes, dos
+paneles de terminal y una carcasa opaca. Los items usan el mismo modelo del bloque,
+sin duplicar PNG de inventario ni modificar los pixeles de los paneles aprobados.

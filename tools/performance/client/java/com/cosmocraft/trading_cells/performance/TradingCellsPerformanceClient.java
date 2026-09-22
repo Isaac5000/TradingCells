@@ -126,7 +126,7 @@ public final class TradingCellsPerformanceClient {
                 shutdownAtNanos = now + 2_000_000_000L;
             } else if (captureRequested && !secondMaterialCapture
                     && (System.getProperty("trading_cells.performance.client.uiFixture", "").equals("materials")
-                        || LogisticsUiFixture.worldScene())
+                        || LogisticsUiFixture.worldScene() || MobSimulationUiFixture.modelScene())
                     && now >= shutdownAtNanos - 1_400_000_000L) {
                 Screenshot.grab(Minecraft.getInstance(), false);
                 secondMaterialCapture = true;

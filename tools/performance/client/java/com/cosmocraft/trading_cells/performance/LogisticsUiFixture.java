@@ -28,6 +28,9 @@ final class LogisticsUiFixture {
     private LogisticsUiFixture() { }
 
     static void inspect(net.minecraft.client.Minecraft minecraft) {
+        if (ItemTextureUiFixture.active()) { ItemTextureUiFixture.inspect(minecraft); return; }
+        if (InfusionUiFixture.active()) { InfusionUiFixture.inspect(minecraft); return; }
+        if (TooltipUiFixture.active()) { TooltipUiFixture.inspect(minecraft); return; }
         if (MobSimulationUiFixture.active()) { MobSimulationUiFixture.inspect(minecraft); return; }
         if (worldScene()) {
             return;
@@ -137,6 +140,9 @@ final class LogisticsUiFixture {
     }
 
     static boolean readyForCapture() {
+        if (ItemTextureUiFixture.active()) { return ItemTextureUiFixture.ready(); }
+        if (InfusionUiFixture.active()) { return InfusionUiFixture.ready(); }
+        if (TooltipUiFixture.active()) { return TooltipUiFixture.ready(); }
         if (MobSimulationUiFixture.active()) { return MobSimulationUiFixture.ready(); }
         if (worldScene()) { return scenePrepared; }
         if (System.getProperty("trading_cells.performance.client.uiFixture", "").equals("interactions")) { return PipeInteractionUiFixture.ready(); }
@@ -146,8 +152,8 @@ final class LogisticsUiFixture {
 
     static boolean worldScene() {
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
-        return fixture.equals("connections") || fixture.equals("caps") || fixture.equals("terminals")
-                || fixture.equals("simulation-models");
+        return ItemTextureUiFixture.active() || TooltipUiFixture.active() || fixture.equals("connections") || fixture.equals("caps") || fixture.equals("terminals")
+                || MobSimulationUiFixture.modelScene() || InfusionUiFixture.modelScene();
     }
 
     private static void checkPipeEditor(com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.PipeConfigurationScreen screen) {
@@ -241,6 +247,9 @@ final class LogisticsUiFixture {
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
         if (fixture.isEmpty() || !PREPARED.add(player.getUUID())) { return; }
         var level = player.level();
+        if (ItemTextureUiFixture.active()) { ItemTextureUiFixture.prepare(player); return; }
+        if (InfusionUiFixture.active()) { InfusionUiFixture.prepare(player, pos); return; }
+        if (TooltipUiFixture.active()) { TooltipUiFixture.prepare(player); return; }
         if (MobSimulationUiFixture.active()) { MobSimulationUiFixture.prepare(player, pos); return; }
         if (fixture.equals("caps")) {
             for (BlockPos target : BlockPos.betweenClosed(pos.offset(-2, -1, -3), pos.offset(2, 2, 2))) {

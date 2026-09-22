@@ -12,7 +12,7 @@ son Python 3.11+ portable y resuelven rutas desde `__file__` o argumentos.
 | `generate_villager_trade_gui.py --check` | `checkVillagerTradeGuiTextures` |
 | `generate_logistics_resources.py --check` | `checkLogisticsResources`; incluye `verify_pipe_models.py` |
 | `test_logistics_resources.py` | `testLogisticsResourceValidation`; regresiones de comparacion PNG, integrada en `checkLogisticsResources` |
-| `generate_family_upgrades.py --check` | `checkUpgradeFamilyTextures`; quince variantes de color y dos terminales, integrada en `checkLogisticsResources` |
+| `generate_family_upgrades.py --check` | `checkUpgradeFamilyTextures`; veinticinco mejoras con marcos comunes y dos terminales, integrada en `checkLogisticsResources` |
 | `validate_project_resources.py` | `checkProjectResources` |
 | `test_recipe_resources.py` | `testRecipeResources`; recetas y registro vanilla, requiere `createMinecraftArtifacts` con fuentes |
 | `release/verify_release_contracts.py` | `checkReleaseContracts` |
@@ -44,9 +44,9 @@ binario predeterminado de CI no genera ese archivo.
   genera una vista PNG/GIF. Fotogramas de 32x32 con escala/fase comunes.
 - `generate_logistics_resources.py`: modelos organizados por tipo, recetas y
   llave de 16x16. No sobrescribe los PNG editables de bloques.
-- `generate_family_upgrades.py --write`: recolorea una base de cobre por familia
-  usando rampas de luminancia de las paletas originales. Conserva coordenadas y
-  transparencia; no modifica las cinco mejoras originales. Fuentes y prompts
+- `generate_family_upgrades.py --write`: compone los emblemas originales sobre
+  los cinco marcos comunes de quarry, recoloreados con rampas de luminancia.
+  Conserva las fuentes y las cinco mejoras originales. Fuentes y prompts
   en `assets/upgrade_bases/README.md`. `--preview <PNG>` muestra todos los niveles.
 - `generate_family_upgrades.py --bake-terminal-steel --write`: guarda el acabado
   gris de los terminales en sus PNG, usando las fuentes de cobre conservadas en

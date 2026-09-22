@@ -2,7 +2,9 @@ package com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.serialization.MapCodec;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -13,6 +15,8 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.special.NoDataSpecialModelRenderer;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.SpriteContents;
+import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.resources.Identifier;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
@@ -30,26 +34,8 @@ public final class StormShardItemRenderSupport {
     private static final float SIDE_OFFSET = 0.02F / 16.0F;
     private static final float SIDE_UV_DEPTH = 1.0F / 16.0F;
 
-    // Exact opaque-pixel mask of textures/item/storm_shard.png, from top to bottom.
-    private static final int[] SHARD_MASK = {
-            0x0000,
-            0x0080,
-            0x0080,
-            0x01C0,
-            0x01C0,
-            0x7FE0,
-            0x3FFF,
-            0x0FFE,
-            0x07F8,
-            0x07F0,
-            0x0FF0,
-            0x0E70,
-            0x1C38,
-            0x1018,
-            0x0008,
-            0x0000
-    };
-    private static final OverlayVertex[] SHARD_MESH = buildShardMesh();
+    private static final Identifier SHARD_TEXTURE = Identifier.fromNamespaceAndPath(
+            "trading_cells", "textures/item/storm_shard.png");
 
     private StormShardItemRenderSupport() {
     }
@@ -63,40 +49,40 @@ public final class StormShardItemRenderSupport {
         return (float) (System.nanoTime() / 50_000_000.0D);
     }
 
-    private static OverlayVertex[] buildShardMesh() {
+    private static OverlayVertex[] buildShardMesh(SpriteContents sprite) {
         List<OverlayVertex> vertices = new ArrayList<>();
-        addFrontAndBackFaces(vertices);
-        addOutlineFaces(vertices);
+        addFrontAndBackFaces(vertices, sprite);
+        addOutlineFaces(vertices, sprite);
         return vertices.toArray(OverlayVertex[]::new);
     }
 
-    private static void addFrontAndBackFaces(List<OverlayVertex> vertices) {
-        for (int y = 0; y < 16; y++) {
+    private static void addFrontAndBackFaces(List<OverlayVertex> vertices, SpriteContents sprite) {
+        for (int y = 0; y < sprite.height(); y++) {
             int x = 0;
-            while (x < 16) {
-                while (x < 16 && !isOpaque(x, y)) {
+            while (x < sprite.width()) {
+                while (x < sprite.width() && !isOpaque(sprite, x, y)) {
                     x++;
                 }
                 int start = x;
-                while (x < 16 && isOpaque(x, y)) {
+                while (x < sprite.width() && isOpaque(sprite, x, y)) {
                     x++;
                 }
                 if (start < x) {
-                    addFrontAndBackQuad(vertices, start, x, y);
+                    addFrontAndBackQuad(vertices, sprite, start, x, y);
                 }
             }
         }
     }
 
-    private static void addFrontAndBackQuad(List<OverlayVertex> vertices, int startX, int endX, int y) {
-        float left = pixel(startX);
-        float right = pixel(endX);
-        float top = 1.0F - pixel(y);
-        float bottom = 1.0F - pixel(y + 1);
-        float u0 = pixel(startX);
-        float u1 = pixel(endX);
-        float v0 = pixel(y);
-        float v1 = pixel(y + 1);
+    private static void addFrontAndBackQuad(List<OverlayVertex> vertices, SpriteContents sprite, int startX, int endX, int y) {
+        float left = pixel(startX, sprite.width());
+        float right = pixel(endX, sprite.width());
+        float top = 1.0F - pixel(y, sprite.height());
+        float bottom = 1.0F - pixel(y + 1, sprite.height());
+        float u0 = left;
+        float u1 = right;
+        float v0 = pixel(y, sprite.height());
+        float v1 = pixel(y + 1, sprite.height());
 
         addQuad(vertices,
                 vertex(left, bottom, FRONT_Z, u0, v1, 0.0F, 0.0F, 1.0F),
@@ -110,35 +96,35 @@ public final class StormShardItemRenderSupport {
                 vertex(right, top, BACK_Z, u1, v0, 0.0F, 0.0F, -1.0F));
     }
 
-    private static void addOutlineFaces(List<OverlayVertex> vertices) {
-        for (int y = 0; y < 16; y++) {
-            for (int x = 0; x < 16; x++) {
-                if (!isOpaque(x, y)) {
+    private static void addOutlineFaces(List<OverlayVertex> vertices, SpriteContents sprite) {
+        for (int y = 0; y < sprite.height(); y++) {
+            for (int x = 0; x < sprite.width(); x++) {
+                if (!isOpaque(sprite, x, y)) {
                     continue;
                 }
-                if (!isOpaque(x - 1, y)) {
-                    addLeftFace(vertices, x, y);
+                if (!isOpaque(sprite, x - 1, y)) {
+                    addLeftFace(vertices, sprite, x, y);
                 }
-                if (!isOpaque(x + 1, y)) {
-                    addRightFace(vertices, x, y);
+                if (!isOpaque(sprite, x + 1, y)) {
+                    addRightFace(vertices, sprite, x, y);
                 }
-                if (!isOpaque(x, y - 1)) {
-                    addTopFace(vertices, x, y);
+                if (!isOpaque(sprite, x, y - 1)) {
+                    addTopFace(vertices, sprite, x, y);
                 }
-                if (!isOpaque(x, y + 1)) {
-                    addBottomFace(vertices, x, y);
+                if (!isOpaque(sprite, x, y + 1)) {
+                    addBottomFace(vertices, sprite, x, y);
                 }
             }
         }
     }
 
-    private static void addLeftFace(List<OverlayVertex> vertices, int x, int y) {
-        float edgeX = pixel(x) - SIDE_OFFSET;
-        float top = 1.0F - pixel(y);
-        float bottom = 1.0F - pixel(y + 1);
-        float u = pixel(x);
-        float v0 = pixel(y);
-        float v1 = pixel(y + 1);
+    private static void addLeftFace(List<OverlayVertex> vertices, SpriteContents sprite, int x, int y) {
+        float edgeX = pixel(x, sprite.width()) - SIDE_OFFSET;
+        float top = 1.0F - pixel(y, sprite.height());
+        float bottom = 1.0F - pixel(y + 1, sprite.height());
+        float u = pixel(x, sprite.width());
+        float v0 = pixel(y, sprite.height());
+        float v1 = pixel(y + 1, sprite.height());
         addQuad(vertices,
                 vertex(edgeX, bottom, BACK_Z, u - SIDE_UV_DEPTH, v1, -1.0F, 0.0F, 0.0F),
                 vertex(edgeX, bottom, FRONT_Z, u, v1, -1.0F, 0.0F, 0.0F),
@@ -146,13 +132,13 @@ public final class StormShardItemRenderSupport {
                 vertex(edgeX, top, BACK_Z, u - SIDE_UV_DEPTH, v0, -1.0F, 0.0F, 0.0F));
     }
 
-    private static void addRightFace(List<OverlayVertex> vertices, int x, int y) {
-        float edgeX = pixel(x + 1) + SIDE_OFFSET;
-        float top = 1.0F - pixel(y);
-        float bottom = 1.0F - pixel(y + 1);
-        float u = pixel(x + 1);
-        float v0 = pixel(y);
-        float v1 = pixel(y + 1);
+    private static void addRightFace(List<OverlayVertex> vertices, SpriteContents sprite, int x, int y) {
+        float edgeX = pixel(x + 1, sprite.width()) + SIDE_OFFSET;
+        float top = 1.0F - pixel(y, sprite.height());
+        float bottom = 1.0F - pixel(y + 1, sprite.height());
+        float u = pixel(x + 1, sprite.width());
+        float v0 = pixel(y, sprite.height());
+        float v1 = pixel(y + 1, sprite.height());
         addQuad(vertices,
                 vertex(edgeX, bottom, FRONT_Z, u, v1, 1.0F, 0.0F, 0.0F),
                 vertex(edgeX, bottom, BACK_Z, u + SIDE_UV_DEPTH, v1, 1.0F, 0.0F, 0.0F),
@@ -160,13 +146,13 @@ public final class StormShardItemRenderSupport {
                 vertex(edgeX, top, FRONT_Z, u, v0, 1.0F, 0.0F, 0.0F));
     }
 
-    private static void addTopFace(List<OverlayVertex> vertices, int x, int y) {
-        float left = pixel(x);
-        float right = pixel(x + 1);
-        float edgeY = 1.0F - pixel(y) + SIDE_OFFSET;
-        float u0 = pixel(x);
-        float u1 = pixel(x + 1);
-        float v = pixel(y);
+    private static void addTopFace(List<OverlayVertex> vertices, SpriteContents sprite, int x, int y) {
+        float left = pixel(x, sprite.width());
+        float right = pixel(x + 1, sprite.width());
+        float edgeY = 1.0F - pixel(y, sprite.height()) + SIDE_OFFSET;
+        float u0 = left;
+        float u1 = right;
+        float v = pixel(y, sprite.height());
         addQuad(vertices,
                 vertex(left, edgeY, FRONT_Z, u0, v, 0.0F, 1.0F, 0.0F),
                 vertex(right, edgeY, FRONT_Z, u1, v, 0.0F, 1.0F, 0.0F),
@@ -174,13 +160,13 @@ public final class StormShardItemRenderSupport {
                 vertex(left, edgeY, BACK_Z, u0, v - SIDE_UV_DEPTH, 0.0F, 1.0F, 0.0F));
     }
 
-    private static void addBottomFace(List<OverlayVertex> vertices, int x, int y) {
-        float left = pixel(x);
-        float right = pixel(x + 1);
-        float edgeY = 1.0F - pixel(y + 1) - SIDE_OFFSET;
-        float u0 = pixel(x);
-        float u1 = pixel(x + 1);
-        float v = pixel(y + 1);
+    private static void addBottomFace(List<OverlayVertex> vertices, SpriteContents sprite, int x, int y) {
+        float left = pixel(x, sprite.width());
+        float right = pixel(x + 1, sprite.width());
+        float edgeY = 1.0F - pixel(y + 1, sprite.height()) - SIDE_OFFSET;
+        float u0 = left;
+        float u1 = right;
+        float v = pixel(y + 1, sprite.height());
         addQuad(vertices,
                 vertex(left, edgeY, BACK_Z, u0, v + SIDE_UV_DEPTH, 0.0F, -1.0F, 0.0F),
                 vertex(right, edgeY, BACK_Z, u1, v + SIDE_UV_DEPTH, 0.0F, -1.0F, 0.0F),
@@ -188,12 +174,13 @@ public final class StormShardItemRenderSupport {
                 vertex(left, edgeY, FRONT_Z, u0, v, 0.0F, -1.0F, 0.0F));
     }
 
-    private static boolean isOpaque(int x, int y) {
-        return x >= 0 && x < 16 && y >= 0 && y < 16 && (SHARD_MASK[y] & 1 << x) != 0;
+    private static boolean isOpaque(SpriteContents sprite, int x, int y) {
+        return x >= 0 && x < sprite.width() && y >= 0 && y < sprite.height()
+                && !sprite.isTransparent(0, x, y);
     }
 
-    private static float pixel(int coordinate) {
-        return coordinate / 16.0F;
+    private static float pixel(int coordinate, int size) {
+        return (float) coordinate / size;
     }
 
     private static OverlayVertex vertex(
@@ -222,8 +209,8 @@ public final class StormShardItemRenderSupport {
         vertices.add(fourth);
     }
 
-    private static void drawMesh(PoseStack.Pose pose, VertexConsumer vertices, int packedLight) {
-        for (OverlayVertex meshVertex : SHARD_MESH) {
+    private static void drawMesh(OverlayVertex[] mesh, PoseStack.Pose pose, VertexConsumer vertices, int packedLight) {
+        for (OverlayVertex meshVertex : mesh) {
             vertices.addVertex(pose, meshVertex.x(), meshVertex.y(), meshVertex.z())
                     .setColor(POWER_COLOR)
                     .setUv(meshVertex.u(), meshVertex.v())
@@ -234,6 +221,13 @@ public final class StormShardItemRenderSupport {
     }
 
     public static final class Renderer implements NoDataSpecialModelRenderer {
+        private final OverlayVertex[] mesh;
+
+        private Renderer(SpriteContents sprite) {
+            // Rebuilt only on resource reload; rendering retains no image or fixed silhouette.
+            mesh = buildShardMesh(sprite);
+        }
+
         @Override
         public void submit(
                 @NonNull PoseStack poseStack,
@@ -248,7 +242,7 @@ public final class StormShardItemRenderSupport {
             collector.order(1).submitCustomGeometry(
                     poseStack,
                     powerLayer,
-                    (pose, vertices) -> drawMesh(pose, vertices, packedLight)
+                    (pose, vertices) -> drawMesh(mesh, pose, vertices, packedLight)
             );
         }
 
@@ -282,7 +276,16 @@ public final class StormShardItemRenderSupport {
 
         @Override
         public SpecialModelRenderer<Void> bake(SpecialModelRenderer.@NonNull BakingContext context) {
-            return new Renderer();
+            // Special models bake before atlas upload; use the current resource pack directly.
+            try (var input = Minecraft.getInstance().getResourceManager().open(SHARD_TEXTURE)) {
+                NativeImage image = NativeImage.read(input);
+                try (var sprite = new SpriteContents(SHARD_TEXTURE,
+                        new FrameSize(image.getWidth(), image.getHeight()), image)) {
+                    return new Renderer(sprite);
+                }
+            } catch (IOException exception) {
+                throw new IllegalStateException("Cannot load Storm Shard energy silhouette", exception);
+            }
         }
     }
 }

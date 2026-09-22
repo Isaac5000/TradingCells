@@ -48,7 +48,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--template-directory", type=Path)
     parser.add_argument("--quick-play-world")
     parser.add_argument("--language", help="Minecraft language for visual checks, for example es_es.")
-    parser.add_argument("--ui-fixture", choices=("pipe", "rules", "interactions", "crafting", "materials", "connections", "caps", "terminals", "simulation", "essences", "simulation-models"),
+    parser.add_argument("--main-arm", choices=("left", "right"), help="Player's primary arm for held-model checks.")
+    parser.add_argument("--ui-fixture", choices=("pipe", "rules", "interactions", "crafting", "materials", "connections", "caps", "terminals", "simulation", "essences", "simulation-models", "simulation-models-offhand", "simulation-models-thirdperson", "tooltips", "infusion", "infusion-models", "item-textures", "pipe-hands"),
                         help="Install a logistics UI fixture in the disposable cloned world; not a performance baseline.")
     parser.add_argument("--output-directory", type=Path)
     parser.add_argument("--without-rei", action="store_true")
@@ -78,7 +79,7 @@ def clone_template(template: Path | None, destination: Path) -> None:
         shutil.move(server_world, client_world)
 
 
-def normalize_options(game_directory: Path, language: str | None = None) -> None:
+def normalize_options(game_directory: Path, language: str | None = None, main_arm: str | None = None) -> None:
     options_file = game_directory / "options.txt"
     values: dict[str, str] = {}
     order: list[str] = []
@@ -104,6 +105,8 @@ def normalize_options(game_directory: Path, language: str | None = None) -> None
     }
     if language:
         fixed["lang"] = language
+    if main_arm:
+        fixed["mainHand"] = json.dumps(main_arm)
     for key, value in fixed.items():
         if key not in values:
             order.append(key)
@@ -204,7 +207,7 @@ def run_once(
     result_directory = run_root / "result"
     run_root.mkdir(parents=True)
     clone_template(args.template_directory, game_directory)
-    normalize_options(game_directory, args.language)
+    normalize_options(game_directory, args.language, args.main_arm)
     result_directory.mkdir(parents=True)
     jfr = run_root / "client.jfr"
     task = (
@@ -265,7 +268,7 @@ def run_once(
     row = read_summary(summary_file)
     verify_backend(row, args.backend)
     verify_dimensions(row, args.width, args.height)
-    if args.open_block and args.ui_fixture not in ("connections", "caps", "terminals", "simulation-models") and not row.get("screen_class", ""):
+    if args.open_block and args.ui_fixture not in ("connections", "caps", "terminals", "simulation-models", "simulation-models-offhand", "simulation-models-thirdperson", "infusion-models", "pipe-hands") and not row.get("screen_class", ""):
         raise RuntimeError(
             "The configured block did not leave a container screen open; "
             f"got {row.get('screen_class', '')!r}"
@@ -279,7 +282,8 @@ def run_once(
         target = result_directory / "capture.png"
         shutil.copy2(screenshot, target)
         row["screenshot_file"] = str(target.relative_to(output))
-        if args.ui_fixture in ("materials", "connections") and len(screenshots) >= 2:
+        if args.ui_fixture in ("materials", "connections", "simulation-models", "simulation-models-offhand",
+                               "simulation-models-thirdperson", "item-textures", "pipe-hands") and len(screenshots) >= 2:
             earlier = sorted(screenshots, key=lambda path: path.stat().st_mtime_ns)[-2]
             shutil.copy2(earlier, result_directory / "animation-before.png")
     else:
@@ -366,6 +370,7 @@ def write_metadata(
         "quick_play_world": args.quick_play_world or "",
         "ui_fixture": args.ui_fixture or "",
         "language": args.language or "template",
+        "main_arm": args.main_arm or "template",
         "camera": args.camera or [],
         "open_block": args.open_block or [],
         "template_directory": str(args.template_directory or ""),

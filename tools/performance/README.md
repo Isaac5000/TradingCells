@@ -1,5 +1,12 @@
 # Medicion de rendimiento
 
+`--ui-fixture item-textures` muestra cuatro capturadores, fragmento con su capa
+electrica y las 25 mejoras usando los modelos reales. Guarda dos capturas para
+comprobar animacion. `--ui-fixture pipe-hands` muestra tuberias en ambas manos,
+en tercera persona cercana; `--main-arm left|right` intercambia el brazo principal.
+Ambas usan copia de plantilla y `--open-block` para preparar el inventario, sin
+abrir un contenedor real ni modificar el mundo original.
+
 Estas herramientas son exclusivamente de desarrollo y no entran en el JAR publicado.
 Cada resultado conserva mundo, configuracion, commit, JVM, backend y duracion para
 poder repetir la comparacion.
@@ -33,6 +40,27 @@ reinician el bloque de ensayo en la copia para no heredar salidas ni pausas.
 y dragon, ademas de sus modulos en la barra; comprueba que hay renderizadores y
 que un tipo inexistente conserva la base vacia. Espera la sincronizacion del
 inventario antes de validar los datos y no abre un menu.
+La escena de modelos tambien coloca la mesa de esencias y permite inspeccionar
+sus marcos y tableros negros/azules junto a los pedestales negros/azules. `--main-arm left` o
+`--main-arm right` comprueba la mano elegida; `simulation-models-offhand` sostiene
+el modulo en la mano secundaria sin sustituir el render nativo de los items.
+`simulation-models-thirdperson` usa la camara frontal de tercera persona y FOV 45
+para comprobar de cerca el apoyo del modulo. La primera persona no dibuja una
+mano adicional. Las escenas de modelos conservan dos capturas de animacion.
+Para menus, colocar la camara a menos de ocho bloques del bloque abierto;
+una camara mas lejana cierra el menu por la validacion nativa de distancia.
+
+`tooltips` abre el inventario creativo y comprueba todos los items registrados
+del mod con informacion normal/avanzada, nombres traducidos y tooltips de REI
+si esta instalado. Verifica eliminacion del titulo del tab, pie unico del mod,
+conservacion de nombres/descripciones personalizados e imagenes, y aislamiento
+de items vanilla. Captura un tooltip real sobre la granja en la barra rapida.
+Los cambios de inventario y modo creativo se limitan a la copia de ensayo.
+`infusion-models` coloca el infusor en sus cuatro orientaciones y lo sostiene
+en la mano para revisar la piedra del End de su base. La fixture `infusion`
+esta en desarrollo: comprueba el tooltip nativo del resultado de Toque de Seda
+II, lo retira con Shift y pasa a la receta fantasma; actualmente falta resolver
+la comprobacion posterior de XP. No usarla como evidencia aprobada.
 `crafting` comprueba tambien Shift doble clic con un item en el cursor, dos
 pilas iguales y una variante con nombre que debe permanecer en el inventario.
 

@@ -1,10 +1,10 @@
 {
   "parent": "trading_cells:block/machine_cage_frame",
   "textures": {
-    "base": "minecraft:block/amethyst_block",
-    "base_left": "minecraft:block/amethyst_block",
-    "base_center": "minecraft:block/amethyst_block",
-    "base_right": "minecraft:block/amethyst_block",
+    "base": "minecraft:block/end_stone",
+    "base_left": "minecraft:block/end_stone",
+    "base_center": "minecraft:block/end_stone",
+    "base_right": "minecraft:block/end_stone",
     "frame": "minecraft:block/crying_obsidian",
     "particle": "minecraft:block/crying_obsidian"
   }

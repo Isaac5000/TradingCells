@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:entity",
+  "pools": [{
+    "rolls": {"type": "minecraft:binomial", "n": 2, "p": 0.5},
+    "entries": [{"type": "minecraft:item", "name": "minecraft:echo_shard"}]
+  }]
+}

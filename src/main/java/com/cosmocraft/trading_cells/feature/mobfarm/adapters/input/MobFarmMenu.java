@@ -93,6 +93,8 @@ public final class MobFarmMenu extends AbstractContainerMenu {
     public int lootRevision() { return snapshotRevision; }
 
     @Override public void broadcastChanges() {
+        // Slot changes can reach the menu before the block's next server tick.
+        if (container instanceof MobFarmBlockEntity farm) { farm.refreshInputs(); }
         super.broadcastChanges();
         if (!(container instanceof MobFarmBlockEntity farm) || !(owner instanceof ServerPlayer player)
                 || !(farm.getLevel() instanceof ServerLevel level)) { return; }
@@ -107,7 +109,7 @@ public final class MobFarmMenu extends AbstractContainerMenu {
             catalogRevision = MobFarmCatalog.revision();
             probabilities = farm.simulationTarget() == null ? Map.of()
                     : MobFarmSimulationLoot.preview(level, farm.simulationTarget(), sword, simulatedKills());
-            farm.rememberLoot(probabilities.keySet());
+            farm.includePreviewLoot(probabilities.keySet());
         }
         farmRevision = farm.lootRevision();
         var ids = new java.util.TreeSet<>(farm.lootItems());
@@ -117,6 +119,7 @@ public final class MobFarmMenu extends AbstractContainerMenu {
             if (next.size() >= 2_048) { break; }
             BuiltInRegistries.ITEM.getOptional(id).ifPresent(item -> {
                 var drop = probabilities.getOrDefault(id, new MobFarmLootTables.DropSummary(-1, 0, 0));
+                if (drop.probability() == 0 && drop.maximum() == 0) { return; }
                 next.add(new LootEntry(new ItemStack(item), farm.lootEnabled(id), drop.probability(), drop.minimum(), drop.maximum()));
             });
         }

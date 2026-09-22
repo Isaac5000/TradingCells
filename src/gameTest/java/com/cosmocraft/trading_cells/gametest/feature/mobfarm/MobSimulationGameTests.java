@@ -37,17 +37,30 @@ public final class MobSimulationGameTests {
     private MobSimulationGameTests() { }
     public static List<GameTestCase> tests() {
         return List.of(new GameTestCase("mob_simulation_actual_module_state", 40, MobSimulationGameTests::moduleState),
+                new GameTestCase("mob_simulation_block_item_names", 40, MobSimulationGameTests::blockItemNames),
                 new GameTestCase("mob_simulation_extractor_interaction", 40, MobSimulationGameTests::extractorInteraction),
                 new GameTestCase("mob_simulation_extractor_rejections", 40, MobSimulationGameTests::extractorRejections),
                 new GameTestCase("mob_simulation_extractor_last_use", 40, MobSimulationGameTests::extractorLastUse),
                 new GameTestCase("mob_simulation_extractor_full_inventory", 40, MobSimulationGameTests::extractorFullInventory),
                 new GameTestCase("mob_simulation_workbench_atomic_cost", 40, MobSimulationGameTests::workbench),
                 new GameTestCase("mob_simulation_workbench_high_level_cost", 40, MobSimulationGameTests::highLevelWorkbench),
+                new GameTestCase("mob_simulation_workbench_shape", 40, MobSimulationGameTests::workbenchShape),
+                new GameTestCase("mob_simulation_preview_before_tick", 40, MobSimulationGameTests::previewBeforeTick),
+                new GameTestCase("mob_simulation_preview_impossible_loot", 40, MobSimulationGameTests::previewImpossibleLoot),
+                new GameTestCase("mob_simulation_save_without_chunk_loads", 40, MobSimulationGameTests::saveWithoutChunkLoads),
                 new GameTestCase("mob_simulation_pending_loot_reload", 40, MobSimulationGameTests::pending),
                 new GameTestCase("mob_simulation_filters_and_automation", 40, MobSimulationGameTests::automation),
                 new GameTestCase("mob_simulation_legacy_farm_migration", 40, MobSimulationGameTests::legacyMigration),
                 new GameTestCase("mob_simulation_legacy_pending_migration", 40, MobSimulationGameTests::legacyPending),
                 new GameTestCase("mob_simulation_paused_migration_tick", 40, MobSimulationGameTests::pausedMigration));
+    }
+
+    private static void blockItemNames(GameTestHelper helper) {
+        for (var item : List.of(MobFarmRegistrationAdapter.ITEM.get(), MobFarmRegistrationAdapter.WORKBENCH_ITEM.get())) {
+            helper.assertValueEqual(item.getDefaultInstance().getHoverName(), item.getBlock().getName(),
+                    "Simulation block items share their block's translated name");
+        }
+        helper.succeed();
     }
 
     private static void extractorInteraction(GameTestHelper helper) {
@@ -361,6 +374,121 @@ public final class MobSimulationGameTests {
         farm.setItem(2, EntityEssenceData.moduleOf(essence(helper)));
         farm.processTick();
         return farm;
+    }
+
+    private static void workbenchShape(GameTestHelper helper) {
+        var state = MobFarmRegistrationAdapter.ESSENCE_WORKBENCH.get().defaultBlockState();
+        var expected = net.minecraft.world.phys.shapes.Shapes.or(
+                net.minecraft.world.level.block.Block.box(1, 10, 1, 15, 13, 15),
+                net.minecraft.world.level.block.Block.box(3, 13, 3, 13, 14, 13),
+                net.minecraft.world.level.block.Block.box(2, 0, 2, 4, 10, 4),
+                net.minecraft.world.level.block.Block.box(2, 0, 12, 4, 10, 14),
+                net.minecraft.world.level.block.Block.box(12, 0, 2, 14, 10, 4),
+                net.minecraft.world.level.block.Block.box(12, 0, 12, 14, 10, 14));
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            var rotated = state.setValue(com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock.FACING, direction);
+            var shape = rotated.getShape(helper.getLevel(), helper.absolutePos(GameTestFixtures.TEST_POS));
+            helper.assertFalse(net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(shape, expected,
+                    net.minecraft.world.phys.shapes.BooleanOp.NOT_SAME), "Workbench selection follows top and legs in every orientation");
+            helper.assertFalse(net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(
+                    rotated.getCollisionShape(helper.getLevel(), helper.absolutePos(GameTestFixtures.TEST_POS)), expected,
+                    net.minecraft.world.phys.shapes.BooleanOp.NOT_SAME), "Workbench collision leaves space between legs");
+        }
+        helper.succeed();
+    }
+
+    private static void saveWithoutChunkLoads(GameTestHelper helper) {
+        var pos = new net.minecraft.core.BlockPos(29_000_000, 64, 29_000_000);
+        var farm = new MobFarmBlockEntity(pos, MobFarmRegistrationAdapter.BLOCK.get().defaultBlockState());
+        farm.setLevel(helper.getLevel());
+        var state = new CompoundTag();
+        state.putBoolean("Hunting", true);
+        farm.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), state));
+        helper.assertFalse(helper.getLevel().getChunkSource().hasChunk(pos.getX() >> 4, pos.getZ() >> 4),
+                "Detached serialization fixture starts outside loaded chunks");
+        var saved = farm.saveWithFullMetadata(helper.getLevel().registryAccess());
+        helper.assertTrue(saved.getBooleanOr("Hunting", false), "Last known animation state is retained");
+        helper.assertFalse(helper.getLevel().getChunkSource().hasChunk(pos.getX() >> 4, pos.getZ() >> 4),
+                "Saving a farm must not load chunks through redstone queries");
+        helper.succeed();
+    }
+
+    private static ItemStack module(GameTestHelper helper, String type, String table) {
+        var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace(type));
+        if (table != null) {
+            var state = new CompoundTag();
+            state.putString("DeathLootTable", table);
+            target.load(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), state));
+        }
+        return EntityEssenceData.moduleOf(EntityEssenceData.essenceOf(target));
+    }
+
+    private static void previewBeforeTick(GameTestHelper helper) {
+        var farm = farm(helper);
+        BlockEntityStateFixtures.fillIndexedSlots(helper, farm, "Slot", 5, 18, new ItemStack(Items.COBBLESTONE, 64));
+        finishCycle(helper, farm);
+        farm.toggleEnabled();
+        var player = connectedPlayer(helper);
+        player.setPos(net.minecraft.world.phys.Vec3.atCenterOf(farm.getBlockPos()));
+        var menu = (MobFarmMenu) farm.createMenu(51, player.getInventory(), player);
+        player.containerMenu = menu;
+        farm.setItem(2, module(helper, "warden", null));
+        menu.broadcastChanges();
+        assertLoot(helper, menu, Items.SCULK_CATALYST, 1_000_000);
+        helper.assertValueEqual(menu.lootEntries().size(), 1, "Pending cow diamonds do not contaminate warden preview");
+        farm.setItem(2, module(helper, "iron_golem", null));
+        menu.broadcastChanges();
+        assertLoot(helper, menu, Items.IRON_INGOT, 1_000_000);
+        helper.assertTrue(menu.lootEntries().stream().noneMatch(entry -> entry.stack().is(Items.SCULK_CATALYST)),
+                "Switch before a tick removes all previous creature drops");
+        farm.setItem(2, module(helper, "warden", "trading_cells_gametest:simulation_echo"));
+        menu.broadcastChanges();
+        assertLoot(helper, menu, Items.ECHO_SHARD, 1_000_000);
+        helper.assertValueEqual(menu.lootEntries().size(), 1, "Custom instance table replaces vanilla loot immediately");
+        int revision = menu.lootRevision();
+        menu.broadcastChanges();
+        helper.assertValueEqual(menu.lootRevision(), revision, "Unchanged preview reuses its snapshot");
+        var saved = farm.saveWithFullMetadata(helper.getLevel().registryAccess());
+        helper.assertValueEqual(saved.getIntOr("ObservedLootCount", 0), 0, "Predictions are not saved as observed drops");
+        helper.assertValueEqual(saved.getIntOr("PendingLootCount", 0), 1, "Old pending output remains safely queued");
+        helper.assertValueEqual(farm.storedExperience(), 5, "Opening and swapping previews never runs a cycle");
+        farm.setItem(2, ItemStack.EMPTY);
+        menu.broadcastChanges();
+        helper.assertTrue(menu.lootEntries().isEmpty(), "Removing module clears preview despite pending output");
+        helper.succeed();
+    }
+
+    private static void previewImpossibleLoot(GameTestHelper helper) {
+        var farm = farm(helper);
+        farm.toggleEnabled();
+        var player = connectedPlayer(helper);
+        player.setPos(net.minecraft.world.phys.Vec3.atCenterOf(farm.getBlockPos()));
+        var menu = (MobFarmMenu) farm.createMenu(52, player.getInventory(), player);
+        player.containerMenu = menu;
+        farm.setItem(2, module(helper, "creeper", null));
+        menu.broadcastChanges();
+        helper.assertValueEqual(menu.lootEntries().size(), 1, "Creeper has gunpowder, no impossible discs or unenchanted head");
+        assertLoot(helper, menu, Items.GUNPOWDER, 666667);
+        var sword = Items.IRON_SWORD.getDefaultInstance();
+        sword.enchant(helper.getLevel().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(com.cosmocraft.trading_cells.feature.combat.adapters.api.CombatEnchantments.DECAPITATION), 1);
+        farm.setItem(1, sword);
+        menu.broadcastChanges();
+        assertLoot(helper, menu, Items.CREEPER_HEAD, 35_000);
+        farm.rememberLoot(List.of(Identifier.withDefaultNamespace("creeper_head")));
+        farm.setItem(1, Items.IRON_SWORD.getDefaultInstance());
+        menu.broadcastChanges();
+        helper.assertValueEqual(menu.lootEntries().size(), 1, "Removing enchantment hides previously observed but now impossible head");
+        farm.setItem(2, module(helper, "cow", "trading_cells_gametest:simulation_unknown"));
+        menu.broadcastChanges();
+        assertLoot(helper, menu, Items.ECHO_SHARD, -1);
+        helper.succeed();
+    }
+
+    private static void assertLoot(GameTestHelper helper, MobFarmMenu menu, net.minecraft.world.item.Item item, int chance) {
+        var drop = menu.lootEntries().stream().filter(entry -> entry.stack().is(item)).findFirst().orElse(null);
+        helper.assertTrue(drop != null, "Expected preview item " + item);
+        helper.assertValueEqual(drop.probability(), chance, "Probability available before first cycle for " + item);
     }
 
     private static void finishCycle(GameTestHelper helper, MobFarmBlockEntity farm) {

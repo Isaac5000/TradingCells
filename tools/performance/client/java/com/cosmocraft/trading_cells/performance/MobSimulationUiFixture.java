@@ -36,14 +36,17 @@ final class MobSimulationUiFixture {
     private static volatile boolean modelScenePrepared;
     private MobSimulationUiFixture() { }
     private static String mode() { return System.getProperty("trading_cells.performance.client.uiFixture", ""); }
-    static boolean active() { return mode().equals("simulation") || mode().equals("essences") || mode().equals("simulation-models"); }
+    static boolean modelScene() { return mode().equals("simulation-models") || offhandScene() || thirdPersonScene(); }
+    private static boolean offhandScene() { return mode().equals("simulation-models-offhand"); }
+    private static boolean thirdPersonScene() { return mode().equals("simulation-models-thirdperson"); }
+    static boolean active() { return mode().equals("simulation") || mode().equals("essences") || modelScene(); }
     static boolean ready() { return phase >= 6; }
 
     static void prepare(ServerPlayer player, BlockPos pos) {
         var level = player.level();
         level.getServer().setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
         player.getInventory().clearContent();
-        if (mode().equals("simulation-models")) { prepareModels(player, pos); return; }
+        if (modelScene()) { prepareModels(player, pos); return; }
         // A reused template may already contain the same block with paused or occupied state.
         level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
         var cow = EntityTypes.COW.create(level, EntitySpawnReason.LOAD);
@@ -82,10 +85,13 @@ final class MobSimulationUiFixture {
 
     private static void prepareModels(ServerPlayer player, BlockPos pos) {
         var level = player.level();
-        for (BlockPos target : BlockPos.betweenClosed(pos.offset(-2, -1, -2), pos.offset(6, 5, 5))) {
+        for (BlockPos target : BlockPos.betweenClosed(pos.offset(-2, -1, -2), pos.offset(6, 5, 9))) {
             level.setBlockAndUpdate(target, target.getY() == pos.getY() - 1
                     ? Blocks.SMOOTH_STONE.defaultBlockState() : Blocks.AIR.defaultBlockState());
         }
+        level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                net.minecraft.world.phys.AABB.encapsulatingFullBlocks(pos.offset(-3, -2, -3), pos.offset(7, 6, 10)))
+                .forEach(net.minecraft.world.entity.item.ItemEntity::discard);
         var villager = EntityTypes.VILLAGER.create(level, EntitySpawnReason.LOAD);
         ItemStack worker = new ItemStack(CapturedMobStackAdapter.capturerItem(CapturedMobKind.VILLAGER));
         CapturedMobStackAdapter.setData(CapturedMobKind.VILLAGER, worker, CapturedMobStackAdapter.createVillagerData(villager));
@@ -108,14 +114,19 @@ final class MobSimulationUiFixture {
         data.put("TradingCellsEssence", essence);
         unavailable.set(DataComponents.CUSTOM_DATA, CustomData.of(data));
         player.getInventory().setItem(6, unavailable);
-        player.getInventory().setSelectedSlot(0);
+        level.setBlockAndUpdate(pos.offset(2, 0, 4), MobFarmRegistrationAdapter.ESSENCE_WORKBENCH.get().defaultBlockState());
+        player.getInventory().setItem(7, MobFarmRegistrationAdapter.WORKBENCH_ITEM.get().getDefaultInstance());
+        if (offhandScene()) {
+            player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, player.getInventory().getItem(0).copy());
+        }
+        player.getInventory().setSelectedSlot(offhandScene() ? 8 : 0);
         player.inventoryMenu.broadcastChanges();
         modelScenePrepared = true;
     }
 
     static void inspect(Minecraft minecraft) {
         if (ready() || System.nanoTime() < nextAction) { return; }
-        if (mode().equals("simulation-models")) {
+        if (modelScene()) {
             if (!modelScenePrepared || minecraft.player == null || minecraft.level == null
                     || minecraft.getEntityRenderDispatcher().camera == null) { return; }
             if (started == 0) { started = System.nanoTime(); }
@@ -138,8 +149,15 @@ final class MobSimulationUiFixture {
             if (renderer.extractArgument(minecraft.player.getInventory().getItem(6)) != null) {
                 throw new IllegalStateException("Unknown module did not retain the empty-pedestal fallback");
             }
-            minecraft.player.getInventory().setSelectedSlot(0);
+            if (offhandScene() && !minecraft.player.getOffhandItem().is(MobFarmRegistrationAdapter.ENTITY_MODULE.get())) { return; }
+            minecraft.player.getInventory().setSelectedSlot(offhandScene() ? 8 : 0);
+            if (thirdPersonScene()) {
+                minecraft.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
+                minecraft.options.fov().set(45);
+            }
             System.out.println("Simulation model previews checked: creeper, cow, warden, ghast, cod, dragon and missing-type fallback");
+            System.out.println("Module held in " + (offhandScene() ? "off hand" : "main hand")
+                    + "; primary arm=" + minecraft.player.getMainArm());
             phase = 6;
             return;
         }
@@ -151,7 +169,13 @@ final class MobSimulationUiFixture {
             var menu = farm.getMenu();
             int x = (screen.width - 374) / 2, y = (screen.height - 246) / 2;
             switch (phase) {
-                case 0 -> { if (menu.lootEntries().isEmpty()) { return; } click(screen, x + 169, y + 36); }
+                case 0 -> {
+                    if (menu.lootEntries().isEmpty()) { return; }
+                    if (menu.lootEntries().stream().anyMatch(entry -> entry.probability() <= 0)) {
+                        throw new IllegalStateException("Native cow preview contains unknown or impossible loot");
+                    }
+                    click(screen, x + 169, y + 36);
+                }
                 case 1 -> click(screen, x + 20, y + 60);
                 case 2 -> { if (menu.lootEntries().getFirst().enabled()) { return; } click(screen, x + 351, y + 16); }
                 case 3 -> { if (menu.enabled()) { return; } click(screen, x + 160, y + 228); }

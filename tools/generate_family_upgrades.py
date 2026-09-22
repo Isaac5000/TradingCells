@@ -38,6 +38,23 @@ QUARRY_HANDLE_ROWS = {
     40: (21, 28), 41: (21, 28), 42: (20, 26), 43: (19, 26),
     44: (19, 25), 45: (19, 24), 46: (19, 24),
 }
+# Half-open row spans traced on the 64px gold artwork, excluding copper panel texels.
+# Keep full runs: color thresholds alone punch holes in white highlights and shadows.
+PIGLIN_GOLD_ROWS = {
+    16: ((28, 35),), 17: ((26, 37),), 18: ((22, 23), (25, 39)),
+    19: ((22, 23), (24, 29), (34, 40)), 20: ((22, 27), (37, 41)),
+    21: ((21, 26), (38, 42)), 22: ((21, 26), (40, 42)),
+    23: ((21, 27), (41, 42)), 24: ((21, 27), (41, 42)),
+    25: ((21, 24),), 26: ((21, 22), (33, 38)), 27: ((32, 39),),
+    28: ((28, 40),), 29: ((26, 41),), 30: ((23, 42),),
+    31: ((22, 41),), 32: ((22, 41),), 33: ((22, 41),),
+    34: ((22, 41),), 35: ((22, 39),), 36: ((22, 36),),
+    37: ((23, 33),), 38: ((24, 31), (42, 43)),
+    39: ((25, 28), (40, 43)), 40: ((21, 22), (37, 43)),
+    41: ((21, 23), (36, 43)), 42: ((21, 24), (38, 43)),
+    43: ((22, 26), (37, 41), (42, 43)), 44: ((22, 27), (35, 40)),
+    45: ((24, 39),), 46: ((25, 38),), 47: ((27, 36),),
+}
 
 
 def wooden_emblem_pixels(family):
@@ -131,6 +148,71 @@ def family_texture(base, material, family=None):
     return result
 
 
+def emblem_pixels(family, base):
+    """Extract the existing artwork, including its dark outline, but not its panel."""
+    if family == "piglin_barter":
+        result = {(x, y) for y, runs in PIGLIN_GOLD_ROWS.items()
+                  for left, right in runs for x in range(left, right)}
+        outline = set()
+        for x, y in result:
+            for point in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                red, green, blue, alpha = base.getpixel(point)
+                if alpha and red < 110 and luminance((red, green, blue)) < 50:
+                    outline.add(point)
+        return result | outline
+    result = set(wooden_emblem_pixels(family))
+    for y in range(16, 49):
+        for x in range(14, 51):
+            red, green, blue, alpha = base.getpixel((x, y))
+            if not alpha:
+                continue
+            selected = max(red, green, blue) > 45 and blue >= red * 0.85
+            if selected:
+                result.add((x, y))
+    # The dark outline is at most two pixels thick; do not flood into the frame.
+    for _ in range(2):
+        outline = set()
+        for x, y in result:
+            for point in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                px, py = point
+                if 14 <= px < 51 and 16 <= py < 49:
+                    red, green, blue, alpha = base.getpixel(point)
+                    if alpha and max(red, green, blue) < 55:
+                        outline.add(point)
+        result.update(outline)
+    return result
+
+
+def quarry_frame(base):
+    """Clone unobstructed quarry panel texels into the removed pickaxe silhouette."""
+    mask = emblem_pixels("quarry", base)
+    result = base.copy()
+    clean = [(x, y) for y in range(15, 50) for x in range(16, 48)
+             if (x, y) not in mask and base.getpixel((x, y))[0] > 85
+             and base.getpixel((x, y))[0] > base.getpixel((x, y))[1] * 1.4]
+    for x, y in sorted(mask):
+        # Reflected samples retain the source drawing's vertical light/shadow bands.
+        point = min(clean, key=lambda p: (abs(p[1] - y), abs(p[0] - (63 - x))))
+        result.putpixel((x, y), base.getpixel(point))
+    return result
+
+
+def common_frame_textures():
+    quarry = family_base("quarry")
+    frame = quarry_frame(quarry)
+    frames = {material: family_texture(frame, material) for material in MATERIALS}
+    result = {}
+    for family in FAMILIES:
+        base = family_base(family)
+        mask = emblem_pixels(family, base)
+        for material, shared in frames.items():
+            icon = shared.copy()
+            for point in mask:
+                icon.putpixel(point, base.getpixel(point))
+            result[ORIGINALS / family / f"{material}_upgrade.png"] = icon
+    return result
+
+
 def luminance(rgb):
     return sum(channel * weight for channel, weight in zip(rgb, (0.2126, 0.7152, 0.0722)))
 
@@ -184,14 +266,9 @@ def recolor(base: Image.Image, material: str, preserved_pixels=()) -> Image.Imag
 
 
 def generated():
-    result = {}
-    for family in FAMILIES:
-        base = family_base(family)
-        for material in MATERIALS:
-            result[ORIGINALS / family / f"{material}_upgrade.png"] = family_texture(base, material, family)
+    result = common_frame_textures()
     for family in TERMINALS:
         with Image.open(BASES / f"{family}.png") as source:
-            result[TEXTURES / f"{family}.png"] = source.convert("RGBA")
             result[TEXTURES.parent / "block/logistics" / f"{family}_front.png"] = source.convert("RGBA")
     with Image.open(BASES / f"{TERMINAL_BODY}.png") as source:
         result[TEXTURES.parent / "block/logistics" / f"{TERMINAL_BODY}.png"] = source.convert("RGBA")
@@ -329,7 +406,7 @@ def main():
             draw.text((x, y + 146), path.stem, fill=(154, 223, 225))
         args.preview.parent.mkdir(parents=True, exist_ok=True)
         sheet.save(args.preview)
-    print(f"Upgrade families: {len(FAMILIES) * 5} palette-only variants, 2 terminal icons and opaque terminal housing verified")
+    print(f"Upgrade families: {len(FAMILIES) * 5} palette-only variants, 2 terminal panels and opaque terminal housing verified")
 
 
 if __name__ == "__main__":

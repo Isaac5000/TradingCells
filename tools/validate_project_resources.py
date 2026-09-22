@@ -423,9 +423,9 @@ def validate_entity_farm_recipes(
     path = find_resource(roots, Path("data/trading_cells/recipe/mob_farm_infusion.json"))
     recipe = parsed_json.get(path) if path else None
     expected = (
-        "minecraft:iron_block", "minecraft:diamond_sword", "minecraft:iron_block",
-        "minecraft:iron_bars", "trading_cells:experience_storage", "minecraft:iron_bars",
-        "minecraft:quartz_block", "minecraft:amethyst_block", "minecraft:quartz_block",
+        "minecraft:iron_block", "minecraft:black_concrete", "minecraft:iron_block",
+        "minecraft:black_concrete", "trading_cells:experience_storage", "minecraft:black_concrete",
+        "minecraft:quartz_block", "minecraft:black_concrete", "minecraft:quartz_block",
     )
     if recipe != {
         "type": "trading_cells:arcane_infusion", "category": "production",

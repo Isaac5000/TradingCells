@@ -28,7 +28,6 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
-// NeoForge event bus listener for RenderHand removed: we rely on model-driven special renderers now.
 
 // Only client side
 @Mod(value = TradingCells.MOD_ID, dist = Dist.CLIENT)
@@ -67,6 +66,7 @@ public class TradingCellsClient {
             modBus.addListener(QuarryClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(SkeletonFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(SkeletonFarmClientRegistrationAdapter::onRegisterRenderers);
+            modBus.addListener(SkeletonFarmClientRegistrationAdapter::onModifyBakingResult);
             modBus.addListener(RaiderFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(RaiderFarmClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(CreeperFarmClientRegistrationAdapter::onRegisterMenuScreens);

@@ -33,9 +33,8 @@ public final class MobFarmScreen extends AbstractContainerScreen<MobFarmMenu> {
         super.init();
         addRenderableWidget(SimulationScreenWidgets.checkButton(leftPos + 344, topPos + 8, label("enabled"),
                 menu::enabled, button -> command(0)));
-        var chance = addRenderableWidget(Button.builder(Component.literal("%"), button -> probabilities = !probabilities)
-                .bounds(leftPos + 161, topPos + 28, 18, 18).build());
-        chance.setTooltip(Tooltip.create(label("probabilities")));
+        addRenderableWidget(SimulationScreenWidgets.checkButton(leftPos + 161, topPos + 28, label("probabilities"),
+                () -> probabilities, button -> probabilities = !probabilities));
         var xp = addRenderableWidget(Button.builder(Component.literal("XP"), button -> command(1))
                 .bounds(leftPos + 147, topPos + 220, 32, 18).build());
         xp.setTooltip(Tooltip.create(Component.translatable("button.trading_cells.withdraw_xp")));
@@ -81,8 +80,12 @@ public final class MobFarmScreen extends AbstractContainerScreen<MobFarmMenu> {
     }
 
     @Override protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        FittedTextRenderer.left(graphics, font, title, 12, 333, 8, 16, SimulationScreenWidgets.TEXT, true);
+        FittedTextRenderer.left(graphics, font, title, 12, 189, 8, 16, SimulationScreenWidgets.TEXT, true);
+        Component enabled = label("enabled");
+        FittedTextRenderer.left(graphics, font, enabled, Math.max(199, 338 - font.width(enabled)), 338,
+                8, 16, SimulationScreenWidgets.MUTED, false);
         graphics.text(font, label("loot"), 12, 33, SimulationScreenWidgets.MUTED, false);
+        graphics.text(font, "%", 149, 33, SimulationScreenWidgets.MUTED, false);
         graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, SimulationScreenWidgets.MUTED, false);
         FittedTextRenderer.left(graphics, font, label("cycle", menu.simulatedKills(), Math.max(1, MachineScreenUtil.durationSeconds(menu.cycleDurationTicks()))),
                 199, 361, 70, 12, SimulationScreenWidgets.MUTED, false);

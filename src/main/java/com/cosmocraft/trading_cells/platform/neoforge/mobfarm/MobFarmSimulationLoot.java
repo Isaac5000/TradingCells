@@ -107,23 +107,22 @@ public final class MobFarmSimulationLoot {
         int count = Math.clamp(kills, 1, 256);
         var result = new LinkedHashMap<>(MobFarmLootTables.preview(level, target, sword, count));
         var nativeSingle = MobFarmLootTables.preview(level, target, sword, 1);
-        var referenced = MobFarmLootTables.filterItems(target);
         for (Supplement extra : supplements(target, sword)) {
             Identifier id = extra.id();
             var nativeDrop = nativeSingle.get(id);
             if (extra.chance() <= 0) {
-                result.putIfAbsent(id, new MobFarmLootTables.DropSummary(referenced.contains(id) ? -1 : 0, 0, 0));
+                result.putIfAbsent(id, new MobFarmLootTables.DropSummary(0, 0, 0));
                 continue;
             }
             // An unsupported native table must not be presented as a known probability.
-            if (nativeDrop == null && referenced.contains(id)) {
+            if (nativeDrop != null && nativeDrop.probability() < 0) {
                 result.put(id, new MobFarmLootTables.DropSummary(-1, 0, 0));
                 continue;
             }
             double nativeChance = nativeDrop == null ? 0 : nativeDrop.probability() / 1_000_000.0;
             double chance = nativeChance + (1 - nativeChance) * extra.chance();
-            int minimum = nativeDrop == null ? extra.minimum() : nativeDrop.minimum();
-            int maximum = nativeDrop == null ? extra.maximum() : nativeDrop.maximum();
+            int minimum = nativeChance == 0 ? extra.minimum() : nativeDrop.minimum();
+            int maximum = nativeChance == 0 ? extra.maximum() : nativeDrop.maximum();
             if (nativeChance < 1) {
                 minimum = Math.min(minimum, extra.minimum());
                 maximum = Math.max(maximum, extra.maximum());

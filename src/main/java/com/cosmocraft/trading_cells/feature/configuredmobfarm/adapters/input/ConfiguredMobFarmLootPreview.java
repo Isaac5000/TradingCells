@@ -25,6 +25,8 @@ public final class ConfiguredMobFarmLootPreview {
     private final com.mojang.serialization.DynamicOps<JsonElement> ops;
     private int visits;
 
+    public record Analysis(Map<Identifier, BaseDrop> drops, boolean complete) { }
+
     private ConfiguredMobFarmLootPreview(ServerLevel level, LootContext context, int looting) {
         this.level = level;
         this.context = context;
@@ -38,7 +40,11 @@ public final class ConfiguredMobFarmLootPreview {
     }
 
     public static Map<Identifier, BaseDrop> calculate(ServerLevel level, LivingEntity target, ItemStack sword, int looting, int kills) {
-        if (target == null || target.getLootTable().isEmpty()) { return Map.of(); }
+        return analyse(level, target, sword, looting, kills).drops();
+    }
+
+    public static Analysis analyse(ServerLevel level, LivingEntity target, ItemStack sword, int looting, int kills) {
+        if (target == null || target.getLootTable().isEmpty()) { return new Analysis(Map.of(), true); }
         var attacker = FakePlayerFactory.getMinecraft(level);
         ItemStack previous = attacker.getMainHandItem().copy();
         try {
@@ -55,14 +61,14 @@ public final class ConfiguredMobFarmLootPreview {
             var result = new LinkedHashMap<Identifier, BaseDrop>();
             analyser.table(target.getLootTable().orElseThrow(), 0).forEach((id, summary) -> {
                 Summary cycle = summary.repeat(Math.clamp(kills, 1, 1024), Math.clamp(kills, 1, 1024));
-                if (cycle.maximum > 0) {
+                if (cycle.maximum > 0 && cycle.zero < 1) {
                     result.put(id, new BaseDrop((int) Math.round((1 - cycle.zero) * 1_000_000),
                             Math.max(1, cycle.minimum), Math.max(1, cycle.maximum)));
                 }
             });
-            return Map.copyOf(result);
+            return new Analysis(Map.copyOf(result), true);
         } catch (RuntimeException ignored) {
-            return Map.of();
+            return new Analysis(Map.of(), false);
         } finally {
             attacker.setItemSlot(EquipmentSlot.MAINHAND, previous);
         }

@@ -28,8 +28,8 @@ public final class TradingCellsItemTooltips {
         if (!isOwnItem(event.getItemStack()) || lines.isEmpty()) {
             return;
         }
-        // The item name can itself be "Trading Cells"; only deduplicate detail lines.
-        lines.subList(1, lines.size()).removeIf(line -> line.getString().equals(MOD_NAME.getString()));
+        // Preserve titles and lore with the same text; only deduplicate the styled footer.
+        lines.subList(1, lines.size()).removeIf(MOD_NAME::equals);
         lines.add(MOD_NAME.copy());
     }
 
@@ -47,7 +47,7 @@ public final class TradingCellsItemTooltips {
                 .toList();
         for (int index = elements.size() - 1; index > 0; index--) {
             if (elements.get(index).left().filter(line -> titles.contains(line)
-                    || line.getString().equals(MOD_NAME.getString())).isPresent()) {
+                    || MOD_NAME.equals(line)).isPresent()) {
                 elements.remove(index);
             }
         }

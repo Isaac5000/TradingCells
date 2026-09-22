@@ -3,7 +3,196 @@
 Solicitud completa: 2026-09-11. Este documento conserva el alcance y la evidencia
 pendiente del objetivo; no sustituye los requisitos del usuario.
 
-## Punto de reanudacion: 2026-09-15
+## Punto de reanudacion: 2026-09-22
+
+### Objetivo vigente
+
+La ultima peticion del usuario exige aplicar `docs/CLEANUP_CANDIDATES.md` y
+eliminar restos cobrizos del recorte del lingote de las mejoras de trueque.
+Ambos cambios aplicados; el objetivo visual anterior permanece terminado.
+
+- Capturadores: cuatro texturas nuevas instaladas a 64x64 sin suavizado, con
+  autorizacion del usuario. Irrompibles con mango metalico de cinco puntas y
+  hueco real, no insignia pegada. Fuentes/prompts en `docs/ITEM_TEXTURES.md`.
+- Fragmento de tormenta: cristal verde electrico instalado. La capa conserva
+  `RenderTypes.energySwirl` y textura vanilla; malla calculada desde el alfa del
+  PNG al hornear recursos. No usa mascara de estrella antigua ni I/O por frame.
+  El primer ensayo detecto atlas no inicializado durante bake; corregido leyendo
+  el recurso del pack actual antes de crear la malla, no el atlas pendiente.
+- Mejoras: 25 PNG compuestos sobre los mismos cinco marcos de quarry, originales
+  conservados. Prueba compara cada pixel de marco y emblema; madera, oro, acero
+  y cian permanecen fijos. `artifacts/item-pipe-yellow-20260921/common-frame-upgrades.png`.
+- Modulo: nuevo ajuste solicitado, rotacion [70,0,0], traslacion [0,2.75,3],
+  escala 0.4. Baja desde la muneca y compensa la inclinacion del brazo. Izquierda
+  comprobada en `artifacts/module-palm-flat-left-vulkan-20260921/` y derecha en
+  `artifacts/module-palm-flat-right-opengl-20260921/`. Las capturas
+  `simulation-module-palm-*-20260921` verificaron el
+  contacto anterior, pero no aprueban este nuevo criterio de apoyo.
+- Tuberias en mano: traslacion [0,0.5,0] en ambas vistas de tercera persona,
+  conservando tamano/rotacion; las cinco familias comparten ajuste. Ambas manos
+  comprobadas en `artifacts/pipe-hands-right-opengl-20260921/`.
+- Mesa: completamente negra, incluidos ambos tableros; bordes azules conservados.
+  Receta: siete hormigones negros y mesa de crafteo, sin amatista. Implementado.
+  Huella actual de 153 recetas:
+  `64761509EF63D71C03AE744166C42A998AF4FD1C618DD768DC990D23538F3BE0`.
+- Tuberia de items: canal blanco convertido en amarillo, 17 PNG con sus ocho
+  fotogramas. Resto de texturas y metadatos intactos. Prueba invierte solo tres
+  colores y comprueba SHA-256 de todos los pixeles originales; 23 pruebas pasan.
+  Previsualizacion en `artifacts/item-pipe-yellow-20260921/pipe-materials.png`.
+- Limpieza aplicada: cinco Java sin consumidores, registro de overlay antiguo,
+  siete directorios vacios, siete PNG obsoletos y cinco pruebas sustituidas.
+  Unos 298 MB retirados. Originales, plantilla activa y evidencias finales
+  conservados. Auditoria cerrada en `docs/CLEANUP_CANDIDATES.md`.
+- Trueque: recorte por filas del lingote y flechas, con su contorno oscuro.
+  Ya no copia fragmentos del panel de cobre; conserva sombras doradas y brillos
+  blancos en los cinco PNG. Prueba especifica de fondo y continuidad del oro.
+  Captura real: `artifacts/piglin-cleanup-client-opengl-20260922/`.
+
+### Evidencia funcional reciente
+
+Cierre vigente: `checkLogisticsResources check releaseCheck` aprobado el
+2026-09-22 a las 06:59, 126/126 GameTests, 28 pruebas de recursos, 25 de recetas
+y cierre normal del servidor. Incluye limpieza, correccion del oro y contratos
+de 153 recetas; 1131 JSON y 181 PNG del juego validados.
+Capturas y animacion verificadas en OpenGL/Vulkan; apoyo final del modulo en
+ambas manos y agarre de tuberias comprobados. Los seis puntos del objetivo
+anterior y la limpieza posterior estan terminados; lo que figura bajo alcance
+anterior es historial.
+
+`releaseCheck` completo aprobado el 2026-09-20 a las 22:23: 126 GameTests,
+22 pruebas de recursos y 25 de recetas. Incluye botin inmediato, descarte de
+resultados imposibles, hitbox propia y guardado sin cargar chunks al cerrar.
+Esta ejecucion es anterior al ultimo cambio de mesa/tuberia/transformacion.
+Ejecucion del 21 a las 07:07: `check` y 126 GameTests aprobados, proceso terminado;
+el handle de salida final se perdio al continuar. No usar como verificacion de
+las texturas/capturadores/agarres editados por la noche. 27 pruebas de recursos
+pasan tras esos cambios; el cierre completo posterior se registra arriba.
+Texturas reales comprobadas en OpenGL y Vulkan. Se descubrio que el inventario
+congelaba la capa electrica: el modelo del fragmento ahora marca su estado como
+animado mediante `ModelEvent.ModifyBakingResult`, sin afectar otros objetos.
+`artifacts/item-textures-animated-vulkan-20260921/`: dos frames cambian 678 pixeles,
+todos dentro de la silueta del fragmento; los otros 29 objetos quedan identicos.
+OpenGL final: `artifacts/item-textures-animated-opengl-20260921/`, 653 pixeles
+cambiantes solo dentro del fragmento. La fixture exige estado animado real.
+Menu con casillas y clics reales aprobado en OpenGL/es_es:
+`artifacts/simulation-loot-checks-opengl-20260921/`. El intento anterior del 20
+fallo porque la camara estaba a mas de ocho bloques y Minecraft cerraba el menu;
+usar `--camera 4097 -59 4100 180 26` para esta fixture, no la camara de modelos.
+
+### Alcance anterior: 2026-09-20
+
+La ultima peticion sustituye el acabado gris y la mano visible descritos en la
+evidencia historica inferior. No rehacerlos. El objetivo activo ahora exige:
+
+- Capturadores normales/irrompibles simetricos; fragmento de tormenta renovado
+  conservando su energia. Pendientes.
+- Marcos comunes extraidos de quarry y emblemas centrales pegados en los PNG.
+  Remaches lilas de chorus, rojos en netherite. Pendiente aplicar esta nueva
+  composicion; las pruebas anteriores de paleta no cierran este requisito.
+- Tooltip solo `Trading Cells`: terminado y probado, conservar R21.
+- Modulo sin mano dibujada, cercano a camara y apoyado correctamente en tercera
+  persona. Transformaciones nuevas; comprobacion visual en curso.
+- Botin/probabilidades inmediatos al abrir, cambiar modulo o espada; excluir
+  resultados imposibles y no mezclar la cola del objetivo anterior. Implementado:
+  el menu refresca entradas antes de enviar el estado, distingue tabla analizada
+  de tabla desconocida y no persiste predicciones como botin observado.
+  Nuevos GameTests para warden/golem, tabla echo shard, creeper sin cabezas/discos,
+  cambio de encantamiento, cola pendiente y tabla no analizable.
+- Casillas de encendido y probabilidades como las de botin, texto de encendido
+  a su izquierda. Implementado, comprobacion visual en curso.
+- Granja y mesa negras, bordes azules animados sin costuras coplanares. Geometria
+  exterior unificada y horneada; comparte la animacion existente de tuberias.
+  Granja 254 caras, mesa 200, modulo 66; sin renderer/coloracion por fotograma.
+  Mesa con superficies superiores de amatista (sustituido el 21) y hitbox fija de tablero/patas.
+- Recetas de granja/mesa con hormigon negro segun peticion, otros ingredientes
+  y XP conservados. Dos recetas auditadas, catalogo sigue en 153; nueva huella
+  `5E26B88EB3F33ABD1203931ADBC8B0867288E40247C199FC5BA98EF605EBAC6D`.
+- Infusor con toda la base de piedra del End, incluidos item y cuatro orientaciones.
+  Modelos y prueba actualizados; captura pendiente.
+- Inventario final de texturas/codigo/directorios prescindibles: SOLO al terminar
+  el resto, sin borrarlos. Pendiente; no eliminar `artifacts` indiscriminadamente.
+
+Durante las pruebas se detecto un bloqueo real de cierre: `saveAdditional`
+llamaba `isHunting`, que consultaba redstone y solicitaba chunks vecinos durante
+descarga. Ahora serializa el estado conocido sin acceder al mundo. Regresion
+con granja separada en un chunk no cargado; conservar esta correccion.
+
+### Evidencia anterior, no criterio visual actual
+
+- Segunda rectificacion visual: el azul incluye TODOS los cantos y marcos,
+  no solo el reborde superior. `outlined_cube` reparte las seis caras exteriores
+  entre centro gris/negro y cuatro bordes azules sin superficies superpuestas.
+  Aplicado a patas y tablero de la mesa, marco completo de la granja y ambos
+  niveles de los pedestales. Conserva limites, alturas y centrado; usa geometria
+  estatica horneada, sin nuevos renderizadores de bloque. Nueva prueba verifica
+  cobertura completa de las caras y ausencia de solapamientos. Captura OpenGL:
+  `artifacts/simulation-full-blue-frames-opengl-20260920/run-1/result/capture.png`.
+  Mismo resultado comprobado en Vulkan:
+  `artifacts/simulation-full-blue-frames-vulkan-20260920/run-1/result/capture.png`.
+  Ambas muestran mesa completa, marcos y modulo con mano; 21 pruebas de
+  recursos logistics aprobadas, incluidas geometria y las paletas anteriores.
+  Esta correccion sustituye las capturas anteriores con azul solo arriba.
+- R23/R24 retomados antes de la segunda rectificacion: ambos modelos del
+  infusor (`arcane_infuser` y `arcane_infuser_frame`) usan `end_stone` en
+  `base_center`, preservando amatista lateral y marco de obsidiana llorosa.
+  Prueba nueva para receta/modelos/inventario aprobada, 24 pruebas de recetas.
+  Capturas del bloque colocado e inventario pendientes.
+  La fixture nueva `infusion` observa el tooltip real del resultado:
+  `[Libro encantado, Toque de seda II, Minecraft]`. Su paso posterior de Shift
+  llega a fase 1 pero no completa la comprobacion del gasto de XP; dos ensayos
+  fallidos en `artifacts/infuser-book-opengl-es-20260920/` y
+  `artifacts/infuser-book-opengl-es-20260920-final/`. Ambos procesos terminaron.
+  No asumir que sea solo sincronizacion: esperar el paquete no lo resolvio.
+  Proximo paso: comprobar inventario/XP de servidor y cliente tras Shift con
+  diagnostico dirigido; no rebajar la prueba ni dar R23 por cerrado todavia.
+- Rectificacion visual del usuario: mesa con el gris de las tuberias; pedestal
+  del modulo negro, ambos con rebordes finos azul entre cian y azul primario.
+  Aplicado tambien al pedestal interior de la granja, sin recolorear su carcasa.
+  Los modelos nativos reutilizan `pipe_base`, hormigon negro y azul claro;
+  mantienen alturas, centrado, recetas y datos. No se generan nuevas imagenes
+  ni se incorpora un renderer de bloque para colorear superficies estaticas.
+  `EntityModuleHandRenderer` dibuja el brazo con la skin y manga del jugador
+  solo al sostener modulos, respeta invisibilidad y mano principal/secundaria,
+  y deja que Minecraft siga dibujando el item compuesto. Primera persona
+  comprobada visualmente en OpenGL/derecha y Vulkan/izquierda:
+  `artifacts/simulation-blue-hand-opengl-20260920/` y
+  `artifacts/simulation-blue-hand-vulkan-left-20260920/`.
+  Mano secundaria comprobada en OpenGL, con el otro brazo vacio visible y sin
+  duplicados: `artifacts/simulation-blue-offhand-opengl-20260920/`.
+  Captura final despejada, mesa completa y modulo en mano derecha (Vulkan):
+  `artifacts/simulation-blue-hand-vulkan-final-20260920/run-1/result/capture.png`.
+  `check releaseCheck` aprobado tras estos cambios: 122/122 GameTests,
+  20 pruebas de recursos y 23 de recetas; contratos de publicacion intactos.
+- R21 terminado: probado en cliente para los 84 items registrados del mod,
+  informacion normal/avanzada y tooltips propios de REI. El tooltip de creativo
+  conserva el nombre y muestra una sola linea `Trading Cells`, sin el titulo
+  del tab. La nueva fixture `tooltips` reproduce un fallo adicional de borrado
+  de lore con ese mismo texto; corregido comparando el componente completo del
+  pie, no solo su cadena. Se conservan nombres personalizados, lore e imagenes.
+  Los items vanilla no reciben nuestro pie ni cambios de nuestro listener.
+  Tambien se corrigieron los nombres de los items de granja y mesa de esencias:
+  usan la traduccion del bloque mediante `useBlockDescriptionPrefix`, sin cambiar
+  IDs, modelos ni recetas. Regresion de servidor `mob_simulation_block_item_names`.
+  Capturas reales con REI a 1280x720: OpenGL/es_es en
+  `artifacts/tooltips-opengl-20260920-final-names/` y Vulkan/en_us en
+  `artifacts/tooltips-vulkan-20260920-final/`. Ambos logs confirman el backend.
+  Repetido sin REI en OpenGL/es_es:
+  `artifacts/tooltips-opengl-without-rei-20260920-final/`; mismos 84 items y
+  tooltip real correcto. `check releaseCheck` paso con 122 GameTests antes
+  de los cambios visuales de mesa/pedestales/mano descritos arriba.
+- GitHub resuelto y confirmado remotamente: el commit `74c402a` pasa Build en
+  [Actions 34956324855](https://github.com/Isaac5000/TradingCells/actions/runs/34956324855).
+  No repetir el diagnostico de 140/153 recetas ni tratar la ejecucion vieja en
+  rojo como un fallo nuevo. Los cambios posteriores al commit siguen locales.
+- R18 en curso, NO terminado: renderer local preparado, modelo vanilla y capa
+  de espada, sin registrar oficio/POI ni cambiar datos del capturador. Falta el
+  PNG `textures/entity/simulation_worker.png`. Mientras no exista, conserva el
+  render normal del aldeano; la presencia se comprueba una vez al crear el
+  renderer, tambien tras recargar recursos, no por fotograma. El primer borrador
+  de ImageGen desplaza islas UV y no se ha instalado. El ajuste de recortes en
+  el PNG sigue pendiente de respuesta; no dar por valido ese borrador.
+
+### Evidencia de terminales y esencias: 2026-09-15
 
 - R01 terminado: carcasas y marcos de ambos terminales recoloreados a acero gris
   de logistics, sin redibujar pantallas, mover pixeles ni alterar el alfa. Los
@@ -17,7 +206,7 @@ pendiente del objetivo; no sustituye los requisitos del usuario.
   `check` y `releaseCheck` pasan con 121 GameTests, 19 pruebas de recursos
   logistics y 23 pruebas de recetas. La nueva regresion compara pixel por pixel
   el recoloreado, la conservacion de pantallas y su idempotencia.
-  No repetir este apartado; siguen pendientes R02 y los acabados R18/R21/R22/R24,
+  No repetir este apartado; siguen pendientes R02 y los acabados R18/R22/R24,
   ademas de la compatibilidad y auditorias indicadas abajo.
 
 - R14: cuatro pruebas nuevas pasan por el evento real de interaccion de NeoForge:
@@ -58,7 +247,7 @@ pendiente del objetivo; no sustituye los requisitos del usuario.
   Referencia actualizada sin desactivar controles. Fuentes de Minecraft
   habilitadas tambien en CI para las 23 pruebas de recetas. Antes de R23 pasan
   `clean build releaseCheck` normal y con `CI=true`, 115/115 GameTests.
-  La ejecucion remota del cambio sigue pendiente de subida.
+  La ejecucion remota ya esta aprobada; enlace en el punto de reanudacion.
 
 ### Evidencia anterior de botin
 
@@ -202,10 +391,10 @@ y el ajuste del ensayo de esencias compilan, pero necesitan pruebas dirigidas.
 | R15 | Mesa de esencias distingue normal/alto nivel y exige requisitos para crear modulo | Funcionalidad verificada | Costes normales/altos y atomicidad comprobados; clics y capturas Vulkan/es_es y OpenGL/en_us |
 | R16 | Modulo con nombre/modelo de criatura sobre base escalonada centrada (boceto posterior sustituye la jaula) | En curso | Renderer, fallback y capturas reales pasan; variantes/vistas pendientes |
 | R17 | Granja conserva aldeano y presenta criatura sobre pedestal, no spawner | En curso | Renderer y soporte escalonado visibles en OpenGL/Vulkan; auditoria final pendiente |
-| R18 | Apariencia local de aldeano cazador de monstruos; ningun oficio ni POI nuevo | Pendiente | Textura, renderer y registro |
+| R18 | Apariencia local de aldeano cazador de monstruos; ningun oficio ni POI nuevo | En curso | Renderer local preparado; PNG y captura final pendientes |
 | R19 | Mismo almacenamiento/extraccion de XP y automatizacion | En curso | Cola, transacciones y migracion de XP comprobadas; auditoria final pendiente |
 | R20 | Filtros de botin con checks, probabilidades, encendido/apagado; menu estilo logistics | En curso | Interaccion real OpenGL/Vulkan comprobada; integracion final pendiente |
-| R21 | Pie de tooltip muestra solo Trading Cells, no nombre del tab | En curso | Fuente del tooltip y captura con REI |
+| R21 | Pie de tooltip muestra solo Trading Cells, no nombre del tab | Terminado | Fixture tooltips: 84 items, normal/avanzado, REI, lore y capturas OpenGL/es_es y Vulkan/en_us |
 | R22 | Fragmento de tormenta mas elaborado y mantiene capa de energia | En curso | PNG/modelo/capa y captura |
 | R23 | Infusor: Libro encantado como nombre, Toque de Seda II en detalle, sin duplicado | Codigo terminado | Vista previa y resultado iguales a libro vanilla verificados; captura pendiente |
 | R24 | Infusor: end stone centro inferior en receta y textura | En curso | Receta, modelo/textura y captura |

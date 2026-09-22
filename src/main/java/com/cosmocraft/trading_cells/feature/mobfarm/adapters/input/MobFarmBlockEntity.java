@@ -115,6 +115,12 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
         }
     }
 
+    void includePreviewLoot(Iterable<Identifier> ids) {
+        for (Identifier id : ids) {
+            if (knownLoot.add(id)) { lootRevision++; }
+        }
+    }
+
     private void refreshLootModule() {
         if (ItemStack.matches(lootModule, creature())) { return; }
         lootModule = creature().copy();
@@ -169,10 +175,11 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
         return !legacyPendingReady || slot > MODULE_SLOT || items.get(slot).isEmpty();
     }
 
-    private void refreshInputs() {
+    void refreshInputs() {
         if (!(level instanceof ServerLevel server)) { return; }
         int revision = MobFarmCatalog.revision();
         if (!inputsDirty && catalogRevision == revision) { return; }
+        if (catalogRevision >= 0 && catalogRevision != revision) { observedLoot.clear(); }
         inputsDirty = false;
         catalogRevision = revision;
         lootFailure = false;
@@ -193,7 +200,6 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
         knownLoot.clear();
         if (target != null) { knownLoot.addAll(MobFarmSimulationLoot.filterItems(target, items.get(SWORD_SLOT))); }
         knownLoot.addAll(observedLoot);
-        pendingLoot.forEach(stack -> knownLoot.add(BuiltInRegistries.ITEM.getKey(stack.getItem())));
         lootRevision++;
     }
 
@@ -321,7 +327,8 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
         output.putInt("CycleDurationTicks", cycleDuration);
         output.putInt("StoredExperience", storedExperience);
         output.putBoolean("Enabled", enabled);
-        output.putBoolean("Hunting", isHunting());
+        // Chunk serialization must not query neighbors while the world is unloading.
+        output.putBoolean("Hunting", hunting && enabled);
         if (legacyCycleKills > 0) {
             output.putInt("LegacyCycleKills", legacyCycleKills);
             output.putBoolean("LegacyPendingReady", legacyPendingReady);

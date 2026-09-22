@@ -33,11 +33,11 @@ public final class MobFarmRegistrationAdapter {
     public static final DeferredBlock<MobFarmBlock> BLOCK = Registration.BLOCKS.register("mob_farm",
             () -> new MobFarmBlock(MachineBlockProperties.villager("mob_farm")));
     public static final DeferredItem<BlockItem> ITEM = Registration.ITEMS.register("mob_farm",
-            () -> new BlockItem(BLOCK.get(), properties("mob_farm")));
+            () -> new BlockItem(BLOCK.get(), properties("mob_farm").useBlockDescriptionPrefix()));
     public static final DeferredBlock<EssenceWorkbenchBlock> ESSENCE_WORKBENCH = Registration.BLOCKS.register("essence_workbench",
             () -> new EssenceWorkbenchBlock(MachineBlockProperties.villager("essence_workbench")));
     public static final DeferredItem<BlockItem> WORKBENCH_ITEM = Registration.ITEMS.register("essence_workbench",
-            () -> new BlockItem(ESSENCE_WORKBENCH.get(), properties("essence_workbench")));
+            () -> new BlockItem(ESSENCE_WORKBENCH.get(), properties("essence_workbench").useBlockDescriptionPrefix()));
     public static final DeferredItem<EntityEssenceItem> ENTITY_ESSENCE = Registration.ITEMS.register("entity_essence",
             () -> new EntityEssenceItem(properties("entity_essence").stacksTo(1), false));
     public static final DeferredItem<EntityEssenceItem> ENTITY_MODULE = Registration.ITEMS.register("entity_module",
