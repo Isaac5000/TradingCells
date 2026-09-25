@@ -35,6 +35,7 @@ public final class LogisticsPipeBlock extends BaseEntityBlock implements SimpleW
     private static final VoxelShape CORE = Block.box(5, 5, 5, 11, 11, 11);
     private static final Map<Direction, VoxelShape> ARMS = createArms();
     private static final Map<Direction, VoxelShape> EXTRACTOR_ARMS = createExtractorArms();
+    private static final Map<Direction, VoxelShape> EXTRACTOR_FRAMES = createExtractorFrames();
     private static final VoxelShape[] CONNECTION_SHAPES = createConnectionShapes();
 
     private final PipeKind kind;
@@ -144,6 +145,10 @@ public final class LogisticsPipeBlock extends BaseEntityBlock implements SimpleW
                 if (connection != 0) {
                     VoxelShape arm = connection == 2 ? EXTRACTOR_ARMS.get(direction) : ARMS.get(direction);
                     shape = Shapes.joinUnoptimized(shape, arm, net.minecraft.world.phys.shapes.BooleanOp.OR);
+                    if (connection == 2) {
+                        shape = Shapes.joinUnoptimized(shape, EXTRACTOR_FRAMES.get(direction),
+                                net.minecraft.world.phys.shapes.BooleanOp.OR);
+                    }
                 }
             }
             shapes[index] = shape.optimize();
@@ -205,6 +210,43 @@ public final class LogisticsPipeBlock extends BaseEntityBlock implements SimpleW
         shapes.put(Direction.WEST, Block.box(1, 5, 5, 5, 11, 11));
         shapes.put(Direction.EAST, Block.box(11, 5, 5, 15, 11, 11));
         return Map.copyOf(shapes);
+    }
+
+    private static Map<Direction, VoxelShape> createExtractorFrames() {
+        Map<Direction, VoxelShape> shapes = new EnumMap<>(Direction.class);
+        shapes.put(Direction.DOWN, frame(Block.box(4, 0, 4, 12, 1, 5),
+                Block.box(4, 0, 11, 12, 1, 12),
+                Block.box(4, 0, 5, 5, 1, 11),
+                Block.box(11, 0, 5, 12, 1, 11)));
+        shapes.put(Direction.UP, frame(Block.box(4, 15, 4, 12, 16, 5),
+                Block.box(4, 15, 11, 12, 16, 12),
+                Block.box(4, 15, 5, 5, 16, 11),
+                Block.box(11, 15, 5, 12, 16, 11)));
+        shapes.put(Direction.NORTH, frame(Block.box(4, 4, 0, 12, 5, 1),
+                Block.box(4, 11, 0, 12, 12, 1),
+                Block.box(4, 5, 0, 5, 11, 1),
+                Block.box(11, 5, 0, 12, 11, 1)));
+        shapes.put(Direction.SOUTH, frame(Block.box(4, 4, 15, 12, 5, 16),
+                Block.box(4, 11, 15, 12, 12, 16),
+                Block.box(4, 5, 15, 5, 11, 16),
+                Block.box(11, 5, 15, 12, 11, 16)));
+        shapes.put(Direction.WEST, frame(Block.box(0, 4, 4, 1, 5, 12),
+                Block.box(0, 11, 4, 1, 12, 12),
+                Block.box(0, 5, 4, 1, 11, 5),
+                Block.box(0, 5, 11, 1, 11, 12)));
+        shapes.put(Direction.EAST, frame(Block.box(15, 4, 4, 16, 5, 12),
+                Block.box(15, 11, 4, 16, 12, 12),
+                Block.box(15, 5, 4, 16, 11, 5),
+                Block.box(15, 5, 11, 16, 11, 12)));
+        return Map.copyOf(shapes);
+    }
+
+    private static VoxelShape frame(VoxelShape... pieces) {
+        VoxelShape result = Shapes.empty();
+        for (VoxelShape piece : pieces) {
+            result = Shapes.joinUnoptimized(result, piece, net.minecraft.world.phys.shapes.BooleanOp.OR);
+        }
+        return result;
     }
 
 }
