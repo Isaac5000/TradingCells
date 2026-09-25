@@ -10,7 +10,7 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 
 - Version de desarrollo no publicada: `1.0.0` para Minecraft `26.2.0` y
   NeoForge `26.2.0.88`.
-- Java 25 y Gradle Wrapper 9.5; `gradlew` esta registrado como ejecutable.
+- Java 25 y Gradle Wrapper 9.8.0; `gradlew` esta registrado como ejecutable.
 - La referencia reproducible anterior se documento el `2026-08-31` en
   `docs/releases/1.0.0-validation.md`: dos JAR identicos con 26 GameTests. Es
   evidencia historica anterior a los hitos actuales. El arbol de desarrollo del

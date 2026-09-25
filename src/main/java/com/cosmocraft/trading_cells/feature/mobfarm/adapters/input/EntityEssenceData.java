@@ -3,6 +3,7 @@ package com.cosmocraft.trading_cells.feature.mobfarm.adapters.input;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.mobfarm.domain.model.EssenceClassification;
 import com.cosmocraft.trading_cells.feature.mobfarm.domain.model.EssenceTier;
+import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import java.util.List;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -17,6 +18,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
@@ -85,6 +87,7 @@ public final class EntityEssenceData {
         result.set(DataComponents.CUSTOM_DATA, CustomData.of(root));
         return result;
         } catch (RuntimeException | LinkageError invalidEntity) {
+            TradingCells.LOGGER.warn("Unable to capture essence for {}", BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()), invalidEntity);
             return ItemStack.EMPTY;
         }
     }
@@ -154,6 +157,11 @@ public final class EntityEssenceData {
             if (!(entity instanceof LivingEntity living) || living instanceof Player) { return null; }
             living.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), state));
             living.setHealth(living.getMaxHealth());
+            if (living instanceof WitherBoss wither) {
+                // A detached preview must represent the post-spawn Wither, not its
+                // temporary 220-tick construction state.
+                wither.setInvulnerableTicks(0);
+            }
             if (level instanceof ServerLevel && (essence.getIntOr("ClassificationVersion", 0) < 1
                     || essence.getIntOr("Tier", 0) < 1 || essence.getIntOr("Tier", 0) > 4)) {
                 writeClassification(essence, EssenceClassifier.classify(living, essence.getBooleanOr("HighLevel", false)));

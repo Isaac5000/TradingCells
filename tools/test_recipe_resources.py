@@ -299,11 +299,17 @@ class SpecificRecipeTests(unittest.TestCase):
 
     def test_essence_bases_and_progressive_upgrades(self):
         for name, material in zip(("tier_i", "tier_ii", "tier_iii", "tier_iv"),
-                                  ("green_concrete", "lapis_lazuli", "diamond", "netherite_ingot")):
+                                  ("emerald", "diamond", "netherite_ingot", "nether_star")):
             grid = crafting_grid(read_json(RECIPES / f"{name}_creature_model_base.json"))
             self.assertEqual([grid[i] for i in CORNERS], [f"minecraft:{material}"] * 4)
             self.assertEqual([grid[i] for i in EDGES], ["minecraft:black_concrete"] * 4)
-            self.assertEqual(grid[4], "trading_cells:storm_shard")
+            expected_center = {
+                "tier_i": "trading_cells:storm_shard",
+                "tier_ii": "trading_cells:tier_i_creature_model_base",
+                "tier_iii": "trading_cells:tier_ii_creature_model_base",
+                "tier_iv": "trading_cells:tier_iii_creature_model_base",
+            }[name]
+            self.assertEqual(grid[4], expected_center)
         for family in ("speed", "capacity"):
             previous = "minecraft:diamond_sword"
             for material in ("copper", "iron", "gold", "diamond", "netherite"):

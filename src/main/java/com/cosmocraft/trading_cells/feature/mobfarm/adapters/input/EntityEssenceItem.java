@@ -18,6 +18,7 @@ public final class EntityEssenceItem extends Item {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override public void appendHoverText(ItemStack stack, Item.TooltipContext context,
             net.minecraft.world.item.component.TooltipDisplay display, java.util.function.Consumer<Component> tooltip,
             net.minecraft.world.item.TooltipFlag flag) {

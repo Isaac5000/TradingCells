@@ -273,6 +273,9 @@ public final class MobSimulationGameTests {
         helper.assertFalse(EntityEssenceData.isHighLevel(essence), "Ordinary cow is normal tier");
         var warden = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("warden"));
         helper.assertTrue(EntityEssenceData.isHighLevel(EntityEssenceData.essenceOf(warden)), "Health-based classification recognizes strong creatures");
+        var dragon = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("ender_dragon"));
+        helper.assertTrue(dragon != null, "Ender dragon can be created for extraction");
+        helper.assertFalse(EntityEssenceData.essenceOf(dragon).isEmpty(), "Ender dragon essence can be extracted");
         var player = helper.makeMockServerPlayer(GameType.SURVIVAL);
         helper.assertTrue(EntityEssenceData.essenceOf(player).isEmpty(), "Player data cannot become a creature module");
         helper.assertTrue(EntityEssenceData.createEntity(helper.getLevel(), ItemStack.EMPTY) == null, "Empty/malformed module has no fallback creature");
@@ -404,7 +407,8 @@ public final class MobSimulationGameTests {
         farm.setItem(2, module(helper, "warden", null));
         menu.broadcastChanges();
         assertLoot(helper, menu, Items.SCULK_CATALYST, 1_000_000);
-        helper.assertValueEqual(menu.lootEntries().size(), 1, "Pending cow diamonds do not contaminate warden preview");
+        assertLoot(helper, menu, Items.ECHO_SHARD, 1_000_000);
+        helper.assertValueEqual(menu.lootEntries().size(), 2, "Modded warden loot is visible before the first cycle");
         farm.setItem(2, module(helper, "iron_golem", null));
         menu.broadcastChanges();
         assertLoot(helper, menu, Items.IRON_INGOT, 1_000_000);
@@ -420,7 +424,8 @@ public final class MobSimulationGameTests {
         var saved = farm.saveWithFullMetadata(helper.getLevel().registryAccess());
         helper.assertValueEqual(saved.getIntOr("ObservedLootCount", 0), 0, "Predictions are not saved as observed drops");
         helper.assertValueEqual(saved.getIntOr("PendingLootCount", 0), 1, "Old pending output remains safely queued");
-        helper.assertValueEqual(farm.storedExperience(), 5, "Opening and swapping previews never runs a cycle");
+        helper.assertTrue(farm.storedExperience() >= 1 && farm.storedExperience() <= 3,
+                "Opening and swapping previews keeps the entity XP range");
         farm.setItem(2, ItemStack.EMPTY);
         menu.broadcastChanges();
         helper.assertTrue(menu.lootEntries().isEmpty(), "Removing module clears preview despite pending output");
@@ -469,13 +474,15 @@ public final class MobSimulationGameTests {
         var farm = farm(helper);
         BlockEntityStateFixtures.fillIndexedSlots(helper, farm, "Slot", 5, 18, new ItemStack(Items.COBBLESTONE, 64));
         finishCycle(helper, farm);
-        helper.assertValueEqual(farm.storedExperience(), 5, "One completed kill yields original XP amount");
+        helper.assertTrue(farm.storedExperience() >= 1 && farm.storedExperience() <= 3,
+                "One completed kill yields the entity XP amount");
+        int cycleExperience = farm.storedExperience();
         helper.assertValueEqual(farm.getItem(1).getDamageValue(), 1, "Unprotected sword wears once");
         var saved = farm.saveWithFullMetadata(helper.getLevel().registryAccess());
         helper.assertValueEqual(saved.getIntOr("PendingLootCount", 0), 1, "Full output keeps rolled result");
         farm.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved));
         for (int tick = 0; tick < 10; tick++) { farm.processTick(); }
-        helper.assertValueEqual(farm.storedExperience(), 5, "Blocked queue never rerolls or duplicates XP");
+        helper.assertValueEqual(farm.storedExperience(), cycleExperience, "Blocked queue never rerolls or duplicates XP");
         farm.removeItem(5, 64);
         farm.processTick();
         helper.assertTrue(farm.getItem(5).is(Items.DIAMOND), "Saved custom-table loot drains when room appears");
@@ -490,7 +497,8 @@ public final class MobSimulationGameTests {
         farm.toggleLoot(Identifier.withDefaultNamespace("diamond"));
         finishCycle(helper, farm);
         helper.assertTrue(farm.getItem(5).isEmpty(), "Unchecked loot is discarded deliberately");
-        helper.assertValueEqual(farm.storedExperience(), 5, "Loot filters do not disable XP");
+        helper.assertTrue(farm.storedExperience() >= 1 && farm.storedExperience() <= 3,
+                "Loot filters do not disable the entity XP reward");
         farm.toggleLoot(Identifier.withDefaultNamespace("diamond"));
         farm.setItem(4, new ItemStack(BuiltInRegistries.ITEM.getOptional(
                 Identifier.fromNamespaceAndPath("trading_cells", "mob_farm_capacity_iron_upgrade")).orElseThrow()));

@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client;
 
 import java.util.function.BooleanSupplier;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenCommon;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -30,10 +31,7 @@ final class SimulationScreenWidgets {
         }
     }
     private static void drawArrow(GuiGraphicsExtractor graphics, int x, int y, int color) {
-        graphics.fill(x, y + 5, x + 17, y + 11, color);
-        for (int column = 0; column < 7; column++) {
-            graphics.fill(x + 17 + column, y + 1 + column, x + 18 + column, y + 15 - column, color);
-        }
+        VillagerTradeScreenCommon.drawEssenceArrow(graphics, x, y, color);
     }
     static void check(GuiGraphicsExtractor graphics, int x, int y, boolean checked) {
         graphics.fill(x, y, x + 11, y + 11, 0xFF899296);

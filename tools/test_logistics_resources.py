@@ -9,6 +9,9 @@ import unittest
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
+import injector_geometry
+import simulation_worker_texture
+import essence_tier_textures
 from generate_logistics_resources import ASSETS, resource_matches, resources
 from generate_mob_simulation_resources import outlined_union, resources as simulation_resources
 from generate_pipe_textures import TEXTURES as PIPE_TEXTURES, blend
@@ -280,12 +283,130 @@ class UpgradePaletteTests(unittest.TestCase):
             start = json.loads((root / "essence" / f"syringe_extract_{tier}_00.json").read_text(encoding="utf-8"))
             filled = json.loads((root / "essence" / f"syringe_extract_{tier}_24.json").read_text(encoding="utf-8"))
             self.assertEqual(len(filled["elements"]), len(start["elements"]) + 1)
-            self.assertEqual(filled["textures"]["essence"], f"trading_cells:block/essence/tier_{tier}_edge")
+            self.assertEqual(filled["textures"]["essence"], f"trading_cells:item/essence/tier_{tier}_liquid")
             poses.extend((start, filled))
         for model in poses:
+            # All layers of a baked cuboid item must resolve into the same atlas.
+            for texture in model["textures"].values():
+                self.assertTrue(texture.startswith(("#", "trading_cells:item/")), texture)
             for cube in model["elements"]:
                 self.assertEqual(set(cube["faces"]), {"north", "south", "east", "west", "up", "down"})
                 self.assertTrue(all(end > start for start, end in zip(cube["from"], cube["to"])))
+
+    def test_injector_atlas_preserves_glass_and_custom_materials(self):
+        root = Path(__file__).resolve().parents[1] / "src/main/resources" / ASSETS / "textures"
+        with Image.open(root / "item/essence/injector_atlas.png") as atlas:
+            self.assertEqual(atlas.size, (128, 128))
+            self.assertLess(atlas.getpixel((48, 80))[3], 100)
+            self.assertGreater(atlas.getpixel((48, 16))[3], 240)
+        for tier in range(1, 5):
+            with Image.open(root / f"item/essence/tier_{tier}_liquid.png") as liquid, \
+                    Image.open(root / f"block/essence/tier_{tier}_edge.png") as edge:
+                self.assertEqual(liquid.size, edge.size)
+                self.assertEqual(liquid.tobytes(), edge.tobytes())
+            self.assertEqual(
+                json.loads((root / f"item/essence/tier_{tier}_liquid.png.mcmeta").read_text()),
+                json.loads((root / f"block/essence/tier_{tier}_edge.png.mcmeta").read_text()))
+        for element in injector_geometry.body() + injector_geometry.vial():
+            for face in element["faces"].values():
+                self.assertEqual(face["texture"], "#atlas")
+                self.assertTrue(all(0 <= value <= 16 for value in face["uv"]))
+
+    def test_injector_animation_translates_bevel_origins_with_geometry(self):
+        root = Path(__file__).resolve().parents[1] / "src/main/resources" / ASSETS / "models/item/essence"
+        original = injector_geometry.shifted(injector_geometry.vial(), 0)
+        self.assertTrue(any("rotation" in element for element in original))
+        for frame in range(33):
+            model = json.loads((root / f"syringe_vial_{frame:02d}.json").read_text(encoding="utf-8"))
+            elements = model["elements"]
+            delta = [b - a for a, b in zip(original[0]["from"], elements[0]["from"])]
+            self.assertEqual(len(elements), len(original))
+            for base, moved in zip(original, elements):
+                points = [(base[key], moved[key]) for key in ("from", "to")]
+                if "rotation" in base:
+                    points.append((base["rotation"]["origin"], moved["rotation"]["origin"]))
+                    self.assertEqual(base["rotation"]["angle"], moved["rotation"]["angle"])
+                for before, after in points:
+                    for a, b, shift in zip(before, after, delta):
+                        self.assertAlmostEqual(b - a, shift, places=4)
+            if frame == 32:
+                self.assertEqual(elements, original)
+
+    def test_injector_liquid_stays_inside_vial_through_extraction(self):
+        root = Path(__file__).resolve().parents[1] / "src/main/resources" / ASSETS / "models/item/essence"
+        for tier in range(1, 5):
+            previous_height = 0
+            for frame in range(25):
+                model = json.loads((root / f"syringe_extract_{tier}_{frame:02d}.json").read_text(encoding="utf-8"))
+                elements = model["elements"]
+                liquid = [e for e in elements if e["faces"]["north"]["texture"] == "#essence"]
+                if not liquid:
+                    self.assertEqual(previous_height, 0)
+                    continue
+                self.assertEqual(len(liquid), 1)
+                fill = liquid[0]
+                height = fill["to"][1] - fill["from"][1]
+                self.assertGreaterEqual(height, previous_height)
+                previous_height = height
+                dx = elements[0]["from"][0] - injector_geometry.body()[0]["from"][0]
+                self.assertGreater(fill["from"][0] - dx, 3.32)
+                self.assertLess(fill["to"][0] - dx, 4.88)
+                self.assertGreater(fill["from"][1], 10.2)
+                self.assertLess(fill["to"][1], 12.96)
+                self.assertGreater(fill["from"][2], 7.22)
+                self.assertLess(fill["to"][2], 8.78)
+            self.assertAlmostEqual(previous_height, 2.68)
+
+    def test_simulation_worker_clothing_preserves_face_and_vanilla_uvs(self):
+        root = Path(__file__).resolve().parents[1]
+        with Image.open(root / "tools/assets/essence/villager_reference.png") as reference, \
+                Image.open(root / "tools/assets/essence/simulation_worker_clothing.png") as clothing, \
+                Image.open(root / "src/main/resources" / ASSETS / "textures/entity/simulation_worker.png") as actual:
+            expected = simulation_worker_texture.texture(reference.convert("RGBA"), clothing.convert("RGBA"))
+            self.assertEqual(actual.size, (64, 64))
+            self.assertEqual(actual.tobytes(), expected.tobytes())
+            self.assertEqual(actual.crop((0, 0, 32, 18)).tobytes(),
+                             reference.convert("RGBA").crop((0, 0, 32, 18)).tobytes())
+            self.assertEqual(actual.crop((32, 0, 64, 18)).getchannel("A").getextrema(), (0, 0))
+            for face in ((22, 26, 30, 38), (6, 44, 14, 64), (48, 26, 52, 34),
+                         (44, 42, 52, 46), (4, 26, 8, 38)):
+                self.assertEqual(actual.crop(face).getchannel("A").getextrema(), (255, 255))
+
+    def test_essence_tier_variants_only_change_liquid_and_core_center(self):
+        root = Path(__file__).resolve().parents[1] / "src/main/resources" / ASSETS
+        for name in ("raw_creature_essence_vial", "entity_essence"):
+            dispatch = json.loads((root / f"items/{name}.json").read_text(encoding="utf-8"))["model"]
+            self.assertEqual(dispatch["property"], "trading_cells:essence_tier")
+            self.assertEqual([entry["threshold"] for entry in dispatch["entries"]], [1, 2, 3, 4])
+            self.assertEqual(dispatch["fallback"], dispatch["entries"][0]["model"])
+            with Image.open(root / f"textures/item/essence/{name}.png") as original:
+                mask = essence_tier_textures.center_pixels(name, original)
+                self.assertGreater(len(mask), 30)
+                for tier in range(1, 5):
+                    model_name = f"item/essence/{name}_tier_{tier}"
+                    self.assertEqual(dispatch["entries"][tier - 1]["model"]["model"], f"trading_cells:{model_name}")
+                    model = json.loads((root / f"models/{model_name}.json").read_text(encoding="utf-8"))
+                    self.assertEqual(model["textures"]["layer0"], f"trading_cells:{model_name}")
+                    with Image.open(root / f"textures/{model_name}.png") as colored:
+                        self.assertEqual(colored.size, original.size)
+                        self.assertEqual(colored.getchannel("A").tobytes(), original.getchannel("A").tobytes())
+                        self.assertEqual(colored.tobytes(), essence_tier_textures.variant(name, original, tier).tobytes())
+                        for y in range(32):
+                            for x in range(32):
+                                if (x, y) not in mask:
+                                    self.assertEqual(colored.getpixel((x, y)), original.getpixel((x, y)))
+                        red, green, blue, _ = colored.getpixel((15, 17))
+                        if tier == 1:
+                            self.assertGreater(green, max(red, blue))
+                        elif tier == 2:
+                            self.assertGreater(blue, green)
+                            self.assertGreater(green, red)
+                        elif tier == 3:
+                            self.assertGreater(blue, red)
+                            self.assertGreater(red, green)
+                        else:
+                            self.assertGreater(red, green)
+                            self.assertGreater(green, blue)
 
     def test_barter_emblem_excludes_copper_fragments_without_holes_in_gold(self):
         base = family_base("piglin_barter")

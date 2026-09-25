@@ -15,7 +15,7 @@ Excluir siempre de busquedas amplias: `.gradle/`, `build/`, `logs/`, `run/` y
 
 ## Entorno y entradas
 
-- Minecraft `26.2.0`, NeoForge `26.2.0.88`, Java 25, Gradle 9.5, mod `1.0.0`.
+- Minecraft `26.2.0`, NeoForge `26.2.0.88`, Java 25, Gradle 9.8.0, mod `1.0.0`.
 - Arranque comun/cliente: `platform/neoforge/bootstrap/{TradingCells,TradingCellsClient}.java`.
 - Registro y composicion: `platform/neoforge/{registration/Registration,bootstrap/FeatureComposition}.java`.
 - Configuracion: `platform/neoforge/bootstrap/Config.java` y `docs/CONFIGURATION.md`.

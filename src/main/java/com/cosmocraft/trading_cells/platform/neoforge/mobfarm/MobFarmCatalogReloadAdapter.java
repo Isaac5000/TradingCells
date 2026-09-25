@@ -18,6 +18,10 @@ public final class MobFarmCatalogReloadAdapter {
             TradingCells.MOD_ID,
             "mob_farm_targets"
     );
+    private static final Identifier LOOT_MODIFIER_LISTENER_ID = Identifier.fromNamespaceAndPath(
+            TradingCells.MOD_ID,
+            "mob_farm_loot_modifiers"
+    );
 
     private MobFarmCatalogReloadAdapter() {
     }
@@ -25,6 +29,7 @@ public final class MobFarmCatalogReloadAdapter {
     @SubscribeEvent
     public static void onAddReloadListeners(AddServerReloadListenersEvent event) {
         event.addListener(LOOT_TABLE_LISTENER_ID, new MobFarmLootTableReloadListener());
+        event.addListener(LOOT_MODIFIER_LISTENER_ID, new MobFarmLootModifierReloadListener());
         event.addListener(TARGET_LISTENER_ID, new MobFarmTargetReloadListener());
     }
 

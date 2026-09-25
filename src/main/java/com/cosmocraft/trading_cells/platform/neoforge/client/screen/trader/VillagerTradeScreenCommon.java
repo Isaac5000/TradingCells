@@ -231,6 +231,18 @@ public final class VillagerTradeScreenCommon {
         );
     }
 
+    public static void drawEssenceArrow(
+            GuiGraphicsExtractor graphics,
+            int x,
+            int y,
+            int color
+    ) {
+        graphics.fill(x, y + 5, x + 17, y + 11, color);
+        for (int column = 0; column < 7; column++) {
+            graphics.fill(x + 17 + column, y + 1 + column, x + 18 + column, y + 15 - column, color);
+        }
+    }
+
     public static void drawDropdownChevron(
             GuiGraphicsExtractor graphics,
             int x,

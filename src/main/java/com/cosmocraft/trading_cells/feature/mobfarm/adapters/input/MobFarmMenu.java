@@ -120,7 +120,9 @@ public final class MobFarmMenu extends AbstractContainerMenu {
             BuiltInRegistries.ITEM.getOptional(id).ifPresent(item -> {
                 var drop = probabilities.getOrDefault(id, new MobFarmLootTables.DropSummary(-1, 0, 0));
                 if (drop.probability() == 0 && drop.maximum() == 0) { return; }
-                next.add(new LootEntry(new ItemStack(item), farm.lootEnabled(id), drop.probability(), drop.minimum(), drop.maximum()));
+                ItemStack display = farm.simulationTarget() == null
+                        ? new ItemStack(item) : MobFarmLootTables.displayStack(id, farm.simulationTarget());
+                next.add(new LootEntry(display, farm.lootEnabled(id), drop.probability(), drop.minimum(), drop.maximum()));
             });
         }
         loot = List.copyOf(next);

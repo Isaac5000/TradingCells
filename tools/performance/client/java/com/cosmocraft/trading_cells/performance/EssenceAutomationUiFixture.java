@@ -202,10 +202,12 @@ final class EssenceAutomationUiFixture {
                 }
                 case 18 -> {
                     if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 13) { return; }
+                    assertExtractionModel(minecraft);
                     capture(minecraft, "11-extraction-half");
                 }
                 case 19 -> {
                     if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 3) { return; }
+                    assertExtractionModel(minecraft);
                     capture(minecraft, "12-extraction-filled");
                 }
                 case 20 -> {
@@ -247,6 +249,13 @@ final class EssenceAutomationUiFixture {
         var event = new MouseButtonEvent(x, y, new MouseButtonInfo(0, 0));
         screen.mouseClicked(event, false); screen.mouseReleased(event);
     }
+    private static void assertExtractionModel(Minecraft minecraft) {
+        var stack = minecraft.player.getMainHandItem();
+        float pose = new com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.SyringeExtractionProperty()
+                .get(stack, minecraft.level, minecraft.player, 0);
+        if (pose < 4 || pose > 5) { throw new IllegalStateException("Tier III extraction model missing: " + pose); }
+        System.out.println("Syringe extraction model pose: " + pose);
+    }
     private static void capture(Minecraft minecraft, String name) {
         Screenshot.grab(minecraft.gameDirectory, name + ".png", minecraft.gameRenderer.mainRenderTarget(), 1, message -> { });
     }
@@ -257,17 +266,32 @@ final class EssenceAutomationUiFixture {
             items.add(MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance());
             ItemStack loaded = items.getFirst().copy(); EssenceExtractorItem.setLoaded(loaded, true); items.add(loaded);
             items.add(MobFarmRegistrationAdapter.EMPTY_VIAL.get().getDefaultInstance());
-            items.add(MobFarmRegistrationAdapter.RAW_ESSENCE.get().getDefaultInstance());
-            items.add(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get().getDefaultInstance());
             items.add(MobFarmRegistrationAdapter.STABILIZER_ITEM.get().getDefaultInstance());
+            for (var item : java.util.List.of(MobFarmRegistrationAdapter.RAW_ESSENCE, MobFarmRegistrationAdapter.ENTITY_ESSENCE)) {
+                for (int tier = 1; tier <= 4; tier++) {
+                    ItemStack stack = item.get().getDefaultInstance();
+                    var data = new net.minecraft.nbt.CompoundTag();
+                    var essence = new net.minecraft.nbt.CompoundTag();
+                    essence.putString("Type", "minecraft:cow");
+                    essence.putInt("Tier", tier);
+                    essence.putInt("ClassificationVersion", 1);
+                    data.put("TradingCellsEssence", essence);
+                    stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
+                            net.minecraft.world.item.component.CustomData.of(data));
+                    float selected = new com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.EssenceTierProperty()
+                            .get(stack, null, null, 0);
+                    if (selected != tier) { throw new IllegalStateException("Incorrect essence tier model: " + selected); }
+                    items.add(stack);
+                }
+            }
             for (var base : MobFarmRegistrationAdapter.MODEL_BASES) { items.add(base.get().getDefaultInstance()); }
         }
         @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             graphics.fill(0, 0, width, height, 0xFF262C2F);
-            int left = (width - 350) / 2, top = (height - 190) / 2;
+            int left = (width - 280) / 2, top = (height - 300) / 2;
             for (int i = 0; i < items.size(); i++) {
                 graphics.pose().pushMatrix();
-                graphics.pose().translate(left + i % 5 * 70, top + i / 5 * 95);
+                graphics.pose().translate(left + i % 4 * 70, top + i / 4 * 75);
                 graphics.pose().scale(3.5F, 3.5F);
                 graphics.item(items.get(i), 0, 0);
                 graphics.pose().popMatrix();

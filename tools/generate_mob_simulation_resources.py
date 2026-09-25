@@ -7,6 +7,9 @@ import io
 import json
 from pathlib import Path
 from PIL import Image
+import injector_geometry
+import simulation_worker_texture
+import essence_tier_textures
 
 ROOT = Path(__file__).resolve().parents[1] / "src/main/resources"
 ASSETS = "assets/trading_cells"
@@ -150,8 +153,10 @@ def resources():
              "model": {"type": "trading_cells:entity_module"}}]}})
         add(f"{DATA}/recipe/{name}.json", {"type": "minecraft:crafting_shaped", "category": "misc",
             "pattern": ["GBG", "BSB", "GBG"], "key": {"G": "minecraft:" + (
-                "green_concrete", "lapis_lazuli", "diamond", "netherite_ingot")[tier - 1],
-                "B": "minecraft:black_concrete", "S": "trading_cells:storm_shard"},
+                "emerald", "diamond", "netherite_ingot", "nether_star")[tier - 1],
+                "B": "minecraft:black_concrete", "S": (
+                    "trading_cells:storm_shard" if tier == 1
+                    else f"trading_cells:tier_{('i', 'ii', 'iii')[tier - 2]}_creature_model_base")},
             "result": {"id": f"trading_cells:{name}", "count": 1}})
         add(f"{DATA}/recipe/essence_stabilization_{tier}.json", {"type": "trading_cells:essence_stabilization",
             "tier": tier, "duration": 100, "amethyst": {"ingredient": "minecraft:amethyst_shard", "count": 2 ** (tier - 1)},
@@ -163,6 +168,16 @@ def resources():
             "textures": {"layer0": f"trading_cells:item/essence/{name}"}})
         model_item(name, f"item/{name}")
 
+    for name in ("raw_creature_essence_vial", "entity_essence"):
+        variants = []
+        for tier in range(1, 5):
+            model = f"item/essence/{name}_tier_{tier}"
+            add(f"{ASSETS}/models/{model}.json", {"parent": "minecraft:item/generated",
+                "textures": {"layer0": f"trading_cells:{model}"}})
+            variants.append({"threshold": tier, "model": {"type": "minecraft:model", "model": f"trading_cells:{model}"}})
+        add(f"{ASSETS}/items/{name}.json", {"model": {"type": "minecraft:range_dispatch",
+            "property": "trading_cells:essence_tier", "entries": variants, "fallback": variants[0]["model"]}})
+
     syringe_display = {
         "firstperson_righthand": {"rotation": [0, 70, 0], "translation": [0, 2, -1], "scale": [0.8] * 3},
         "firstperson_lefthand": {"rotation": [0, -110, 0], "translation": [0, 2, -1], "scale": [0.8] * 3},
@@ -170,38 +185,9 @@ def resources():
         "thirdperson_lefthand": {"rotation": [0, -90, -90], "translation": [0, 3, 0], "scale": [0.85] * 3},
         "gui": {"rotation": [15, -25, 0], "scale": [1, 1, 1]},
     }
-    textures = {"iron": "minecraft:block/iron_block", "dark": "minecraft:block/black_concrete",
-                "grip": "minecraft:block/gray_concrete", "blue": "minecraft:block/light_blue_concrete",
-                "glass": "minecraft:block/glass", "cap": "minecraft:block/amethyst_block",
-                "particle": "minecraft:block/iron_block"}
-
-    def cube(start, end, texture, uv=None):
-        face = {"texture": "#" + texture, "uv": uv or [0, 0, 16, 16]}
-        return {"from": start, "to": end, "faces": {side: deepcopy(face)
-                for side in ("north", "south", "west", "east", "up", "down")}}
-
-    body = [cube([2.5, 7, 6.5], [10.5, 9.5, 9.5], "iron"),
-            cube([2.75, 2, 6.75], [4.8, 7.25, 9.25], "grip"),
-            cube([3.2, 2.75, 6.6], [4.25, 6, 9.4], "blue"),
-            cube([10.5, 7.5, 7], [11.5, 9, 9], "dark"),
-            cube([11.5, 8, 7.8], [15.25, 8.4, 8.2], "iron"),
-            cube([15.25, 8.1, 7.9], [15.75, 8.3, 8.1], "iron"),
-            cube([4.8, 5, 7.6], [6.8, 5.4, 8.4], "dark"),
-            cube([6.4, 5.4, 7.6], [6.8, 7, 8.4], "dark"),
-            cube([5.1, 6.1, 7.7], [5.6, 7, 8.3], "blue"),
-            cube([3, 9.5, 6.9], [5.2, 10, 9.1], "dark"),
-            cube([7, 7.9, 6.35], [8.7, 8.55, 9.65], "blue")]
-    vial = [cube([3.3, 10, 7.2], [4.9, 13.8, 8.8], "glass"),
-            cube([3.3, 9.9, 7.2], [4.9, 10.2, 8.8], "iron"),
-            cube([3.15, 13.8, 7.05], [5.05, 14.4, 8.95], "cap")]
-
-    def shifted(elements, dx, dy=0):
-        elements = deepcopy(elements)
-        for element in elements:
-            for key in ("from", "to"):
-                element[key][0] = round(element[key][0] + dx, 4)
-                element[key][1] = round(element[key][1] + dy, 4)
-        return elements
+    textures = {"atlas": injector_geometry.ATLAS, "particle": "#atlas"}
+    body, vial = injector_geometry.body(), injector_geometry.vial()
+    shifted = injector_geometry.shifted
 
     def syringe_model(elements, extra=None):
         return {"parent": "minecraft:item/generated", "textures": textures | (extra or {}),
@@ -231,11 +217,11 @@ def resources():
             advance = min(1, progress / 0.15) * min(1, (1 - progress) / 0.2)
             advance = advance * advance * (3 - 2 * advance)
             fill = max(0, min(1, (progress - 0.15) / 0.7))
-            liquid = [] if fill <= 0 else [cube([3.5, 10.2, 7.4], [4.7, round(10.2 + 3.35 * fill, 4), 8.6],
-                                                "essence", [1, 7, 2, 8])]
+            liquid = injector_geometry.liquid(fill)
             name = f"syringe_extract_{tier}_{frame:02d}"
-            add(f"{ASSETS}/models/item/essence/{name}.json", syringe_model(shifted(body + vial + liquid, advance * 2),
-                {"essence": f"trading_cells:block/essence/tier_{tier}_edge"}))
+            # Submit the opaque fill before the translucent vial walls.
+            add(f"{ASSETS}/models/item/essence/{name}.json", syringe_model(shifted(body + liquid + vial, advance * 2),
+                {"essence": f"trading_cells:item/essence/tier_{tier}_liquid"}))
             extracting.append({"threshold": (tier - 1) * 2 + progress,
                                "model": {"type": "minecraft:model", "model": f"trading_cells:item/essence/{name}"}})
     add(f"{ASSETS}/items/essence_extractor.json", {"model": {"type": "minecraft:range_dispatch",
@@ -294,6 +280,17 @@ def texture_resources():
     """Preserve generated silhouettes; tier variants change palette only."""
     result = {}
     sources = Path(__file__).resolve().parent / "assets/essence"
+    with Image.open(sources / "villager_reference.png") as reference, \
+            Image.open(sources / "simulation_worker_clothing.png") as clothing:
+        worker = simulation_worker_texture.texture(reference.convert("RGBA"), clothing.convert("RGBA"))
+        stream = io.BytesIO()
+        worker.save(stream, format="PNG")
+        result[f"{ASSETS}/textures/entity/simulation_worker.png"] = stream.getvalue()
+    with Image.open(sources / "injector_atlas.png") as source:
+        atlas = source.convert("RGBA").resize((128, 128), Image.Resampling.NEAREST)
+        stream = io.BytesIO()
+        atlas.save(stream, format="PNG")
+        result[f"{ASSETS}/textures/item/essence/injector_atlas.png"] = stream.getvalue()
     for name in ("essence_extractor", "empty_essence_vial", "raw_creature_essence_vial", "entity_essence", "essence_stabilizer"):
         size = 128 if name == "essence_stabilizer" else 32
         image = Image.open(sources / f"{name}.png").convert("RGBA").resize((size, size), Image.Resampling.NEAREST)
@@ -301,10 +298,14 @@ def texture_resources():
         image.save(stream, format="PNG")
         path = "block/essence_stabilizer" if name == "essence_stabilizer" else f"item/essence/{name}"
         result[f"{ASSETS}/textures/{path}.png"] = stream.getvalue()
+        if name in ("raw_creature_essence_vial", "entity_essence"):
+            for tier in range(1, 5):
+                variant = essence_tier_textures.variant(name, image, tier)
+                stream = io.BytesIO()
+                variant.save(stream, format="PNG")
+                result[f"{ASSETS}/textures/item/essence/{name}_tier_{tier}.png"] = stream.getvalue()
     pipe = Image.open(ROOT / f"{ASSETS}/textures/block/logistics/fluid_pipe/fluid_pipe.png").convert("RGBA")
-    palettes = (((85, 230, 106), (185, 255, 194)), ((53, 207, 255), (183, 243, 255)),
-                ((176, 92, 255), (224, 194, 255)), ((255, 211, 78), (255, 242, 166)))
-    for tier, (base, highlight) in enumerate(palettes, 1):
+    for tier, (base, highlight) in enumerate(essence_tier_textures.PALETTES, 1):
         variant = pipe.copy()
         values = [max(pipe.getpixel((x, y))[:3]) for y in range(pipe.height) if 14 <= y % 32 < 18 for x in range(pipe.width)]
         low, high = min(values), max(values)
@@ -320,6 +321,10 @@ def texture_resources():
         stream = io.BytesIO()
         variant.save(stream, format="PNG")
         result[f"{ASSETS}/textures/block/essence/tier_{tier}_edge.png"] = stream.getvalue()
+        # Item models cannot combine the block and item atlases in Minecraft 26.2.
+        result[f"{ASSETS}/textures/item/essence/tier_{tier}_liquid.png"] = stream.getvalue()
+        result[f"{ASSETS}/textures/item/essence/tier_{tier}_liquid.png.mcmeta"] = (
+            ROOT / f"{ASSETS}/textures/block/essence/tier_{tier}_edge.png.mcmeta").read_bytes()
     return result
 
 

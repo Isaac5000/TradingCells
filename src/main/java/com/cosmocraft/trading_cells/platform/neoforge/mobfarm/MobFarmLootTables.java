@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.platform.neoforge.mobfarm;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.BiConsumer;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -13,6 +14,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 
 /** Shared native loot execution, independent of farm families and output filters. */
@@ -20,6 +24,19 @@ public final class MobFarmLootTables {
     private MobFarmLootTables() { }
 
     public record DropSummary(int probability, int minimum, int maximum) { }
+
+    public static ItemStack displayStack(Identifier id, LivingEntity target) {
+        if (id.equals(Identifier.withDefaultNamespace("tipped_arrow"))) {
+            Identifier targetId = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
+            return switch (targetId.toString()) {
+                case "minecraft:stray" -> PotionContents.createItemStack(Items.TIPPED_ARROW, Potions.SLOWNESS);
+                case "minecraft:bogged" -> PotionContents.createItemStack(Items.TIPPED_ARROW, Potions.POISON);
+                case "minecraft:parched" -> PotionContents.createItemStack(Items.TIPPED_ARROW, Potions.WEAKNESS);
+                default -> new ItemStack(Items.TIPPED_ARROW);
+            };
+        }
+        return BuiltInRegistries.ITEM.getOptional(id).map(ItemStack::new).orElse(ItemStack.EMPTY);
+    }
 
     public static java.util.Map<Identifier, DropSummary> preview(ServerLevel level, LivingEntity target,
                                                                 ItemStack sword, int kills) {
@@ -38,7 +55,12 @@ public final class MobFarmLootTables {
     public static List<Identifier> filterItems(LivingEntity target) {
         if (target.getLootTable().isEmpty()) { return List.of(); }
         var result = new java.util.LinkedHashSet<Identifier>();
-        for (var reference : MobFarmLootTableReloadListener.references(target.getLootTable().orElseThrow().identifier())) {
+        Identifier tableId = target.getLootTable().orElseThrow().identifier();
+        var references = new LinkedHashSet<>(MobFarmLootTableReloadListener.references(tableId));
+        for (Identifier injected : MobFarmLootTableReloadListener.modifierTables(tableId)) {
+            references.addAll(MobFarmLootTableReloadListener.references(injected));
+        }
+        for (var reference : references) {
             if (reference.tag()) {
                 var tag = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, reference.id());
                 BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(holder -> result.add(BuiltInRegistries.ITEM.getKey(holder.value())));

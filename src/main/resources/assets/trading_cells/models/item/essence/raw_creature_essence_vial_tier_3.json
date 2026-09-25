@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "trading_cells:item/essence/raw_creature_essence_vial_tier_3"
+  }
+}

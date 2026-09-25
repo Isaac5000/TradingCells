@@ -2,6 +2,7 @@ package com.cosmocraft.trading_cells.gametest.feature.mobfarm;
 
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmLootTables;
+import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmSimulationLoot;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.registries.Registries;
@@ -13,6 +14,7 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -30,7 +32,8 @@ public final class MobFarmLootTableGameTests {
         return List.of(
                 new GameTestCase("mobfarm_actual_entity_loot_table", 40, MobFarmLootTableGameTests::actualEntity),
                 new GameTestCase("mobfarm_loot_context_restored_on_failure", 40, MobFarmLootTableGameTests::failure),
-                new GameTestCase("mobfarm_loot_missing_targets", 40, MobFarmLootTableGameTests::missingTargets));
+                new GameTestCase("mobfarm_loot_missing_targets", 40, MobFarmLootTableGameTests::missingTargets),
+                new GameTestCase("mobfarm_wither_simulation_loot", 40, MobFarmLootTableGameTests::witherSimulation));
     }
 
     private static Cow capturedTarget(GameTestHelper helper) {
@@ -98,6 +101,19 @@ public final class MobFarmLootTableGameTests {
         };
         helper.assertTrue(MobFarmLootTables.batches(level, empty, ItemStack.EMPTY, 1).isEmpty(), "No invented table when entity has none");
         helper.assertTrue(MobFarmLootTables.batches(level, capturedTarget(helper), ItemStack.EMPTY, 0).isEmpty(), "Zero kills do not roll");
+        helper.succeed();
+    }
+
+    private static void witherSimulation(GameTestHelper helper) {
+        var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("wither"));
+        helper.assertTrue(target instanceof WitherBoss, "Wither target is created");
+        helper.assertValueEqual(((WitherBoss) target).getInvulnerableTicks(), 0,
+                "Detached Wither is in its normal post-spawn state");
+        var loot = new java.util.ArrayList<ItemStack>();
+        MobFarmSimulationLoot.roll(helper.getLevel(), target, Items.IRON_SWORD.getDefaultInstance(), 1,
+                (kill, stack) -> loot.add(stack.copy()));
+        helper.assertTrue(loot.stream().anyMatch(stack -> stack.is(Items.NETHER_STAR)),
+                "Wither simulation includes its custom death loot");
         helper.succeed();
     }
 }

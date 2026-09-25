@@ -7,9 +7,9 @@
     "GBG"
   ],
   "key": {
-    "G": "minecraft:netherite_ingot",
+    "G": "minecraft:nether_star",
     "B": "minecraft:black_concrete",
-    "S": "trading_cells:storm_shard"
+    "S": "trading_cells:tier_iii_creature_model_base"
   },
   "result": {
     "id": "trading_cells:tier_iv_creature_model_base",

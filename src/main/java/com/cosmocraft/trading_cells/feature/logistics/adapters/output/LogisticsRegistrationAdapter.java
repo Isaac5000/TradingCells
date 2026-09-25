@@ -164,16 +164,10 @@ public final class LogisticsRegistrationAdapter {
     }
 
     private static BlockBehaviour.Properties pipeProperties(String id, PipeKind kind) {
-        SoundType sound = switch (kind) {
-            case FLUID -> SoundType.COPPER;
-            case GAS -> SoundType.CALCITE;
-            case UNIVERSAL -> SoundType.METAL;
-            case ITEM, ENERGY -> SoundType.METAL;
-        };
         return BlockBehaviour.Properties.of()
                 .setId(ResourceKey.create(Registries.BLOCK, id(id)))
                 .strength(1.5F, 6.0F)
-                .sound(sound)
+                .sound(SoundType.COPPER)
                 .noOcclusion()
                 .pushReaction(PushReaction.BLOCK)
                 .isRedstoneConductor((state, getter, pos) -> false)

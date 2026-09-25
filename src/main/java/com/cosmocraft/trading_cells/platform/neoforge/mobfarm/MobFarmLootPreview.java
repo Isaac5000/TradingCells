@@ -49,7 +49,13 @@ public final class MobFarmLootPreview {
             var context = new LootContext.Builder(params).withOptionalRandomSeed(1).create(Optional.empty());
             var analyser = new MobFarmLootPreview(level, context, looting);
             var result = new LinkedHashMap<Identifier, DropSummary>();
-            analyser.table(target.getLootTable().orElseThrow(), 0).forEach((id, summary) -> {
+            ResourceKey<LootTable> lootTable = target.getLootTable().orElseThrow();
+            var analysed = new LinkedHashMap<>(analyser.table(lootTable, 0));
+            for (Identifier injected : MobFarmLootTableReloadListener.modifierTables(lootTable.identifier())) {
+                analyser.table(ResourceKey.create(Registries.LOOT_TABLE, injected), 0)
+                        .forEach((id, summary) -> analysed.merge(id, summary, Summary::plus));
+            }
+            analysed.forEach((id, summary) -> {
                 Summary cycle = summary.repeat(Math.clamp(kills, 1, 1024), Math.clamp(kills, 1, 1024));
                 if (cycle.maximum > 0 && cycle.zero < 1) {
                     result.put(id, new DropSummary((int) Math.round((1 - cycle.zero) * 1_000_000),

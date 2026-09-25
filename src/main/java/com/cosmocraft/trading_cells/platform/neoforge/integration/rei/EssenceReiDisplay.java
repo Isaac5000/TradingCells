@@ -72,7 +72,7 @@ public final class EssenceReiDisplay extends BasicDisplay {
         List<EntryIngredient> outputs = new ArrayList<>();
         outputs.add(EntryIngredients.of(tierStack(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get(), recipe.tier())));
         outputs.add(EntryIngredients.of(MobFarmRegistrationAdapter.EMPTY_VIAL.get()));
-        var remainders = recipe.reagent().ingredient().items().map(item -> item.value().getDefaultInstance().getCraftingRemainder())
+        var remainders = recipe.reagent().ingredient().getValues().stream().map(item -> item.value().getDefaultInstance().getCraftingRemainder())
                 .filter(java.util.Objects::nonNull).map(template -> {
                     ItemStack stack = template.create(); stack.setCount(stack.getCount() * recipe.reagent().count()); return EntryStacks.of(stack);
                 }).toList();
@@ -81,7 +81,8 @@ public final class EssenceReiDisplay extends BasicDisplay {
                 ingredient(recipe.amethyst()), ingredient(recipe.reagent())), outputs, holder.id().identifier(), false, recipe.tier(), recipe.duration());
     }
     private static EntryIngredient ingredient(SizedIngredient sized) {
-        return EntryIngredient.of(sized.ingredient().items().map(item -> EntryStacks.of(new ItemStack(item, sized.count()))).toList());
+        return EntryIngredient.of(sized.ingredient().getValues().stream()
+                .map(item -> EntryStacks.of(new ItemStack(item, sized.count()))).toList());
     }
     public static EssenceReiDisplay synthesis(EssenceTier tier) {
         return new EssenceReiDisplay(List.of(EntryIngredients.of(tierStack(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get(), tier.id())),

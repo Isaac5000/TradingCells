@@ -34,7 +34,7 @@ public final class LogisticsPipeBlock extends BaseEntityBlock implements SimpleW
     private static final Map<Direction, EnumProperty<PipeConnection>> CONNECTIONS = createProperties();
     private static final VoxelShape CORE = Block.box(5, 5, 5, 11, 11, 11);
     private static final Map<Direction, VoxelShape> ARMS = createArms();
-    private static final Map<Direction, VoxelShape> EXTRACTOR_RINGS = createExtractorRings();
+    private static final Map<Direction, VoxelShape> EXTRACTOR_ARMS = createExtractorArms();
     private static final VoxelShape[] CONNECTION_SHAPES = createConnectionShapes();
 
     private final PipeKind kind;
@@ -142,10 +142,8 @@ public final class LogisticsPipeBlock extends BaseEntityBlock implements SimpleW
                 int connection = encoded % 3;
                 encoded /= 3;
                 if (connection != 0) {
-                    shape = Shapes.joinUnoptimized(shape, ARMS.get(direction), net.minecraft.world.phys.shapes.BooleanOp.OR);
-                    if (connection == 2) {
-                        shape = Shapes.joinUnoptimized(shape, EXTRACTOR_RINGS.get(direction), net.minecraft.world.phys.shapes.BooleanOp.OR);
-                    }
+                    VoxelShape arm = connection == 2 ? EXTRACTOR_ARMS.get(direction) : ARMS.get(direction);
+                    shape = Shapes.joinUnoptimized(shape, arm, net.minecraft.world.phys.shapes.BooleanOp.OR);
                 }
             }
             shapes[index] = shape.optimize();
@@ -198,41 +196,15 @@ public final class LogisticsPipeBlock extends BaseEntityBlock implements SimpleW
         return Map.copyOf(shapes);
     }
 
-    private static Map<Direction, VoxelShape> createExtractorRings() {
+    private static Map<Direction, VoxelShape> createExtractorArms() {
         Map<Direction, VoxelShape> shapes = new EnumMap<>(Direction.class);
-        shapes.put(Direction.DOWN, horizontalRing(0, 1));
-        shapes.put(Direction.UP, horizontalRing(15, 16));
-        shapes.put(Direction.NORTH, northSouthRing(0, 1));
-        shapes.put(Direction.SOUTH, northSouthRing(15, 16));
-        shapes.put(Direction.WEST, eastWestRing(0, 1));
-        shapes.put(Direction.EAST, eastWestRing(15, 16));
+        shapes.put(Direction.DOWN, Block.box(5, 1, 5, 11, 5, 11));
+        shapes.put(Direction.UP, Block.box(5, 11, 5, 11, 15, 11));
+        shapes.put(Direction.NORTH, Block.box(5, 5, 1, 11, 11, 5));
+        shapes.put(Direction.SOUTH, Block.box(5, 5, 11, 11, 11, 15));
+        shapes.put(Direction.WEST, Block.box(1, 5, 5, 5, 11, 11));
+        shapes.put(Direction.EAST, Block.box(11, 5, 5, 15, 11, 11));
         return Map.copyOf(shapes);
     }
 
-    private static VoxelShape horizontalRing(double y1, double y2) {
-        return Shapes.or(
-                Block.box(4, y1, 4, 12, y2, 5),
-                Block.box(4, y1, 11, 12, y2, 12),
-                Block.box(4, y1, 5, 5, y2, 11),
-                Block.box(11, y1, 5, 12, y2, 11)
-        );
-    }
-
-    private static VoxelShape northSouthRing(double z1, double z2) {
-        return Shapes.or(
-                Block.box(4, 4, z1, 12, 5, z2),
-                Block.box(4, 11, z1, 12, 12, z2),
-                Block.box(4, 5, z1, 5, 11, z2),
-                Block.box(11, 5, z1, 12, 11, z2)
-        );
-    }
-
-    private static VoxelShape eastWestRing(double x1, double x2) {
-        return Shapes.or(
-                Block.box(x1, 4, 4, x2, 5, 12),
-                Block.box(x1, 11, 4, x2, 12, 12),
-                Block.box(x1, 5, 4, x2, 11, 5),
-                Block.box(x1, 5, 11, x2, 11, 12)
-        );
-    }
 }

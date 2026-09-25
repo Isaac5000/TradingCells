@@ -7,9 +7,9 @@
     "GBG"
   ],
   "key": {
-    "G": "minecraft:lapis_lazuli",
+    "G": "minecraft:diamond",
     "B": "minecraft:black_concrete",
-    "S": "trading_cells:storm_shard"
+    "S": "trading_cells:tier_i_creature_model_base"
   },
   "result": {
     "id": "trading_cells:tier_ii_creature_model_base",

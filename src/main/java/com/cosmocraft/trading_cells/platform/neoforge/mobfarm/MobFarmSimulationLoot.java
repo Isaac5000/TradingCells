@@ -19,6 +19,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.OminousBottleAmplifier;
 
 /** Composes native instance loot with simulation rewards without changing legacy farm rolls. */
@@ -49,6 +50,10 @@ public final class MobFarmSimulationLoot {
         if (target instanceof Creeper creeper && creeper.isPowered()) {
             result.add(new Supplement(new ItemStack(CombatItems.stormShard()), 1, 1,
                     StormShardDropRules.maximumAmount(looting)));
+        }
+        if (target.getType() == EntityTypes.WITHER) {
+            // Vanilla emits this from WitherBoss.dropCustomDeathLoot, not its loot table.
+            result.add(new Supplement(new ItemStack(Items.NETHER_STAR), 1, 1, 1));
         }
         result.addAll(MobFarmEquipmentLoot.supplements(target, looting));
         return result;

@@ -28,6 +28,8 @@ final class MobFarmLootTableReloadListener extends SimpleJsonResourceReloadListe
     );
     private static final AtomicReference<Map<Identifier, List<LootReference>>> REFERENCES =
             new AtomicReference<>(Map.of());
+    static final AtomicReference<Map<Identifier, List<Identifier>>> MODIFIER_TABLES =
+            new AtomicReference<>(Map.of());
 
     MobFarmLootTableReloadListener() {
         super(JSON_CODEC, new FileToIdConverter("loot_table", ".json"));
@@ -35,6 +37,10 @@ final class MobFarmLootTableReloadListener extends SimpleJsonResourceReloadListe
 
     static List<LootReference> references(Identifier lootTableId) {
         return REFERENCES.get().getOrDefault(lootTableId, List.of());
+    }
+
+    static List<Identifier> modifierTables(Identifier lootTableId) {
+        return MODIFIER_TABLES.get().getOrDefault(lootTableId, List.of());
     }
 
     @Override

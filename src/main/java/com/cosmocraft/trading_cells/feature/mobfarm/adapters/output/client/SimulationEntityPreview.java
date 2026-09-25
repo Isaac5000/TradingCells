@@ -9,6 +9,8 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.animal.fish.WaterAnimal;
 import org.jspecify.annotations.Nullable;
 
@@ -27,6 +29,13 @@ record SimulationEntityPreview(EntityRenderState state, float scale) {
             entity.setXRot(0.0F);
             entity.xRotO = 0.0F;
             entity.yHeadRot = entity.yHeadRotO = entity.yBodyRot = entity.yBodyRotO = yaw;
+            if (entity instanceof WitherBoss wither) {
+                // The auxiliary heads otherwise retain independent saved/server rotations.
+                for (int head = 0; head < wither.getHeadYRots().length; head++) {
+                    wither.getHeadYRots()[head] = yaw;
+                    wither.getHeadXRots()[head] = 0.0F;
+                }
+            }
             EntityRenderState state = dispatcher.extractEntity(entity, 0.0F);
             PreviewEntityRenderUtil.suppressWorldEffects(state);
             if (entity instanceof WaterAnimal && state instanceof LivingEntityRenderState living) {
@@ -38,6 +47,16 @@ record SimulationEntityPreview(EntityRenderState state, float scale) {
                     width * HORIZONTAL_VISUAL_MARGIN / Math.max(0.1F, entity.getBbWidth()),
                     height * VERTICAL_VISUAL_MARGIN / Math.max(0.1F, entity.getBbHeight())
             );
+            if (entity.getType() == EntityTypes.ENDER_DRAGON) {
+                // The dragon's multipart hitbox is much larger than the pedestal preview.
+                scale = Math.min(width * 0.14F, height * 0.08F);
+            } else if (entity instanceof WitherBoss && height > 0.60F) {
+                // Item models have less available height than the machine pedestal.
+                scale = Math.min(
+                        width * 0.60F / Math.max(0.1F, entity.getBbWidth()),
+                        height * 1.05F / Math.max(0.1F, entity.getBbHeight())
+                );
+            }
             return new SimulationEntityPreview(state, scale);
         } catch (RuntimeException | LinkageError unsupportedRenderer) {
             // A missing/incompatible optional renderer leaves the surrounding model intact.

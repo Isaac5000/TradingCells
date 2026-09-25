@@ -1,6 +1,40 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "trading_cells:item/raw_creature_essence_vial"
+    "type": "minecraft:range_dispatch",
+    "property": "trading_cells:essence_tier",
+    "entries": [
+      {
+        "threshold": 1,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/raw_creature_essence_vial_tier_1"
+        }
+      },
+      {
+        "threshold": 2,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/raw_creature_essence_vial_tier_2"
+        }
+      },
+      {
+        "threshold": 3,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/raw_creature_essence_vial_tier_3"
+        }
+      },
+      {
+        "threshold": 4,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/raw_creature_essence_vial_tier_4"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "trading_cells:item/essence/raw_creature_essence_vial_tier_1"
+    }
   }
 }

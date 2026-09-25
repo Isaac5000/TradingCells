@@ -2,6 +2,7 @@ package com.cosmocraft.trading_cells.feature.mobfarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.mixin.MobExperienceAccessor;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.mobfarm.domain.model.MobFarmRules;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
@@ -28,6 +29,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -39,6 +41,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.Nullable;
 
 public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity implements MenuProvider {
+    private static final int MAX_EXPERIENCE_PER_ENTITY = 20;
     public static final int WORKER_SLOT = 0;
     public static final int SWORD_SLOT = 1;
     public static final int MODULE_SLOT = 2;
@@ -245,7 +248,18 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
 
     private void settleCycle(ServerLevel server) {
         // Legacy queues were rolled but unpaid; new queues are paid before draining.
-        storedExperience = (int) Math.min(Integer.MAX_VALUE, storedExperience + kills * 5L);
+        long cycleExperience = 0;
+        if (target instanceof MobExperienceAccessor mob) {
+            for (int kill = 0; kill < kills; kill++) {
+                int reward = mob.tradingCells$experienceReward(server);
+                if (target instanceof EnderDragon) {
+                    // The dragon awards XP from tickDeath instead of Mob's base reward.
+                    reward = 12_000;
+                }
+                cycleExperience += Math.min(MAX_EXPERIENCE_PER_ENTITY, Math.max(0, reward));
+            }
+        }
+        storedExperience = (int) Math.min(Integer.MAX_VALUE, storedExperience + cycleExperience);
         if (!weapon.warriorsTouch()) {
             items.get(SWORD_SLOT).hurtAndBreak(1, server, (LivingEntity) null, ignored -> items.set(SWORD_SLOT, ItemStack.EMPTY));
             inputsDirty = true;
