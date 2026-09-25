@@ -328,6 +328,18 @@ def texture_resources():
     return result
 
 
+def png_matches(path, expected):
+    """Compare generated PNG pixels, not platform-specific encoding bytes."""
+    try:
+        with Image.open(path) as actual, Image.open(io.BytesIO(expected)) as reference:
+            return (
+                actual.size == reference.size
+                and actual.convert("RGBA").tobytes() == reference.convert("RGBA").tobytes()
+            )
+    except (FileNotFoundError, OSError):
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write", action="store_true")
@@ -346,7 +358,10 @@ def main():
         if args.write:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
-        if args.check and (not path.is_file() or path.read_bytes() != content):
+        matches = png_matches(path, content) if path.suffix == ".png" else (
+            path.is_file() and path.read_bytes() == content
+        )
+        if args.check and not matches:
             stale.append(relative)
     if stale:
         raise SystemExit("Stale simulation resources:\n" + "\n".join(stale))
