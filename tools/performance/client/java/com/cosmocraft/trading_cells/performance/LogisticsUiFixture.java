@@ -28,6 +28,7 @@ final class LogisticsUiFixture {
     private LogisticsUiFixture() { }
 
     static void inspect(net.minecraft.client.Minecraft minecraft) {
+        if (EssenceAutomationUiFixture.active()) { EssenceAutomationUiFixture.inspect(minecraft); return; }
         if (ItemTextureUiFixture.active()) { ItemTextureUiFixture.inspect(minecraft); return; }
         if (InfusionUiFixture.active()) { InfusionUiFixture.inspect(minecraft); return; }
         if (TooltipUiFixture.active()) { TooltipUiFixture.inspect(minecraft); return; }
@@ -140,6 +141,7 @@ final class LogisticsUiFixture {
     }
 
     static boolean readyForCapture() {
+        if (EssenceAutomationUiFixture.active()) { return EssenceAutomationUiFixture.ready(); }
         if (ItemTextureUiFixture.active()) { return ItemTextureUiFixture.ready(); }
         if (InfusionUiFixture.active()) { return InfusionUiFixture.ready(); }
         if (TooltipUiFixture.active()) { return TooltipUiFixture.ready(); }
@@ -152,7 +154,7 @@ final class LogisticsUiFixture {
 
     static boolean worldScene() {
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
-        return ItemTextureUiFixture.active() || TooltipUiFixture.active() || fixture.equals("connections") || fixture.equals("caps") || fixture.equals("terminals")
+        return EssenceAutomationUiFixture.active() || ItemTextureUiFixture.active() || TooltipUiFixture.active() || fixture.equals("connections") || fixture.equals("caps") || fixture.equals("terminals")
                 || MobSimulationUiFixture.modelScene() || InfusionUiFixture.modelScene();
     }
 
@@ -247,6 +249,7 @@ final class LogisticsUiFixture {
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
         if (fixture.isEmpty() || !PREPARED.add(player.getUUID())) { return; }
         var level = player.level();
+        if (EssenceAutomationUiFixture.active()) { EssenceAutomationUiFixture.prepare(player, pos); return; }
         if (ItemTextureUiFixture.active()) { ItemTextureUiFixture.prepare(player); return; }
         if (InfusionUiFixture.active()) { InfusionUiFixture.prepare(player, pos); return; }
         if (TooltipUiFixture.active()) { TooltipUiFixture.prepare(player); return; }

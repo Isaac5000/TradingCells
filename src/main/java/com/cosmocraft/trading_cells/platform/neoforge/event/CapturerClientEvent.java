@@ -7,7 +7,6 @@ import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.Piglin
 import com.cosmocraft.trading_cells.feature.captures.adapters.output.client.PiglinCapturerItemRenderSupport;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.TradingCellBlockEntityRenderer;
 import com.cosmocraft.trading_cells.feature.captures.adapters.output.client.VillagerCapturerItemRenderSupport;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.StormShardItemRenderSupport;
 import com.cosmocraft.trading_cells.feature.silktouch.adapters.output.client.PreservedSpawnerItemRenderSupport;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.render.BlockEntityItemRenderSupport;
@@ -36,7 +35,6 @@ public final class CapturerClientEvent {
         register(event, "piglin_capturer_third_person", PiglinCapturerItemRenderSupport.ThirdPerson.Unbaked.MAP_CODEC);
         register(event, "piglin_capturer_first_person", PiglinCapturerItemRenderSupport.FirstPerson.Unbaked.MAP_CODEC);
         register(event, "block_entity_item", BlockEntityItemRenderSupport.Unbaked.MAP_CODEC);
-        register(event, "storm_shard_charge", StormShardItemRenderSupport.Unbaked.MAP_CODEC);
         register(event, "preserved_spawner_entity", PreservedSpawnerItemRenderSupport.Unbaked.MAP_CODEC);
     }
 

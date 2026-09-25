@@ -1,5 +1,15 @@
 # Bases de mejoras
 
+2026-09-24: los cinco PNG antiguos de `textures/item/upgrades/` fueron eliminados
+por el usuario. No se restauran. `frames/{copper,iron,gold,diamond,netherite}.png`
+son las nuevas bases generales: copia exacta de cada quarry actual sin el pico,
+rellenando su silueta con texeles limpios del mismo panel. Conservan tamano,
+transparencia, marco, colores y remaches. Solo diamante/netherita tienen esquinas
+especiales. `--bake-generic-frames` realiza esta importacion una sola vez.
+El generador normal lee esos PNG independientes, sin depender de los recursos
+eliminados ni de sus propias salidas. Tambien publica copias sin emblema en
+`textures/item/upgrades/generic/` para futuras mejoras.
+
 Marcos comunes, 2026-09-21: los cinco niveles de quarry son ahora la unica
 carcasa para las cinco familias. El generador extrae cada emblema del PNG
 canonico, incluido su contorno, y lo pega sobre el mismo marco por material.
@@ -27,7 +37,7 @@ adicionales en el juego. La forma de los emblemas y los marcos no cambia.
 
 Fuentes canonicas de 64x64 para `generate_family_upgrades.py`. Cada familia aporta
 su emblema de cobre; quarry aporta el marco comun y los otros niveles cambian
-su paleta. Los cinco PNG originales de `textures/item/upgrades/` se conservan.
+su paleta. Las fuentes historicas bajo `originals/` no son dependencias del build.
 
 Correccion del 2026-09-13: cobre, hierro y oro conservan remaches normales del
 material. Solo diamante usa lila y netherite rojo, mediante una mascara limitada

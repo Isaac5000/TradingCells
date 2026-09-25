@@ -3,7 +3,7 @@
   "category": "production",
   "ingredients": [
     {
-      "ingredient": "minecraft:iron_block",
+      "ingredient": "minecraft:lapis_block",
       "count": 1
     },
     {
@@ -11,7 +11,7 @@
       "count": 1
     },
     {
-      "ingredient": "minecraft:iron_block",
+      "ingredient": "minecraft:lapis_block",
       "count": 1
     },
     {
@@ -27,15 +27,15 @@
       "count": 1
     },
     {
-      "ingredient": "minecraft:quartz_block",
+      "ingredient": "minecraft:lapis_block",
       "count": 1
     },
     {
-      "ingredient": "minecraft:black_concrete",
+      "ingredient": "trading_cells:storm_shard",
       "count": 1
     },
     {
-      "ingredient": "minecraft:quartz_block",
+      "ingredient": "minecraft:lapis_block",
       "count": 1
     }
   ],

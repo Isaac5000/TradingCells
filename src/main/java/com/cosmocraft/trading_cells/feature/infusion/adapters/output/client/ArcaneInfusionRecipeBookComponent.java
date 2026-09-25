@@ -79,10 +79,12 @@ public final class ArcaneInfusionRecipeBookComponent extends RecipeBookComponent
         if (!(recipe instanceof ArcaneInfusionRecipeDisplay infusion)) {
             return;
         }
-        ghostSlots.setResult(menu.slots.get(ArcaneInfuserBlockEntity.OUTPUT_SLOT), context, infusion.result());
+        if (!menu.slots.get(ArcaneInfuserBlockEntity.OUTPUT_SLOT).hasItem()) {
+            ghostSlots.setResult(menu.slots.get(ArcaneInfuserBlockEntity.OUTPUT_SLOT), context, infusion.result());
+        }
         for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
             SlotDisplay ingredient = infusion.ingredients().get(slot);
-            if (!(ingredient instanceof SlotDisplay.Empty)) {
+            if (!(ingredient instanceof SlotDisplay.Empty) && !menu.slots.get(slot).hasItem()) {
                 ghostSlots.setInput(menu.slots.get(slot), context, ingredient);
             }
         }

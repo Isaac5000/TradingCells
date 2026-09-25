@@ -14,7 +14,7 @@ authors="Isaac"
 config="trading_cells.mixins.json"
 
 [[mixins]]
-config="trading_cells.creeperfarm.mixins.json"
+config="trading_cells.mobfarm.mixins.json"
 
 [[mixins]]
 config="trading_cells.rei_compat.mixins.json"

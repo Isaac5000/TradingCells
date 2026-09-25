@@ -36,7 +36,7 @@ aceptacion pendiente; no sustituye la matriz final de publicacion.
   mutacion real espera confirmacion, nunca un clic vacio o sobre un slot lleno.
 - Un slot real de mejora por cara. Las cinco mejoras son fabricables:
   cobre, hierro, oro, diamante y netherita. Conservan los IDs internos anteriores;
-  `infinite_pipe_upgrade` ya no es exclusivo de creativo. El caudal depende solo
+  `netherite_pipe_upgrade` ya no es exclusivo de creativo. El caudal depende solo
   de la mejora instalada, no de su cantidad.
 - Las mejoras se retiran con el perfil activo y se sueltan por separado al romper.
   La cara recupera su perfil basico al quitar la ultima; colocar una tuberia

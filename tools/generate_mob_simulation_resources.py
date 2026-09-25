@@ -2,13 +2,17 @@
 
 import argparse
 from collections import defaultdict
+from copy import deepcopy
+import io
 import json
 from pathlib import Path
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1] / "src/main/resources"
 ASSETS = "assets/trading_cells"
 DATA = "data/trading_cells"
 MATERIALS = ("copper", "iron", "gold", "diamond", "netherite")
+BASES = ("tier_i", "tier_ii", "tier_iii", "tier_iv")
 
 
 def block_model(elements):
@@ -74,7 +78,7 @@ def resources():
     result = {}
 
     def add(path, value):
-        if value.get("type") == "minecraft:crafting_shaped":
+        if value.get("type") in ("minecraft:crafting_shaped", "minecraft:smithing_transform"):
             value["show_notification"] = False
         result[path] = json.dumps(value, ensure_ascii=False, indent=2) + "\n"
 
@@ -104,7 +108,13 @@ def resources():
         for z in (2, 12):
             table_boxes.append(([x, 0, z], [x + 2, 10, z + 2]))
     add(f"{ASSETS}/models/block/essence_workbench.json", block_model(outlined_union(table_boxes, "base")))
-    for name in ("mob_farm", "essence_workbench"):
+    add(f"{ASSETS}/models/block/essence_stabilizer.json", {"parent": "minecraft:block/block",
+        "textures": {"atlas": "trading_cells:block/essence_stabilizer", "particle": "#atlas"},
+        "elements": [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": {
+            face: {"texture": "#atlas", "uv": uv, "cullface": face} for face, uv in {
+                "up": [0, 0, 8, 8], "north": [8, 0, 16, 8], "down": [8, 8, 16, 16],
+                "south": [0, 8, 8, 16], "east": [0, 8, 8, 16], "west": [0, 8, 8, 16]}.items()}}]})
+    for name in ("mob_farm", "essence_workbench", "essence_stabilizer"):
         add(f"{ASSETS}/blockstates/{name}.json", {"variants": {
             f"facing={facing}": {"model": f"trading_cells:block/{name}", "y": index * 90}
             for index, facing in enumerate(("north", "east", "south", "west"))}})
@@ -125,11 +135,112 @@ def resources():
     for hand in ("thirdperson_righthand", "thirdperson_lefthand"):
         module_model["display"][hand] = {"rotation": [70, 0, 0], "translation": [0, 2.75, 3], "scale": [0.4, 0.4, 0.4]}
     add(f"{ASSETS}/models/item/entity_module.json", module_model)
-    entity_item("entity_module", "item/entity_module", "entity_module")
-    for name, texture in (("entity_essence", "minecraft:item/experience_bottle"),
-                          ("essence_extractor", "trading_cells:item/pipe_target_selector")):
-        add(f"{ASSETS}/models/item/{name}.json", {"parent": "minecraft:item/generated", "textures": {"layer0": texture}})
+    tiers = []
+    for tier, base in enumerate(BASES, 1):
+        name = f"{base}_creature_model_base"
+        model = deepcopy(module_model)
+        model["textures"]["edge"] = f"trading_cells:block/essence/tier_{tier}_edge"
+        add(f"{ASSETS}/textures/block/essence/tier_{tier}_edge.png.mcmeta",
+            {"animation": {"width": 32, "height": 32, "frametime": 4, "interpolate": False}})
+        add(f"{ASSETS}/models/item/{name}.json", model)
         model_item(name, f"item/{name}")
+        tiers.append({"threshold": tier, "model": {"type": "minecraft:composite", "models": [
+            {"type": "minecraft:model", "model": f"trading_cells:item/{name}"},
+            {"type": "minecraft:special", "base": "trading_cells:item/entity_module",
+             "model": {"type": "trading_cells:entity_module"}}]}})
+        add(f"{DATA}/recipe/{name}.json", {"type": "minecraft:crafting_shaped", "category": "misc",
+            "pattern": ["GBG", "BSB", "GBG"], "key": {"G": "minecraft:" + (
+                "green_concrete", "lapis_lazuli", "diamond", "netherite_ingot")[tier - 1],
+                "B": "minecraft:black_concrete", "S": "trading_cells:storm_shard"},
+            "result": {"id": f"trading_cells:{name}", "count": 1}})
+        add(f"{DATA}/recipe/essence_stabilization_{tier}.json", {"type": "trading_cells:essence_stabilization",
+            "tier": tier, "duration": 100, "amethyst": {"ingredient": "minecraft:amethyst_shard", "count": 2 ** (tier - 1)},
+            "reagent": {"ingredient": "minecraft:" + ("redstone", "glowstone_dust", "ender_pearl", "dragon_breath")[tier - 1], "count": 2}})
+    add(f"{ASSETS}/items/entity_module.json", {"model": {"type": "minecraft:range_dispatch",
+        "property": "trading_cells:essence_tier", "entries": tiers, "fallback": tiers[0]["model"]}})
+    for name in ("entity_essence", "essence_extractor", "empty_essence_vial", "raw_creature_essence_vial"):
+        add(f"{ASSETS}/models/item/{name}.json", {"parent": "minecraft:item/generated",
+            "textures": {"layer0": f"trading_cells:item/essence/{name}"}})
+        model_item(name, f"item/{name}")
+
+    syringe_display = {
+        "firstperson_righthand": {"rotation": [0, 70, 0], "translation": [0, 2, -1], "scale": [0.8] * 3},
+        "firstperson_lefthand": {"rotation": [0, -110, 0], "translation": [0, 2, -1], "scale": [0.8] * 3},
+        "thirdperson_righthand": {"rotation": [0, 90, 90], "translation": [0, 3, 0], "scale": [0.85] * 3},
+        "thirdperson_lefthand": {"rotation": [0, -90, -90], "translation": [0, 3, 0], "scale": [0.85] * 3},
+        "gui": {"rotation": [15, -25, 0], "scale": [1, 1, 1]},
+    }
+    textures = {"iron": "minecraft:block/iron_block", "dark": "minecraft:block/black_concrete",
+                "grip": "minecraft:block/gray_concrete", "blue": "minecraft:block/light_blue_concrete",
+                "glass": "minecraft:block/glass", "cap": "minecraft:block/amethyst_block",
+                "particle": "minecraft:block/iron_block"}
+
+    def cube(start, end, texture, uv=None):
+        face = {"texture": "#" + texture, "uv": uv or [0, 0, 16, 16]}
+        return {"from": start, "to": end, "faces": {side: deepcopy(face)
+                for side in ("north", "south", "west", "east", "up", "down")}}
+
+    body = [cube([2.5, 7, 6.5], [10.5, 9.5, 9.5], "iron"),
+            cube([2.75, 2, 6.75], [4.8, 7.25, 9.25], "grip"),
+            cube([3.2, 2.75, 6.6], [4.25, 6, 9.4], "blue"),
+            cube([10.5, 7.5, 7], [11.5, 9, 9], "dark"),
+            cube([11.5, 8, 7.8], [15.25, 8.4, 8.2], "iron"),
+            cube([15.25, 8.1, 7.9], [15.75, 8.3, 8.1], "iron"),
+            cube([4.8, 5, 7.6], [6.8, 5.4, 8.4], "dark"),
+            cube([6.4, 5.4, 7.6], [6.8, 7, 8.4], "dark"),
+            cube([5.1, 6.1, 7.7], [5.6, 7, 8.3], "blue"),
+            cube([3, 9.5, 6.9], [5.2, 10, 9.1], "dark"),
+            cube([7, 7.9, 6.35], [8.7, 8.55, 9.65], "blue")]
+    vial = [cube([3.3, 10, 7.2], [4.9, 13.8, 8.8], "glass"),
+            cube([3.3, 9.9, 7.2], [4.9, 10.2, 8.8], "iron"),
+            cube([3.15, 13.8, 7.05], [5.05, 14.4, 8.95], "cap")]
+
+    def shifted(elements, dx, dy=0):
+        elements = deepcopy(elements)
+        for element in elements:
+            for key in ("from", "to"):
+                element[key][0] = round(element[key][0] + dx, 4)
+                element[key][1] = round(element[key][1] + dy, 4)
+        return elements
+
+    def syringe_model(elements, extra=None):
+        return {"parent": "minecraft:item/generated", "textures": textures | (extra or {}),
+                "display": syringe_display, "elements": elements}
+
+    add(f"{ASSETS}/models/item/essence_extractor.json", syringe_model(body))
+    syringe = {"type": "minecraft:model", "model": "trading_cells:item/essence_extractor"}
+    loading = []
+    for frame in range(33):
+        progress = frame / 32
+        if progress < 0.4:
+            fraction = progress / 0.4
+            fraction = fraction * fraction * (3 - 2 * fraction)
+            dx, dy = 5 * (1 - fraction), -6 + 10 * fraction
+        elif progress < 0.75:
+            dx, dy = 0, 4 - 3.25 * (progress - 0.4) / 0.35
+        else:
+            dx, dy = 0, 0.75 * (1 - progress) / 0.25
+        name = f"syringe_vial_{frame:02d}"
+        add(f"{ASSETS}/models/item/essence/{name}.json", syringe_model(shifted(vial, dx, dy)))
+        loading.append({"threshold": progress, "model": {"type": "minecraft:composite", "models": [
+            syringe, {"type": "minecraft:model", "model": f"trading_cells:item/essence/{name}"}]}})
+    extracting = []
+    for tier in range(1, 5):
+        for frame in range(25):
+            progress = frame / 24
+            advance = min(1, progress / 0.15) * min(1, (1 - progress) / 0.2)
+            advance = advance * advance * (3 - 2 * advance)
+            fill = max(0, min(1, (progress - 0.15) / 0.7))
+            liquid = [] if fill <= 0 else [cube([3.5, 10.2, 7.4], [4.7, round(10.2 + 3.35 * fill, 4), 8.6],
+                                                "essence", [1, 7, 2, 8])]
+            name = f"syringe_extract_{tier}_{frame:02d}"
+            add(f"{ASSETS}/models/item/essence/{name}.json", syringe_model(shifted(body + vial + liquid, advance * 2),
+                {"essence": f"trading_cells:block/essence/tier_{tier}_edge"}))
+            extracting.append({"threshold": (tier - 1) * 2 + progress,
+                               "model": {"type": "minecraft:model", "model": f"trading_cells:item/essence/{name}"}})
+    add(f"{ASSETS}/items/essence_extractor.json", {"model": {"type": "minecraft:range_dispatch",
+        "property": "trading_cells:syringe_extraction", "entries": extracting, "fallback": {"type": "minecraft:range_dispatch",
+        "property": "trading_cells:syringe_load", "fallback": syringe, "entries": loading}}})
 
     for family in ("speed", "capacity"):
         for index, material in enumerate(MATERIALS):
@@ -137,27 +248,78 @@ def resources():
             add(f"{ASSETS}/models/item/{name}.json", {"parent": "minecraft:item/generated", "textures": {
                 "layer0": f"trading_cells:item/upgrades/mob_farm_{family}/{material}_upgrade"}})
             model_item(name, f"item/{name}")
-            ingot = "diamond" if material == "diamond" else f"{material}_ingot"
-            previous = ("minecraft:clock" if family == "speed" else "minecraft:amethyst_block") if index == 0 \
+            previous = "minecraft:diamond_sword" if index == 0 \
                 else f"trading_cells:mob_farm_{family}_{MATERIALS[index - 1]}_upgrade"
-            add(f"{DATA}/recipe/{name}.json", {"type": "minecraft:crafting_shaped", "category": "misc",
-                "pattern": ["CMC", "MSM", "CPC"], "key": {
-                    "C": "minecraft:blaze_powder" if material == "netherite" else "minecraft:popped_chorus_fruit",
-                    "M": f"minecraft:{ingot}", "S": "minecraft:iron_sword" if family == "speed" else "minecraft:diamond_sword",
-                    "P": previous}, "result": {"id": f"trading_cells:{name}", "count": 1}})
+            if material == "netherite":
+                add(f"{DATA}/recipe/{name}.json", {"type": "minecraft:smithing_transform",
+                    "template": "minecraft:netherite_upgrade_smithing_template", "base": previous,
+                    "addition": "minecraft:netherite_block", "result": {"id": f"trading_cells:{name}", "count": 1}})
+            else:
+                add(f"{DATA}/recipe/{name}.json", {"type": "minecraft:crafting_shaped", "category": "misc",
+                    "pattern": ["CBC", "BSB", "CBC"], "key": {
+                        "C": "minecraft:popped_chorus_fruit" if material == "diamond" else
+                             "minecraft:clock" if family == "speed" else "minecraft:chest",
+                        "B": f"minecraft:{material}_block", "S": previous},
+                    "result": {"id": f"trading_cells:{name}", "count": 1}})
 
     add(f"{DATA}/recipe/essence_workbench.json", {"type": "minecraft:crafting_shaped", "category": "misc",
-        "pattern": ["BBB", "BCB", "B B"], "key": {"B": "minecraft:black_concrete",
-        "C": "minecraft:crafting_table"}, "result": {"id": "trading_cells:essence_workbench", "count": 1}})
+        "pattern": ["LBL", "BCB", "BSB"], "key": {"B": "minecraft:black_concrete", "L": "minecraft:lapis_block",
+        "C": "trading_cells:experience_storage", "S": "trading_cells:storm_shard"},
+        "result": {"id": "trading_cells:essence_workbench", "count": 1}})
     add(f"{DATA}/recipe/essence_extractor.json", {"type": "minecraft:crafting_shaped", "category": "equipment",
-        "pattern": [" IA", " BR", "I  "], "key": {"I": "minecraft:iron_ingot", "A": "minecraft:amethyst_shard",
-        "B": "minecraft:glass_bottle", "R": "minecraft:redstone"}, "result": {"id": "trading_cells:essence_extractor", "count": 1}})
-    farm_inputs = ("minecraft:iron_block", "minecraft:black_concrete", "minecraft:iron_block",
+        "pattern": ["  A", " G ", "I  "], "key": {"I": "minecraft:iron_ingot", "A": "minecraft:amethyst_shard",
+        "G": "minecraft:glass_pane"}, "result": {"id": "trading_cells:essence_extractor", "count": 1}})
+    add(f"{DATA}/recipe/empty_essence_vial.json", {"type": "minecraft:crafting_shaped", "category": "misc",
+        "pattern": ["A", "G", "G"], "key": {"G": "minecraft:glass", "A": "minecraft:amethyst_shard"},
+        "result": {"id": "trading_cells:empty_essence_vial", "count": 4}})
+    add(f"{DATA}/recipe/essence_stabilizer.json", {"type": "minecraft:crafting_shaped", "category": "misc",
+        "pattern": ["LGL", "BDB", "LBL"], "key": {"L": "minecraft:lapis_block", "G": "minecraft:glass",
+        "B": "minecraft:black_concrete", "D": "minecraft:diamond_block"},
+        "result": {"id": "trading_cells:essence_stabilizer", "count": 1}})
+    farm_inputs = ("minecraft:lapis_block", "minecraft:black_concrete", "minecraft:lapis_block",
                    "minecraft:black_concrete", "trading_cells:experience_storage", "minecraft:black_concrete",
-                   "minecraft:quartz_block", "minecraft:black_concrete", "minecraft:quartz_block")
+                   "minecraft:lapis_block", "trading_cells:storm_shard", "minecraft:lapis_block")
     add(f"{DATA}/recipe/mob_farm_infusion.json", {"type": "trading_cells:arcane_infusion", "category": "production",
         "ingredients": [{"ingredient": item, "count": 1} for item in farm_inputs], "experience": 50_000,
         "result": {"type": "item", "item": "trading_cells:mob_farm"}})
+    add(f"{DATA}/recipe/experience_bottle_infusion.json", {"type": "trading_cells:arcane_infusion", "category": "misc",
+        "shapeless": True,
+        "ingredients": [{"ingredient": "minecraft:glass_bottle", "count": 1} if slot == 4 else {"empty": True}
+                        for slot in range(9)], "experience": 11,
+        "result": {"type": "item", "item": "minecraft:experience_bottle"}})
+    return result
+
+
+def texture_resources():
+    """Preserve generated silhouettes; tier variants change palette only."""
+    result = {}
+    sources = Path(__file__).resolve().parent / "assets/essence"
+    for name in ("essence_extractor", "empty_essence_vial", "raw_creature_essence_vial", "entity_essence", "essence_stabilizer"):
+        size = 128 if name == "essence_stabilizer" else 32
+        image = Image.open(sources / f"{name}.png").convert("RGBA").resize((size, size), Image.Resampling.NEAREST)
+        stream = io.BytesIO()
+        image.save(stream, format="PNG")
+        path = "block/essence_stabilizer" if name == "essence_stabilizer" else f"item/essence/{name}"
+        result[f"{ASSETS}/textures/{path}.png"] = stream.getvalue()
+    pipe = Image.open(ROOT / f"{ASSETS}/textures/block/logistics/fluid_pipe/fluid_pipe.png").convert("RGBA")
+    palettes = (((85, 230, 106), (185, 255, 194)), ((53, 207, 255), (183, 243, 255)),
+                ((176, 92, 255), (224, 194, 255)), ((255, 211, 78), (255, 242, 166)))
+    for tier, (base, highlight) in enumerate(palettes, 1):
+        variant = pipe.copy()
+        values = [max(pipe.getpixel((x, y))[:3]) for y in range(pipe.height) if 14 <= y % 32 < 18 for x in range(pipe.width)]
+        low, high = min(values), max(values)
+        for y in range(pipe.height):
+            if not 14 <= y % 32 < 18:
+                continue
+            for x in range(pipe.width):
+                pixel = pipe.getpixel((x, y))
+                step = round(3 * (max(pixel[:3]) - low) / max(1, high - low))
+                palette = [tuple(round(c * 0.55) for c in base), base,
+                           tuple((c + h) // 2 for c, h in zip(base, highlight)), highlight]
+                variant.putpixel((x, y), (*palette[step], pixel[3]))
+        stream = io.BytesIO()
+        variant.save(stream, format="PNG")
+        result[f"{ASSETS}/textures/block/essence/tier_{tier}_edge.png"] = stream.getvalue()
     return result
 
 
@@ -173,6 +335,13 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8", newline="\n")
         if args.check and (not path.is_file() or path.read_text(encoding="utf-8") != content):
+            stale.append(relative)
+    for relative, content in texture_resources().items():
+        path = ROOT / relative
+        if args.write:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+        if args.check and (not path.is_file() or path.read_bytes() != content):
             stale.append(relative)
     if stale:
         raise SystemExit("Stale simulation resources:\n" + "\n".join(stale))

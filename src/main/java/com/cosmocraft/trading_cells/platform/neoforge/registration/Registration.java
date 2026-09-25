@@ -16,12 +16,7 @@ import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryTooltipE
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.combat.adapters.input.CombatTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.combat.adapters.output.CombatRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.SkeletonFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.RaiderFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.CreeperFarmRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.ConfiguredMobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.silktouch.adapters.output.SilkTouchTwoRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.TraderTooltipEventAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
@@ -97,13 +92,8 @@ public class Registration {
         LogisticsRegistrationAdapter.load(modEventBus);
         FarmerRegistrationAdapter.load();
         IronFarmRegistrationAdapter.load();
-        SkeletonFarmRegistrationAdapter.load(modEventBus);
-        RaiderFarmRegistrationAdapter.load(modEventBus);
-        CreeperFarmRegistrationAdapter.load(modEventBus);
-        ConfiguredMobFarmRegistrationAdapter.load(modEventBus);
         com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.load(modEventBus);
         SilkTouchTwoRegistrationAdapter.load();
-        ZombieFarmRegistrationAdapter.load(modEventBus);
         QuarryRegistrationAdapter.load(modEventBus);
         CreativeTabRegistration.load();
         FarmerTooltipEventAdapter.register(modEventBus);

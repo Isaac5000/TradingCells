@@ -13,11 +13,6 @@ import com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.Log
 import com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.LogisticsClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.MobFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.QuarryClientRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.output.client.SkeletonFarmClientRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.output.client.RaiderFarmClientRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.output.client.CreeperFarmClientRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.output.client.ConfiguredMobFarmClientRegistrationAdapter;
-import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.client.ZombieFarmClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.VillagerTradingCellClientRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.client.network.TradingCellClientPayloadRegistration;
 import com.cosmocraft.trading_cells.platform.neoforge.client.ExperienceFluidClientRegistration;
@@ -64,20 +59,13 @@ public class TradingCellsClient {
             modBus.addListener(ConverterClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(QuarryClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(QuarryClientRegistrationAdapter::onRegisterRenderers);
-            modBus.addListener(SkeletonFarmClientRegistrationAdapter::onRegisterMenuScreens);
-            modBus.addListener(SkeletonFarmClientRegistrationAdapter::onRegisterRenderers);
-            modBus.addListener(SkeletonFarmClientRegistrationAdapter::onModifyBakingResult);
-            modBus.addListener(RaiderFarmClientRegistrationAdapter::onRegisterMenuScreens);
-            modBus.addListener(RaiderFarmClientRegistrationAdapter::onRegisterRenderers);
-            modBus.addListener(CreeperFarmClientRegistrationAdapter::onRegisterMenuScreens);
-            modBus.addListener(CreeperFarmClientRegistrationAdapter::onRegisterRenderers);
-            modBus.addListener(ConfiguredMobFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterSpecialModelRenderers);
-            modBus.addListener(ConfiguredMobFarmClientRegistrationAdapter::onRegisterRenderers);
-            modBus.addListener(ZombieFarmClientRegistrationAdapter::onRegisterMenuScreens);
-            modBus.addListener(ZombieFarmClientRegistrationAdapter::onRegisterRenderers);
+            modBus.addListener((net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent event) ->
+                    event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("trading_cells", "storm_shard_charge"),
+                            com.cosmocraft.trading_cells.feature.combat.adapters.output.client.StormShardItemRenderSupport.Unbaked.MAP_CODEC));
+            modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterModelProperties);
         }
         // Rendering is handled by SpecialModelRenderers selected by JSON.
     }

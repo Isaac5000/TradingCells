@@ -2,14 +2,20 @@ package com.cosmocraft.trading_cells.feature.infusion.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionRecipe;
+import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionRecipeDisplay;
 import com.cosmocraft.trading_cells.feature.infusion.domain.model.ArcaneInfusionTransferAction;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.MachineMenuLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BooleanSupplier;
+import com.cosmocraft.trading_cells.platform.neoforge.network.InfuserAutomationPayload;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.StackedItemContents;
@@ -39,13 +45,21 @@ public final class ArcaneInfuserMenu extends RecipeBookMenu {
 
     private final Container container;
     private final ContainerData data;
+    private final Player owner;
+    private String lockedRecipeName = "";
+    private ItemStack lockedRecipeResult = ItemStack.EMPTY;
+    private String sentRecipe = null;
+    private ItemStack sentResult = ItemStack.EMPTY;
+    private @Nullable Identifier selectedRecipeId;
+    private @Nullable ArcaneInfusionRecipeDisplay automationDisplay;
+    private @Nullable ArcaneInfusionRecipeDisplay sentDisplay;
 
     public ArcaneInfuserMenu(int containerId, Inventory inventory) {
         this(
                 containerId,
                 inventory,
                 new SimpleContainer(MACHINE_SLOT_COUNT),
-                new SimpleContainerData(5)
+                new SimpleContainerData(7)
         );
     }
 
@@ -57,9 +71,10 @@ public final class ArcaneInfuserMenu extends RecipeBookMenu {
     ) {
         super(ArcaneInfuserRegistrationAdapter.MENU.get(), containerId);
         checkContainerSize(container, MACHINE_SLOT_COUNT);
-        checkContainerDataCount(data, 5);
+        checkContainerDataCount(data, 7);
         this.container = container;
         this.data = data;
+        this.owner = inventory.player;
 
         for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
             addSlot(new Slot(container, slot, inputSlotX(slot), inputSlotY(slot)));
@@ -84,6 +99,40 @@ public final class ArcaneInfuserMenu extends RecipeBookMenu {
 
     public int storedExperience() {
         return (data.get(0) & 0xFFFF) | ((data.get(1) & 0x7FFF) << 16);
+    }
+    public boolean fillStorage() { return data.get(5) != 0; }
+    public int lockState() { return data.get(6); }
+    public String lockedRecipeName() { return lockedRecipeName; }
+    public ItemStack lockedRecipeResult() { return lockedRecipeResult; }
+    public @Nullable ArcaneInfusionRecipeDisplay automationDisplay() { return automationDisplay; }
+    public void setAutomationDisplay(String name, ItemStack result, @Nullable ArcaneInfusionRecipeDisplay display) {
+        lockedRecipeName = name;
+        lockedRecipeResult = result.copy();
+        automationDisplay = display;
+    }
+    @Override public void broadcastChanges() {
+        super.broadcastChanges();
+        if (owner instanceof ServerPlayer player && container instanceof ArcaneInfuserBlockEntity infuser) {
+            Identifier id = infuser.lockedRecipeId();
+            if (id == null) { id = infuser.activeRecipeId(); }
+            if (id == null) { id = selectedRecipeId; }
+            String recipe = id == null ? "" : id.toString();
+            ArcaneInfusionRecipe value = infuser.recipe(id);
+            ItemStack result = value == null ? ItemStack.EMPTY : value.result().displayResult();
+            ArcaneInfusionRecipeDisplay display = value == null ? null : (ArcaneInfusionRecipeDisplay) value.display().getFirst();
+            if (!recipe.equals(sentRecipe) || !ItemStack.matches(result, sentResult) || !Objects.equals(display, sentDisplay)) {
+                PacketDistributor.sendToPlayer(player, new InfuserAutomationPayload(containerId, recipe, result, display));
+                sentRecipe = recipe;
+                sentResult = result.copy();
+                sentDisplay = display;
+            }
+        }
+    }
+    @Override public boolean clickMenuButton(Player player, int button) {
+        if (player != owner || !stillValid(player) || !(container instanceof ArcaneInfuserBlockEntity infuser)) { return false; }
+        if (button == 0) { infuser.experience().toggleMode(); return true; }
+        if (button == 1) { infuser.toggleRecipeLock(selectedRecipeId); return true; }
+        return false;
     }
 
     public int capacity() {
@@ -135,6 +184,10 @@ public final class ArcaneInfuserMenu extends RecipeBookMenu {
         if (!(holder.value() instanceof ArcaneInfusionRecipe recipe)) {
             return PostPlaceAction.NOTHING;
         }
+        if (container instanceof ArcaneInfuserBlockEntity infuser && infuser.lockedRecipeId() != null) {
+            return PostPlaceAction.NOTHING;
+        }
+        selectedRecipeId = holder.id().identifier();
 
         List<ItemStack> returnedInventory = copyInventory(inventory.getNonEquipmentItems());
         for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
@@ -217,7 +270,7 @@ public final class ArcaneInfuserMenu extends RecipeBookMenu {
         if (result.getCount() == original.getCount()) {
             return ItemStack.EMPTY;
         }
-        slot.setByPlayer(ItemStack.EMPTY, original);
+        slot.setByPlayer(ItemStack.EMPTY, original.copyWithCount(original.getCount() - result.getCount()));
         slot.onTake(player, result);
         return original;
     }

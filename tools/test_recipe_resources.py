@@ -23,8 +23,8 @@ RESOURCE_ROOT = ROOT / "src/main/resources"
 RECIPES = RESOURCE_ROOT / DATA / "recipe"
 EGG = "#trading_cells:arcane_infusion_eggs"
 PIPE_MATERIALS = {
-    "basic": "copper_ingot", "improved": "iron_ingot", "advanced": "gold_ingot",
-    "ultimate": "diamond", "infinite": "netherite_ingot",
+    "copper": "copper_ingot", "iron": "iron_ingot", "gold": "gold_ingot",
+    "diamond": "diamond", "netherite": "netherite_ingot",
 }
 CORNERS = (0, 2, 6, 8)
 EDGES = (1, 3, 5, 7)
@@ -264,17 +264,63 @@ class SpecificRecipeTests(unittest.TestCase):
                 self.assertEqual(center[0]["to"], [10, 2, 14])
         self.assertEqual(read_json(models / "item/arcane_infuser.json")["parent"], "trading_cells:block/arcane_infuser")
 
-    def test_simulation_black_concrete_recipes_preserve_other_materials(self):
+    def test_essence_machine_recipes(self):
         grid = crafting_grid(read_json(RECIPES / "essence_workbench.json"))
-        self.assertEqual(grid, ["minecraft:black_concrete", "minecraft:black_concrete", "minecraft:black_concrete",
-                                "minecraft:black_concrete", "minecraft:crafting_table", "minecraft:black_concrete",
-                                "minecraft:black_concrete", None, "minecraft:black_concrete"])
+        self.assertEqual(grid, ["minecraft:lapis_block", "minecraft:black_concrete", "minecraft:lapis_block",
+                                "minecraft:black_concrete", "trading_cells:experience_storage", "minecraft:black_concrete",
+                                "minecraft:black_concrete", "trading_cells:storm_shard", "minecraft:black_concrete"])
+        self.assertEqual(crafting_grid(read_json(RECIPES / "essence_stabilizer.json")), [
+            "minecraft:lapis_block", "minecraft:glass", "minecraft:lapis_block",
+            "minecraft:black_concrete", "minecraft:diamond_block", "minecraft:black_concrete",
+            "minecraft:lapis_block", "minecraft:black_concrete", "minecraft:lapis_block"])
+        vial = read_json(RECIPES / "empty_essence_vial.json")
+        self.assertEqual(vial["pattern"], ["A", "G", "G"])
+        self.assertEqual(vial["key"], {"A": "minecraft:amethyst_shard", "G": "minecraft:glass"})
+        self.assertEqual(vial["result"]["count"], 4)
         farm = read_json(RECIPES / "mob_farm_infusion.json")
         self.assertEqual(farm["ingredients"], [{"ingredient": item, "count": 1} for item in (
-            "minecraft:iron_block", "minecraft:black_concrete", "minecraft:iron_block",
+            "minecraft:lapis_block", "minecraft:black_concrete", "minecraft:lapis_block",
             "minecraft:black_concrete", "trading_cells:experience_storage", "minecraft:black_concrete",
-            "minecraft:quartz_block", "minecraft:black_concrete", "minecraft:quartz_block")])
+            "minecraft:lapis_block", "trading_cells:storm_shard", "minecraft:lapis_block")])
         self.assertEqual(farm["experience"], 50_000)
+
+    def test_essence_stabilization_and_bottle_costs(self):
+        for tier, reagent in enumerate(("redstone", "glowstone_dust", "ender_pearl", "dragon_breath"), 1):
+            recipe = read_json(RECIPES / f"essence_stabilization_{tier}.json")
+            self.assertEqual(recipe["tier"], tier)
+            self.assertEqual(recipe["duration"], 100)
+            self.assertEqual(recipe["amethyst"], {"ingredient": "minecraft:amethyst_shard", "count": 2 ** (tier - 1)})
+            self.assertEqual(recipe["reagent"], {"ingredient": f"minecraft:{reagent}", "count": 2})
+        bottle = read_json(RECIPES / "experience_bottle_infusion.json")
+        self.assertEqual(bottle["experience"], 11)
+        self.assertTrue(bottle["shapeless"])
+        self.assertEqual(bottle["ingredients"], [{"ingredient": "minecraft:glass_bottle", "count": 1} if i == 4
+                                                else {"empty": True} for i in range(9)])
+
+    def test_essence_bases_and_progressive_upgrades(self):
+        for name, material in zip(("tier_i", "tier_ii", "tier_iii", "tier_iv"),
+                                  ("green_concrete", "lapis_lazuli", "diamond", "netherite_ingot")):
+            grid = crafting_grid(read_json(RECIPES / f"{name}_creature_model_base.json"))
+            self.assertEqual([grid[i] for i in CORNERS], [f"minecraft:{material}"] * 4)
+            self.assertEqual([grid[i] for i in EDGES], ["minecraft:black_concrete"] * 4)
+            self.assertEqual(grid[4], "trading_cells:storm_shard")
+        for family in ("speed", "capacity"):
+            previous = "minecraft:diamond_sword"
+            for material in ("copper", "iron", "gold", "diamond", "netherite"):
+                name = f"mob_farm_{family}_{material}_upgrade"
+                recipe = read_json(RECIPES / f"{name}.json")
+                if material == "netherite":
+                    self.assertEqual(recipe["type"], "minecraft:smithing_transform")
+                    self.assertEqual(recipe["template"], "minecraft:netherite_upgrade_smithing_template")
+                    self.assertEqual(recipe["base"], previous)
+                    self.assertEqual(recipe["addition"], "minecraft:netherite_block")
+                else:
+                    grid = crafting_grid(recipe)
+                    corner = "popped_chorus_fruit" if material == "diamond" else "chest" if family == "capacity" else "clock"
+                    self.assertEqual([grid[i] for i in CORNERS], [f"minecraft:{corner}"] * 4)
+                    self.assertEqual([grid[i] for i in EDGES], [f"minecraft:{material}_block"] * 4)
+                    self.assertEqual(grid[4], previous)
+                previous = f"trading_cells:{name}"
 
     def test_all_pipe_tiers_use_their_material_and_keep_the_upgrade_chain(self):
         generated = resources()
@@ -285,12 +331,19 @@ class SpecificRecipeTests(unittest.TestCase):
             with self.subTest(tier=tier):
                 recipe = read_json(RESOURCE_ROOT / relative)
                 self.assertEqual((RESOURCE_ROOT / relative).read_bytes(), generated[relative])
-                grid = crafting_grid(recipe)
-                corner = "popped_chorus_fruit" if tier == "ultimate" else material
-                self.assertEqual([grid[i] for i in CORNERS], [f"minecraft:{corner}"] * 4)
-                self.assertEqual([grid[i] for i in EDGES], [f"minecraft:{material}"] * 4)
-                self.assertEqual(grid[4], previous)
-                self.assertEqual(recipe["result"], {"id": f"trading_cells:{name}", "count": 1})
+                if tier == "netherite":
+                    self.assertEqual(recipe["type"], "minecraft:smithing_transform")
+                    self.assertEqual(recipe["template"], "minecraft:netherite_upgrade_smithing_template")
+                    self.assertEqual(recipe["base"], previous)
+                    self.assertEqual(recipe["addition"], "minecraft:netherite_ingot")
+                    self.assertEqual(recipe["result"], {"id": f"trading_cells:{name}"})
+                else:
+                    grid = crafting_grid(recipe)
+                    corner = "popped_chorus_fruit" if tier == "diamond" else material
+                    self.assertEqual([grid[i] for i in CORNERS], [f"minecraft:{corner}"] * 4)
+                    self.assertEqual([grid[i] for i in EDGES], [f"minecraft:{material}"] * 4)
+                    self.assertEqual(grid[4], previous)
+                    self.assertEqual(recipe["result"], {"id": f"trading_cells:{name}", "count": 1})
                 self.assertIs(recipe["show_notification"], False)
             previous = f"trading_cells:{name}"
 
@@ -327,14 +380,13 @@ class SimulationRecipeValidationTests(unittest.TestCase):
 
     def test_active_catalog_passes(self):
         self.assertEqual(self.validate(), [])
-        self.assertEqual(len(validator.LEGACY_ENTITY_FARM_BLOCKS), 21)
 
-    def test_all_replaced_farm_recipes_are_rejected(self):
-        for name in validator.LEGACY_ENTITY_FARM_BLOCKS:
+    def test_removed_farm_recipes_remain_absent(self):
+        for name in ("skeleton", "zombie", "creeper", "raider", "arthropod", "slime", "guardian", "piglin",
+                     "blaze", "ghast", "enderman", "shulker", "breeze", "phantom", "livestock", "fish",
+                     "aquatic", "mount", "amphibian", "bee", "creaking"):
             with self.subTest(farm=name):
-                self.assertTrue(any("must not be published" in error for error in self.validate({
-                    f"{name}_infusion.json": read_json(RECIPES / "mob_farm_infusion.json"),
-                })))
+                self.assertFalse((RECIPES / f"{name}_farm_infusion.json").exists())
 
     def test_general_farm_layout_and_cost_are_checked(self):
         for field, value in (("experience", 1), ("result", {"type": "item", "item": "trading_cells:skeleton_farm"})):

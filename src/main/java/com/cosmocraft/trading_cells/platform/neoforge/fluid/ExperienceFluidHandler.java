@@ -19,6 +19,7 @@ public final class ExperienceFluidHandler extends SnapshotJournal<Integer>
     private final IntSupplier capacityGetter;
     private final boolean acceptsInput;
     private final boolean permitsExtraction;
+    private final IntSupplier inputBudget;
     private final Runnable committedChange;
 
     public ExperienceFluidHandler(
@@ -30,12 +31,20 @@ public final class ExperienceFluidHandler extends SnapshotJournal<Integer>
             boolean permitsExtraction,
             Runnable committedChange
     ) {
+        this(resourceSupplier, amountGetter, amountSetter, capacityGetter, acceptsInput, permitsExtraction,
+                () -> Integer.MAX_VALUE, committedChange);
+    }
+
+    public ExperienceFluidHandler(Supplier<FluidResource> resourceSupplier, IntSupplier amountGetter,
+            IntConsumer amountSetter, IntSupplier capacityGetter, boolean acceptsInput, boolean permitsExtraction,
+            IntSupplier inputBudget, Runnable committedChange) {
         this.resourceSupplier = Objects.requireNonNull(resourceSupplier);
         this.amountGetter = Objects.requireNonNull(amountGetter);
         this.amountSetter = Objects.requireNonNull(amountSetter);
         this.capacityGetter = Objects.requireNonNull(capacityGetter);
         this.acceptsInput = acceptsInput;
         this.permitsExtraction = permitsExtraction;
+        this.inputBudget = Objects.requireNonNull(inputBudget);
         this.committedChange = Objects.requireNonNull(committedChange);
     }
 
@@ -80,7 +89,7 @@ public final class ExperienceFluidHandler extends SnapshotJournal<Integer>
         if (!acceptsInput || !matches(resource) || requestedAmount == 0) {
             return 0;
         }
-        int inserted = Math.min(requestedAmount, capacity() - amount());
+        int inserted = Math.min(Math.min(requestedAmount, Math.max(0, inputBudget.getAsInt())), capacity() - amount());
         if (inserted <= 0) {
             return 0;
         }

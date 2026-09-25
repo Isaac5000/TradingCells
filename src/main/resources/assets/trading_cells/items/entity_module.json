@@ -1,18 +1,100 @@
 {
   "model": {
-    "type": "minecraft:composite",
-    "models": [
+    "type": "minecraft:range_dispatch",
+    "property": "trading_cells:essence_tier",
+    "entries": [
       {
-        "type": "minecraft:model",
-        "model": "trading_cells:item/entity_module"
+        "threshold": 1,
+        "model": {
+          "type": "minecraft:composite",
+          "models": [
+            {
+              "type": "minecraft:model",
+              "model": "trading_cells:item/tier_i_creature_model_base"
+            },
+            {
+              "type": "minecraft:special",
+              "base": "trading_cells:item/entity_module",
+              "model": {
+                "type": "trading_cells:entity_module"
+              }
+            }
+          ]
+        }
       },
       {
-        "type": "minecraft:special",
-        "base": "trading_cells:item/entity_module",
+        "threshold": 2,
         "model": {
-          "type": "trading_cells:entity_module"
+          "type": "minecraft:composite",
+          "models": [
+            {
+              "type": "minecraft:model",
+              "model": "trading_cells:item/tier_ii_creature_model_base"
+            },
+            {
+              "type": "minecraft:special",
+              "base": "trading_cells:item/entity_module",
+              "model": {
+                "type": "trading_cells:entity_module"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "threshold": 3,
+        "model": {
+          "type": "minecraft:composite",
+          "models": [
+            {
+              "type": "minecraft:model",
+              "model": "trading_cells:item/tier_iii_creature_model_base"
+            },
+            {
+              "type": "minecraft:special",
+              "base": "trading_cells:item/entity_module",
+              "model": {
+                "type": "trading_cells:entity_module"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "threshold": 4,
+        "model": {
+          "type": "minecraft:composite",
+          "models": [
+            {
+              "type": "minecraft:model",
+              "model": "trading_cells:item/tier_iv_creature_model_base"
+            },
+            {
+              "type": "minecraft:special",
+              "base": "trading_cells:item/entity_module",
+              "model": {
+                "type": "trading_cells:entity_module"
+              }
+            }
+          ]
         }
       }
-    ]
+    ],
+    "fallback": {
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/tier_i_creature_model_base"
+        },
+        {
+          "type": "minecraft:special",
+          "base": "trading_cells:item/entity_module",
+          "model": {
+            "type": "trading_cells:entity_module"
+          }
+        }
+      ]
+    }
   }
 }

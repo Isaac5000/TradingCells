@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "LGL",
+    "BDB",
+    "LBL"
+  ],
+  "key": {
+    "L": "minecraft:lapis_block",
+    "G": "minecraft:glass",
+    "B": "minecraft:black_concrete",
+    "D": "minecraft:diamond_block"
+  },
+  "result": {
+    "id": "trading_cells:essence_stabilizer",
+    "count": 1
+  },
+  "show_notification": false
+}

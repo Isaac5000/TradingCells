@@ -37,7 +37,8 @@ public final class TradingCellsReiMixinPlugin implements IMixinConfigPlugin {
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         return ARCHITECTURY_HANDLER.equals(targetClassName)
-                || REI_DISPLAY_SCREEN.equals(targetClassName);
+                || REI_DISPLAY_SCREEN.equals(targetClassName)
+                || "me.shedaniel.rei.impl.client.gui.screen.AbstractDisplayViewingScreen".equals(targetClassName);
     }
 
     @Override

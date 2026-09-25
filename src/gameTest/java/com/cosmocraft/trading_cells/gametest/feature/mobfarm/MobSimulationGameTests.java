@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.gametest.feature.mobfarm;
 
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EntityEssenceData;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceExtractorItem;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceWorkbenchBlockEntity;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.MobFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.MobFarmMenu;
@@ -9,8 +10,6 @@ import com.cosmocraft.trading_cells.gametest.shared.BlockEntityStateFixtures;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestFixtures;
 import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmLootTables;
-import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.LegacyMobFarmMigration;
-import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MinecraftExperience;
 import java.util.List;
 import net.minecraft.core.Direction;
@@ -42,6 +41,8 @@ public final class MobSimulationGameTests {
                 new GameTestCase("mob_simulation_extractor_rejections", 40, MobSimulationGameTests::extractorRejections),
                 new GameTestCase("mob_simulation_extractor_last_use", 40, MobSimulationGameTests::extractorLastUse),
                 new GameTestCase("mob_simulation_extractor_full_inventory", 40, MobSimulationGameTests::extractorFullInventory),
+                new GameTestCase("mob_simulation_syringe_reload", 40, MobSimulationGameTests::syringeReload),
+                new GameTestCase("mob_simulation_syringe_animated_extraction", 40, MobSimulationGameTests::animatedExtraction),
                 new GameTestCase("mob_simulation_workbench_atomic_cost", 40, MobSimulationGameTests::workbench),
                 new GameTestCase("mob_simulation_workbench_high_level_cost", 40, MobSimulationGameTests::highLevelWorkbench),
                 new GameTestCase("mob_simulation_workbench_shape", 40, MobSimulationGameTests::workbenchShape),
@@ -49,10 +50,7 @@ public final class MobSimulationGameTests {
                 new GameTestCase("mob_simulation_preview_impossible_loot", 40, MobSimulationGameTests::previewImpossibleLoot),
                 new GameTestCase("mob_simulation_save_without_chunk_loads", 40, MobSimulationGameTests::saveWithoutChunkLoads),
                 new GameTestCase("mob_simulation_pending_loot_reload", 40, MobSimulationGameTests::pending),
-                new GameTestCase("mob_simulation_filters_and_automation", 40, MobSimulationGameTests::automation),
-                new GameTestCase("mob_simulation_legacy_farm_migration", 40, MobSimulationGameTests::legacyMigration),
-                new GameTestCase("mob_simulation_legacy_pending_migration", 40, MobSimulationGameTests::legacyPending),
-                new GameTestCase("mob_simulation_paused_migration_tick", 40, MobSimulationGameTests::pausedMigration));
+                new GameTestCase("mob_simulation_filters_and_automation", 40, MobSimulationGameTests::automation));
     }
 
     private static void blockItemNames(GameTestHelper helper) {
@@ -68,11 +66,12 @@ public final class MobSimulationGameTests {
             var player = connectedPlayer(helper);
             var tool = MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance();
             player.setItemInHand(InteractionHand.OFF_HAND, tool);
-            player.getInventory().setItem(9, new ItemStack(Items.GLASS_BOTTLE, 2));
+            player.getInventory().setItem(9, new ItemStack(MobFarmRegistrationAdapter.EMPTY_VIAL.get(), 2));
             var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace(id));
+            reload(player, tool);
             float health = target.getHealth();
             var uuid = target.getUUID();
-            helper.assertValueEqual(interact(player, target, InteractionHand.OFF_HAND), InteractionResult.SUCCESS,
+            helper.assertValueEqual(interact(player, target, InteractionHand.OFF_HAND), InteractionResult.CONSUME,
                     "Registered extraction handler accepts " + id);
             helper.assertValueEqual(tool.getDamageValue(), 1, "Extraction wears the held tool once");
             helper.assertValueEqual(player.getInventory().getItem(9).getCount(), 1, "One bottle consumed");
@@ -87,10 +86,11 @@ public final class MobSimulationGameTests {
             helper.assertValueEqual(essenceCount(player), 1, "Cooldown prevents repeated extraction");
             helper.assertValueEqual(player.getInventory().getItem(9).getCount(), 1, "Cooldown preserves bottles");
             helper.assertValueEqual(tool.getDamageValue(), 1, "Cooldown preserves durability");
-            helper.assertTrue(EntityEssenceData.createEntity(helper.getLevel(), EntityEssenceData.moduleOf(essence)) != null,
+            helper.assertTrue(EntityEssenceData.createEntity(helper.getLevel(), EntityEssenceData.moduleOf(EntityEssenceData.coreOf(essence))) != null,
                     "Extracted state creates a usable simulation module");
             for (int tick = 0; tick < 40; tick++) { player.getCooldowns().tick(); }
             helper.assertFalse(player.getCooldowns().isOnCooldown(tool), "Extractor cooldown expires after forty ticks");
+            reload(player, tool);
             interact(player, target, InteractionHand.OFF_HAND);
             helper.assertValueEqual(essenceCount(player), 2, "Extraction resumes once the cooldown expires");
         }
@@ -106,7 +106,7 @@ public final class MobSimulationGameTests {
         helper.assertValueEqual(essenceCount(player), 0, "Survival extraction requires a bottle");
         helper.assertValueEqual(tool.getDamageValue(), 0, "Failed extraction does not wear the tool");
         helper.assertFalse(player.getCooldowns().isOnCooldown(tool), "Failed extraction does not start cooldown");
-        player.getInventory().setItem(9, new ItemStack(Items.GLASS_BOTTLE, 2));
+        player.getInventory().setItem(9, new ItemStack(MobFarmRegistrationAdapter.EMPTY_VIAL.get(), 2));
         target.setHealth(0);
         interact(player, target, InteractionHand.MAIN_HAND);
         helper.assertTrue(interact(player, connectedPlayer(helper), InteractionHand.MAIN_HAND) == null,
@@ -127,7 +127,8 @@ public final class MobSimulationGameTests {
         var tool = MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance();
         tool.setDamageValue(tool.getMaxDamage() - 1);
         player.setItemInHand(InteractionHand.MAIN_HAND, tool);
-        player.getInventory().setItem(9, new ItemStack(Items.GLASS_BOTTLE, 2));
+        player.getInventory().setItem(9, new ItemStack(MobFarmRegistrationAdapter.EMPTY_VIAL.get(), 2));
+        reload(player, tool);
         var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("cow"));
         interact(player, target, InteractionHand.MAIN_HAND);
         helper.assertTrue(tool.isEmpty(), "Last use breaks the extractor");
@@ -141,13 +142,14 @@ public final class MobSimulationGameTests {
         var player = connectedPlayer(helper);
         player.setPos(net.minecraft.world.phys.Vec3.atCenterOf(helper.absolutePos(GameTestFixtures.TEST_POS)));
         for (int slot = 0; slot < 36; slot++) { player.getInventory().setItem(slot, new ItemStack(Items.STONE, 64)); }
-        player.getInventory().setItem(9, new ItemStack(Items.GLASS_BOTTLE, 2));
+        player.getInventory().setItem(9, new ItemStack(MobFarmRegistrationAdapter.EMPTY_VIAL.get(), 2));
         player.setItemInHand(InteractionHand.OFF_HAND, MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance());
+        reload(player, player.getOffhandItem());
         var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("cow"));
         interact(player, target, InteractionHand.OFF_HAND);
         helper.assertValueEqual(essenceCount(player), 0, "Full inventory has no room for the essence");
         var dropped = helper.getLevel().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(3),
-                item -> item.getItem().is(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get()));
+                item -> item.getItem().is(MobFarmRegistrationAdapter.RAW_ESSENCE.get()));
         helper.assertValueEqual(dropped.size(), 1, "Overflow essence drops once instead of being lost");
         helper.assertValueEqual(dropped.getFirst().getItem().getCount(), 1, "Dropped essence count");
         dropped.forEach(ItemEntity::discard);
@@ -155,13 +157,90 @@ public final class MobSimulationGameTests {
     }
 
     private static @org.jspecify.annotations.Nullable InteractionResult interact(ServerPlayer player, LivingEntity target, InteractionHand hand) {
-        return CommonHooks.onInteractEntity(player, target, hand, net.minecraft.world.phys.Vec3.ZERO);
+        if (!(target instanceof net.minecraft.world.entity.player.Player) && player.level().getEntity(target.getUUID()) == null) {
+            target.setPos(player.position());
+            player.level().addFreshEntity(target);
+        }
+        var result = CommonHooks.onInteractEntity(player, target, hand, net.minecraft.world.phys.Vec3.ZERO);
+        if (EssenceExtractorItem.extractionTier(player.getItemInHand(hand)) > 0) {
+            for (int tick = 0; tick < EssenceExtractorItem.EXTRACTION_TICKS; tick++) { player.doTick(); }
+        }
+        return result;
+    }
+
+    private static void animatedExtraction(GameTestHelper helper) {
+        var player = connectedPlayer(helper);
+        var tool = MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance();
+        player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+        EssenceExtractorItem.setLoaded(tool, true);
+        var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("cow"));
+        target.setPos(player.position()); helper.getLevel().addFreshEntity(target);
+        EssenceExtractorItem.beginExtraction(player, target, InteractionHand.MAIN_HAND);
+        for (int tick = 0; tick < 12; tick++) { player.doTick(); }
+        helper.assertValueEqual(essenceCount(player), 0, "No essence before the extraction animation completes");
+        helper.assertTrue(EssenceExtractorItem.isLoaded(tool), "Part-filled vial remains loaded");
+        player.stopUsingItem();
+        helper.assertValueEqual(EssenceExtractorItem.extractionTier(tool), 0, "Cancelled animation clears transient target");
+        helper.assertValueEqual(tool.getDamageValue(), 0, "Cancel preserves durability");
+        EssenceExtractorItem.beginExtraction(player, target, InteractionHand.MAIN_HAND);
+        target.setPos(player.position().add(20, 0, 0)); player.doTick();
+        helper.assertFalse(player.isUsingItem(), "Moving target cancels extraction");
+        helper.assertTrue(EssenceExtractorItem.isLoaded(tool), "Moving target preserves the loaded vial");
+        target.setPos(player.position());
+        EssenceExtractorItem.beginExtraction(player, target, InteractionHand.MAIN_HAND);
+        for (int tick = 0; tick < 23; tick++) { player.doTick(); }
+        helper.assertValueEqual(essenceCount(player), 0, "Final extraction tick required");
+        player.doTick();
+        helper.assertValueEqual(essenceCount(player), 1, "24-tick extraction delivers once");
+        helper.assertValueEqual(tool.getDamageValue(), 1, "Only completed extraction spends durability");
+        helper.succeed();
+    }
+
+    private static void reload(ServerPlayer player, ItemStack tool) {
+        tool.getItem().finishUsingItem(tool, player.level(), player);
+        player.stopUsingItem();
+    }
+
+    private static void syringeReload(GameTestHelper helper) {
+        var player = connectedPlayer(helper);
+        player.setPos(net.minecraft.world.phys.Vec3.atCenterOf(helper.absolutePos(GameTestFixtures.TEST_POS)));
+        ItemStack tool = MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance();
+        player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+        player.getInventory().setItem(9, new ItemStack(MobFarmRegistrationAdapter.EMPTY_VIAL.get(), 2));
+        var target = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("cow"));
+        interact(player, target, InteractionHand.MAIN_HAND);
+        helper.assertValueEqual(essenceCount(player), 0, "Unloaded syringe cannot extract");
+        helper.assertValueEqual(player.getInventory().getItem(9).getCount(), 2, "Attempt does not auto-consume a vial");
+        tool.getItem().use(player.level(), player, InteractionHand.MAIN_HAND);
+        for (int tick = 0; tick < 12; tick++) { player.doTick(); }
+        helper.assertFalse(EssenceExtractorItem.isLoaded(tool), "Partial reload is not a loaded syringe");
+        player.stopUsingItem();
+        helper.assertValueEqual(player.getInventory().getItem(9).getCount(), 2, "Cancelled reload spends nothing");
+        tool.getItem().use(player.level(), player, InteractionHand.MAIN_HAND);
+        for (int tick = 0; tick < EssenceExtractorItem.RELOAD_TICKS - 1; tick++) { player.doTick(); }
+        helper.assertFalse(EssenceExtractorItem.isLoaded(tool), "The vial is not consumed before the final tick");
+        player.doTick();
+        helper.assertTrue(EssenceExtractorItem.isLoaded(tool), "Completed reload locks a vial into the top socket");
+        helper.assertValueEqual(player.getInventory().getItem(9).getCount(), 1, "Exactly one vial consumed on completion");
+        helper.assertValueEqual(tool.getDamageValue(), 0, "Reload does not consume durability");
+        tool.getItem().finishUsingItem(tool, player.level(), player);
+        helper.assertValueEqual(player.getInventory().getItem(9).getCount(), 1, "Repeated finish cannot charge twice");
+        var ops = helper.getLevel().registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
+        var serialized = ItemStack.CODEC.encodeStart(ops, tool).getOrThrow();
+        var restored = ItemStack.CODEC.parse(ops, serialized).getOrThrow();
+        helper.assertTrue(EssenceExtractorItem.isLoaded(restored), "Loaded state survives saving and transfer");
+        interact(player, target, InteractionHand.MAIN_HAND);
+        helper.assertFalse(EssenceExtractorItem.isLoaded(tool), "Extraction empties the socket");
+        helper.assertValueEqual(essenceCount(player), 1, "Loaded vial produces exactly one raw essence");
+        helper.assertValueEqual(player.getInventory().getItem(9).getCount(), 1, "Extraction cannot consume a second inventory vial");
+        helper.assertValueEqual(tool.getDamageValue(), 1, "Successful extraction wears the syringe once");
+        helper.succeed();
     }
 
     private static ItemStack extractedEssence(ServerPlayer player) {
         for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
             ItemStack stack = player.getInventory().getItem(slot);
-            if (stack.is(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get())) { return stack; }
+            if (stack.is(MobFarmRegistrationAdapter.RAW_ESSENCE.get())) { return stack; }
         }
         return ItemStack.EMPTY;
     }
@@ -170,109 +249,9 @@ public final class MobSimulationGameTests {
         int count = 0;
         for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
             ItemStack stack = player.getInventory().getItem(slot);
-            if (stack.is(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get())) { count += stack.getCount(); }
+            if (stack.is(MobFarmRegistrationAdapter.RAW_ESSENCE.get())) { count += stack.getCount(); }
         }
         return count;
-    }
-
-    private static PortableMachineBlockEntity legacyFarm(GameTestHelper helper, String id) {
-        var block = BuiltInRegistries.BLOCK.getOptional(Identifier.fromNamespaceAndPath("trading_cells", id)).orElseThrow();
-        helper.setBlock(GameTestFixtures.TEST_POS, block);
-        return helper.getBlockEntity(GameTestFixtures.TEST_POS, PortableMachineBlockEntity.class);
-    }
-
-    private static void legacyMigration(GameTestHelper helper) {
-        var ids = new java.util.ArrayList<>(List.of("skeleton_farm", "zombie_farm", "raider_farm", "creeper_farm"));
-        for (var kind : com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmKind.values()) {
-            ids.add(kind.blockId());
-        }
-        helper.assertValueEqual(ids.size(), 21, "All replaced farm IDs covered");
-        for (String id : ids) {
-            var old = legacyFarm(helper, id);
-            var container = (net.minecraft.world.Container) old;
-            ItemStack worker = GameTestFixtures.adultVillagerCapture(helper);
-            container.setItem(0, worker.copy());
-            container.setItem(1, Items.IRON_SWORD.getDefaultInstance());
-            BlockEntityStateFixtures.fillIndexedSlots(helper, old, "Slot", 2, 18, new ItemStack(Items.COBBLESTONE, 37));
-            CompoundTag data = old.saveWithFullMetadata(helper.getLevel().registryAccess());
-            data.putInt("CycleTicks", 123);
-            data.putInt("CycleDurationTicks", 1200);
-            data.putInt("StoredExperience", 7654);
-            data.putBoolean("Enabled", false);
-            data.putString("MachineRedstoneMode", "low_signal_pauses");
-            data.putInt("EnabledLootMask", 0);
-            data.putInt("DisabledDynamicLootCount", 1);
-            data.putString("DisabledDynamicLoot0", "minecraft:redstone");
-            old.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), data));
-            var redstone = old.redstoneMode();
-            helper.assertTrue(LegacyMobFarmMigration.convert(old), "Migration succeeds for " + id);
-            var farm = helper.getBlockEntity(GameTestFixtures.TEST_POS, MobFarmBlockEntity.class);
-            helper.assertTrue(ItemStack.matches(farm.worker(), worker), "Worker data retained for " + id);
-            helper.assertTrue(farm.getItem(1).is(Items.IRON_SWORD), "Sword retained for " + id);
-            helper.assertTrue(EntityEssenceData.createEntity(helper.getLevel(), farm.creature()) != null, "Creature module restored for " + id);
-            for (int slot = 5; slot < 23; slot++) {
-                helper.assertTrue(farm.getItem(slot).is(Items.COBBLESTONE) && farm.getItem(slot).getCount() == 37,
-                        "Output slot offset preserved for " + id);
-            }
-            helper.assertValueEqual(farm.storedExperience(), 7654, "XP unchanged during conversion");
-            helper.assertValueEqual(farm.cycleTicks(), 123, "Exact unfinished progress retained");
-            helper.assertFalse(farm.enabled(), "Manual pause retained");
-            helper.assertValueEqual(farm.redstoneMode(), redstone, "Redstone mode retained");
-            helper.assertFalse(farm.lootEnabled(Identifier.withDefaultNamespace("redstone")), "Dynamic filter retained");
-            helper.assertFalse(LegacyMobFarmMigration.convert(farm), "Conversion is one-time");
-        }
-        helper.succeed();
-    }
-
-    private static void legacyPending(GameTestHelper helper) {
-        var old = legacyFarm(helper, "skeleton_farm");
-        var inventory = (net.minecraft.world.Container) old;
-        inventory.setItem(0, GameTestFixtures.adultVillagerCapture(helper));
-        inventory.setItem(1, Items.IRON_SWORD.getDefaultInstance());
-        BlockEntityStateFixtures.fillIndexedSlots(helper, old, "Slot", 2, 18, new ItemStack(Items.COBBLESTONE, 64));
-        var data = old.saveWithFullMetadata(helper.getLevel().registryAccess());
-        var output = net.minecraft.world.level.storage.TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
-        output.store("PendingLoot0", ItemStack.CODEC, new ItemStack(Items.DIAMOND, 3));
-        data.merge(output.buildResult());
-        data.putInt("PendingLootCount", 1);
-        data.putBoolean("PendingLootReady", true);
-        data.putInt("CycleTicks", 999);
-        data.putInt("CycleDurationTicks", 1000);
-        data.putInt("StoredExperience", 17);
-        old.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), data));
-        helper.assertTrue(LegacyMobFarmMigration.convert(old), "Legacy pending batch can migrate");
-        var farm = helper.getBlockEntity(GameTestFixtures.TEST_POS, MobFarmBlockEntity.class);
-        helper.assertValueEqual(farm.storedExperience(), 17, "Conversion itself does not pay unfinished work");
-        farm.processTick();
-        helper.assertValueEqual(farm.storedExperience(), 22, "Old unpaid batch settles once");
-        helper.assertValueEqual(farm.getItem(1).getDamageValue(), 1, "Old batch wears sword once");
-        data = farm.saveWithFullMetadata(helper.getLevel().registryAccess());
-        helper.assertValueEqual(data.getIntOr("PendingLootCount", 0), 1, "Overflow is preserved, not discarded");
-        farm.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), data));
-        farm.removeItem(5, 64);
-        farm.processTick();
-        helper.assertTrue(farm.getItem(5).is(Items.DIAMOND) && farm.getItem(5).getCount() == 3, "Saved roll survives reload without reroll");
-        helper.assertValueEqual(farm.storedExperience(), 22, "Draining migrated batch cannot pay twice");
-        helper.assertValueEqual(farm.getItem(1).getDamageValue(), 1, "Draining migrated batch cannot charge twice");
-        helper.succeed();
-    }
-
-    private static void pausedMigration(GameTestHelper helper) {
-        var old = legacyFarm(helper, "creeper_farm");
-        var data = old.saveWithFullMetadata(helper.getLevel().registryAccess());
-        data.putBoolean("Enabled", false);
-        data.putInt("CreeperKind", 1);
-        data.putString("CreeperTarget", "trading_cells:charged_creeper");
-        old.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), data));
-        old.setRedstoneMode(com.cosmocraft.trading_cells.shared.machines.domain.model.MachineRedstoneMode.LOW_SIGNAL_PAUSES);
-        helper.runAfterDelay(2, () -> {
-            var farm = helper.getBlockEntity(GameTestFixtures.TEST_POS, MobFarmBlockEntity.class);
-            helper.assertFalse(farm.enabled(), "Paused farm is converted by its actual block ticker");
-            var target = EntityEssenceData.createEntity(helper.getLevel(), farm.creature());
-            helper.assertTrue(target instanceof net.minecraft.world.entity.monster.Creeper creeper && creeper.isPowered(),
-                    "Synthetic charged target becomes actual captured entity state");
-            helper.succeed();
-        });
     }
 
     private static ItemStack essence(GameTestHelper helper) {
@@ -306,22 +285,23 @@ public final class MobSimulationGameTests {
         var player = connectedPlayer(helper);
         player.setPos(net.minecraft.world.phys.Vec3.atCenterOf(bench.getBlockPos()));
         bench.setItem(0, essence(helper));
-        bench.setItem(1, new ItemStack(Items.AMETHYST_SHARD, 4));
-        bench.setItem(2, new ItemStack(Items.IRON_INGOT, 4));
-        helper.assertFalse(bench.synthesize(player), "Insufficient XP does not consume any ingredients");
-        helper.assertValueEqual(bench.getItem(1).getCount(), 4, "Shards preserved on failure");
+        bench.setItem(1, new ItemStack(MobFarmRegistrationAdapter.MODEL_BASES.getFirst().get(), 2));
+        BlockEntityStateFixtures.fillIndexedSlots(helper, bench, "Slot", 2, 1, new ItemStack(Items.IRON_INGOT, 4));
         player.giveExperiencePoints(1_000);
+        helper.assertFalse(bench.synthesize(player), "Player XP is not spent implicitly");
+        bench.experience().transfer(player, 1, 0);
+        helper.assertValueEqual(bench.experience().amount(), 1_000, "Manual transfer fills internal XP");
         BlockEntityStateFixtures.fillIndexedSlots(helper, bench, "Slot", 3, 1, Items.STONE.getDefaultInstance());
         helper.assertFalse(bench.synthesize(player), "Occupied result prevents crafting");
-        helper.assertValueEqual(MinecraftExperience.totalPoints(player.experienceLevel, player.experienceProgress), 1_000,
-                "Occupied output does not spend XP");
+        helper.assertValueEqual(bench.experience().amount(), 1_000, "Blocked result preserves internal XP");
         bench.removeItem(3, 1);
-        helper.assertTrue(bench.synthesize(player), "Valid requirements produce a reusable module");
-        helper.assertValueEqual(MinecraftExperience.totalPoints(player.experienceLevel, player.experienceProgress), 700,
-                "Normal synthesis charges exactly 300 points");
-        helper.assertTrue(bench.getItem(0).isEmpty() && bench.getItem(1).isEmpty() && bench.getItem(2).isEmpty(), "One complete set consumed");
-        helper.assertTrue(bench.getItem(3).is(MobFarmRegistrationAdapter.ENTITY_MODULE.get()), "Module delivered to output");
-        helper.assertFalse(bench.synthesize(player), "Repeated button cannot duplicate module");
+        helper.assertTrue(bench.synthesize(player), "Matching core and base produce a reusable model");
+        helper.assertValueEqual(bench.experience().amount(), 0, "Tier I consumes exactly 1000 XP");
+        helper.assertTrue(bench.getItem(0).isEmpty(), "One core consumed");
+        helper.assertValueEqual(bench.getItem(1).getCount(), 1, "Only one base consumed");
+        helper.assertValueEqual(bench.getItem(2).getCount(), 4, "Legacy metal remains recoverable");
+        helper.assertTrue(bench.getItem(3).is(MobFarmRegistrationAdapter.ENTITY_MODULE.get()), "Model delivered");
+        helper.assertFalse(bench.synthesize(player), "Repeated button cannot duplicate a model");
         helper.succeed();
     }
 
@@ -332,37 +312,26 @@ public final class MobSimulationGameTests {
         var center = net.minecraft.world.phys.Vec3.atCenterOf(bench.getBlockPos());
         player.setPos(center);
         var warden = MobFarmLootTables.createTarget(helper.getLevel(), Identifier.withDefaultNamespace("warden"));
-        bench.setItem(0, EntityEssenceData.essenceOf(warden));
-        bench.setItem(1, new ItemStack(Items.AMETHYST_SHARD, 16));
-        bench.setItem(2, new ItemStack(Items.IRON_INGOT, 64));
-        player.giveExperiencePoints(3_000);
-        helper.assertFalse(bench.synthesize(player), "High-level synthesis cannot substitute iron for netherite");
-        helper.assertValueEqual(bench.getItem(2).getCount(), 64, "Wrong material is never consumed");
-        bench.setItem(2, new ItemStack(Items.NETHERITE_INGOT, 2));
-        bench.setItem(1, new ItemStack(Items.AMETHYST_SHARD, 15));
-        helper.assertFalse(bench.synthesize(player), "High-level synthesis requires all sixteen shards");
-        bench.setItem(1, new ItemStack(Items.AMETHYST_SHARD, 17));
+        ItemStack core = EntityEssenceData.essenceOf(warden);
+        int tier = EntityEssenceData.tier(core).id();
+        int cost = EntityEssenceData.tier(core).modelExperience();
+        bench.setItem(0, core);
+        bench.setItem(1, new ItemStack(MobFarmRegistrationAdapter.MODEL_BASES.getFirst().get()));
+        bench.experience().setRaw(cost);
+        helper.assertFalse(bench.synthesize(player), "Wrong-tier base cannot substitute for the matching base");
+        bench.setItem(1, new ItemStack(MobFarmRegistrationAdapter.MODEL_BASES.get(tier - 1).get(), 2));
         player.setPos(center.add(20, 0, 0));
-        helper.assertFalse(bench.synthesize(player), "Distant requests cannot craft at the workbench");
+        helper.assertFalse(bench.synthesize(player), "Distant requests cannot craft");
         player.setPos(center);
-        com.cosmocraft.trading_cells.platform.neoforge.experience.PlayerExperienceTransfer.removePoints(player, 1);
-        helper.assertFalse(bench.synthesize(player), "2999 XP is insufficient for high-level synthesis");
-        helper.assertValueEqual(bench.getItem(1).getCount(), 17, "Every failed request preserves shards");
-        helper.assertValueEqual(bench.getItem(2).getCount(), 2, "Every failed request preserves netherite");
-        helper.assertValueEqual(MinecraftExperience.totalPoints(player.experienceLevel, player.experienceProgress), 2_999,
-                "Failed requests preserve XP");
-        player.giveExperiencePoints(1);
-        helper.assertTrue(bench.synthesize(player), "Exact high-level requirements produce the module");
-        helper.assertTrue(bench.getItem(0).isEmpty(), "One essence consumed");
-        helper.assertValueEqual(bench.getItem(1).getCount(), 1, "Exactly sixteen shards consumed");
-        helper.assertValueEqual(bench.getItem(2).getCount(), 1, "Exactly one netherite ingot consumed");
-        helper.assertValueEqual(MinecraftExperience.totalPoints(player.experienceLevel, player.experienceProgress), 0,
-                "Exactly three thousand XP consumed");
-        var module = bench.getItem(3);
-        helper.assertTrue(EntityEssenceData.isHighLevel(module), "Output retains high-level classification");
-        var simulated = EntityEssenceData.createEntity(helper.getLevel(), module);
-        helper.assertTrue(simulated != null && simulated.getType() == warden.getType(), "Output restores the warden");
-        helper.assertFalse(bench.synthesize(player), "Repeated requests cannot duplicate high-level modules");
+        bench.experience().setRaw(cost - 1);
+        helper.assertFalse(bench.synthesize(player), "One missing XP prevents consumption");
+        helper.assertValueEqual(bench.getItem(1).getCount(), 2, "Failures preserve both bases");
+        bench.experience().setRaw(cost);
+        helper.assertTrue(bench.synthesize(player), "Matching tier and exact internal XP succeed");
+        helper.assertValueEqual(bench.getItem(1).getCount(), 1, "Only one base consumed");
+        helper.assertValueEqual(bench.experience().amount(), 0, "Exact tier cost consumed");
+        var simulated = EntityEssenceData.createEntity(helper.getLevel(), bench.getItem(3));
+        helper.assertTrue(simulated != null && simulated.getType() == warden.getType(), "Model restores the warden");
         helper.succeed();
     }
 
@@ -550,7 +519,7 @@ public final class MobSimulationGameTests {
         helper.succeed();
     }
 
-    private static net.minecraft.server.level.ServerPlayer connectedPlayer(GameTestHelper helper) {
+    static net.minecraft.server.level.ServerPlayer connectedPlayer(GameTestHelper helper) {
         var player = new net.minecraft.server.level.ServerPlayer(helper.getLevel().getServer(), helper.getLevel(),
                 new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "simulation-test"),
                 net.minecraft.server.level.ClientInformation.createDefault()) {
@@ -565,6 +534,8 @@ public final class MobSimulationGameTests {
                     io.netty.channel.@org.jspecify.annotations.Nullable ChannelFutureListener listener) { }
         };
         player.setGameMode(GameType.SURVIVAL);
+        player.setPos(net.minecraft.world.phys.Vec3.atCenterOf(helper.absolutePos(GameTestFixtures.TEST_POS)));
+        player.setNoGravity(true);
         return player;
     }
 }

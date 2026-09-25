@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "pattern": [
+    "CMC",
+    "MUM",
+    "CMC"
+  ],
+  "key": {
+    "C": "minecraft:gold_ingot",
+    "M": "minecraft:gold_ingot",
+    "U": "trading_cells:iron_pipe_upgrade"
+  },
+  "result": {
+    "id": "trading_cells:gold_pipe_upgrade",
+    "count": 1
+  }
+}

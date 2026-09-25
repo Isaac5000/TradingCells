@@ -74,6 +74,9 @@ public final class PortableMachineItemHandler implements ResourceHandler<ItemRes
     @Override
     public int insert(int index, ItemResource resource, int amount, TransactionContext transaction) {
         int slot = slot(index);
+        if (container instanceof MachineInsertionLimit limited) {
+            amount = Math.min(amount, Math.max(0, limited.insertionLimit(slot, resource.toStack())));
+        }
         return accepts(slot, resource) ? contents.insert(slot, resource, amount, transaction) : 0;
     }
 

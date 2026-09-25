@@ -33,11 +33,7 @@ las traducciones puras de API permanecen en adaptadores.
 | `quarry` | Canteras para aldeanos y piglins, catalogos de materiales, herramientas y minado profundo. |
 | `converter` | Estados de infeccion, curacion y descuento. |
 | `ironfarm` | Produccion, multiplicadores y animacion temporal. |
-| `skeletonfarm` | Ciclos de caza, filtros de botin, tiers de espada y experiencia acumulada. |
-| `zombiefarm` | Ciclos de caza de zombis, catalogo dinamico, filtros y experiencia acumulada. |
-| `raiderfarm` | Ciclos de saqueadores, variante ominosa, catalogo dinamico, filtros y experiencia acumulada. |
-| `creeperfarm` | Ciclos de creepers normales y cargados, botin dinamico y Fragmentos de la Tormenta. |
-| `configuredmobfarm` | Diecisiete familias configurables compuestas sobre el catalogo comun de objetivos. |
+| `mobfarm` | Granja general de entidades, modulos, catalogo dinamico, filtros y experiencia acumulada. |
 | `experience` | Calculo y transferencia segura de niveles para el deposito de experiencia. |
 | `experiencenetwork` | Grafo de tuberias, conexiones terminales y transferencia atomica de XP. |
 | `infusion` | Recetas de infusion, consumo atomico manual y deposito de XP. |
@@ -198,7 +194,7 @@ classpath reutiliza la salida de `main` y agrega las dependencias cliente
 opcionales. Los perfiles servidor siguen usando `main`, de modo que REI,
 Architectury y Cloth Config no pueden filtrarse al servidor dedicado ni al JAR.
 El perfil Vulkan prepara su configuracion local desactivando la ventana temprana
-OpenGL de NeoForge `26.2.0.57`, como solucion temporal a la incidencia
+OpenGL de NeoForge `26.2.0.88`, como solucion temporal a la incidencia
 upstream `NeoForge#3230`; no existe ningun workaround dentro del codigo del mod.
 
 Jade constituye otra integracion opcional. Sus clases se concentran en

@@ -9,7 +9,7 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 ## Estado actual
 
 - Version de desarrollo no publicada: `1.0.0` para Minecraft `26.2.0` y
-  NeoForge `26.2.0.57`.
+  NeoForge `26.2.0.88`.
 - Java 25 y Gradle Wrapper 9.5; `gradlew` esta registrado como ejecutable.
 - La referencia reproducible anterior se documento el `2026-08-31` en
   `docs/releases/1.0.0-validation.md`: dos JAR identicos con 26 GameTests. Es
@@ -19,8 +19,9 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
   Los terminales pasan clics reales y scroll en OpenGL/Vulkan con REI/Jade.
   Evidencia y JAR de desarrollo en `docs/LOGISTICS.md`; la matriz manual,
   reproducibilidad final y CI del commit definitivo siguen abiertas.
-- El arbol actual incorpora diecisiete familias configurables, el recetario del
-  Infusor, cultivos por datapack, diagnostico comun y modos de redstone persistentes.
+- El arbol actual conserva el recetario del Infusor, cultivos por datapack,
+  diagnostico comun y modos de redstone persistentes. Las granjas antiguas por
+  familia fueron retiradas por el usuario: no restaurar sus clases ni recursos.
   El objeto Configurador se ha retirado por peticion expresa.
   La sustitucion del Controlador y la red experimental de XP por logistica
   universal esta en desarrollo; estado y validacion en `docs/LOGISTICS.md`.
@@ -29,6 +30,13 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
   recurso, marcador de inventarios, reglas avanzadas y autocompletado acotado
   implementados y comprobados con clics reales en OpenGL/Vulkan.
   Pendientes: escala de redes, topologia compartida y memoria de canales.
+- Esencias y automatizacion, 2026-09-25: flujo de cuatro tiers, estabilizador,
+  jeringa 3D con recarga/extraccion, mesa con salida de crafting/XP/autocraft e
+  infusor bloqueable desde recetario. Estado y pruebas: `docs/ESSENCE_AUTOMATION.md`.
+  Reglas de equipo y previsualizacion de loot trasladadas al sistema general.
+  Marcos de mejoras generales independientes en `tools/assets/upgrade_bases/frames`;
+  no recuperar los cinco PNG genericos antiguos. Nombres de mejoras resueltos
+  por el usuario: no volver a renombrarlos.
 
 ## Arquitectura
 
@@ -73,17 +81,16 @@ responsables distintos.
 ## Modulos y responsabilidades
 
 Las features registradas son `captures`, `combat`, `trader`, `breeders`,
-`incubators`, `farmer`, `quarry`, `converter`, `ironfarm`, `skeletonfarm`,
-`zombiefarm`, `raiderfarm`, `creeperfarm`, `experience`, `logistics`,
+`incubators`, `farmer`, `quarry`, `converter`, `ironfarm`, `experience`, `logistics`,
   `infusion` y `silktouch`; `machinecontrol` conserva contratos internos.
-`configuredmobfarm` implementa por composicion Artropodos, Slimes, Guardianes,
-Piglins, Blazes, Ghasts, Endermen, Shulkers, Breezes, Phantoms, Animales y Peces.
-Tambien implementa Acuaticas, Monturas, Anfibios, Abejas y Creakings.
+`mobfarm` implementa una granja general por composicion y modulo de entidad;
+el catalogo dinamico conserva objetivos vanilla y de datapacks sin registrar
+una granja distinta por familia.
 `platform/neoforge/mobfarm` mantiene el catalogo dinamico comun y ejecuta loot
-tables desde entidades concretas con `MobFarmLootTables`; la futura entrada
-manual de entidades no esta implementada. Las cuatro
-familias historicas conservan su implementacion y las diecisiete configurables
-comparten una Block Entity sin compartir IDs persistentes.
+tables desde entidades concretas con `MobFarmLootTables`; `MobFarmLootPreview`
+analiza probabilidades sin ejecutar loot y `MobFarmEquipmentLoot` conserva
+perfiles de equipo sin depender de granjas por familia. La granja general usa
+el estado saneado de Creature Models; no restaurar las implementaciones retiradas.
 
 ## Funcionalidades implementadas
 
@@ -91,11 +98,9 @@ comparten una Block Entity sin compartir IDs persistentes.
 - Cultivos y Canteras para aldeanos y piglins con herramientas, Fortuna/Eficiencia,
   catalogos dinamicos, salidas parciales y persistencia. Los cultivos aceptan
   descriptores aditivos `schema_version: 1` mediante snapshots inmutables.
-- Conversion de aldeanos, Granja de Hierro y granjas de Esqueletos, Zombis,
-  Saqueadores, Creepers, Artropodos, Slimes, Guardianes, Piglins, Blazes, Ghasts,
-  Endermen, Shulkers, Breezes, Phantoms, Animales, Peces, Acuaticas, Monturas,
-  Anfibios, Abejas y Creakings con filtros, objetivos ampliables y XP. Los Vexes
-  forman parte de Saqueadores.
+- Conversion de aldeanos, Granja de Hierro y simulacion general de entidades
+  con filtros, objetivos ampliables y XP. Los objetivos se seleccionan mediante
+  modulos y no mediante bloques por familia.
 - Almacen y fluido de XP, Infusor Arcano con recetario categorizado y recetas
   posicionales dispersas, y encantamientos propios.
 - Tres modos de redstone y contratos internos de configuracion. La logistica conserva

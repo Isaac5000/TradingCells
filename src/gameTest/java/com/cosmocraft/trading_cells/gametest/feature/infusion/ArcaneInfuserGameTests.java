@@ -188,7 +188,8 @@ public final class ArcaneInfuserGameTests {
                     GameTestFixtures.TEST_POS,
                     side
             );
-            helper.assertValueEqual(handler.size(), 0, "Automated Infuser slots on " + side);
+            helper.assertValueEqual(handler.size(), side == net.minecraft.core.Direction.DOWN ? 1 : 10,
+                    "Infuser input and physical-output exposure on " + side);
         }
         assertEntityFarmRecipeLayout(helper);
         helper.succeed();
@@ -201,12 +202,12 @@ public final class ArcaneInfuserGameTests {
         );
         infuser.setItem(
                 ArcaneInfuserBlockEntity.TOP_LEFT_SLOT,
-                new ItemStack(Items.IRON_BLOCK)
+                new ItemStack(Items.LAPIS_BLOCK)
         );
         infuser.setItem(ArcaneInfuserBlockEntity.TOP_SLOT, new ItemStack(item("minecraft:black_concrete")));
         infuser.setItem(
                 ArcaneInfuserBlockEntity.TOP_RIGHT_SLOT,
-                new ItemStack(Items.IRON_BLOCK)
+                new ItemStack(Items.LAPIS_BLOCK)
         );
         infuser.setItem(ArcaneInfuserBlockEntity.LEFT_SLOT, new ItemStack(item("minecraft:black_concrete")));
         infuser.setItem(
@@ -214,9 +215,9 @@ public final class ArcaneInfuserGameTests {
                 new ItemStack(ExperienceStorageRegistrationAdapter.ITEM.get())
         );
         infuser.setItem(ArcaneInfuserBlockEntity.RIGHT_SLOT, new ItemStack(item("minecraft:black_concrete")));
-        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_LEFT_SLOT, new ItemStack(Items.QUARTZ_BLOCK));
-        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_SLOT, new ItemStack(item("minecraft:black_concrete")));
-        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_RIGHT_SLOT, new ItemStack(Items.QUARTZ_BLOCK));
+        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_LEFT_SLOT, new ItemStack(Items.LAPIS_BLOCK));
+        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_SLOT, new ItemStack(item("trading_cells:storm_shard")));
+        infuser.setItem(ArcaneInfuserBlockEntity.BOTTOM_RIGHT_SLOT, new ItemStack(Items.LAPIS_BLOCK));
 
         helper.assertTrue(
                 infuser.visibleResult().is(MobFarmRegistrationAdapter.ITEM.get()),

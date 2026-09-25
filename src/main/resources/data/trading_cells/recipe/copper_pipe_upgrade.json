@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "show_notification": false,
+  "pattern": [
+    "CMC",
+    "MUM",
+    "CMC"
+  ],
+  "key": {
+    "C": "minecraft:copper_ingot",
+    "M": "minecraft:copper_ingot",
+    "U": "minecraft:hopper"
+  },
+  "result": {
+    "id": "trading_cells:copper_pipe_upgrade",
+    "count": 1
+  }
+}

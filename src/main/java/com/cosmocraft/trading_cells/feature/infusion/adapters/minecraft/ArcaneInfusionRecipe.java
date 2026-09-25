@@ -29,7 +29,8 @@ public record ArcaneInfusionRecipe(
         List<ArcaneInfusionIngredientSlot> ingredients,
         int experience,
         ArcaneInfusionResult result,
-        ArcaneInfusionRecipeCategory category
+        ArcaneInfusionRecipeCategory category,
+        boolean shapeless
 ) implements Recipe<ArcaneInfusionInput> {
     private static final Codec<List<ArcaneInfusionIngredientSlot>> INGREDIENTS_CODEC =
             ArcaneInfusionIngredientSlot.CODEC.listOf().validate(ArcaneInfusionRecipe::validateIngredients);
@@ -42,7 +43,8 @@ public record ArcaneInfusionRecipe(
                     ArcaneInfusionRecipeCategory.CODEC.optionalFieldOf(
                             "category",
                             ArcaneInfusionRecipeCategory.MISC
-                    ).forGetter(ArcaneInfusionRecipe::category)
+                    ).forGetter(ArcaneInfusionRecipe::category),
+                    Codec.BOOL.optionalFieldOf("shapeless", false).forGetter(ArcaneInfusionRecipe::shapeless)
             ).apply(instance, ArcaneInfusionRecipe::new)
     );
 
@@ -57,10 +59,25 @@ public record ArcaneInfusionRecipe(
         }
         ingredients = List.copyOf(ingredients);
         category = category == null ? ArcaneInfusionRecipeCategory.MISC : category;
+        if (shapeless && ingredients.stream().filter(slot -> slot.count() > 0).count() != 1) {
+            throw new IllegalArgumentException("Shapeless infusion supports exactly one ingredient position");
+        }
+    }
+    public ArcaneInfusionRecipe(List<ArcaneInfusionIngredientSlot> ingredients, int experience,
+            ArcaneInfusionResult result, ArcaneInfusionRecipeCategory category) {
+        this(ingredients, experience, result, category, false);
     }
 
     @Override
     public boolean matches(ArcaneInfusionInput input, Level level) {
+        if (shapeless) {
+            int occupied = 0;
+            for (int slot = 0; slot < ArcaneInfusionInput.SIZE; slot++) {
+                if (!input.getItem(slot).isEmpty()) { occupied++; }
+            }
+            if (occupied != 1) { return false; }
+            input = normalized(input);
+        }
         for (int slot = 0; slot < ArcaneInfusionInput.SIZE; slot++) {
             if (!ingredients.get(slot).matches(input.getItem(slot))) {
                 return false;
@@ -71,7 +88,31 @@ public record ArcaneInfusionRecipe(
 
     @Override
     public ItemStack assemble(ArcaneInfusionInput input) {
-        return result.assemble(input);
+        return result.assemble(shapeless ? normalized(input) : input);
+    }
+    private int canonicalSlot() {
+        for (int slot = 0; slot < ingredients.size(); slot++) { if (ingredients.get(slot).count() > 0) { return slot; } }
+        return 4;
+    }
+    private ArcaneInfusionInput normalized(ArcaneInfusionInput input) {
+        List<ItemStack> slots = new ArrayList<>(java.util.Collections.nCopies(ArcaneInfusionInput.SIZE, ItemStack.EMPTY));
+        for (int slot = 0; slot < ArcaneInfusionInput.SIZE; slot++) {
+            if (!input.getItem(slot).isEmpty()) { slots.set(canonicalSlot(), input.getItem(slot)); break; }
+        }
+        return new ArcaneInfusionInput(slots);
+    }
+    public int consumedCount(int slot, ArcaneInfusionInput input) {
+        return shapeless ? (input.getItem(slot).isEmpty() ? 0 : ingredients.get(canonicalSlot()).count()) : ingredient(slot).count();
+    }
+    public ArcaneInfusionIngredientSlot inputIngredient(int slot, ArcaneInfusionInput input) {
+        if (!shapeless) { return ingredient(slot); }
+        for (int other = 0; other < ArcaneInfusionInput.SIZE; other++) {
+            if (other != slot && !input.getItem(other).isEmpty()) { return ingredients.stream().filter(i -> i.count() == 0).findFirst().orElseThrow(); }
+        }
+        return ingredient(canonicalSlot());
+    }
+    public boolean matchesInputRestrictions(int slot, ItemStack stack) {
+        return result.matchesPlacementInput(shapeless ? canonicalSlot() : slot, stack);
     }
 
     public ArcaneInfusionIngredientSlot ingredient(int slot) {
@@ -152,6 +193,7 @@ public record ArcaneInfusionRecipe(
         buffer.writeVarInt(recipe.experience());
         ArcaneInfusionResult.STREAM_CODEC.encode(buffer, recipe.result());
         buffer.writeByte(recipe.category().ordinal());
+        buffer.writeBoolean(recipe.shapeless());
     }
 
     private static ArcaneInfusionRecipe decode(RegistryFriendlyByteBuf buffer) {
@@ -163,7 +205,8 @@ public record ArcaneInfusionRecipe(
                 ingredients,
                 buffer.readVarInt(),
                 ArcaneInfusionResult.STREAM_CODEC.decode(buffer),
-                ArcaneInfusionRecipeCategory.fromOrdinal(buffer.readUnsignedByte())
+                ArcaneInfusionRecipeCategory.fromOrdinal(buffer.readUnsignedByte()),
+                buffer.readBoolean()
         );
     }
 

@@ -198,15 +198,25 @@ def resources():
         "I": "minecraft:iron_ingot", "C": "minecraft:compass", "R": "minecraft:redstone"})
 
     previous = "minecraft:hopper"
-    for tier, material, texture in (("basic", "copper_ingot", "copper"), ("improved", "iron_ingot", "iron"),
-                           ("advanced", "gold_ingot", "gold"), ("ultimate", "diamond", "diamond"), ("infinite", "netherite_ingot", "netherite")):
+    for tier, material, texture in (("copper", "copper_ingot", "copper"), ("iron", "iron_ingot", "iron"),
+                           ("gold", "gold_ingot", "gold"), ("diamond", "diamond", "diamond"), ("netherite", "netherite_ingot", "netherite")):
         name = tier + "_pipe_upgrade"
         put(f"{ASSETS}/models/item/{name}.json", {"parent": "minecraft:item/generated",
             "textures": {"layer0": f"trading_cells:item/upgrades/pipe/{texture}_upgrade"}})
         item(name, f"trading_cells:item/{name}")
-        corners = "popped_chorus_fruit" if texture == "diamond" else material
-        recipe(name, ["CMC", "MUM", "CMC"], {
-            "C": "minecraft:" + corners, "M": "minecraft:" + material, "U": previous})
+        if tier == "netherite":
+            put(f"{DATA}/recipe/{name}.json", {
+                "type": "minecraft:smithing_transform",
+                "show_notification": False,
+                "template": "minecraft:netherite_upgrade_smithing_template",
+                "base": previous,
+                "addition": "minecraft:netherite_ingot",
+                "result": {"id": f"trading_cells:{name}"},
+            })
+        else:
+            corners = "popped_chorus_fruit" if texture == "diamond" else material
+            recipe(name, ["CMC", "MUM", "CMC"], {
+                "C": "minecraft:" + corners, "M": "minecraft:" + material, "U": previous})
         previous = "trading_cells:" + name
 
     for crafting in (False, True):

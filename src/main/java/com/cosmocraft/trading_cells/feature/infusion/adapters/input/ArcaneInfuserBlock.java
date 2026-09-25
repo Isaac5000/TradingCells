@@ -6,12 +6,9 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.Level;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 public final class ArcaneInfuserBlock extends AbstractPortableMachineBlock<ArcaneInfuserBlockEntity> {
     public static final MapCodec<ArcaneInfuserBlock> CODEC = simpleCodec(ArcaneInfuserBlock::new);
@@ -28,15 +25,6 @@ public final class ArcaneInfuserBlock extends AbstractPortableMachineBlock<Arcan
     @Override
     public @NonNull BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
         return new ArcaneInfuserBlockEntity(pos, state);
-    }
-
-    @Override
-    public <B extends BlockEntity> @Nullable BlockEntityTicker<B> getTicker(
-            @NonNull Level level,
-            @NonNull BlockState state,
-            @NonNull BlockEntityType<B> type
-    ) {
-        return null;
     }
 
     @Override

@@ -1,4 +1,4 @@
-"""Derive each upgrade family from one fixed drawing and the original material palettes."""
+"""Compose upgrade emblems on reusable, material-colored quarry frames."""
 
 import argparse
 from collections import defaultdict, deque
@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TEXTURES = ROOT / "src/main/resources/assets/trading_cells/textures/item"
 ORIGINALS = TEXTURES / "upgrades"
 BASES = Path(__file__).resolve().parent / "assets/upgrade_bases"
+FRAMES = BASES / "frames"
 MATERIALS = ("copper", "iron", "gold", "diamond", "netherite")
 FAMILIES = ("quarry", "piglin_barter", "pipe", "mob_farm_speed", "mob_farm_capacity")
 TERMINALS = ("network_terminal", "network_crafting_terminal")
@@ -183,13 +184,14 @@ def emblem_pixels(family, base):
     return result
 
 
-def quarry_frame(base):
+def quarry_frame(base, reference=None):
     """Clone unobstructed quarry panel texels into the removed pickaxe silhouette."""
-    mask = emblem_pixels("quarry", base)
+    reference = base if reference is None else reference
+    mask = emblem_pixels("quarry", reference)
     result = base.copy()
     clean = [(x, y) for y in range(15, 50) for x in range(16, 48)
-             if (x, y) not in mask and base.getpixel((x, y))[0] > 85
-             and base.getpixel((x, y))[0] > base.getpixel((x, y))[1] * 1.4]
+             if (x, y) not in mask and reference.getpixel((x, y))[0] > 85
+             and reference.getpixel((x, y))[0] > reference.getpixel((x, y))[1] * 1.4]
     for x, y in sorted(mask):
         # Reflected samples retain the source drawing's vertical light/shadow bands.
         point = min(clean, key=lambda p: (abs(p[1] - y), abs(p[0] - (63 - x))))
@@ -197,11 +199,23 @@ def quarry_frame(base):
     return result
 
 
+def bake_generic_frames():
+    """Import existing quarry tiers once, without repainting their material colors."""
+    reference = family_base("quarry")
+    FRAMES.mkdir(parents=True, exist_ok=True)
+    for material in MATERIALS:
+        with Image.open(ORIGINALS / "quarry" / f"{material}_upgrade.png") as source:
+            quarry_frame(source.convert("RGBA"), reference).save(FRAMES / f"{material}.png")
+
+
+def generic_frame(material):
+    with Image.open(FRAMES / f"{material}.png") as source:
+        return source.convert("RGBA")
+
+
 def common_frame_textures():
-    quarry = family_base("quarry")
-    frame = quarry_frame(quarry)
-    frames = {material: family_texture(frame, material) for material in MATERIALS}
-    result = {}
+    frames = {material: generic_frame(material) for material in MATERIALS}
+    result = {ORIGINALS / "generic" / f"{material}_upgrade.png": image for material, image in frames.items()}
     for family in FAMILIES:
         base = family_base(family)
         mask = emblem_pixels(family, base)
@@ -219,7 +233,7 @@ def luminance(rgb):
 
 @lru_cache(maxsize=None)
 def material_ramp(material):
-    with Image.open(ORIGINALS / f"{material}_upgrade.png") as source:
+    with Image.open(FRAMES / f"{material}.png") as source:
         source = source.convert("RGBA")
         pixels = [source.getpixel((x, y)) for y in range(source.height) for x in range(source.width)]
     bands = defaultdict(list)
@@ -312,7 +326,10 @@ def main():
     parser.add_argument("--bake-mob-farm-sword", action="store_true")
     parser.add_argument("--bake-wooden-emblems", action="store_true")
     parser.add_argument("--bake-terminal-steel", action="store_true")
+    parser.add_argument("--bake-generic-frames", action="store_true")
     args = parser.parse_args()
+    if args.bake_generic_frames:
+        bake_generic_frames()
     if args.bake_mob_farm_sword:
         bake_mob_farm_sword()
     if args.bake_wooden_emblems:

@@ -14,8 +14,7 @@ public final class DomainRulesVerification {
         IronFarmDomainVerification.verify();
         MobFarmDomainVerification.verify();
         MobSimulationDomainVerification.verify();
-        SkeletonFarmDomainVerification.verify();
-        ZombieFarmDomainVerification.verify();
+        CombatDomainVerification.verify();
         QuarryDomainVerification.verify();
         CapturerDomainVerification.verify();
         ScreenLayoutDomainVerification.verify();

@@ -1,0 +1,13 @@
+{
+  "type": "trading_cells:essence_stabilization",
+  "tier": 1,
+  "duration": 100,
+  "amethyst": {
+    "ingredient": "minecraft:amethyst_shard",
+    "count": 1
+  },
+  "reagent": {
+    "ingredient": "minecraft:redstone",
+    "count": 2
+  }
+}

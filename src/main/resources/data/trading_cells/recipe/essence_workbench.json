@@ -2,13 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "BBB",
+    "LBL",
     "BCB",
-    "B B"
+    "BSB"
   ],
   "key": {
     "B": "minecraft:black_concrete",
-    "C": "minecraft:crafting_table"
+    "L": "minecraft:lapis_block",
+    "C": "trading_cells:experience_storage",
+    "S": "trading_cells:storm_shard"
   },
   "result": {
     "id": "trading_cells:essence_workbench",

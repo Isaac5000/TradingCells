@@ -91,13 +91,12 @@ def main() -> int:
             f"expected {contract['farmer_crop_schema_version']}, got {actual_crop_schema}"
         )
 
-    catalog_source = (NETWORK_ROOT / "MobFarmCatalogSyncPayload.java").read_text(encoding="utf-8")
-    actual_protocol = integer_constant(catalog_source, "CURRENT_PROTOCOL_VERSION")
-    if actual_protocol != contract["mob_farm_catalog_protocol_version"]:
-        errors.append(
-            "mob-farm catalog protocol changed: "
-            f"expected {contract['mob_farm_catalog_protocol_version']}, got {actual_protocol}"
-        )
+    for class_name in contract["retired_payloads"]:
+        if (NETWORK_ROOT / f"{class_name}.java").exists() or f"{class_name}.PAYLOAD_TYPE" in registration:
+            errors.append(f"retired farm payload restored: {class_name}")
+    for relative_path in contract["retired_machine_classes"]:
+        if (JAVA_ROOT / relative_path).exists():
+            errors.append(f"retired farm machine restored: {relative_path}")
 
     recipe_count, recipe_fingerprint = recipe_catalog_fingerprint()
     if recipe_count != contract["recipe_catalog_count"]:
@@ -142,7 +141,7 @@ def main() -> int:
         "Release contracts valid: "
         f"{len(contract['payload_ids'])} payload IDs, "
         f"{sum(map(len, contract['persistent_nbt_keys'].values()))} NBT keys, "
-        f"{recipe_count} recipes, schema {actual_schema}, protocol {actual_protocol}."
+        f"{recipe_count} recipes, schema {actual_schema}, network {actual_registration}."
     )
     return 0
 

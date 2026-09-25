@@ -89,6 +89,7 @@ public final class ExperienceGameTests {
 
         helper.setBlock(GameTestFixtures.TEST_POS, ArcaneInfuserRegistrationAdapter.BLOCK.get());
         ArcaneInfuserBlockEntity infuser = helper.getBlockEntity(GameTestFixtures.TEST_POS, ArcaneInfuserBlockEntity.class);
+        infuser.experience().toggleMode();
         ResourceHandler<FluidResource> infuserFluid = helper.requireCapability(
                 Capabilities.Fluid.BLOCK,
                 GameTestFixtures.TEST_POS,
@@ -102,12 +103,12 @@ public final class ExperienceGameTests {
         try (Transaction transaction = Transaction.openRoot()) {
             helper.assertValueEqual(
                     infuserFluid.extract(0, experience, 1, transaction),
-                    0,
-                    "Infuser must be an XP destination only"
+                    1,
+                    "Infuser permits XP extraction"
             );
             transaction.commit();
         }
-        helper.assertValueEqual(infuser.storedExperience(), 30, "Rejected Infuser XP extraction");
+        helper.assertValueEqual(infuser.storedExperience(), 29, "Infuser XP extraction is conserved");
 
         assertOutputOnlyFluid(helper, TraderRegistrationAdapter.VILLAGER_TRADER_BLOCK.get(), experience);
         assertOutputOnlyFluid(helper, AutotraderRegistrationAdapter.AUTOTRADER_BLOCK.get(), experience);

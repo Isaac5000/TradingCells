@@ -14,6 +14,9 @@ import org.jspecify.annotations.Nullable;
 
 /** Detached, stationary previews share the ordinary entity renderer, never a world entity. */
 record SimulationEntityPreview(EntityRenderState state, float scale) {
+    private static final float HORIZONTAL_VISUAL_MARGIN = 0.50F;
+    private static final float VERTICAL_VISUAL_MARGIN = 0.80F;
+
     static @Nullable SimulationEntityPreview create(@Nullable LivingEntity entity,
             EntityRenderDispatcher dispatcher, float yaw, float width, float height) {
         if (entity == null) { return null; }
@@ -30,8 +33,11 @@ record SimulationEntityPreview(EntityRenderState state, float scale) {
                 // Preview fish must not use their out-of-water flopping pose.
                 living.isInWater = true;
             }
-            float scale = Math.min(width / Math.max(0.1F, entity.getBbWidth()),
-                    height / Math.max(0.1F, entity.getBbHeight()));
+            // Entity models can extend beyond their AABB through tails, wings or held items.
+            float scale = Math.min(
+                    width * HORIZONTAL_VISUAL_MARGIN / Math.max(0.1F, entity.getBbWidth()),
+                    height * VERTICAL_VISUAL_MARGIN / Math.max(0.1F, entity.getBbHeight())
+            );
             return new SimulationEntityPreview(state, scale);
         } catch (RuntimeException | LinkageError unsupportedRenderer) {
             // A missing/incompatible optional renderer leaves the surrounding model intact.

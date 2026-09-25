@@ -1,6 +1,12 @@
 package com.cosmocraft.trading_cells.feature.mobfarm.adapters.output;
 
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EntityEssenceItem;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureModelBaseItem;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceStabilizerBlock;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceStabilizerBlockEntity;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceStabilizerMenu;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceStabilizationRecipe;
+import com.cosmocraft.trading_cells.feature.mobfarm.domain.model.EssenceTier;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceExtractorItem;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceWorkbenchBlock;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceWorkbenchBlockEntity;
@@ -21,6 +27,8 @@ import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -42,9 +50,28 @@ public final class MobFarmRegistrationAdapter {
             () -> new EntityEssenceItem(properties("entity_essence").stacksTo(1), false));
     public static final DeferredItem<EntityEssenceItem> ENTITY_MODULE = Registration.ITEMS.register("entity_module",
             () -> new EntityEssenceItem(properties("entity_module").stacksTo(1), true));
+    public static final DeferredItem<Item> EMPTY_VIAL = Registration.ITEMS.register("empty_essence_vial",
+            () -> new Item(properties("empty_essence_vial")));
+    public static final DeferredItem<EntityEssenceItem> RAW_ESSENCE = Registration.ITEMS.register("raw_creature_essence_vial",
+            () -> new EntityEssenceItem(properties("raw_creature_essence_vial").stacksTo(1), false));
+    public static final List<DeferredItem<CreatureModelBaseItem>> MODEL_BASES = registerBases();
     public static final DeferredItem<EssenceExtractorItem> ESSENCE_EXTRACTOR = Registration.ITEMS.register("essence_extractor",
             () -> new EssenceExtractorItem(properties("essence_extractor").durability(256)));
     public static final List<DeferredItem<MobFarmUpgradeItem>> UPGRADES = registerUpgrades();
+    public static final DeferredBlock<EssenceStabilizerBlock> STABILIZER = Registration.BLOCKS.register("essence_stabilizer",
+            () -> new EssenceStabilizerBlock(MachineBlockProperties.villager("essence_stabilizer")));
+    public static final DeferredItem<BlockItem> STABILIZER_ITEM = Registration.ITEMS.register("essence_stabilizer",
+            () -> new BlockItem(STABILIZER.get(), properties("essence_stabilizer").useBlockDescriptionPrefix()));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EssenceStabilizerBlockEntity>> STABILIZER_BLOCK_ENTITY =
+            Registration.BLOCK_ENTITY_TYPES.register("essence_stabilizer",
+                    () -> new BlockEntityType<>(EssenceStabilizerBlockEntity::new, STABILIZER.get()));
+    public static final DeferredHolder<MenuType<?>, MenuType<EssenceStabilizerMenu>> STABILIZER_MENU =
+            Registration.MENU_TYPES.register("essence_stabilizer", () -> new MenuType<>(EssenceStabilizerMenu::new, FeatureFlags.VANILLA_SET));
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<EssenceStabilizationRecipe>> STABILIZATION_SERIALIZER =
+            Registration.RECIPE_SERIALIZERS.register("essence_stabilization", () -> EssenceStabilizationRecipe.SERIALIZER);
+    public static final DeferredHolder<RecipeType<?>, RecipeType<EssenceStabilizationRecipe>> STABILIZATION_TYPE =
+            Registration.RECIPE_TYPES.register("essence_stabilization",
+                    () -> RecipeType.simple(Identifier.fromNamespaceAndPath("trading_cells", "essence_stabilization")));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MobFarmBlockEntity>> BLOCK_ENTITY =
             Registration.BLOCK_ENTITY_TYPES.register("mob_farm", () -> new BlockEntityType<>(MobFarmBlockEntity::new, BLOCK.get()));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EssenceWorkbenchBlockEntity>> WORKBENCH_BLOCK_ENTITY =
@@ -56,6 +83,15 @@ public final class MobFarmRegistrationAdapter {
             () -> new MenuType<>(EssenceWorkbenchMenu::new, FeatureFlags.VANILLA_SET));
 
     private MobFarmRegistrationAdapter() { }
+    private static List<DeferredItem<CreatureModelBaseItem>> registerBases() {
+        List<DeferredItem<CreatureModelBaseItem>> result = new ArrayList<>();
+        String[] names = {"tier_i", "tier_ii", "tier_iii", "tier_iv"};
+        for (EssenceTier tier : EssenceTier.values()) {
+            String id = names[tier.id() - 1] + "_creature_model_base";
+            result.add(Registration.ITEMS.register(id, () -> new CreatureModelBaseItem(properties(id), tier)));
+        }
+        return List.copyOf(result);
+    }
     private static Item.Properties properties(String id) {
         return new Item.Properties().setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("trading_cells", id)));
     }
@@ -72,10 +108,16 @@ public final class MobFarmRegistrationAdapter {
         return List.copyOf(upgrades);
     }
 
-    public static void load(IEventBus bus) { bus.addListener(MobFarmRegistrationAdapter::registerCapabilities); }
+    public static void load(IEventBus bus) {
+        bus.addListener(MobFarmRegistrationAdapter::registerCapabilities);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                (net.neoforged.neoforge.event.OnDatapackSyncEvent event) -> event.sendRecipes(STABILIZATION_TYPE.get()));
+    }
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
         event.registerBlockEntity(Capabilities.Item.BLOCK, WORKBENCH_BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
+        event.registerBlockEntity(Capabilities.Item.BLOCK, STABILIZER_BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
+        event.registerBlockEntity(Capabilities.Fluid.BLOCK, WORKBENCH_BLOCK_ENTITY.get(), (bench, side) -> bench.fluidHandler());
         event.registerBlockEntity(Capabilities.Fluid.BLOCK, BLOCK_ENTITY.get(), (farm, side) -> farm.experienceFluidHandler());
     }
 }

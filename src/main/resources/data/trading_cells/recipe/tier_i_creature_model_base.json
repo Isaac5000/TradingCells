@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GBG",
+    "BSB",
+    "GBG"
+  ],
+  "key": {
+    "G": "minecraft:green_concrete",
+    "B": "minecraft:black_concrete",
+    "S": "trading_cells:storm_shard"
+  },
+  "result": {
+    "id": "trading_cells:tier_i_creature_model_base",
+    "count": 1
+  },
+  "show_notification": false
+}

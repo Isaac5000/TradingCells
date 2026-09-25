@@ -2,15 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "CMC",
-    "MSM",
-    "CPC"
+    "CBC",
+    "BSB",
+    "CBC"
   ],
   "key": {
-    "C": "minecraft:popped_chorus_fruit",
-    "M": "minecraft:gold_ingot",
-    "S": "minecraft:iron_sword",
-    "P": "trading_cells:mob_farm_speed_iron_upgrade"
+    "C": "minecraft:clock",
+    "B": "minecraft:gold_block",
+    "S": "trading_cells:mob_farm_speed_iron_upgrade"
   },
   "result": {
     "id": "trading_cells:mob_farm_speed_gold_upgrade",

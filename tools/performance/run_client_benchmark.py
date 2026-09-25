@@ -49,7 +49,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--quick-play-world")
     parser.add_argument("--language", help="Minecraft language for visual checks, for example es_es.")
     parser.add_argument("--main-arm", choices=("left", "right"), help="Player's primary arm for held-model checks.")
-    parser.add_argument("--ui-fixture", choices=("pipe", "rules", "interactions", "crafting", "materials", "connections", "caps", "terminals", "simulation", "essences", "simulation-models", "simulation-models-offhand", "simulation-models-thirdperson", "tooltips", "infusion", "infusion-models", "item-textures", "pipe-hands"),
+    parser.add_argument("--ui-fixture", choices=("pipe", "rules", "interactions", "crafting", "materials", "connections", "caps", "terminals", "simulation", "essences", "simulation-models", "simulation-models-offhand", "simulation-models-thirdperson", "tooltips", "infusion", "infusion-models", "item-textures", "pipe-hands", "essence-automation"),
                         help="Install a logistics UI fixture in the disposable cloned world; not a performance baseline.")
     parser.add_argument("--output-directory", type=Path)
     parser.add_argument("--without-rei", action="store_true")

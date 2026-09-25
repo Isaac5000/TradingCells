@@ -55,9 +55,9 @@ final class MobSimulationUiFixture {
             level.setBlockAndUpdate(pos, MobFarmRegistrationAdapter.ESSENCE_WORKBENCH.get().defaultBlockState());
             var bench = (EssenceWorkbenchBlockEntity) level.getBlockEntity(pos);
             bench.setItem(0, essence);
-            bench.setItem(1, new ItemStack(Items.AMETHYST_SHARD, 12));
+            bench.setItem(1, MobFarmRegistrationAdapter.MODEL_BASES.getFirst().get().getDefaultInstance());
             bench.setItem(2, new ItemStack(Items.IRON_INGOT, 12));
-            player.giveExperiencePoints(1_000);
+            bench.experience().setRaw(1_000);
             player.getInventory().setItem(9, EntityEssenceData.essenceOf(EntityTypes.WARDEN.create(level, EntitySpawnReason.LOAD)));
             return;
         }
@@ -190,9 +190,9 @@ final class MobSimulationUiFixture {
             }
         } else if (screen instanceof EssenceWorkbenchScreen bench) {
             var menu = bench.getMenu();
-            int x = (screen.width - 236) / 2, y = (screen.height - 222) / 2;
+            int x = (screen.width - 236) / 2, y = (screen.height - 260) / 2;
             switch (phase) {
-                case 0 -> { if (!menu.canSynthesize()) { return; } click(screen, x + 110, y + 101); }
+                case 0 -> { if (!menu.canSynthesize()) { return; } click(screen, x + 110, y + 144); }
                 case 1 -> {
                     if (menu.getSlot(3).getItem().isEmpty()) { return; }
                     var slot = menu.getSlot(3);
@@ -200,8 +200,8 @@ final class MobSimulationUiFixture {
                     screen.mouseClicked(event, false); screen.mouseReleased(event);
                 }
                 case 2 -> { if (!menu.getSlot(3).getItem().isEmpty()) { return; } click(screen, x + menu.getSlot(4).x + 8, y + menu.getSlot(4).y + 8); }
-                case 3 -> { if (menu.getCarried().isEmpty()) { return; } click(screen, x + 43, y + 55); }
-                case 4 -> { if (!menu.highLevel() || menu.experienceCost() != 3_000) { return; } }
+                case 3 -> { if (menu.getCarried().isEmpty()) { return; } click(screen, x + 64, y + 56); }
+                case 4 -> { if (!menu.highLevel() || menu.experienceCost() != 64_000) { return; } }
                 case 5 -> {
                     if (menu.canSynthesize()) { throw new IllegalStateException("High-level synthesis accepted insufficient requirements"); }
                     System.out.println("Essence UI checked: normal synthesis, output Shift-click, high-level classification and disabled insufficient recipe");
@@ -230,18 +230,22 @@ final class MobSimulationUiFixture {
         net.minecraft.world.item.CreativeModeTabs.tryRebuildTabContents(level.enabledFeatures(), true, level.registryAccess());
         var items = registry.getEntryStacks().map(entry -> entry.getValue())
                 .filter(value -> value instanceof ItemStack).map(value -> ((ItemStack) value).getItem()).toList();
-        if (items.stream().anyMatch(item -> item instanceof net.minecraft.world.item.BlockItem block
-                && block.getBlock() instanceof com.cosmocraft.trading_cells.platform.neoforge.mobfarm.LegacyMobFarmBlock)) {
+        var removedFarms = java.util.Set.of("skeleton_farm", "zombie_farm", "creeper_farm", "raider_farm",
+                "arthropod_farm", "slime_farm", "guardian_farm", "piglin_farm", "blaze_farm", "ghast_farm",
+                "enderman_farm", "shulker_farm", "breeze_farm", "phantom_farm", "livestock_farm", "fish_farm",
+                "aquatic_farm", "mount_farm", "amphibian_farm", "bee_farm", "creaking_farm");
+        if (items.stream().map(net.minecraft.core.registries.BuiltInRegistries.ITEM::getKey)
+                .anyMatch(id -> id.getNamespace().equals("trading_cells") && removedFarms.contains(id.getPath()))) {
             throw new IllegalStateException("REI still lists replaced entity farms");
         }
         var creative = com.cosmocraft.trading_cells.platform.neoforge.registration.CreativeTabRegistration.FARMS_TAB.get().getDisplayItems();
         var missing = creative.stream().filter(stack -> !items.contains(stack.getItem()))
                 .map(stack -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString()).toList();
-        if (creative.size() != 13 || !missing.isEmpty()) {
+        if (creative.size() != 19 || !missing.isEmpty()) {
             throw new IllegalStateException("Simulation creative entries=" + creative.size()
                     + ", REI entries=" + items.size() + ", missing=" + missing);
         }
-        System.out.println("Simulation catalog checked: 13 creative/REI entries and no legacy farm items");
+        System.out.println("Simulation catalog checked: 19 creative/REI entries and no legacy farm items");
         return true;
     }
 }

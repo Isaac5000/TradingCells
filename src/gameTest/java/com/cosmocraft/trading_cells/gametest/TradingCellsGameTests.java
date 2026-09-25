@@ -1,17 +1,13 @@
 package com.cosmocraft.trading_cells.gametest;
 
 import com.cosmocraft.trading_cells.gametest.feature.silktouch.SilkTouchTwoGameTests;
-import com.cosmocraft.trading_cells.gametest.feature.configuredmobfarm.ConfiguredMobFarmGameTests;
 import com.cosmocraft.trading_cells.gametest.feature.farmer.FarmerGameTests;
 import com.cosmocraft.trading_cells.gametest.feature.machine.PortableMachineGameTests;
 import com.cosmocraft.trading_cells.gametest.feature.machine.MachineCapabilityGameTests;
 import com.cosmocraft.trading_cells.gametest.feature.ironfarm.IronFarmGameTests;
 import com.cosmocraft.trading_cells.gametest.feature.quarry.QuarryGameTests;
-import com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobFarmGameTests;
 import com.cosmocraft.trading_cells.gametest.feature.experience.ExperienceGameTests;
-import com.cosmocraft.trading_cells.gametest.feature.machinecontrol.MachineControlGameTests;
 import com.cosmocraft.trading_cells.gametest.feature.infusion.ArcaneInfuserGameTests;
-import com.cosmocraft.trading_cells.gametest.feature.network.NetworkGameTests;
 import com.cosmocraft.trading_cells.gametest.shared.BlockEntityGameTests;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
@@ -66,16 +62,13 @@ public final class TradingCellsGameTests {
         tests.addAll(MachineCapabilityGameTests.tests());
         tests.addAll(IronFarmGameTests.tests());
         tests.addAll(QuarryGameTests.tests());
-        tests.addAll(MobFarmGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobFarmLootTableGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.EssenceAutomationGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationLootGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationCatalogGameTests.tests());
-        tests.addAll(ConfiguredMobFarmGameTests.tests());
         tests.addAll(ExperienceGameTests.tests());
-        tests.addAll(MachineControlGameTests.tests());
         tests.addAll(ArcaneInfuserGameTests.tests());
-        tests.addAll(NetworkGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsTransportGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsContractGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsCapabilityGameTests.tests());
@@ -88,7 +81,6 @@ public final class TradingCellsGameTests {
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsMenuGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsShapeGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsRuleGameTests.tests());
-        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.configuredmobfarm.ConfiguredMobFarmPreviewGameTests.tests());
         tests.addAll(BlockEntityGameTests.tests());
         return List.copyOf(tests);
     }

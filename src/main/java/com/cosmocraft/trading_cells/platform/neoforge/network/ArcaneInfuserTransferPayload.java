@@ -41,14 +41,16 @@ public record ArcaneInfuserTransferPayload(int containerId, byte actionId, int r
     public static void handle(ArcaneInfuserTransferPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)
-                    || !(player.containerMenu instanceof ArcaneInfuserMenu menu)
-                    || menu.containerId != payload.containerId()
-                    || !menu.stillValid(player)) {
+                    || player.containerMenu.containerId != payload.containerId()
+                    || !player.containerMenu.stillValid(player)) {
                 return;
             }
-            ArcaneInfusionTransferAction.fromId(payload.actionId()).ifPresent(action ->
-                    menu.handleTransfer(player, action, payload.requestedLevels())
-            );
+            if (player.containerMenu instanceof ArcaneInfuserMenu menu) {
+                ArcaneInfusionTransferAction.fromId(payload.actionId()).ifPresent(action ->
+                        menu.handleTransfer(player, action, payload.requestedLevels()));
+            } else if (player.containerMenu instanceof com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceWorkbenchMenu menu) {
+                menu.handleExperienceTransfer(player, payload.actionId(), payload.requestedLevels());
+            }
         });
     }
 }

@@ -79,9 +79,6 @@ public final class PortableMachineJadeComponentProvider implements IBlockCompone
 
     private static int progressColor(BlockAccessor accessor) {
         String path = BuiltInRegistries.BLOCK.getKey(accessor.getBlockState().getBlock()).getPath();
-        if (path.contains("skeleton_farm") || path.contains("zombie_farm")) {
-            return 0xFF9EB7D1;
-        }
         if (path.contains("iron_farm")) {
             return 0xFFD7D7D7;
         }

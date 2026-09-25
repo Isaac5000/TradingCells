@@ -14,7 +14,7 @@ from generate_mob_simulation_resources import outlined_union, resources as simul
 from generate_pipe_textures import TEXTURES as PIPE_TEXTURES, blend
 from generate_family_upgrades import BASES, FAMILIES, MATERIALS, MOB_FARM_SWORD_REGIONS, TERMINAL_BODY, family_base, family_texture, generated, luminance, material_ramp, recolor, rivet_pixels
 from generate_family_upgrades import WOOD_PALETTE, fixed_emblem_pixels, wooden_emblem_pixels
-from generate_family_upgrades import ORIGINALS, emblem_pixels, quarry_frame
+from generate_family_upgrades import ORIGINALS, FRAMES, emblem_pixels, quarry_frame, generic_frame
 from generate_family_upgrades import TERMINALS, TERMINAL_ORIGINALS, TERMINAL_STEEL, logistics_terminal_texture
 
 
@@ -105,8 +105,11 @@ class ItemSpriteTests(unittest.TestCase):
             self.assertEqual(image.size, (64, 64))
             self.assertEqual(set(image.getchannel("A").get_flattened_data()), {0, 255})
         model = json.loads((root / "items/storm_shard.json").read_text(encoding="utf-8"))["model"]
-        self.assertEqual(model["type"], "minecraft:composite")
-        self.assertEqual(model["models"][1]["model"]["type"], "trading_cells:storm_shard_charge")
+        self.assertEqual(model["type"], "minecraft:select")
+        gui_model = model["cases"][0]["model"]
+        self.assertEqual(gui_model["type"], "minecraft:composite")
+        self.assertEqual(gui_model["models"][1]["model"]["type"], "trading_cells:storm_shard_charge")
+        self.assertEqual(model["fallback"]["models"][1]["model"]["type"], "trading_cells:storm_shard_charge")
 
 
 class PipePaletteTests(unittest.TestCase):
@@ -142,8 +145,7 @@ class PipePaletteTests(unittest.TestCase):
 class SimulationModelTests(unittest.TestCase):
     def test_entity_previews_keep_the_baked_pedestal(self):
         generated = simulation_resources()
-        for name, base, renderer in (("entity_module", "item/entity_module", "entity_module"),
-                                     ("mob_farm", "block/mob_farm", "block_entity_item")):
+        for name, base, renderer in (("mob_farm", "block/mob_farm", "block_entity_item"),):
             with self.subTest(item=name):
                 model = json.loads(generated[f"assets/trading_cells/items/{name}.json"])["model"]
                 self.assertEqual(model, {"type": "minecraft:composite", "models": [
@@ -155,6 +157,21 @@ class SimulationModelTests(unittest.TestCase):
                             for part in farm["elements"]))
         self.assertNotIn("spawner", json.dumps(farm))
         module = json.loads(generated["assets/trading_cells/models/item/entity_module.json"])
+        dispatch = json.loads(generated["assets/trading_cells/items/entity_module.json"])["model"]
+        self.assertEqual(dispatch["type"], "minecraft:range_dispatch")
+        self.assertEqual(dispatch["property"], "trading_cells:essence_tier")
+        self.assertEqual([entry["threshold"] for entry in dispatch["entries"]], [1, 2, 3, 4])
+        for tier, name in enumerate(("tier_i", "tier_ii", "tier_iii", "tier_iv"), 1):
+            base = f"item/{name}_creature_model_base"
+            self.assertEqual(dispatch["entries"][tier - 1]["model"], {"type": "minecraft:composite", "models": [
+                {"type": "minecraft:model", "model": f"trading_cells:{base}"},
+                {"type": "minecraft:special", "base": "trading_cells:item/entity_module",
+                 "model": {"type": "trading_cells:entity_module"}}]})
+            variant = json.loads(generated[f"assets/trading_cells/models/{base}.json"])
+            self.assertEqual(variant["elements"], module["elements"])
+            self.assertEqual(variant["display"], module["display"])
+            self.assertEqual(variant["textures"]["base"], "minecraft:block/black_concrete")
+            self.assertEqual(variant["textures"]["edge"], f"trading_cells:block/essence/tier_{tier}_edge")
         self.assertEqual(module["elements"], outlined_union(
             [([1, 0, 1], [15, 1.5, 15]), ([3, 1.5, 3], [13, 3.5, 13])], "base"))
         for hand in ("firstperson_righthand", "firstperson_lefthand"):
@@ -213,9 +230,8 @@ class UpgradePaletteTests(unittest.TestCase):
     def test_all_families_share_exact_quarry_frames_and_baked_emblems(self):
         images = generated()
         quarry = family_base("quarry")
-        frame = quarry_frame(quarry)
         for material in MATERIALS:
-            expected_frame = family_texture(frame, material)
+            expected_frame = generic_frame(material)
             for family in FAMILIES:
                 with self.subTest(material=material, family=family):
                     base = family_base(family)
@@ -236,6 +252,40 @@ class UpgradePaletteTests(unittest.TestCase):
             capacity = images[ORIGINALS / "mob_farm_capacity" / f"{material}_upgrade.png"]
             for bounds in MOB_FARM_SWORD_REGIONS:
                 self.assertEqual(speed.crop(bounds).tobytes(), capacity.crop(bounds).tobytes())
+
+    def test_generic_frames_keep_quarry_colors_without_the_pickaxe(self):
+        quarry = family_base("quarry")
+        mask = emblem_pixels("quarry", quarry)
+        images = generated()
+        for material in MATERIALS:
+            frame = generic_frame(material)
+            icon = images[ORIGINALS / "quarry" / f"{material}_upgrade.png"]
+            self.assertEqual(frame.size, (64, 64))
+            self.assertEqual(frame.getchannel("A").tobytes(), icon.getchannel("A").tobytes())
+            self.assertEqual(frame.tobytes(), images[ORIGINALS / "generic" / f"{material}_upgrade.png"].tobytes())
+            self.assertEqual(frame.tobytes(), quarry_frame(icon, quarry).tobytes())
+            self.assertTrue(any(frame.getpixel(point) != icon.getpixel(point) for point in mask))
+            for y in range(64):
+                for x in range(64):
+                    if (x, y) not in mask:
+                        self.assertEqual(frame.getpixel((x, y)), icon.getpixel((x, y)))
+
+    def test_syringe_models_are_closed_3d_and_fill_each_tier(self):
+        root = Path(__file__).resolve().parents[1] / "src/main/resources" / ASSETS / "models/item"
+        body = json.loads((root / "essence_extractor.json").read_text(encoding="utf-8"))
+        self.assertNotIn("layer0", body["textures"])
+        self.assertGreaterEqual(len(body["elements"]), 10)
+        poses = [body]
+        for tier in range(1, 5):
+            start = json.loads((root / "essence" / f"syringe_extract_{tier}_00.json").read_text(encoding="utf-8"))
+            filled = json.loads((root / "essence" / f"syringe_extract_{tier}_24.json").read_text(encoding="utf-8"))
+            self.assertEqual(len(filled["elements"]), len(start["elements"]) + 1)
+            self.assertEqual(filled["textures"]["essence"], f"trading_cells:block/essence/tier_{tier}_edge")
+            poses.extend((start, filled))
+        for model in poses:
+            for cube in model["elements"]:
+                self.assertEqual(set(cube["faces"]), {"north", "south", "east", "west", "up", "down"})
+                self.assertTrue(all(end > start for start, end in zip(cube["from"], cube["to"])))
 
     def test_barter_emblem_excludes_copper_fragments_without_holes_in_gold(self):
         base = family_base("piglin_barter")
@@ -363,7 +413,7 @@ class UpgradePaletteTests(unittest.TestCase):
     def test_all_upgrade_items_use_only_their_family_texture(self):
         root = Path(__file__).resolve().parents[1] / "src/main/resources"
         names = [f"{family}_{material}_upgrade" for family in FAMILIES if family != "pipe" for material in MATERIALS]
-        names += [f"{tier}_pipe_upgrade" for tier in ("basic", "improved", "advanced", "ultimate", "infinite")]
+        names += [f"{tier}_pipe_upgrade" for tier in ("copper", "iron", "gold", "diamond", "netherite")]
         generated_resources = resources()
         for name in names:
             with self.subTest(item=name):
@@ -375,7 +425,7 @@ class UpgradePaletteTests(unittest.TestCase):
 
     def test_sprite_transparency_and_opaque_block_housing(self):
         images = generated()
-        self.assertEqual(len(images), 28)
+        self.assertEqual(len(images), 33)
         self.assertFalse(any(path.parent.name == "item" for path in images),
                          "Terminal items use block models, not duplicate item PNGs")
         for path, image in images.items():

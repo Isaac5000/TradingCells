@@ -34,7 +34,7 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInfuserMenu>
         implements RecipeUpdateListener {
     private static final Identifier SURFACE =
-            Identifier.withDefaultNamespace("textures/block/amethyst_block.png");
+            Identifier.withDefaultNamespace("textures/block/end_stone.png");
     private static final WidgetSprites RECIPE_BOOK_BUTTON_SPRITES = new WidgetSprites(
             Identifier.fromNamespaceAndPath("trading_cells", "arcane_infuser/recipe_book_button"),
             Identifier.fromNamespaceAndPath("trading_cells", "arcane_infuser/recipe_book_button_highlighted")
@@ -81,9 +81,12 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     private EditBox amountField;
     private Button depositButton;
     private Button withdrawButton;
+    private InfuserControlButton xpModeButton;
+    private InfuserControlButton lockButton;
     private final ArcaneInfusionRecipeBookComponent recipeBookComponent;
     private boolean widthTooNarrow;
     private int selectedRecipeExperience = -1;
+    private boolean displayedLockedGhost;
 
     public ArcaneInfuserScreen(ArcaneInfuserMenu menu, Inventory inventory, Component title) {
         this(menu, inventory, title, new ArcaneInfusionRecipeBookComponent(menu));
@@ -134,6 +137,10 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
                 Component.translatable("button.trading_cells.withdraw_xp"),
                 button -> send(false)
         ).bounds(leftPos + CONTROL_X, topPos + WITHDRAW_BUTTON_Y, CONTROL_WIDTH, BUTTON_HEIGHT).build());
+        xpModeButton = addRenderableWidget(new InfuserControlButton(leftPos + 69, topPos + 81,
+                false, () -> menu.fillStorage() ? 1 : 0, button -> automationAction(0)));
+        lockButton = addRenderableWidget(new InfuserControlButton(leftPos + 89, topPos + 81,
+                true, menu::lockState, button -> automationAction(1)));
         updateButtonStates();
     }
 
@@ -141,6 +148,15 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     public void containerTick() {
         super.containerTick();
         recipeBookComponent.tick();
+        if (menu.lockState() != 0 && menu.automationDisplay() != null) {
+            recipeBookComponent.fillGhostRecipe(menu.automationDisplay());
+            selectedRecipeExperience = menu.automationDisplay().experience();
+            displayedLockedGhost = true;
+        } else if (displayedLockedGhost) {
+            recipeBookComponent.slotClicked(menu.slots.get(0));
+            selectedRecipeExperience = -1;
+            displayedLockedGhost = false;
+        }
         updateButtonStates();
     }
 
@@ -428,6 +444,22 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     }
 
     private void updateButtonStates() {
+        if (xpModeButton != null && lockButton != null) {
+            Component mode = Component.translatable(menu.fillStorage()
+                    ? "gui.trading_cells.xp.fill_storage" : "gui.trading_cells.xp.active_recipe");
+            xpModeButton.setMessage(mode);
+            xpModeButton.setTooltip(Tooltip.create(mode));
+            Component recipe = menu.lockedRecipeResult().isEmpty() ? Component.literal(menu.lockedRecipeName())
+                    : menu.lockedRecipeResult().getHoverName();
+            Component lock = Component.translatable(switch (menu.lockState()) {
+                case 1 -> "gui.trading_cells.infuser.unlock";
+                case 2 -> "gui.trading_cells.infuser.missing_recipe";
+                default -> "gui.trading_cells.infuser.lock";
+            }, recipe);
+            lockButton.setMessage(lock);
+            lockButton.setTooltip(Tooltip.create(lock));
+            lockButton.active = menu.lockState() != 0 || menu.requiredExperience() > 0 || menu.automationDisplay() != null;
+        }
         if (depositButton == null || withdrawButton == null) {
             return;
         }
@@ -473,6 +505,8 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     }
 
     private void repositionTransferWidgets() {
+        if (xpModeButton != null) { xpModeButton.setPosition(leftPos + 69, topPos + 81); }
+        if (lockButton != null) { lockButton.setPosition(leftPos + 89, topPos + 81); }
         if (amountField != null) {
             amountField.setPosition(leftPos + CONTROL_X, topPos + FIELD_Y);
         }
@@ -612,5 +646,11 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
                 action.id(),
                 transferAll ? 0 : requestedLevels()
         ));
+    }
+
+    private void automationAction(int button) {
+        if (minecraft != null && minecraft.gameMode != null) {
+            minecraft.gameMode.handleInventoryButtonClick(menu.containerId, button);
+        }
     }
 }

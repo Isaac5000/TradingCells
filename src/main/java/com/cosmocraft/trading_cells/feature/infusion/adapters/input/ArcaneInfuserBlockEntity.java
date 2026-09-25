@@ -14,6 +14,11 @@ import com.cosmocraft.trading_cells.platform.neoforge.fluid.ExperienceFluidHandl
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
+import com.cosmocraft.trading_cells.platform.neoforge.experience.MachineExperienceAccount;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineInsertionLimit;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -45,7 +50,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
-        implements WorldlyContainer, MenuProvider {
+        implements WorldlyContainer, MenuProvider, MachineInsertionLimit {
     public static final int TOP_LEFT_SLOT = 0;
     public static final int TOP_SLOT = 1;
     public static final int TOP_RIGHT_SLOT = 2;
@@ -65,10 +70,10 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
     public static final int OUTPUT_STATE_PHYSICAL = 3;
 
     private static final String SLOT_TAG_PREFIX = "Slot";
-    private static final String STORED_EXPERIENCE_TAG = "StoredExperience";
     private static final String INVENTORY_VERSION_TAG = "InventoryVersion";
     private static final int INVENTORY_VERSION = 2;
-    private static final int[] NO_SLOTS = new int[0];
+    private static final int[] INPUTS = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+    private static final int[] OUTPUTS = {OUTPUT_SLOT};
     private static final int[] LEGACY_SLOT_TARGETS = {
             TOP_SLOT,
             LEFT_SLOT,
@@ -82,13 +87,10 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
     private final ArcaneInfusionUseCase service = FeatureComposition.arcaneInfusion();
     private final RecipeManager.CachedCheck<ArcaneInfusionInput, ArcaneInfusionRecipe> recipeCheck =
             RecipeManager.createCheck(ArcaneInfuserRegistrationAdapter.RECIPE_TYPE.get());
-    private final ExperienceFluidHandler fluidHandler = ExperienceFluidHandlers.destination(
-            this::storedExperience,
-            this::setStoredExperienceRaw,
-            () -> EXPERIENCE_CAPACITY,
-            this::experienceChanged
-    );
-    private int storedExperience;
+    private final MachineExperienceAccount experience = new MachineExperienceAccount(this::experienceChanged);
+    private final ExperienceFluidHandler fluidHandler = experience.handler(this::requiredExperience);
+    private @Nullable Identifier lockedRecipe;
+    private @Nullable Identifier cachedRecipeId;
     private boolean previewDirty = true;
     private @Nullable RecipeManager cachedPreviewManager;
     private @Nullable ArcaneInfusionRecipe cachedPreviewRecipe;
@@ -103,11 +105,13 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         @Override
         public int get(int index) {
             return switch (index) {
-                case 0 -> storedExperience & 0xFFFF;
-                case 1 -> storedExperience >>> 16;
+                case 0 -> experience.amount() & 0xFFFF;
+                case 1 -> experience.amount() >>> 16;
                 case 2 -> requiredExperience() & 0xFFFF;
                 case 3 -> requiredExperience() >>> 16;
                 case 4 -> outputState();
+                case 5 -> experience.fillStorage() ? 1 : 0;
+                case 6 -> lockState();
                 default -> 0;
             };
         }
@@ -116,15 +120,15 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         public void set(int index, int value) {
             int unsignedValue = value & 0xFFFF;
             if (index == 0) {
-                setStoredExperienceRaw((storedExperience & 0x7FFF0000) | unsignedValue);
+                setStoredExperienceRaw((experience.amount() & 0x7FFF0000) | unsignedValue);
             } else if (index == 1) {
-                setStoredExperienceRaw((storedExperience & 0xFFFF) | ((unsignedValue & 0x7FFF) << 16));
+                setStoredExperienceRaw((experience.amount() & 0xFFFF) | ((unsignedValue & 0x7FFF) << 16));
             }
         }
 
         @Override
         public int getCount() {
-            return 5;
+            return 7;
         }
     };
 
@@ -140,7 +144,22 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
 
     @Override
     public void processTick() {
-        // Manual crafting is event-driven; this machine intentionally performs no per-tick work.
+        if (!(level instanceof ServerLevel server) || lockedRecipe == null) { return; }
+        refreshPreview();
+        ArcaneInfusionRecipe recipe = cachedPreviewRecipe;
+        if (recipe == null || cachedPreviewResult.isEmpty() || !hasRequiredExperience(recipe)) { return; }
+        ItemStack output = items.get(OUTPUT_SLOT);
+        ItemStack result = cachedPreviewResult.copy();
+        if (!output.isEmpty() && (!ItemStack.isSameItemSameComponents(output, result)
+                || (long) output.getCount() + result.getCount() > output.getMaxStackSize())) { return; }
+        List<ItemStack> remaining = consumptionPlan(recipe);
+        if (remaining == null) { return; }
+        for (int slot = 0; slot < INPUT_SLOT_COUNT; slot++) { items.set(slot, remaining.get(slot)); }
+        if (!output.isEmpty()) { result.grow(output.getCount()); }
+        items.set(OUTPUT_SLOT, result);
+        experience.spend(recipe.experience());
+        contentsChanged();
+        playCompletionFeedback(server, recipe);
     }
 
     /** Returns a non-persistent recipe preview, or a completed physical result if one exists. */
@@ -170,7 +189,8 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         if (!hasRequiredExperience(recipe)) {
             return OUTPUT_STATE_INSUFFICIENT_EXPERIENCE;
         }
-        return OUTPUT_STATE_MANUAL_READY;
+        return lockedRecipe == null && consumptionPlan(recipe) != null
+                ? OUTPUT_STATE_MANUAL_READY : OUTPUT_STATE_EMPTY;
     }
 
     /** Atomically consumes the resources represented by the result the player just took. */
@@ -192,12 +212,15 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         }
         refreshPreview();
         ArcaneInfusionRecipe recipe = cachedPreviewRecipe;
-        if (recipe == null
+        if (lockedRecipe != null || recipe == null
                 || !hasRequiredExperience(recipe)
                 || !sameResult(cachedPreviewResult, expectedResult)) {
             return false;
         }
-        consume(recipe);
+        ItemStack remainder = cachedPreviewResult.copy();
+        remainder.shrink(expectedResult.getCount());
+        if (!consume(recipe)) { return false; }
+        items.set(OUTPUT_SLOT, remainder);
         contentsChanged();
         if (level instanceof ServerLevel serverLevel) {
             playCompletionFeedback(serverLevel, recipe);
@@ -206,7 +229,7 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
     }
 
     public int storedExperience() {
-        return storedExperience;
+        return experience.amount();
     }
 
     @Override
@@ -229,7 +252,7 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
                 reason,
                 0,
                 0,
-                storedExperience,
+                experience.amount(),
                 output.getCount(),
                 output.isEmpty() ? getMaxStackSize() : output.getMaxStackSize()
         );
@@ -239,61 +262,41 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         return fluidHandler;
     }
 
-    public void transferExperience(
-            ServerPlayer player,
-            ArcaneInfusionTransferAction action,
-            int requestedLevels
-    ) {
-        if (level == null || level.isClientSide()) {
-            return;
+    public void transferExperience(ServerPlayer player, ArcaneInfusionTransferAction action, int requestedLevels) {
+        if (level instanceof ServerLevel && stillValid(player)) {
+            experience.transfer(player, action.id(), requestedLevels);
         }
-        int points = switch (action) {
-            case DEPOSIT -> service.depositLevels(
-                    player.experienceLevel,
-                    player.experienceProgress,
-                    storedExperience,
-                    EXPERIENCE_CAPACITY,
-                    requestedLevels
-            );
-            case DEPOSIT_ALL -> service.depositAll(
-                    player.experienceLevel,
-                    player.experienceProgress,
-                    storedExperience,
-                    EXPERIENCE_CAPACITY
-            );
-            case WITHDRAW -> service.withdrawLevels(
-                    player.experienceLevel,
-                    player.experienceProgress,
-                    storedExperience,
-                    requestedLevels
-            );
-            case WITHDRAW_ALL -> service.withdrawAll(
-                    player.experienceLevel,
-                    player.experienceProgress,
-                    storedExperience
-            );
-        };
-        if (points <= 0) {
-            return;
+    }
+
+    public MachineExperienceAccount experience() { return experience; }
+    public @Nullable Identifier lockedRecipeId() { return lockedRecipe; }
+    public ItemStack lockedRecipeResult() {
+        refreshPreview();
+        return lockedRecipe == null || cachedPreviewRecipe == null ? ItemStack.EMPTY : cachedPreviewRecipe.result().displayResult();
+    }
+    public int lockState() {
+        refreshPreview();
+        return lockedRecipe == null ? 0 : cachedPreviewRecipe == null ? 2 : 1;
+    }
+    public void toggleRecipeLock() {
+        toggleRecipeLock(null);
+    }
+    public void toggleRecipeLock(@Nullable Identifier selected) {
+        refreshPreview();
+        if (lockedRecipe != null) { lockedRecipe = null; }
+        else {
+            Identifier candidate = cachedPreviewResult.isEmpty() ? selected : cachedRecipeId;
+            if (recipe(candidate) == null) { return; }
+            lockedRecipe = candidate;
         }
-        if (action == ArcaneInfusionTransferAction.WITHDRAW
-                || action == ArcaneInfusionTransferAction.WITHDRAW_ALL) {
-            int transferred = PlayerExperienceTransfer.addPoints(player, points);
-            if (transferred <= 0) {
-                return;
-            }
-            storedExperience = Math.max(0, storedExperience - transferred);
-        } else {
-            int transferred = PlayerExperienceTransfer.removePoints(player, points);
-            if (transferred <= 0) {
-                return;
-            }
-            storedExperience = (int) Math.min(
-                    EXPERIENCE_CAPACITY,
-                    (long) storedExperience + transferred
-            );
-        }
-        experienceChanged();
+        contentsChanged();
+    }
+    public @Nullable Identifier activeRecipeId() { refreshPreview(); return cachedRecipeId; }
+    public @Nullable ArcaneInfusionRecipe recipe(@Nullable Identifier id) {
+        if (id == null || !(level instanceof ServerLevel server)) { return null; }
+        return server.recipeAccess().byKey(ResourceKey.create(Registries.RECIPE, id))
+                .map(RecipeHolder::value).filter(ArcaneInfusionRecipe.class::isInstance)
+                .map(ArcaneInfusionRecipe.class::cast).orElse(null);
     }
 
     @Override
@@ -379,7 +382,7 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
 
     @Override
     public int @NonNull [] getSlotsForFace(@NonNull Direction direction) {
-        return NO_SLOTS;
+        return direction == Direction.DOWN ? OUTPUTS : INPUTS;
     }
 
     @Override
@@ -388,7 +391,7 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
             @NonNull ItemStack stack,
             @Nullable Direction direction
     ) {
-        return false;
+        return direction != Direction.DOWN && insertionLimit(slot, stack) > 0;
     }
 
     @Override
@@ -397,7 +400,33 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
             @NonNull ItemStack stack,
             @NonNull Direction direction
     ) {
-        return false;
+        return slot == OUTPUT_SLOT;
+    }
+
+    @Override
+    public int insertionLimit(int slot, ItemStack stack) {
+        if (slot < 0 || slot >= INPUT_SLOT_COUNT || stack.isEmpty()) { return 0; }
+        if (lockedRecipe == null) { return stack.getMaxStackSize(); }
+        refreshPreview();
+        ArcaneInfusionRecipe recipe = cachedPreviewRecipe;
+        var input = new ArcaneInfusionInput(List.copyOf(items.subList(0, INPUT_SLOT_COUNT)));
+        if (recipe == null || recipe.inputIngredient(slot, input).ingredient().isEmpty()) { return 0; }
+        var ingredient = recipe.inputIngredient(slot, input).ingredient().orElseThrow();
+        if (!ingredient.ingredient().test(stack) || !recipe.matchesInputRestrictions(slot, stack)) { return 0; }
+        ItemStack current = items.get(slot);
+        if (!current.isEmpty() && !ItemStack.isSameItemSameComponents(current, stack)) { return 0; }
+        return Math.max(0, ingredient.count() - current.getCount());
+    }
+
+    @Override
+    public void setItem(int slot, ItemStack stack, boolean insideTransaction) {
+        if (insideTransaction && validSlot(slot)) {
+            items.set(slot, stack.copy());
+            invalidatePreview();
+            setChanged();
+        } else {
+            setItem(slot, stack);
+        }
     }
 
     @Override
@@ -419,7 +448,10 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
                 );
             }
         }
-        setStoredExperienceRaw(input.getIntOr(STORED_EXPERIENCE_TAG, 0));
+        experience.load(input);
+        String recipeId = input.getStringOr("LockedRecipe", "");
+        lockedRecipe = recipeId.isEmpty() ? null : Identifier.tryParse(recipeId);
+        invalidatePreview();
     }
 
     @Override
@@ -431,9 +463,8 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
                 output.store(SLOT_TAG_PREFIX + slot, ItemStack.CODEC, items.get(slot));
             }
         }
-        if (storedExperience > 0) {
-            output.putInt(STORED_EXPERIENCE_TAG, storedExperience);
-        }
+        experience.save(output);
+        if (lockedRecipe != null) { output.putString("LockedRecipe", lockedRecipe.toString()); }
     }
 
     @Override
@@ -441,7 +472,8 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         for (int slot = 0; slot < CONTAINER_SIZE; slot++) {
             items.set(slot, ItemStack.EMPTY);
         }
-        storedExperience = 0;
+        experience.clear();
+        lockedRecipe = null;
         invalidatePreview();
         setChanged();
     }
@@ -453,7 +485,7 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
 
     private void setStoredExperienceRaw(int value) {
         int clamped = Math.clamp(value, 0, EXPERIENCE_CAPACITY);
-        storedExperience = clamped;
+        experience.setRaw(clamped);
     }
 
     private static boolean validSlot(int slot) {
@@ -485,14 +517,24 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         }
         previewDirty = false;
         cachedPreviewRecipe = null;
+        cachedRecipeId = null;
         cachedPreviewResult = ItemStack.EMPTY;
         ArcaneInfusionInput input = new ArcaneInfusionInput(List.copyOf(items.subList(0, INPUT_SLOT_COUNT)));
-        Optional<RecipeHolder<ArcaneInfusionRecipe>> match = recipeCheck.getRecipeFor(input, serverLevel);
+        Optional<RecipeHolder<ArcaneInfusionRecipe>> match;
+        if (lockedRecipe == null) {
+            match = recipeCheck.getRecipeFor(input, serverLevel);
+        } else {
+            match = currentManager.byKey(ResourceKey.create(Registries.RECIPE, lockedRecipe))
+                    .filter(holder -> holder.value() instanceof ArcaneInfusionRecipe)
+                    .map(holder -> new RecipeHolder<>(holder.id(), (ArcaneInfusionRecipe) holder.value()));
+        }
         if (match.isEmpty()) {
             return;
         }
         ArcaneInfusionRecipe recipe = match.get().value();
-        ItemStack result = recipe.assemble(input);
+        cachedRecipeId = match.get().id().identifier();
+        cachedPreviewRecipe = recipe;
+        ItemStack result = recipe.matches(input, serverLevel) ? recipe.assemble(input) : ItemStack.EMPTY;
         if (!result.isEmpty()) {
             cachedPreviewRecipe = recipe;
             cachedPreviewResult = result;
@@ -502,6 +544,7 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
     private void invalidatePreview() {
         previewDirty = true;
         cachedPreviewRecipe = null;
+        cachedRecipeId = null;
         cachedPreviewResult = ItemStack.EMPTY;
     }
 
@@ -513,25 +556,45 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         return service.evaluate(new ArcaneInfusionAttempt(
                 true,
                 true,
-                storedExperience,
+                experience.amount(),
                 recipe.experience()
         )) == ArcaneInfusionDecision.READY;
     }
 
-    private void consume(ArcaneInfusionRecipe recipe) {
+    private @Nullable List<ItemStack> consumptionPlan(ArcaneInfusionRecipe recipe) {
+        List<ItemStack> remaining = new java.util.ArrayList<>();
+        var input = new ArcaneInfusionInput(List.copyOf(items.subList(0, INPUT_SLOT_COUNT)));
         for (int slot = 0; slot < INPUT_SLOT_COUNT; slot++) {
-            int count = recipe.ingredient(slot).count();
-            if (count == 0) {
-                continue;
-            }
             ItemStack consumed = items.get(slot);
-            ItemStackTemplate remainder = consumed.getCraftingRemainder();
-            consumed.shrink(count);
-            if (consumed.isEmpty()) {
-                items.set(slot, remainder == null ? ItemStack.EMPTY : remainder.create());
+            int count = recipe.consumedCount(slot, input);
+            ItemStack next = consumed.copy();
+            if (count > 0) {
+                ItemStackTemplate remainder = consumed.getCraftingRemainder();
+                next.shrink(count);
+                if (remainder != null) {
+                    ItemStack returned = remainder.create();
+                    long amount = (long) returned.getCount() * count;
+                    if (amount > returned.getMaxStackSize()) { return null; }
+                    returned.setCount((int) amount);
+                    if (!next.isEmpty()) {
+                        if (!ItemStack.isSameItemSameComponents(next, returned)
+                                || next.getCount() + returned.getCount() > next.getMaxStackSize()) { return null; }
+                        returned.grow(next.getCount());
+                    }
+                    next = returned;
+                }
             }
+            remaining.add(next);
         }
-        storedExperience -= recipe.experience();
+        return remaining;
+    }
+
+    private boolean consume(ArcaneInfusionRecipe recipe) {
+        List<ItemStack> remaining = consumptionPlan(recipe);
+        if (remaining == null) { return false; }
+        for (int slot = 0; slot < INPUT_SLOT_COUNT; slot++) { items.set(slot, remaining.get(slot)); }
+        experience.spend(recipe.experience());
+        return true;
     }
 
     private static boolean sameResult(ItemStack current, ItemStack expected) {

@@ -18,7 +18,6 @@ import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.client.Iron
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.PiglinQuarryScreen;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.VillagerQuarryScreen;
-import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.LegacyMobFarmBlock;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
@@ -39,7 +38,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.BlockItem;
 
 @REIPluginClient
 public final class TradingCellsReiClientPlugin implements REIClientPlugin {
@@ -147,8 +145,15 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         "category.trading_cells.spawner_redstone_control",
                         Items.SPAWNER
                 ),
-                new ArcaneInfusionReiCategory()
+                new ArcaneInfusionReiCategory(), new EssenceReiCategory(false), new EssenceReiCategory(true)
         ));
+
+        registry.addWorkstations(EssenceReiDisplay.STABILIZATION,
+                EntryStacks.of(com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.STABILIZER_ITEM.get()));
+        registry.addWorkstations(EssenceReiDisplay.SYNTHESIS,
+                EntryStacks.of(com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.WORKBENCH_ITEM.get()));
+        registry.configure(EssenceReiDisplay.STABILIZATION, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.configure(EssenceReiDisplay.SYNTHESIS, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
 
         registry.addWorkstations(
                 VILLAGER_BREEDING,
@@ -237,6 +242,9 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
 
     @Override
     public void registerDisplays(DisplayRegistry registry) {
+        for (var tier : com.cosmocraft.trading_cells.feature.mobfarm.domain.model.EssenceTier.values()) {
+            registry.add(EssenceReiDisplay.synthesis(tier));
+        }
         for (TradingCellsReiDisplay display : TradingCellsReiDisplays.createAll()) {
             registry.add(display);
         }
@@ -244,6 +252,12 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
 
     @Override
     public void registerScreens(ScreenRegistry registry) {
+        registry.registerContainerClickArea(new Rectangle(86, 50, 24, 16),
+                com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.EssenceWorkbenchScreen.class,
+                EssenceReiDisplay.SYNTHESIS);
+        registry.registerContainerClickArea(new Rectangle(124, 48, 24, 16),
+                com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.EssenceStabilizerScreen.class,
+                EssenceReiDisplay.STABILIZATION);
         Rectangle progressArea = new Rectangle(
                 MachineScreenLayout.machineX(54),
                 0,
@@ -330,8 +344,6 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
 
     @Override
     public void registerEntries(EntryRegistry registry) {
-        registry.removeEntryIf(entry -> entry.getValue() instanceof ItemStack stack
-                && stack.getItem() instanceof BlockItem item && item.getBlock() instanceof LegacyMobFarmBlock);
         registry.removeEntry(EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTER_QUALITY_UPGRADE_ITEM.get()));
         registry.removeEntry(EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTER_YIELD_UPGRADE_ITEM.get()));
         registry.removeEntry(EntryStacks.of(TraderRegistrationAdapter.PIGLIN_BARTER_HYBRID_UPGRADE_ITEM.get()));

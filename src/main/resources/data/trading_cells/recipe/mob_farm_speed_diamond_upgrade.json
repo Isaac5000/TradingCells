@@ -2,15 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "CMC",
-    "MSM",
-    "CPC"
+    "CBC",
+    "BSB",
+    "CBC"
   ],
   "key": {
     "C": "minecraft:popped_chorus_fruit",
-    "M": "minecraft:diamond",
-    "S": "minecraft:iron_sword",
-    "P": "trading_cells:mob_farm_speed_gold_upgrade"
+    "B": "minecraft:diamond_block",
+    "S": "trading_cells:mob_farm_speed_gold_upgrade"
   },
   "result": {
     "id": "trading_cells:mob_farm_speed_diamond_upgrade",

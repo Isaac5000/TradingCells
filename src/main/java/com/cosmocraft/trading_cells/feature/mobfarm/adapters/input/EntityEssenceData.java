@@ -1,6 +1,8 @@
 package com.cosmocraft.trading_cells.feature.mobfarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.feature.mobfarm.domain.model.EssenceClassification;
+import com.cosmocraft.trading_cells.feature.mobfarm.domain.model.EssenceTier;
 import java.util.List;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -27,8 +29,6 @@ import org.jspecify.annotations.Nullable;
 public final class EntityEssenceData {
     private static final String ROOT = "TradingCellsEssence";
     private static final int MAX_DATA_BYTES = 65_536;
-    private static final TagKey<EntityType<?>> HIGH_LEVEL = TagKey.create(Registries.ENTITY_TYPE,
-            Identifier.fromNamespaceAndPath("trading_cells", "high_level_essence"));
     private static final List<String> VOLATILE = List.of("UUID", "Pos", "Motion", "Rotation", "Passengers",
             "Leash", "leash", "Brain", "Inventory", "Items", "EnderItems", "Offers", "Owner", "OwnerUUID",
             "RootVehicle", "PortalCooldown", "DeathTime", "HurtTime", "HurtByTimestamp", "Fire", "Air");
@@ -44,10 +44,22 @@ public final class EntityEssenceData {
         return Identifier.tryParse(data(stack).getStringOr("Type", ""));
     }
 
-    public static boolean isHighLevel(ItemStack stack) { return data(stack).getBooleanOr("HighLevel", false); }
+    public static EssenceTier tier(ItemStack stack) {
+        CompoundTag data = data(stack);
+        return EssenceTier.fromId(data.getIntOr("Tier", data.getBooleanOr("HighLevel", false) ? 3 : 1));
+    }
+    public static boolean isHighLevel(ItemStack stack) { return tier(stack).id() >= 3; }
+    public static int classificationVersion(ItemStack stack) { return data(stack).getIntOr("ClassificationVersion", 0); }
+    public static double threatScore(ItemStack stack) { return data(stack).getDoubleOr("ThreatScore", 0); }
+    public static boolean isCharged(ItemStack stack) {
+        return data(stack).getCompound("State").map(state -> state.getBooleanOr("powered", false)).orElse(false);
+    }
 
     public static Component displayName(ItemStack stack) {
         Identifier id = entityTypeId(stack);
+        if (Identifier.withDefaultNamespace("creeper").equals(id) && isCharged(stack)) {
+            return Component.translatable("entity.trading_cells.charged_creeper");
+        }
         return id == null ? Component.translatable("item.trading_cells.entity_essence")
                 : BuiltInRegistries.ENTITY_TYPE.getOptional(id).map(EntityType::getDescription)
                         .orElseGet(() -> Component.literal(id.toString()));
@@ -55,20 +67,55 @@ public final class EntityEssenceData {
 
     public static ItemStack essenceOf(@Nullable LivingEntity target) {
         if (target == null || target instanceof Player || !target.isAlive()) { return ItemStack.EMPTY; }
-        TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, target.registryAccess());
+        try {
+        ProblemReporter.Collector problems = new ProblemReporter.Collector();
+        TagValueOutput output = TagValueOutput.createWithContext(problems, target.registryAccess());
         target.saveWithoutId(output);
+        if (!problems.isEmpty()) { return ItemStack.EMPTY; }
         CompoundTag state = output.buildResult();
         sanitize(state);
         if (state.sizeInBytes() > MAX_DATA_BYTES) { return ItemStack.EMPTY; }
         CompoundTag essence = new CompoundTag();
         essence.putString("Type", BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString());
-        essence.putBoolean("HighLevel", target.getMaxHealth() >= 80.0F || target.typeHolder().is(HIGH_LEVEL));
+        writeClassification(essence, EssenceClassifier.classify(target, false));
         essence.put("State", state);
         CompoundTag root = new CompoundTag();
         root.put(ROOT, essence);
         ItemStack result = new ItemStack(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get());
         result.set(DataComponents.CUSTOM_DATA, CustomData.of(root));
         return result;
+        } catch (RuntimeException | LinkageError invalidEntity) {
+            return ItemStack.EMPTY;
+        }
+    }
+
+    public static ItemStack rawEssenceOf(LivingEntity target) {
+        ItemStack core = essenceOf(target);
+        return core.isEmpty() ? ItemStack.EMPTY : copyEssence(core, MobFarmRegistrationAdapter.RAW_ESSENCE.get());
+    }
+
+    public static ItemStack coreOf(ItemStack raw) {
+        return raw.is(MobFarmRegistrationAdapter.RAW_ESSENCE.get()) && entityTypeId(raw) != null
+                ? copyEssence(raw, MobFarmRegistrationAdapter.ENTITY_ESSENCE.get()) : ItemStack.EMPTY;
+    }
+
+    private static ItemStack copyEssence(ItemStack source, net.minecraft.world.item.Item item) {
+        ItemStack result = new ItemStack(item);
+        CompoundTag root = new CompoundTag();
+        root.put(ROOT, data(source));
+        result.set(DataComponents.CUSTOM_DATA, CustomData.of(root));
+        return result;
+    }
+
+    private static void writeClassification(CompoundTag data, EssenceClassification.Result classification) {
+        data.putInt("Tier", classification.tier().id());
+        data.putDouble("ThreatScore", classification.score());
+        data.putInt("ClassificationVersion", classification.version());
+        data.putBoolean("HighLevel", classification.tier().id() >= 3);
+    }
+
+    public static boolean ensureClassified(ServerLevel level, ItemStack stack) {
+        return entityTypeId(stack) != null && createEntity(level, stack) != null;
     }
 
     public static ItemStack moduleOf(ItemStack essence) {
@@ -91,6 +138,7 @@ public final class EntityEssenceData {
 
     public static @Nullable LivingEntity createEntity(Level level, ItemStack stack) {
         if (!stack.is(MobFarmRegistrationAdapter.ENTITY_MODULE.get())
+                && !stack.is(MobFarmRegistrationAdapter.RAW_ESSENCE.get())
                 && !stack.is(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get())) { return null; }
         CompoundTag essence = data(stack);
         Identifier id = Identifier.tryParse(essence.getStringOr("Type", ""));
@@ -106,6 +154,13 @@ public final class EntityEssenceData {
             if (!(entity instanceof LivingEntity living) || living instanceof Player) { return null; }
             living.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), state));
             living.setHealth(living.getMaxHealth());
+            if (level instanceof ServerLevel && (essence.getIntOr("ClassificationVersion", 0) < 1
+                    || essence.getIntOr("Tier", 0) < 1 || essence.getIntOr("Tier", 0) > 4)) {
+                writeClassification(essence, EssenceClassifier.classify(living, essence.getBooleanOr("HighLevel", false)));
+                CompoundTag root = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+                root.put(ROOT, essence);
+                stack.set(DataComponents.CUSTOM_DATA, CustomData.of(root));
+            }
             return living;
         } catch (RuntimeException | LinkageError invalidEntity) {
             return null;

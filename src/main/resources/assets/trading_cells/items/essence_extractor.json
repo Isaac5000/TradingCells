@@ -1,6 +1,1246 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "trading_cells:item/essence_extractor"
+    "type": "minecraft:range_dispatch",
+    "property": "trading_cells:syringe_extraction",
+    "entries": [
+      {
+        "threshold": 0.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_00"
+        }
+      },
+      {
+        "threshold": 0.041666666666666664,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_01"
+        }
+      },
+      {
+        "threshold": 0.08333333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_02"
+        }
+      },
+      {
+        "threshold": 0.125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_03"
+        }
+      },
+      {
+        "threshold": 0.16666666666666666,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_04"
+        }
+      },
+      {
+        "threshold": 0.20833333333333334,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_05"
+        }
+      },
+      {
+        "threshold": 0.25,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_06"
+        }
+      },
+      {
+        "threshold": 0.2916666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_07"
+        }
+      },
+      {
+        "threshold": 0.3333333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_08"
+        }
+      },
+      {
+        "threshold": 0.375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_09"
+        }
+      },
+      {
+        "threshold": 0.4166666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_10"
+        }
+      },
+      {
+        "threshold": 0.4583333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_11"
+        }
+      },
+      {
+        "threshold": 0.5,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_12"
+        }
+      },
+      {
+        "threshold": 0.5416666666666666,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_13"
+        }
+      },
+      {
+        "threshold": 0.5833333333333334,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_14"
+        }
+      },
+      {
+        "threshold": 0.625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_15"
+        }
+      },
+      {
+        "threshold": 0.6666666666666666,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_16"
+        }
+      },
+      {
+        "threshold": 0.7083333333333334,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_17"
+        }
+      },
+      {
+        "threshold": 0.75,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_18"
+        }
+      },
+      {
+        "threshold": 0.7916666666666666,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_19"
+        }
+      },
+      {
+        "threshold": 0.8333333333333334,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_20"
+        }
+      },
+      {
+        "threshold": 0.875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_21"
+        }
+      },
+      {
+        "threshold": 0.9166666666666666,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_22"
+        }
+      },
+      {
+        "threshold": 0.9583333333333334,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_23"
+        }
+      },
+      {
+        "threshold": 1.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_1_24"
+        }
+      },
+      {
+        "threshold": 2.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_00"
+        }
+      },
+      {
+        "threshold": 2.0416666666666665,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_01"
+        }
+      },
+      {
+        "threshold": 2.0833333333333335,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_02"
+        }
+      },
+      {
+        "threshold": 2.125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_03"
+        }
+      },
+      {
+        "threshold": 2.1666666666666665,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_04"
+        }
+      },
+      {
+        "threshold": 2.2083333333333335,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_05"
+        }
+      },
+      {
+        "threshold": 2.25,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_06"
+        }
+      },
+      {
+        "threshold": 2.2916666666666665,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_07"
+        }
+      },
+      {
+        "threshold": 2.3333333333333335,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_08"
+        }
+      },
+      {
+        "threshold": 2.375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_09"
+        }
+      },
+      {
+        "threshold": 2.4166666666666665,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_10"
+        }
+      },
+      {
+        "threshold": 2.4583333333333335,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_11"
+        }
+      },
+      {
+        "threshold": 2.5,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_12"
+        }
+      },
+      {
+        "threshold": 2.5416666666666665,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_13"
+        }
+      },
+      {
+        "threshold": 2.5833333333333335,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_14"
+        }
+      },
+      {
+        "threshold": 2.625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_15"
+        }
+      },
+      {
+        "threshold": 2.6666666666666665,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_16"
+        }
+      },
+      {
+        "threshold": 2.7083333333333335,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_17"
+        }
+      },
+      {
+        "threshold": 2.75,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_18"
+        }
+      },
+      {
+        "threshold": 2.7916666666666665,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_19"
+        }
+      },
+      {
+        "threshold": 2.8333333333333335,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_20"
+        }
+      },
+      {
+        "threshold": 2.875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_21"
+        }
+      },
+      {
+        "threshold": 2.9166666666666665,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_22"
+        }
+      },
+      {
+        "threshold": 2.9583333333333335,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_23"
+        }
+      },
+      {
+        "threshold": 3.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_2_24"
+        }
+      },
+      {
+        "threshold": 4.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_00"
+        }
+      },
+      {
+        "threshold": 4.041666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_01"
+        }
+      },
+      {
+        "threshold": 4.083333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_02"
+        }
+      },
+      {
+        "threshold": 4.125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_03"
+        }
+      },
+      {
+        "threshold": 4.166666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_04"
+        }
+      },
+      {
+        "threshold": 4.208333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_05"
+        }
+      },
+      {
+        "threshold": 4.25,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_06"
+        }
+      },
+      {
+        "threshold": 4.291666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_07"
+        }
+      },
+      {
+        "threshold": 4.333333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_08"
+        }
+      },
+      {
+        "threshold": 4.375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_09"
+        }
+      },
+      {
+        "threshold": 4.416666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_10"
+        }
+      },
+      {
+        "threshold": 4.458333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_11"
+        }
+      },
+      {
+        "threshold": 4.5,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_12"
+        }
+      },
+      {
+        "threshold": 4.541666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_13"
+        }
+      },
+      {
+        "threshold": 4.583333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_14"
+        }
+      },
+      {
+        "threshold": 4.625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_15"
+        }
+      },
+      {
+        "threshold": 4.666666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_16"
+        }
+      },
+      {
+        "threshold": 4.708333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_17"
+        }
+      },
+      {
+        "threshold": 4.75,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_18"
+        }
+      },
+      {
+        "threshold": 4.791666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_19"
+        }
+      },
+      {
+        "threshold": 4.833333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_20"
+        }
+      },
+      {
+        "threshold": 4.875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_21"
+        }
+      },
+      {
+        "threshold": 4.916666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_22"
+        }
+      },
+      {
+        "threshold": 4.958333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_23"
+        }
+      },
+      {
+        "threshold": 5.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_3_24"
+        }
+      },
+      {
+        "threshold": 6.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_00"
+        }
+      },
+      {
+        "threshold": 6.041666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_01"
+        }
+      },
+      {
+        "threshold": 6.083333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_02"
+        }
+      },
+      {
+        "threshold": 6.125,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_03"
+        }
+      },
+      {
+        "threshold": 6.166666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_04"
+        }
+      },
+      {
+        "threshold": 6.208333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_05"
+        }
+      },
+      {
+        "threshold": 6.25,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_06"
+        }
+      },
+      {
+        "threshold": 6.291666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_07"
+        }
+      },
+      {
+        "threshold": 6.333333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_08"
+        }
+      },
+      {
+        "threshold": 6.375,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_09"
+        }
+      },
+      {
+        "threshold": 6.416666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_10"
+        }
+      },
+      {
+        "threshold": 6.458333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_11"
+        }
+      },
+      {
+        "threshold": 6.5,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_12"
+        }
+      },
+      {
+        "threshold": 6.541666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_13"
+        }
+      },
+      {
+        "threshold": 6.583333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_14"
+        }
+      },
+      {
+        "threshold": 6.625,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_15"
+        }
+      },
+      {
+        "threshold": 6.666666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_16"
+        }
+      },
+      {
+        "threshold": 6.708333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_17"
+        }
+      },
+      {
+        "threshold": 6.75,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_18"
+        }
+      },
+      {
+        "threshold": 6.791666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_19"
+        }
+      },
+      {
+        "threshold": 6.833333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_20"
+        }
+      },
+      {
+        "threshold": 6.875,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_21"
+        }
+      },
+      {
+        "threshold": 6.916666666666667,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_22"
+        }
+      },
+      {
+        "threshold": 6.958333333333333,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_23"
+        }
+      },
+      {
+        "threshold": 7.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/essence/syringe_extract_4_24"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:range_dispatch",
+      "property": "trading_cells:syringe_load",
+      "fallback": {
+        "type": "minecraft:model",
+        "model": "trading_cells:item/essence_extractor"
+      },
+      "entries": [
+        {
+          "threshold": 0.0,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_00"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.03125,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_01"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.0625,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_02"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.09375,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_03"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.125,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_04"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.15625,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_05"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.1875,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_06"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.21875,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_07"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.25,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_08"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.28125,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_09"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.3125,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_10"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.34375,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_11"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.375,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_12"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.40625,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_13"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.4375,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_14"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.46875,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_15"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.5,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_16"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.53125,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_17"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.5625,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_18"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.59375,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_19"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.625,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_20"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.65625,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_21"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.6875,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_22"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.71875,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_23"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.75,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_24"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.78125,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_25"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.8125,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_26"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.84375,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_27"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.875,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_28"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.90625,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_29"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.9375,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_30"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 0.96875,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_31"
+              }
+            ]
+          }
+        },
+        {
+          "threshold": 1.0,
+          "model": {
+            "type": "minecraft:composite",
+            "models": [
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence_extractor"
+              },
+              {
+                "type": "minecraft:model",
+                "model": "trading_cells:item/essence/syringe_vial_32"
+              }
+            ]
+          }
+        }
+      ]
+    }
   }
 }

@@ -3,17 +3,23 @@
   "network_registration_version": "2",
   "farmer_crop_schema_version": 1,
   "mob_farm_target_schema_version": 1,
-  "mob_farm_catalog_protocol_version": 1,
-  "recipe_catalog_count": 153,
-  "recipe_catalog_sha256": "64761509EF63D71C03AE744166C42A998AF4FD1C618DD768DC990D23538F3BE0",
+  "retired_payloads": ["MobFarmCatalogSyncPayload", "RequestMobFarmCatalogPayload"],
+  "retired_machine_classes": [
+    "feature/configuredmobfarm/adapters/input/ConfiguredMobFarmBlockEntity.java",
+    "feature/creeperfarm/adapters/input/CreeperFarmBlockEntity.java",
+    "feature/raiderfarm/adapters/input/RaiderFarmBlockEntity.java",
+    "feature/skeletonfarm/adapters/input/SkeletonFarmBlockEntity.java",
+    "feature/zombiefarm/adapters/input/ZombieFarmBlockEntity.java"
+  ],
+  "recipe_catalog_count": 164,
+  "recipe_catalog_sha256": "85ABFA9EB9658863E274AB222B176B86EC5B7EC1F80FAC9BBBEAE53F56A782B2",
   "payload_ids": {
     "ArcaneInfuserTransferPayload": "arcane_infuser_transfer",
+    "InfuserAutomationPayload": "infuser_automation",
     "AutotraderMenuSyncPayload": "autotrader_menu_sync",
     "ExperienceStorageTransferPayload": "experience_storage_transfer",
     "ExtractTradingCellExperiencePayload": "extract_trading_cell_experience",
-    "MobFarmCatalogSyncPayload": "mob_farm_catalog_sync",
     "QuarryCatalogSyncPayload": "quarry_catalog_sync",
-    "RequestMobFarmCatalogPayload": "request_mob_farm_catalog",
     "RequestQuarryCatalogPayload": "request_quarry_catalog",
     "ResetTradesPayload": "reset_trades",
     "SelectAutotraderOfferPayload": "select_autotrader_offer",
@@ -40,18 +46,6 @@
       "CuredReady",
       "TradingCellsCureDiscount"
     ],
-    "feature/configuredmobfarm/adapters/input/ConfiguredMobFarmBlockEntity.java": [
-      "CycleTicks",
-      "CycleDurationTicks",
-      "MobTarget",
-      "EnabledLootMask",
-      "DisabledDynamicLootCount",
-      "StoredExperience",
-      "PendingLootCount",
-      "PendingLootReady",
-      "PendingBatchStarted",
-      "Enabled"
-    ],
     "feature/experience/adapters/input/ExperienceStorageBlockEntity.java": [
       "StoredExperience"
     ],
@@ -65,8 +59,24 @@
       "IncubationTicks"
     ],
     "feature/infusion/adapters/input/ArcaneInfuserBlockEntity.java": [
+      "InventoryVersion",
+      "LockedRecipe"
+    ],
+    "platform/neoforge/experience/MachineExperienceAccount.java": [
       "StoredExperience",
-      "InventoryVersion"
+      "FillExperienceStorage"
+    ],
+    "feature/mobfarm/adapters/input/EntityEssenceData.java": [
+      "TradingCellsEssence", "Type", "State", "Tier", "ThreatScore", "ClassificationVersion"
+    ],
+    "feature/mobfarm/adapters/input/EssenceExtractorItem.java": [
+      "TradingCellsSyringeLoaded"
+    ],
+    "feature/mobfarm/adapters/input/EssenceStabilizerBlockEntity.java": [
+      "StabilizationProgress", "StabilizationRecipe"
+    ],
+    "feature/mobfarm/adapters/input/EssenceWorkbenchBlockEntity.java": [
+      "AutomaticSynthesis"
     ],
     "feature/ironfarm/adapters/input/IronFarmBlockEntity.java": [
       "CycleTicks",
@@ -81,45 +91,6 @@
       "PendingResultCount",
       "PendingMaterial",
       "PendingPreview"
-    ],
-    "feature/creeperfarm/adapters/input/CreeperFarmBlockEntity.java": [
-      "CycleTicks",
-      "CycleDurationTicks",
-      "CreeperKind",
-      "CreeperTarget",
-      "EnabledLootMask",
-      "DisabledDynamicLootCount",
-      "StoredExperience",
-      "PendingLootCount",
-      "PendingLootReady",
-      "PendingBatchStarted",
-      "Enabled"
-    ],
-    "feature/raiderfarm/adapters/input/RaiderFarmBlockEntity.java": [
-      "CycleTicks",
-      "CycleDurationTicks",
-      "RaiderKind",
-      "RaiderTarget",
-      "EnabledLootMask",
-      "DisabledDynamicLootCount",
-      "StoredExperience",
-      "PendingLootCount",
-      "PendingLootReady",
-      "PendingBatchStarted",
-      "Enabled"
-    ],
-    "feature/skeletonfarm/adapters/input/SkeletonFarmBlockEntity.java": [
-      "CycleTicks",
-      "CycleDurationTicks",
-      "SkeletonKind",
-      "SkeletonTarget",
-      "EnabledLootMask",
-      "DisabledDynamicLootCount",
-      "StoredExperience",
-      "PendingLootCount",
-      "PendingLootReady",
-      "PendingBatchStarted",
-      "Enabled"
     ],
     "feature/trader/adapters/input/AutotraderBlockEntity.java": [
       "SelectedOffer",
@@ -150,19 +121,6 @@
       "TradeRefreshTicks",
       "StoredExperience",
       "TradingCellsCureDiscount"
-    ],
-    "feature/zombiefarm/adapters/input/ZombieFarmBlockEntity.java": [
-      "CycleTicks",
-      "CycleDurationTicks",
-      "ZombieKind",
-      "ZombieTarget",
-      "EnabledLootMask",
-      "DisabledDynamicLootCount",
-      "StoredExperience",
-      "PendingLootCount",
-      "PendingLootReady",
-      "PendingBatchStarted",
-      "Enabled"
     ],
     "platform/neoforge/machine/PortableMachineBlockEntity.java": [
       "MachineRedstoneMode"

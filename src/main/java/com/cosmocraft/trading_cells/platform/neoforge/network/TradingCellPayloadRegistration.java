@@ -9,6 +9,7 @@ public final class TradingCellPayloadRegistration {
 
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("2");
+        registrar.playToClient(InfuserAutomationPayload.PAYLOAD_TYPE, InfuserAutomationPayload.STREAM_CODEC, InfuserAutomationPayload::handle);
         registrar.playToServer(
                 ResetTradesPayload.PAYLOAD_TYPE,
                 ResetTradesPayload.STREAM_CODEC,
@@ -35,11 +36,6 @@ public final class TradingCellPayloadRegistration {
                 RequestQuarryCatalogPayload::handle
         );
         registrar.playToServer(
-                RequestMobFarmCatalogPayload.PAYLOAD_TYPE,
-                RequestMobFarmCatalogPayload.STREAM_CODEC,
-                RequestMobFarmCatalogPayload::handle
-        );
-        registrar.playToServer(
                 ExperienceStorageTransferPayload.PAYLOAD_TYPE,
                 ExperienceStorageTransferPayload.STREAM_CODEC,
                 ExperienceStorageTransferPayload::handle
@@ -63,13 +59,11 @@ public final class TradingCellPayloadRegistration {
         registrar.playToClient(TradingCellMenuSyncPayload.PAYLOAD_TYPE, TradingCellMenuSyncPayload.STREAM_CODEC);
         registrar.playToClient(AutotraderMenuSyncPayload.PAYLOAD_TYPE, AutotraderMenuSyncPayload.STREAM_CODEC);
         registrar.playToClient(QuarryCatalogSyncPayload.PAYLOAD_TYPE, QuarryCatalogSyncPayload.STREAM_CODEC);
-        registrar.playToClient(MobFarmCatalogSyncPayload.PAYLOAD_TYPE, MobFarmCatalogSyncPayload.STREAM_CODEC);
         registrar.playToClient(NetworkTerminalSyncPayload.PAYLOAD_TYPE, NetworkTerminalSyncPayload.STREAM_CODEC);
         registrar.playToClient(NetworkCraftingSyncPayload.PAYLOAD_TYPE, NetworkCraftingSyncPayload.STREAM_CODEC);
         registrar.playToClient(PipeMenuSyncPayload.PAYLOAD_TYPE, PipeMenuSyncPayload.STREAM_CODEC);
         registrar.playToClient(PipeChannelSuggestionsPayload.PAYLOAD_TYPE, PipeChannelSuggestionsPayload.STREAM_CODEC);
         registrar.playToServer(PipeChannelQueryPayload.PAYLOAD_TYPE, PipeChannelQueryPayload.STREAM_CODEC, PipeChannelQueryPayload::handle);
-        registrar.playToClient(ConfiguredFarmLootPreviewPayload.PAYLOAD_TYPE, ConfiguredFarmLootPreviewPayload.STREAM_CODEC);
         registrar.playToClient(MobSimulationLootPayload.PAYLOAD_TYPE, MobSimulationLootPayload.STREAM_CODEC, MobSimulationLootPayload::handle);
         registrar.playToServer(MobSimulationFilterPayload.PAYLOAD_TYPE, MobSimulationFilterPayload.STREAM_CODEC, MobSimulationFilterPayload::handle);
     }

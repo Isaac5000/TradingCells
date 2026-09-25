@@ -167,7 +167,7 @@ public final class LogisticsRegistrationAdapter {
         SoundType sound = switch (kind) {
             case FLUID -> SoundType.COPPER;
             case GAS -> SoundType.CALCITE;
-            case UNIVERSAL -> SoundType.AMETHYST;
+            case UNIVERSAL -> SoundType.METAL;
             case ITEM, ENERGY -> SoundType.METAL;
         };
         return BlockBehaviour.Properties.of()

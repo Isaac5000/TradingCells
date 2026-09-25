@@ -1,23 +1,14 @@
 package com.cosmocraft.trading_cells.platform.neoforge.mobfarm;
 
-import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmTargetCatalog;
-import com.cosmocraft.trading_cells.feature.configuredmobfarm.domain.model.ConfiguredMobFarmDropRules;
-import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarmLootAdapter;
-import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarmTargetCatalog;
-import com.cosmocraft.trading_cells.feature.raiderfarm.domain.model.RaiderFarmDropRules;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmTargetCatalog;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmDropRules;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmKind;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.domain.model.SkeletonFarmLoot;
-import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmTargetCatalog;
-import com.cosmocraft.trading_cells.feature.zombiefarm.domain.model.ZombieFarmDropRules;
 import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmSimulationLoot.Style;
 import com.cosmocraft.trading_cells.platform.neoforge.mobfarm.MobFarmSimulationLoot.Supplement;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -29,45 +20,46 @@ final class MobFarmEquipmentLoot {
     static List<Supplement> supplements(LivingEntity target, int looting) {
         var id = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
         var result = new ArrayList<Supplement>();
-        if (SkeletonFarmTargetCatalog.isStaticTarget(id)) {
-            Item weapon = SkeletonFarmTargetCatalog.staticKind(id) == SkeletonFarmKind.WITHER_SKELETON
-                    ? Items.STONE_SWORD : Items.BOW;
-            result.add(weapon(weapon, SkeletonFarmDropRules.chance(SkeletonFarmLoot.WEAPONS, looting)));
-        }
-        if (ZombieFarmTargetCatalog.isStaticTarget(id)) {
-            boolean hard = target.level().getDifficulty() == Difficulty.HARD;
-            switch (ZombieFarmTargetCatalog.staticKind(id)) {
-                case ZOMBIE, ZOMBIE_VILLAGER, HUSK -> {
-                    result.add(weapon(Items.IRON_SWORD, ZombieFarmDropRules.zombieSwordChance(looting, hard)));
-                    result.add(weapon(Items.IRON_SPEAR, ZombieFarmDropRules.zombieSpearChance(looting, hard)));
-                    result.add(weapon(Items.IRON_SHOVEL, ZombieFarmDropRules.zombieShovelChance(looting, hard)));
-                }
-                case DROWNED -> {
-                    result.add(weapon(Items.TRIDENT, ZombieFarmDropRules.drownedTridentChance(looting)));
-                    result.add(weapon(Items.FISHING_ROD, ZombieFarmDropRules.drownedFishingRodChance(looting)));
-                    result.add(new Supplement(new ItemStack(Items.NAUTILUS_SHELL), ZombieFarmDropRules.drownedNautilusChance(), 1, 1));
-                }
-                case ZOMBIFIED_PIGLIN -> {
-                    result.add(weapon(Items.GOLDEN_SWORD, ZombieFarmDropRules.zombifiedPiglinSwordChance(looting)));
-                    result.add(weapon(Items.GOLDEN_SPEAR, ZombieFarmDropRules.zombifiedPiglinSpearChance(looting)));
-                }
-                case ZOGLIN -> { }
+        if (!"minecraft".equals(id.getNamespace())) { return List.of(); }
+        double equipmentChance = Math.min(1.0D, 0.085D + Math.max(0, looting) * 0.01D);
+        switch (id.getPath()) {
+            case "skeleton", "stray", "bogged", "parched", "skeleton_horse", "wither_skeleton" -> {
+                // Preserve the historical float calculation used by skeleton equipment.
+                double chance = Math.min(1.0F, 0.085F + Math.max(0, looting) * 0.01F);
+                result.add(weapon(id.getPath().equals("wither_skeleton") ? Items.STONE_SWORD : Items.BOW, chance));
             }
-        }
-        for (ItemStack equipment : ConfiguredMobFarmTargetCatalog.equipment(id)) {
-            double chance = ConfiguredMobFarmDropRules.spawnedEquipmentChance(
-                    ConfiguredMobFarmTargetCatalog.equipmentSpawnChance(id, equipment.getItem()), looting);
-            boolean weapon = equipment.is(Items.CROSSBOW) || equipment.is(Items.GOLDEN_SWORD)
-                    || equipment.is(Items.GOLDEN_SPEAR) || equipment.is(Items.GOLDEN_AXE);
-            result.add(new Supplement(equipment, chance, 1, 1, weapon, Style.WORN));
-        }
-        ItemStack raiderWeapon = RaiderFarmTargetCatalog.defaultWeapon(id);
-        if (!raiderWeapon.isEmpty()) {
-            result.add(new Supplement(raiderWeapon, RaiderFarmDropRules.weaponChance(looting), 1, 1, true, Style.PLAIN));
-        }
-        if (RaiderFarmTargetCatalog.isPillager(id)) {
-            result.add(new Supplement(RaiderFarmLootAdapter.ominousBanner(target.registryAccess()), 1, 1, 1));
-            result.add(new Supplement(new ItemStack(Items.OMINOUS_BOTTLE), 1, 1, 1, false, Style.OMINOUS_BOTTLE));
+            case "zombie", "zombie_villager", "husk" -> {
+                double chance = (target.level().getDifficulty() == Difficulty.HARD ? 0.05D : 0.01D) * equipmentChance;
+                result.add(weapon(Items.IRON_SWORD, chance / 6.0D));
+                result.add(weapon(Items.IRON_SPEAR, chance / 6.0D));
+                result.add(weapon(Items.IRON_SHOVEL, chance * 4.0D / 6.0D));
+            }
+            case "drowned" -> {
+                result.add(weapon(Items.TRIDENT, 0.10D * (10.0D / 16.0D) * equipmentChance));
+                result.add(weapon(Items.FISHING_ROD, 0.10D * (6.0D / 16.0D) * equipmentChance));
+                result.add(new Supplement(new ItemStack(Items.NAUTILUS_SHELL), 0.03D, 1, 1));
+            }
+            case "zombified_piglin" -> {
+                result.add(weapon(Items.GOLDEN_SWORD, equipmentChance * 0.95D));
+                result.add(weapon(Items.GOLDEN_SPEAR, equipmentChance * 0.05D));
+            }
+            case "piglin_brute" -> result.add(weapon(Items.GOLDEN_AXE, equipmentChance));
+            case "piglin" -> {
+                result.add(weapon(Items.CROSSBOW, 0.50D * equipmentChance));
+                result.add(weapon(Items.GOLDEN_SPEAR, 0.05D * equipmentChance));
+                result.add(weapon(Items.GOLDEN_SWORD, 0.45D * equipmentChance));
+                for (Item armor : List.of(Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS)) {
+                    result.add(new Supplement(new ItemStack(armor), 0.10D * equipmentChance, 1, 1, false, Style.WORN));
+                }
+            }
+            case "pillager" -> {
+                result.add(new Supplement(new ItemStack(Items.CROSSBOW), equipmentChance, 1, 1, true, Style.PLAIN));
+                result.add(new Supplement(Raid.getOminousBannerInstance(target.registryAccess()
+                        .lookupOrThrow(Registries.BANNER_PATTERN)), 1, 1, 1));
+                result.add(new Supplement(new ItemStack(Items.OMINOUS_BOTTLE), 1, 1, 1, false, Style.OMINOUS_BOTTLE));
+            }
+            case "vindicator" -> result.add(new Supplement(new ItemStack(Items.IRON_AXE), equipmentChance, 1, 1, true, Style.PLAIN));
+            default -> { }
         }
         return List.copyOf(result);
     }

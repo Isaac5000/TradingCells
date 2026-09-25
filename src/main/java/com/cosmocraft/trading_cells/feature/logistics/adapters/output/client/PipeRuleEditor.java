@@ -86,7 +86,7 @@ final class PipeRuleEditor {
         widgets.accept(Button.builder(Component.translatable("gui.cancel"), button -> cancel.run()).bounds(left + 204, top + 224, 76, 16).build());
         widgets.accept(Button.builder(label("rule.save"), button -> save()).bounds(left + 284, top + 224, 78, 16).build());
         if (!advanced) {
-            var tooltip = Tooltip.create(label("requires", Component.translatable("item.trading_cells.ultimate_pipe_upgrade")));
+            var tooltip = Tooltip.create(label("requires", Component.translatable("item.trading_cells.diamond_pipe_upgrade")));
             components.setTooltip(tooltip); channel.setTooltip(tooltip); invertButton.setTooltip(tooltip); matchButton.setTooltip(tooltip);
         }
         updateIcon();

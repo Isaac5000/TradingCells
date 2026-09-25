@@ -2,15 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "CMC",
-    "MSM",
-    "CPC"
+    "CBC",
+    "BSB",
+    "CBC"
   ],
   "key": {
-    "C": "minecraft:popped_chorus_fruit",
-    "M": "minecraft:copper_ingot",
-    "S": "minecraft:diamond_sword",
-    "P": "minecraft:amethyst_block"
+    "C": "minecraft:chest",
+    "B": "minecraft:copper_block",
+    "S": "minecraft:diamond_sword"
   },
   "result": {
     "id": "trading_cells:mob_farm_capacity_copper_upgrade",

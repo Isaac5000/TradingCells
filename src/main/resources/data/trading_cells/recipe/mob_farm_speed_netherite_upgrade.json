@@ -1,17 +1,8 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "misc",
-  "pattern": [
-    "CMC",
-    "MSM",
-    "CPC"
-  ],
-  "key": {
-    "C": "minecraft:blaze_powder",
-    "M": "minecraft:netherite_ingot",
-    "S": "minecraft:iron_sword",
-    "P": "trading_cells:mob_farm_speed_diamond_upgrade"
-  },
+  "type": "minecraft:smithing_transform",
+  "template": "minecraft:netherite_upgrade_smithing_template",
+  "base": "trading_cells:mob_farm_speed_diamond_upgrade",
+  "addition": "minecraft:netherite_block",
   "result": {
     "id": "trading_cells:mob_farm_speed_netherite_upgrade",
     "count": 1

@@ -3,17 +3,11 @@ package com.cosmocraft.trading_cells.platform.neoforge.client.network;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.VillagerTradingCellMenu;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.AutotraderMenu;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu;
-import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFarmMenu;
-import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarmMenu;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmMenu;
-import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmMenu;
-import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmMenu;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.input.NetworkTerminalMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellExperiencePayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.AutotraderMenuSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.TradingCellMenuSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.QuarryCatalogSyncPayload;
-import com.cosmocraft.trading_cells.platform.neoforge.network.MobFarmCatalogSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.NetworkTerminalSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.NetworkCraftingSyncPayload;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
@@ -85,33 +79,10 @@ public final class TradingCellClientPayloadRegistration {
                 menu.applyCatalogSnapshot(payload);
             }
         });
-        event.register(MobFarmCatalogSyncPayload.PAYLOAD_TYPE, (payload, context) -> {
-            if (context.player().containerMenu instanceof SkeletonFarmMenu menu
-                    && menu.containerId == payload.containerId()) {
-                menu.applyCatalogSnapshot(payload);
-            } else if (context.player().containerMenu instanceof ZombieFarmMenu menu
-                    && menu.containerId == payload.containerId()) {
-                menu.applyCatalogSnapshot(payload);
-            } else if (context.player().containerMenu instanceof RaiderFarmMenu menu
-                    && menu.containerId == payload.containerId()) {
-                menu.applyCatalogSnapshot(payload);
-            } else if (context.player().containerMenu instanceof CreeperFarmMenu menu
-                    && menu.containerId == payload.containerId()) {
-                menu.applyCatalogSnapshot(payload);
-            } else if (context.player().containerMenu instanceof ConfiguredMobFarmMenu menu
-                    && menu.containerId == payload.containerId()) {
-                menu.applyCatalogSnapshot(payload);
-            }
-        });
         event.register(NetworkTerminalSyncPayload.PAYLOAD_TYPE, (payload, context) -> {
             if (context.player().containerMenu instanceof NetworkTerminalMenu menu
                     && menu.containerId == payload.containerId()) {
                 menu.applyServerState(payload);
-            }
-        });
-        event.register(com.cosmocraft.trading_cells.platform.neoforge.network.ConfiguredFarmLootPreviewPayload.PAYLOAD_TYPE, (payload, context) -> {
-            if (context.player().containerMenu instanceof ConfiguredMobFarmMenu menu && menu.containerId == payload.containerId()) {
-                menu.applyLootPreview(payload);
             }
         });
     }

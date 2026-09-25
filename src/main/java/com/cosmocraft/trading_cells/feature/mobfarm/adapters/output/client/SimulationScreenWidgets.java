@@ -20,6 +20,21 @@ final class SimulationScreenWidgets {
         graphics.fill(x - 1, y - 1, x + 17, y + 17, 0xFF727D82);
         graphics.fill(x, y, x + 16, y + 16, 0xFF343C40);
     }
+    static void arrow(GuiGraphicsExtractor graphics, int x, int y, float progress) {
+        drawArrow(graphics, x, y, MUTED);
+        int width = (int) (24 * Math.clamp(progress, 0, 1));
+        if (width > 0) {
+            graphics.enableScissor(x, y, x + width, y + 16);
+            drawArrow(graphics, x, y, ACCENT);
+            graphics.disableScissor();
+        }
+    }
+    private static void drawArrow(GuiGraphicsExtractor graphics, int x, int y, int color) {
+        graphics.fill(x, y + 5, x + 17, y + 11, color);
+        for (int column = 0; column < 7; column++) {
+            graphics.fill(x + 17 + column, y + 1 + column, x + 18 + column, y + 15 - column, color);
+        }
+    }
     static void check(GuiGraphicsExtractor graphics, int x, int y, boolean checked) {
         graphics.fill(x, y, x + 11, y + 11, 0xFF899296);
         graphics.fill(x + 1, y + 1, x + 10, y + 10, 0xFF1C2427);

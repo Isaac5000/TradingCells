@@ -32,7 +32,7 @@ usar OpenGL como fallback si el equipo o el controlador no son compatibles.
 
 ### Ventana temprana de NeoForge
 
-NeoForge `26.2.0.57` tiene abierta la incidencia
+NeoForge `26.2.0.88` tiene abierta la incidencia
 [`NeoForge#3230`](https://github.com/neoforged/NeoForge/issues/3230): su pantalla
 temprana crea una ventana con contexto OpenGL y Minecraft no puede reutilizarla
 para Vulkan. `runClientVulkan` ejecuta `prepareVulkanFmlConfig` y establece

@@ -34,7 +34,14 @@ public enum PipeUpgradeTier {
     public boolean allowsAdvancedRules() { return id >= ULTIMATE.id; }
 
     public String serializedName() {
-        return name().toLowerCase(Locale.ROOT);
+        return switch (this) {
+            case BARE -> "bare";
+            case BASIC -> "copper";
+            case IMPROVED -> "iron";
+            case ADVANCED -> "gold";
+            case ULTIMATE -> "diamond";
+            case INFINITE -> "netherite";
+        };
     }
 
     public int interval(LogisticsResourceType type) {

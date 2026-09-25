@@ -2,13 +2,8 @@ package com.cosmocraft.trading_cells.platform.neoforge.integration.jade;
 
 import com.cosmocraft.trading_cells.feature.experience.adapters.input.ExperienceStorageBlockEntity;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserBlockEntity;
-import com.cosmocraft.trading_cells.feature.skeletonfarm.adapters.input.SkeletonFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.AutotraderBlockEntity;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.VillagerTradingCellBlockEntity;
-import com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmBlockEntity;
-import com.cosmocraft.trading_cells.feature.raiderfarm.adapters.input.RaiderFarmBlockEntity;
-import com.cosmocraft.trading_cells.feature.creeperfarm.adapters.input.CreeperFarmBlockEntity;
-import com.cosmocraft.trading_cells.feature.configuredmobfarm.adapters.input.ConfiguredMobFarmBlockEntity;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineDiagnosticSource;
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
@@ -55,11 +50,6 @@ public final class PortableMachineJadeDataProvider implements IServerDataProvide
         return switch (target) {
             case ExperienceStorageBlockEntity storage -> storage.storedExperience();
             case ArcaneInfuserBlockEntity infuser -> infuser.storedExperience();
-            case SkeletonFarmBlockEntity farm -> farm.dataAccess().get(4);
-            case ZombieFarmBlockEntity farm -> farm.dataAccess().get(4);
-            case RaiderFarmBlockEntity farm -> farm.dataAccess().get(4);
-            case CreeperFarmBlockEntity farm -> farm.dataAccess().get(4);
-            case ConfiguredMobFarmBlockEntity farm -> farm.dataAccess().get(4);
             case AutotraderBlockEntity autotrader -> autotrader.storedExperience();
             case VillagerTradingCellBlockEntity trader -> trader.storedExperience();
             default -> -1;

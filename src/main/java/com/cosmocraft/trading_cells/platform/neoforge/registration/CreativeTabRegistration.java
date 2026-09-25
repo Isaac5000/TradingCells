@@ -122,7 +122,10 @@ public final class CreativeTabRegistration {
                     .displayItems((parameters, output) -> {
                         output.accept(MobFarmRegistrationAdapter.ITEM.get());
                         output.accept(MobFarmRegistrationAdapter.WORKBENCH_ITEM.get());
+                        output.accept(MobFarmRegistrationAdapter.STABILIZER_ITEM.get());
                         output.accept(MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get());
+                        output.accept(MobFarmRegistrationAdapter.EMPTY_VIAL.get());
+                        MobFarmRegistrationAdapter.MODEL_BASES.forEach(item -> output.accept(item.get()));
                         MobFarmRegistrationAdapter.UPGRADES.forEach(item -> output.accept(item.get()));
                     })
                     .build());

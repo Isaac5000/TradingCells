@@ -159,12 +159,13 @@ public final class LogisticsMenuGameTests {
     }
 
     private static void horizontalFarm(GameTestHelper helper) {
-        helper.setBlock(SOURCE, com.cosmocraft.trading_cells.feature.zombiefarm.adapters.output.ZombieFarmRegistrationAdapter.BLOCK.get());
-        var farm = helper.getBlockEntity(SOURCE, com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmBlockEntity.class);
+        helper.setBlock(SOURCE, com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.BLOCK.get());
+        var farm = helper.getBlockEntity(SOURCE, com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.MobFarmBlockEntity.class);
         com.cosmocraft.trading_cells.gametest.shared.BlockEntityStateFixtures.fillIndexedSlots(helper, farm,
-                "Slot", com.cosmocraft.trading_cells.feature.zombiefarm.adapters.input.ZombieFarmBlockEntity.FIRST_OUTPUT_SLOT,
+                "Slot", com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.MobFarmBlockEntity.FIRST_OUTPUT_SLOT,
                 1, new ItemStack(Items.ROTTEN_FLESH, 8));
-        helper.assertValueEqual(farm.getItem(2).getCount(), 8, "Fixture contains actual produced loot");
+        helper.assertValueEqual(farm.getItem(com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.MobFarmBlockEntity.FIRST_OUTPUT_SLOT)
+                .getCount(), 8, "Fixture contains actual produced loot");
         var target = barrel(helper, TARGET, Items.ROTTEN_FLESH, 0);
         var origin = line(helper, PipeKind.ITEM);
         origin.setMode(Direction.WEST, PipeSideMode.EXTRACT);

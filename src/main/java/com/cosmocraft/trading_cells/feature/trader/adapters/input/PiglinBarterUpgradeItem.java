@@ -39,9 +39,5 @@ public final class PiglinBarterUpgradeItem extends Item {
 
     void appendTooltip(Consumer<Component> builder) {
         builder.accept(Component.translatable(tier.tooltipKey).withStyle(ChatFormatting.GRAY));
-        builder.accept(Component.translatable(
-                "tooltip.trading_cells.piglin_barter_upgrade_machine",
-                Component.translatable("block.trading_cells.netherite_piglin_bartering_cell")
-        ).withStyle(ChatFormatting.DARK_GRAY));
     }
 }

@@ -15,7 +15,7 @@ Excluir siempre de busquedas amplias: `.gradle/`, `build/`, `logs/`, `run/` y
 
 ## Entorno y entradas
 
-- Minecraft `26.2.0`, NeoForge `26.2.0.57`, Java 25, Gradle 9.5, mod `1.0.0`.
+- Minecraft `26.2.0`, NeoForge `26.2.0.88`, Java 25, Gradle 9.5, mod `1.0.0`.
 - Arranque comun/cliente: `platform/neoforge/bootstrap/{TradingCells,TradingCellsClient}.java`.
 - Registro y composicion: `platform/neoforge/{registration/Registration,bootstrap/FeatureComposition}.java`.
 - Configuracion: `platform/neoforge/bootstrap/Config.java` y `docs/CONFIGURATION.md`.
@@ -37,12 +37,7 @@ Todas las rutas Java siguientes parten de
 | Canteras | `feature/quarry/` | catalogo, herramientas y minado profundo |
 | Conversion | `feature/converter/` | infeccion, curacion, ofertas y descuentos |
 | Hierro | `feature/ironfarm/` | ciclos, salidas y multiplicadores |
-| Esqueletos | `feature/skeletonfarm/` | `docs/SKELETON_FARM.md` |
-| Zombis | `feature/zombiefarm/` | `docs/ZOMBIE_FARM.md` |
-| Saqueadores | `feature/raiderfarm/` | objetivos, estandarte ominoso, botin y XP |
-| Creepers | `feature/creeperfarm/` | normal/cargado, botin y Fragmentos de la Tormenta |
-| Granjas configurables | `feature/configuredmobfarm/` | diecisiete familias; `docs/MOB_FARM_ROADMAP.md` |
-| Simulacion de entidades | `feature/mobfarm/` | granja general, esencias, modulos y migracion en desarrollo; `docs/ENTITY_SIMULATION_REWORK.md` |
+| Simulacion de entidades | `feature/mobfarm/` | granja general, esencias, modulos y catalogo dinamico; `docs/ESSENCE_AUTOMATION.md` (estado actual), `docs/ENTITY_SIMULATION_REWORK.md` (historial) |
 | Experiencia | `feature/experience/` | almacenamiento, calculo y fluido XP |
 | Logistica | `feature/logistics/` | tuberias, mejoras, reglas, canales, marcador y terminales; `docs/LOGISTICS.md` |
 | Infusor | `feature/infusion/` | `ArcaneInfuserBlockEntity`; `docs/ARCANE_INFUSER.md` |
@@ -90,7 +85,7 @@ La estructura de capas y las dependencias permitidas estan en `ARCHITECTURE.md`.
 | Renderizado | `checkGraphicsBackendIndependence` y matriz de `docs/GRAPHICS_BACKENDS.md` |
 | Recursos, modelos o recetas | `checkProjectResources` y generador afectado con `--check` |
 | Logistica | `checkLogisticsResources`; GameTests `feature/logistics/` |
-| Simulacion de entidades | `checkMobSimulationResources`, `testLogisticsResourceValidation`; GameTests `feature/mobfarm/`; fixtures `simulation`, `essences`, `simulation-models` |
+| Simulacion de entidades | `checkMobSimulationResources`, `testLogisticsResourceValidation`; GameTests `feature/mobfarm/`; fixture vigente `essence-automation`, tambien `simulation`, `simulation-models` |
 | Persistencia o mecanica | suite GameTest afectada y `runGameTestServer` |
 | Cambio normal completo | `check` |
 | Candidata publicable | `clean releaseCheck` |

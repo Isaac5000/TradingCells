@@ -18,46 +18,6 @@ from typing import Any, Iterable
 
 MOD_ID = "trading_cells"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
-ENTITY_FARM_BLOCKS = {
-    "arthropod_farm",
-    "blaze_farm",
-    "breeze_farm",
-    "creeper_farm",
-    "enderman_farm",
-    "ghast_farm",
-    "guardian_farm",
-    "fish_farm",
-    "livestock_farm",
-    "phantom_farm",
-    "piglin_farm",
-    "raider_farm",
-    "shulker_farm",
-    "skeleton_farm",
-    "slime_farm",
-    "zombie_farm",
-}
-ENTITY_FARM_FRAME_TEXTURE = "minecraft:block/iron_block"
-ENTITY_FARM_BASE_TEXTURES = {
-    "arthropod_farm": "minecraft:block/pale_moss_block",
-    "blaze_farm": "minecraft:block/nether_bricks",
-    "breeze_farm": "minecraft:block/polished_tuff",
-    "creeper_farm": "minecraft:block/pale_moss_block",
-    "enderman_farm": "minecraft:block/end_stone",
-    "ghast_farm": "minecraft:block/soul_soil",
-    "guardian_farm": "minecraft:block/prismarine_bricks",
-    "fish_farm": "minecraft:block/sand",
-    "livestock_farm": "minecraft:block/hay_block_top",
-    "phantom_farm": "minecraft:block/pale_moss_block",
-    "piglin_farm": "minecraft:block/polished_blackstone",
-    "raider_farm": "minecraft:block/dark_oak_planks",
-    "shulker_farm": "minecraft:block/purpur_block",
-    "skeleton_farm": "minecraft:block/pale_moss_block",
-    "slime_farm": "trading_cells:block/slime_block_opaque",
-    "zombie_farm": "minecraft:block/pale_moss_block",
-}
-LEGACY_ENTITY_FARM_BLOCKS = ENTITY_FARM_BLOCKS | {
-    "aquatic_farm", "mount_farm", "amphibian_farm", "bee_farm", "creaking_farm",
-}
 CRAFTING_RECIPE_TYPES = {
     "minecraft:crafting_shaped",
     "minecraft:crafting_shapeless",
@@ -234,41 +194,8 @@ def validate_pickaxe_coverage(
 def validate_entity_farm_particles(
     roots: list[Path], parsed_json: dict[Path, Any], errors: list[str]
 ) -> None:
-    for block_id in sorted(ENTITY_FARM_BLOCKS):
-        model_paths = (
-            Path("assets") / MOD_ID / "models" / "block" / f"{block_id}.json",
-            Path("assets") / MOD_ID / "models" / "block" / f"{block_id}_frame.json",
-            Path("assets") / MOD_ID / "models" / "item" / f"{block_id}.json",
-        )
-        for model_path in model_paths:
-            path = find_resource(roots, model_path)
-            if path is None:
-                errors.append(f"missing entity-farm model: {model_path}")
-                continue
-            document = parsed_json.get(path)
-            textures = document.get("textures") if isinstance(document, dict) else None
-            if not isinstance(textures, dict):
-                errors.append(f"{path}: textures must be an object")
-                continue
-            if textures.get("frame") != ENTITY_FARM_FRAME_TEXTURE:
-                errors.append(f"{path}: entity-farm frame must use iron_block")
-            if textures.get("particle") != ENTITY_FARM_FRAME_TEXTURE:
-                errors.append(f"{path}: entity-farm particles must use the iron frame texture")
-            expected_base = ENTITY_FARM_BASE_TEXTURES[block_id]
-            for texture_key in ("base", "base_left", "base_center", "base_right"):
-                if texture_key in textures and textures[texture_key] != expected_base:
-                    errors.append(
-                        f"{path}: entity-farm {texture_key} must use {expected_base}"
-                    )
-            expected_parent = (
-                "trading_cells:item/villager_breeder"
-                if model_path.parent.name == "item"
-                else "trading_cells:block/machine_cage_frame"
-                if model_path.stem.endswith("_frame")
-                else "trading_cells:block/villager_breeder"
-            )
-            if document.get("parent") != expected_parent:
-                errors.append(f"{path}: entity-farm model must inherit {expected_parent}")
+    # Entity targets are represented by the general mob_farm module, not blocks.
+    return
 
 
 def validate_models_and_textures(
@@ -415,17 +342,12 @@ def validate_recipes(
 def validate_entity_farm_recipes(
     roots: list[Path], parsed_json: dict[Path, Any], errors: list[str]
 ) -> None:
-    for block_id in sorted(LEGACY_ENTITY_FARM_BLOCKS):
-        path = find_resource(roots, Path(f"data/trading_cells/recipe/{block_id}_infusion.json"))
-        if path is not None:
-            errors.append(f"{path}: replaced entity-farm recipe must not be published")
-
     path = find_resource(roots, Path("data/trading_cells/recipe/mob_farm_infusion.json"))
     recipe = parsed_json.get(path) if path else None
     expected = (
-        "minecraft:iron_block", "minecraft:black_concrete", "minecraft:iron_block",
+        "minecraft:lapis_block", "minecraft:black_concrete", "minecraft:lapis_block",
         "minecraft:black_concrete", "trading_cells:experience_storage", "minecraft:black_concrete",
-        "minecraft:quartz_block", "minecraft:black_concrete", "minecraft:quartz_block",
+        "minecraft:lapis_block", "trading_cells:storm_shard", "minecraft:lapis_block",
     )
     if recipe != {
         "type": "trading_cells:arcane_infusion", "category": "production",

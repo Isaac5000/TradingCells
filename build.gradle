@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.143'
+    id 'net.neoforged.moddev' version '2.0.147'
     id 'idea'
 }
 
@@ -276,7 +276,7 @@ neoForge {
             client()
             sourceSet = sourceSets.developmentClient
             gameDirectory = project.file('run/vulkan')
-            // NeoForge 26.2.0.57 still creates its early window with an
+            // NeoForge 26.2.0.88 still creates its early window with an
             // OpenGL context, which cannot be handed to Minecraft's Vulkan backend.
             taskBefore prepareVulkanFmlConfig.get()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
