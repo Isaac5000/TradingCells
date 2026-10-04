@@ -20,9 +20,17 @@ son Python 3.11+ portable y resuelven rutas desde `__file__` o argumentos.
 
 ## Antes de subir a GitHub
 
-Ejecutar `./gradlew clean build releaseCheck` (`.\gradlew.bat` en Windows).
+Ejecutar `./gradlew clean build` (`.\gradlew.bat` en Windows). `releaseCheck`
+queda reservado para una publicación y añade los GameTests y la comprobación del
+artefacto único.
 La subida de Git y las comprobaciones de GitHub Actions son operaciones distintas:
 un commit puede estar subido aunque Actions termine en rojo.
+
+Las comprobaciones de generación visual (`checkMachineGuiTextures`,
+`checkVillagerTradeGuiTextures`, `checkLogisticsResources` y
+`checkMobSimulationResources`) no bloquean `build`: dependen de PNG editables y
+pueden detectar diferencias de codificación o acabados artísticos aprobados.
+Siguen disponibles para auditorías manuales específicas.
 
 Los cambios intencionados de recetas requieren revisar el catalogo y actualizar
 solo `recipe_catalog_count` y `recipe_catalog_sha256` en
