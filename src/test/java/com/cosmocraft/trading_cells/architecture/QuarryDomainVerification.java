@@ -16,18 +16,18 @@ final class QuarryDomainVerification {
     }
 
     private static void verifyQuarryRules() {
-        require(QuarryBlockEntity.OUTPUT_SLOT_COUNT == 18,
-                "Both quarry variants must always expose eighteen output slots");
+        require(QuarryBlockEntity.OUTPUT_SLOT_COUNT == 27,
+                "Both quarry variants must always expose twenty-seven output slots");
         require(QuarryFortune.boostSelectionWeight(100, 0) == 100,
                 "A quarry without Fortune must keep the base material weight");
         require(QuarryFortune.boostSelectionWeight(100, 3) == 220,
                 "Fortune III must boost ore selection independently of Silk Touch");
         require(QuarryCycle.durationTicks(VanillaPickaxeTier.WOODEN.timingPosition(), 0) == 2_400,
-                "A wooden pickaxe without Efficiency must take exactly 120 seconds");
+                "A wooden pickaxe without speed upgrades must take exactly 120 seconds");
         require(QuarryCycle.durationTicks(VanillaPickaxeTier.NETHERITE.timingPosition(), 0) == 400,
-                "A netherite pickaxe without Efficiency must take exactly 20 seconds");
-        require(QuarryCycle.durationTicks(VanillaPickaxeTier.NETHERITE.timingPosition(), 5) == 100,
-                "A netherite Efficiency V pickaxe must take exactly five seconds");
+                "A netherite pickaxe without speed upgrades must take exactly 20 seconds");
+        require(QuarryCycle.durationTicks(VanillaPickaxeTier.NETHERITE.timingPosition(), 5) == 20,
+                "Netherite speed and pickaxe reach the one-second minimum");
         require(QuarryCycle.durationSeconds(2.5D, 0) == 56
                         && QuarryCycle.durationTicks(2.5D, 0) == 1_120,
                 "Fractional quarry seconds must be rounded down before conversion to ticks");
@@ -38,7 +38,7 @@ final class QuarryDomainVerification {
                 "The golden pickaxe must keep its low harvest tier despite its high mining speed");
         require(QuarryCycle.durationTicks(VanillaPickaxeTier.IRON.timingPosition(), 5)
                         == QuarryCycle.durationTicks(VanillaPickaxeTier.IRON.timingPosition(), 7),
-                "Quarry Efficiency levels above five must not reduce duration further");
+                "Quarry speed tiers above five must not reduce duration further");
         require(QuarryCycle.durationTicks(7.0D, 0) < QuarryCycle.durationTicks(6.0D, 0),
                 "A tier above netherite must still reduce the quarry duration");
         require(QuarryCycle.durationTicks(6.0D, 0) - QuarryCycle.durationTicks(7.0D, 0)
@@ -50,9 +50,10 @@ final class QuarryDomainVerification {
                         && QuarryCycle.durationTicks(Double.MAX_VALUE, 5) >= QuarryCycle.MINIMUM_DURATION_TICKS,
                 "The modded-pickaxe curve must never become faster than one second");
         for (double tierPosition : new double[] {0.0D, 2.5D, 6.0D, 7.0D, 100.0D}) {
-            for (int efficiency = 0; efficiency <= 7; efficiency++) {
-                require(QuarryCycle.durationTicks(tierPosition, efficiency) % 20 == 0,
-                        "Every quarry duration must contain a whole number of seconds");
+            for (int speedTier = 0; speedTier <= 7; speedTier++) {
+                require(QuarryCycle.durationTicks(tierPosition, speedTier) == Math.max(20,
+                        (QuarryCycle.durationTicks(tierPosition, 0) + (1 << Math.min(5, speedTier)) - 1) / (1 << Math.min(5, speedTier))),
+                        "Speed divides base ticks with ceiling and a minimum of twenty ticks");
             }
         }
         require(QuarryCycle.rescaleProgress(100, 200, 100) == 50,

@@ -1,10 +1,13 @@
 package com.cosmocraft.trading_cells.feature.infusion.adapters.output.client;
 
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineControlButton;
+
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserBlockEntity;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserMenu;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionRecipeDisplay;
 import com.cosmocraft.trading_cells.feature.infusion.domain.model.ArcaneInfusionTransferAction;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.NonNegativeIntegerEditBox;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenCommon;
@@ -18,7 +21,7 @@ import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.navigation.ScreenPosition;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.client.gui.screens.recipebook.RecipeUpdateListener;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -31,19 +34,17 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
-public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInfuserMenu>
+public final class ArcaneInfuserScreen extends MachineContainerScreen<ArcaneInfuserMenu>
         implements RecipeUpdateListener {
-    private static final Identifier SURFACE =
-            Identifier.withDefaultNamespace("textures/block/end_stone.png");
     private static final WidgetSprites RECIPE_BOOK_BUTTON_SPRITES = new WidgetSprites(
-            Identifier.fromNamespaceAndPath("trading_cells", "arcane_infuser/recipe_book_button"),
-            Identifier.fromNamespaceAndPath("trading_cells", "arcane_infuser/recipe_book_button_highlighted")
+            Identifier.fromNamespaceAndPath("trading_cells", "arcane_infuser/buttons/recipe_book"),
+            Identifier.fromNamespaceAndPath("trading_cells", "arcane_infuser/buttons/recipe_book_highlighted")
     );
     private static final MachineScreenTheme THEME = MachineScreenTheme.IRON_FARM;
     private static final int RECIPE_PANEL_X = 7;
     private static final int RECIPE_PANEL_Y = 25;
     private static final int RECIPE_PANEL_WIDTH = 104;
-    private static final int RECIPE_PANEL_HEIGHT = 91;
+    private static final int RECIPE_PANEL_HEIGHT = 85;
     private static final int CONTROL_PANEL_X = 114;
     private static final int CONTROL_PANEL_Y = 25;
     private static final int CONTROL_PANEL_WIDTH = 86;
@@ -62,10 +63,12 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     private static final int DEPOSIT_BUTTON_Y = 81;
     private static final int WITHDRAW_BUTTON_Y = 98;
     private static final int RECIPE_EXPERIENCE_X = 10;
-    public static final int RECIPE_EXPERIENCE_Y = 102;
+    public static final int RECIPE_EXPERIENCE_Y = 97;
     private static final int RECIPE_EXPERIENCE_WIDTH = 98;
-    private static final int RECIPE_EXPERIENCE_HEIGHT = 12;
-    private static final int RECIPE_BOOK_WIDE_VIEWPORT_TRIM = 26;
+    private static final int RECIPE_EXPERIENCE_HEIGHT = 10;
+    private static final int RECIPE_BOOK_VIEWPORT_TRIM = 72;
+    private static final int AUTOMATION_BUTTON_Y = 77;
+    private int recipeBookViewportWidth;
     public static final int RECIPE_VIEWER_X = MachineScreenLayout.machineX(56);
     public static final int RECIPE_VIEWER_Y = ArcaneInfuserMenu.OUTPUT_SLOT_Y + 2;
     public static final int RECIPE_VIEWER_WIDTH = VillagerTradeSprites.ARROW_WIDTH;
@@ -81,8 +84,8 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     private EditBox amountField;
     private Button depositButton;
     private Button withdrawButton;
-    private InfuserControlButton xpModeButton;
-    private InfuserControlButton lockButton;
+    private MachineControlButton xpModeButton;
+    private MachineControlButton lockButton;
     private final ArcaneInfusionRecipeBookComponent recipeBookComponent;
     private boolean widthTooNarrow;
     private int selectedRecipeExperience = -1;
@@ -108,10 +111,12 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     @Override
     protected void init() {
         super.init();
-        widthTooNarrow = width < 379;
-        int recipeBookViewportWidth = width - (widthTooNarrow ? 0 : RECIPE_BOOK_WIDE_VIEWPORT_TRIM);
-        recipeBookComponent.init(recipeBookViewportWidth, height, minecraft, widthTooNarrow);
-        leftPos = recipeBookComponent.updateScreenPosition(width, imageWidth);
+        int layoutWidth = width - RECIPE_BOOK_VIEWPORT_TRIM;
+        widthTooNarrow = layoutWidth < 390;
+        // Vanilla tabs extend 30 pixels left of the book. Keep them clear of equipment, too.
+        recipeBookViewportWidth = layoutWidth + (widthTooNarrow ? 54 : -16);
+        recipeBookComponent.init(recipeBookViewportWidth, height - RECIPE_VIEWER_FOOTER, minecraft, widthTooNarrow);
+        leftPos = recipeBookComponent.updateScreenPosition(layoutWidth, imageWidth);
         initRecipeBookButton();
         addWidget(recipeBookComponent);
         amountField = addRenderableWidget(new NonNegativeIntegerEditBox(
@@ -137,9 +142,9 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
                 Component.translatable("button.trading_cells.withdraw_xp"),
                 button -> send(false)
         ).bounds(leftPos + CONTROL_X, topPos + WITHDRAW_BUTTON_Y, CONTROL_WIDTH, BUTTON_HEIGHT).build());
-        xpModeButton = addRenderableWidget(new InfuserControlButton(leftPos + 69, topPos + 81,
+        xpModeButton = addRenderableWidget(new MachineControlButton(leftPos + 69, topPos + AUTOMATION_BUTTON_Y,
                 false, () -> menu.fillStorage() ? 1 : 0, button -> automationAction(0)));
-        lockButton = addRenderableWidget(new InfuserControlButton(leftPos + 89, topPos + 81,
+        lockButton = addRenderableWidget(new MachineControlButton(leftPos + 89, topPos + AUTOMATION_BUTTON_Y,
                 true, menu::lockState, button -> automationAction(1)));
         updateButtonStates();
     }
@@ -176,7 +181,7 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         int x = leftPos;
         int y = topPos;
-        MachineScreenLayout.drawBackground(graphics, x, y, SURFACE, THEME);
+        MachineScreenLayout.drawBackground(graphics, x, y, MachineGuiSkin.ARCANE_INFUSER, THEME);
         drawPanel(graphics, x + RECIPE_PANEL_X, y + RECIPE_PANEL_Y, RECIPE_PANEL_WIDTH, RECIPE_PANEL_HEIGHT);
         drawPanel(graphics, x + CONTROL_PANEL_X, y + CONTROL_PANEL_Y, CONTROL_PANEL_WIDTH, CONTROL_PANEL_HEIGHT);
         drawMachineSlots(graphics, x, y);
@@ -195,11 +200,7 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        if (recipeBookComponent.isVisible() && widthTooNarrow) {
-            extractBackground(graphics, mouseX, mouseY, partialTick);
-        } else {
-            super.extractContents(graphics, mouseX, mouseY, partialTick);
-        }
+        super.extractContents(graphics, mouseX, mouseY, partialTick);
         graphics.nextStratum();
         recipeBookComponent.extractRenderState(graphics, mouseX, mouseY, partialTick);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
@@ -373,18 +374,16 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
                 SUMMARY_INTERIOR
         );
         if (required > 0) {
-            drawFittedCenteredText(
-                    graphics,
+            com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRenderer.centeredAtMost(
+                    graphics, font,
                     Component.translatable(
                             "gui.trading_cells.arcane_recipe_experience",
                             available,
                             required
                     ),
-                    panelX + RECIPE_EXPERIENCE_WIDTH / 2,
-                    panelY + 4,
-                    RECIPE_EXPERIENCE_WIDTH - 6,
-                    0.62F,
-                    VALUE_TEXT_COLOR
+                    panelX + 3, panelX + RECIPE_EXPERIENCE_WIDTH - 3,
+                    panelY + 2, RECIPE_EXPERIENCE_HEIGHT - 4,
+                    VALUE_TEXT_COLOR, false, 0.62F
             );
         }
     }
@@ -496,7 +495,7 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
                 RECIPE_BOOK_BUTTON_SPRITES,
                 button -> {
                     recipeBookComponent.toggleVisibility();
-                    leftPos = recipeBookComponent.updateScreenPosition(width, imageWidth);
+                    leftPos = recipeBookComponent.updateScreenPosition(width - RECIPE_BOOK_VIEWPORT_TRIM, imageWidth);
                     ScreenPosition updated = getRecipeBookButtonPosition();
                     button.setPosition(updated.x(), updated.y());
                     onRecipeBookButtonClick();
@@ -505,8 +504,8 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
     }
 
     private void repositionTransferWidgets() {
-        if (xpModeButton != null) { xpModeButton.setPosition(leftPos + 69, topPos + 81); }
-        if (lockButton != null) { lockButton.setPosition(leftPos + 89, topPos + 81); }
+        if (xpModeButton != null) { xpModeButton.setPosition(leftPos + 69, topPos + AUTOMATION_BUTTON_Y); }
+        if (lockButton != null) { lockButton.setPosition(leftPos + 89, topPos + AUTOMATION_BUTTON_Y); }
         if (amountField != null) {
             amountField.setPosition(leftPos + CONTROL_X, topPos + FIELD_Y);
         }
@@ -534,8 +533,7 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
             setFocused(recipeBookComponent);
             return true;
         }
-        return widthTooNarrow && recipeBookComponent.isVisible()
-                || super.mouseClicked(event, doubleClick);
+        return bookCovers(event.x(), event.y()) || super.mouseClicked(event, doubleClick);
     }
 
     @Override
@@ -546,8 +544,16 @@ public final class ArcaneInfuserScreen extends AbstractContainerScreen<ArcaneInf
 
     @Override
     protected boolean isHovering(int left, int top, int width, int height, double mouseX, double mouseY) {
-        return (!widthTooNarrow || !recipeBookComponent.isVisible())
-                && super.isHovering(left, top, width, height, mouseX, mouseY);
+        return !bookCovers(mouseX, mouseY) && super.isHovering(left, top, width, height, mouseX, mouseY);
+    }
+
+    private boolean bookCovers(double x, double y) {
+        if (!recipeBookComponent.isVisible()) { return false; }
+        int bookWidth = ArcaneInfusionRecipeBookComponent.IMAGE_WIDTH;
+        int bookHeight = ArcaneInfusionRecipeBookComponent.IMAGE_HEIGHT;
+        int bookX = (recipeBookViewportWidth - bookWidth) / 2 - (widthTooNarrow ? 0 : 86);
+        int bookY = (height - RECIPE_VIEWER_FOOTER - bookHeight) / 2;
+        return x >= bookX - 32 && x < bookX + bookWidth && y >= bookY && y < bookY + bookHeight;
     }
 
     @Override

@@ -4,16 +4,14 @@ import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryBlockEnt
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.PiglinQuarryMenuLayout;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
-import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRenderer;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotSprites;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.SlotRenderer;
-import com.cosmocraft.trading_cells.platform.neoforge.client.screen.TiledSurfaceRenderer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -22,59 +20,43 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-public final class PiglinQuarryScreen extends AbstractContainerScreen<QuarryMenu> {
+public final class PiglinQuarryScreen extends MachineContainerScreen<QuarryMenu> {
     public static final int RECIPE_VIEWER_X = 199;
-    public static final int RECIPE_VIEWER_Y = 30;
+    public static final int RECIPE_VIEWER_Y = 21;
     public static final int RECIPE_VIEWER_WIDTH = 69;
     public static final int RECIPE_VIEWER_HEIGHT = 13;
-    private static final Identifier BACKGROUND = Identifier.fromNamespaceAndPath(
-            TradingCells.MOD_ID,
-            "textures/gui/quarry/piglin_background.png"
-    );
     private static final Identifier SURFACE = Identifier.fromNamespaceAndPath(
             "minecraft",
             "textures/block/netherrack.png"
     );
-    private static final Identifier SURFACE_OVERLAY = Identifier.fromNamespaceAndPath(
-            TradingCells.MOD_ID,
-            "textures/gui/quarry/piglin_surface_overlay.png"
-    );
     private static final SlotRenderer.Palette SLOT_PALETTE = new SlotRenderer.Palette(
             0xFF2F2F2F,
             0xFF575757,
-            0xFFBEBEBE,
-            0xFFE2E2E2
+            0xFF343D41,
+            0xFF869397
     );
     private static final int FRAME_DARK = 0xFF551526;
     private static final int FRAME_LIGHT = 0xFFDC6679;
-    private static final int LEFT_SURFACE_X = 6;
-    private static final int LEFT_SURFACE_Y = 26;
-    private static final int LEFT_SURFACE_WIDTH = 112;
-    private static final int LEFT_SURFACE_HEIGHT = 179;
-    private static final int MACHINE_SURFACE_X = 124;
-    private static final int MACHINE_SURFACE_Y = 26;
-    private static final int MACHINE_SURFACE_WIDTH = 218;
-    private static final int MACHINE_SURFACE_HEIGHT = 75;
-    private static final int[] INPUT_ROW_Y = {29, 64, 99};
+    private static final int[] INPUT_ROW_Y = {29, 64, 99, 134};
     private static final int INPUT_ROW_X = 10;
     private static final int INPUT_ROW_WIDTH = 103;
     private static final int INPUT_ROW_HEIGHT = 32;
     private static final int OUTPUT_HEADER_X = 151;
-    private static final int OUTPUT_HEADER_Y = 51;
+    private static final int OUTPUT_HEADER_Y = 36;
     private static final int OUTPUT_HEADER_WIDTH = 162;
     private static final int OUTPUT_HEADER_HEIGHT = 11;
     private static final int OUTPUT_LABEL_HEIGHT = 13;
     private static final int INVENTORY_HEADER_X = 162;
-    private static final int INVENTORY_HEADER_Y = 105;
+    private static final int INVENTORY_HEADER_Y = 111;
     private static final int INVENTORY_HEADER_WIDTH = 162;
     private static final int INVENTORY_HEADER_HEIGHT = 11;
     private static final int INVENTORY_LABEL_HEIGHT = 13;
     private static final int CATALOG_BUTTON_X = 134;
-    private static final int CATALOG_BUTTON_Y = 63;
+    private static final int CATALOG_BUTTON_Y = 49;
     private static final int CATALOG_BUTTON_SIZE = 12;
-    private static final int TEXT_DARK = 0xFF303436;
-    private static final int PANEL_DARK = 0xFF4A4E50;
-    private static final int PANEL_LIGHT = 0xFFAEB3B5;
+    private static final int TEXT_DARK = 0xFFE0E5E6;
+    private static final int PANEL_DARK = 0xFF566166;
+    private static final int PANEL_LIGHT = 0xFF343D41;
     private static final int ACCENT = 0xFF8D4652;
     private static final int OFFSCREEN_MOUSE_COORDINATE = -10_000;
 
@@ -85,7 +67,7 @@ public final class PiglinQuarryScreen extends AbstractContainerScreen<QuarryMenu
         super(menu, inventory, title, PiglinQuarryMenuLayout.WIDTH, PiglinQuarryMenuLayout.HEIGHT);
         titleLabelY = 8;
         inventoryLabelX = 164;
-        inventoryLabelY = 108;
+        inventoryLabelY = 112;
     }
 
     @Override
@@ -108,11 +90,6 @@ public final class PiglinQuarryScreen extends AbstractContainerScreen<QuarryMenu
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         drawBackground(graphics);
-        drawSurfaces(graphics);
-        drawSurfaceOverlay(graphics);
-        drawOutputHeader(graphics);
-        drawInventoryHeader(graphics);
-        drawInputRows(graphics);
         drawInventorySlots(graphics);
         drawMachineSlots(graphics);
         drawProgress(graphics);
@@ -153,55 +130,8 @@ public final class PiglinQuarryScreen extends AbstractContainerScreen<QuarryMenu
     }
 
     private void drawBackground(GuiGraphicsExtractor graphics) {
-        graphics.blit(RenderPipelines.GUI_TEXTURED, BACKGROUND, leftPos, topPos, 0.0F, 0.0F,
-                PiglinQuarryMenuLayout.WIDTH, PiglinQuarryMenuLayout.HEIGHT,
-                PiglinQuarryMenuLayout.ATLAS_WIDTH, PiglinQuarryMenuLayout.ATLAS_HEIGHT);
-    }
-
-    private void drawSurfaces(GuiGraphicsExtractor graphics) {
-        TiledSurfaceRenderer.draw(graphics, SURFACE, leftPos + LEFT_SURFACE_X, topPos + LEFT_SURFACE_Y,
-                LEFT_SURFACE_WIDTH, LEFT_SURFACE_HEIGHT, 0x00000000);
-        TiledSurfaceRenderer.draw(graphics, SURFACE, leftPos + MACHINE_SURFACE_X, topPos + MACHINE_SURFACE_Y,
-                MACHINE_SURFACE_WIDTH, MACHINE_SURFACE_HEIGHT, 0x00000000);
-    }
-
-    private void drawSurfaceOverlay(GuiGraphicsExtractor graphics) {
-        graphics.blit(
-                RenderPipelines.GUI_TEXTURED,
-                SURFACE_OVERLAY,
-                leftPos,
-                topPos,
-                0.0F,
-                0.0F,
-                PiglinQuarryMenuLayout.WIDTH,
-                PiglinQuarryMenuLayout.HEIGHT,
-                PiglinQuarryMenuLayout.WIDTH,
-                PiglinQuarryMenuLayout.HEIGHT
-        );
-    }
-
-    private void drawInputRows(GuiGraphicsExtractor graphics) {
-        for (int rowY : INPUT_ROW_Y) {
-            int x = leftPos + INPUT_ROW_X;
-            int y = topPos + rowY;
-            graphics.fill(x, y, x + INPUT_ROW_WIDTH, y + INPUT_ROW_HEIGHT, PANEL_DARK);
-            graphics.fill(x + 1, y + 1, x + INPUT_ROW_WIDTH - 1, y + INPUT_ROW_HEIGHT - 1, PANEL_LIGHT);
-            graphics.fill(x + 1, y + 1, x + 4, y + INPUT_ROW_HEIGHT - 1, ACCENT);
-        }
-    }
-
-    private void drawOutputHeader(GuiGraphicsExtractor graphics) {
-        int x = leftPos + OUTPUT_HEADER_X;
-        int y = topPos + OUTPUT_HEADER_Y;
-        graphics.fill(x, y, x + OUTPUT_HEADER_WIDTH, y + OUTPUT_HEADER_HEIGHT, PANEL_DARK);
-        graphics.fill(x + 1, y + 1, x + OUTPUT_HEADER_WIDTH - 1, y + OUTPUT_HEADER_HEIGHT - 1, PANEL_LIGHT);
-    }
-
-    private void drawInventoryHeader(GuiGraphicsExtractor graphics) {
-        int x = leftPos + INVENTORY_HEADER_X;
-        int y = topPos + INVENTORY_HEADER_Y;
-        graphics.fill(x, y, x + INVENTORY_HEADER_WIDTH, y + INVENTORY_HEADER_HEIGHT, PANEL_DARK);
-        graphics.fill(x + 1, y + 1, x + INVENTORY_HEADER_WIDTH - 1, y + INVENTORY_HEADER_HEIGHT - 1, PANEL_LIGHT);
+        com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin.PIGLIN_QUARRY.draw(
+                graphics, leftPos, topPos, imageWidth, imageHeight);
     }
 
     private void drawInventorySlots(GuiGraphicsExtractor graphics) {
@@ -223,6 +153,9 @@ public final class PiglinQuarryScreen extends AbstractContainerScreen<QuarryMenu
     }
 
     private void drawMachineSlots(GuiGraphicsExtractor graphics) {
+        drawSlot(graphics, 17, 142);
+        com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotGhosts.upgrade(
+                graphics, menu.getSlot(QuarryBlockEntity.SPEED_SLOT), leftPos, topPos, false);
         drawSlot(graphics, PiglinQuarryMenuLayout.WORKER_SLOT_X, PiglinQuarryMenuLayout.WORKER_SLOT_Y);
         drawSlot(graphics, PiglinQuarryMenuLayout.PICKAXE_SLOT_X, PiglinQuarryMenuLayout.PICKAXE_SLOT_Y);
         drawSlot(graphics, PiglinQuarryMenuLayout.UPGRADE_SLOT_X, PiglinQuarryMenuLayout.UPGRADE_SLOT_Y);
@@ -261,7 +194,7 @@ public final class PiglinQuarryScreen extends AbstractContainerScreen<QuarryMenu
     private void drawLabels(GuiGraphicsExtractor graphics) {
         FittedTextRenderer.centered(graphics, font, Component.translatable("gui.trading_cells.inputs"),
                 9, 115, 8, 18, TEXT_DARK, false);
-        FittedTextRenderer.centered(graphics, font, title, 126, 340, 8, 18, TEXT_DARK, false);
+        FittedTextRenderer.centered(graphics, font, title, 126, 340, 7, 12, TEXT_DARK, false);
         FittedTextRenderer.centered(graphics, font, playerInventoryTitle,
                 INVENTORY_HEADER_X, INVENTORY_HEADER_X + INVENTORY_HEADER_WIDTH,
                 INVENTORY_HEADER_Y, INVENTORY_LABEL_HEIGHT, TEXT_DARK, false);
@@ -271,6 +204,7 @@ public final class PiglinQuarryScreen extends AbstractContainerScreen<QuarryMenu
         drawInputLabel(graphics, "gui.trading_cells.input.piglin", INPUT_ROW_Y[0]);
         drawInputLabel(graphics, "gui.trading_cells.input.pickaxe", INPUT_ROW_Y[1]);
         drawInputLabel(graphics, "gui.trading_cells.input.upgrade", INPUT_ROW_Y[2]);
+        drawInputLabel(graphics, "gui.trading_cells.interaction.speed", INPUT_ROW_Y[3]);
     }
 
     private void drawInputLabel(GuiGraphicsExtractor graphics, String key, int rowY) {

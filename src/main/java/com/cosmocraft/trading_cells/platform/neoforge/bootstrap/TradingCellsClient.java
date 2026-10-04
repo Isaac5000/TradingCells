@@ -61,6 +61,7 @@ public class TradingCellsClient {
             modBus.addListener(QuarryClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterRenderers);
+            modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterRenderStateModifiers);
             modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterSpecialModelRenderers);
             modBus.addListener((net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent event) ->
                     event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("trading_cells", "storm_shard_charge"),

@@ -53,25 +53,25 @@ final class PipeRuleEditor {
         kindButton = Button.builder(Component.literal(kind == PipeFilterRule.MatchKind.ID ? "ID" : "Tag"), button -> {
             kind = kind == PipeFilterRule.MatchKind.ID ? PipeFilterRule.MatchKind.TAG : PipeFilterRule.MatchKind.ID;
             button.setMessage(Component.literal(kind == PipeFilterRule.MatchKind.ID ? "ID" : "Tag")); updateIcon();
-        }).bounds(left + 36, top + 36, 46, 18).build();
+        }).bounds(left + 36, top + 24, 46, 18).build();
         widgets.accept(kindButton);
-        identifier = new EditBox(font, left + 86, top + 36, 276, 18, label("filter.identifier"));
+        identifier = new EditBox(font, left + 86, top + 24, 250, 18, label("filter.identifier"));
         identifier.setMaxLength(PipeFilterRule.MAX_KEY_LENGTH); identifier.setValue(keyText);
         identifier.setResponder(value -> updateIcon()); widgets.accept(identifier);
-        components = new EditBox(font, left + 12, top + 74, 274, 18, label("filter.components"));
+        components = new EditBox(font, left + 12, top + 58, 248, 18, label("filter.components"));
         components.setMaxLength(2048); components.setValue(componentText); components.active = advanced; widgets.accept(components);
         var matchButton = Button.builder(label("match." + match.name().toLowerCase(Locale.ROOT)), button -> {
             match = PipeFilterRule.ComponentMatch.values()[(match.ordinal() + 1) % PipeFilterRule.ComponentMatch.values().length];
             button.setMessage(label("match." + match.name().toLowerCase(Locale.ROOT)));
-        }).bounds(left + 290, top + 74, 72, 18).build();
+        }).bounds(left + 264, top + 58, 72, 18).build();
         matchButton.active = advanced; widgets.accept(matchButton);
-        channel = new EditBox(font, left + 12, top + 112, 350, 18, label("filter.route_channel"));
+        channel = new EditBox(font, left + 12, top + 92, 324, 16, label("filter.route_channel"));
         int remaining = parent.isEmpty() ? 256 : Math.max(0, 255 - parent.length());
         channel.setMaxLength(remaining);
         String route = initial.routeChannel();
         channel.setValue(channelText != null ? channelText : parent.isEmpty() ? route : route.startsWith(parent + "/") ? route.substring(parent.length() + 1) : "");
         channel.active = advanced && remaining > 0; widgets.accept(channel);
-        var invertButton = new PipeEditorIcons.IconButton(left + 204, top + 201, 20,
+        var invertButton = new PipeEditorIcons.IconButton(left + 204, top + 162, 20,
                 inversionIcon(), label(inverted ? "rule.inverted" : "rule.inherit"), false, button -> {
                     inverted = !inverted;
                     button.setMessage(label(inverted ? "rule.inverted" : "rule.inherit"));
@@ -80,11 +80,11 @@ final class PipeRuleEditor {
                 });
         invertButton.setTooltip(Tooltip.create(invertButton.getMessage()));
         invertButton.active = advanced; widgets.accept(invertButton);
-        var clear = Button.builder(Component.literal("x"), button -> target = null).bounds(left + 344, top + 163, 18, 18)
+        var clear = Button.builder(Component.literal("x"), button -> target = null).bounds(left + 318, top + 126, 18, 18)
                 .tooltip(Tooltip.create(label("rule.clear_target"))).build();
         clear.active = advanced; widgets.accept(clear);
-        widgets.accept(Button.builder(Component.translatable("gui.cancel"), button -> cancel.run()).bounds(left + 204, top + 224, 76, 16).build());
-        widgets.accept(Button.builder(label("rule.save"), button -> save()).bounds(left + 284, top + 224, 78, 16).build());
+        widgets.accept(Button.builder(Component.translatable("gui.cancel"), button -> cancel.run()).bounds(left + 204, top + 186, 64, 14).build());
+        widgets.accept(Button.builder(label("rule.save"), button -> save()).bounds(left + 272, top + 186, 64, 14).build());
         if (!advanced) {
             var tooltip = Tooltip.create(label("requires", Component.translatable("item.trading_cells.diamond_pipe_upgrade")));
             components.setTooltip(tooltip); channel.setTooltip(tooltip); invertButton.setTooltip(tooltip); matchButton.setTooltip(tooltip);
@@ -110,7 +110,7 @@ final class PipeRuleEditor {
     }
 
     boolean click(double x, double y, int button, ItemStack carried) {
-        if (inside(x, y, 12, 36, 18, 18)) {
+        if (inside(x, y, 12, 24, 18, 18)) {
             if (button == 1) { identifier.setValue(""); return true; }
             if (carried.isEmpty()) { return true; }
             String id = BuiltInRegistries.ITEM.getKey(carried.getItem()).toString();
@@ -123,7 +123,7 @@ final class PipeRuleEditor {
             if (advanced && type == LogisticsResourceType.ITEM) { components.setValue(LogisticsComponentData.fingerprint(carried.getComponentsPatch())); }
             return true;
         }
-        if (inside(x, y, 204, 164, 18, 18)) {
+        if (inside(x, y, 204, 126, 18, 18)) {
             if (advanced) {
                 if (button == 1) { target = null; }
                 else { var recorded = PipeTargetSelectorItem.target(carried); if (recorded != null) { target = recorded; } }
@@ -134,26 +134,26 @@ final class PipeRuleEditor {
     }
 
     void draw(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        PipeConfigurationScreen.drawSlot(graphics, left + 12, top + 36);
-        if (!icon.isEmpty()) { graphics.fakeItem(icon, left + 13, top + 37); }
-        graphics.text(font, label("filter.components"), left + 12, top + 62, 0xFFB8C1C4, false);
+        PipeConfigurationScreen.drawSlot(graphics, left + 12, top + 24);
+        if (!icon.isEmpty()) { graphics.fakeItem(icon, left + 13, top + 25); }
+        graphics.text(font, label("filter.components"), left + 12, top + 46, 0xFFB8C1C4, false);
         Component channelLabel = parent.isEmpty() ? label("channel") : Component.literal(parent + "/");
-        graphics.text(font, font.plainSubstrByWidth(channelLabel.getString(), 350), left + 12, top + 100, 0xFFB8C1C4, false);
-        graphics.text(font, label("rule.target"), left + 204, top + 150, 0xFFB8C1C4, false);
-        PipeConfigurationScreen.drawSlot(graphics, left + 204, top + 164);
+        graphics.text(font, font.plainSubstrByWidth(channelLabel.getString(), 324), left + 12, top + 80, 0xFFB8C1C4, false);
+        graphics.text(font, label("rule.target"), left + 204, top + 112, 0xFFB8C1C4, false);
+        PipeConfigurationScreen.drawSlot(graphics, left + 204, top + 126);
         if (target != null) {
             var minecraft = net.minecraft.client.Minecraft.getInstance();
             var pos = new net.minecraft.core.BlockPos(target.x(), target.y(), target.z());
             if (minecraft.level != null && minecraft.level.dimension().identifier().toString().equals(target.dimension()) && minecraft.level.getChunkSource().hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
-                graphics.fakeItem(minecraft.level.getBlockState(pos).getBlock().asItem().getDefaultInstance(), left + 205, top + 165);
+                graphics.fakeItem(minecraft.level.getBlockState(pos).getBlock().asItem().getDefaultInstance(), left + 205, top + 127);
             }
             String xyz = target.x() + ", " + target.y() + ", " + target.z();
-            graphics.text(font, font.plainSubstrByWidth(xyz, 114), left + 226, top + 169, 0xFF65DDE2, false);
-            graphics.text(font, font.plainSubstrByWidth(target.dimension(), 158), left + 204, top + 189, 0xFFB8C1C4, false);
-            if (inside(mouseX, mouseY, 204, 164, 134, 36)) {
+            graphics.text(font, font.plainSubstrByWidth(xyz, 88), left + 226, top + 131, 0xFF65DDE2, false);
+            graphics.text(font, font.plainSubstrByWidth(target.dimension(), 132), left + 204, top + 149, 0xFFB8C1C4, false);
+            if (inside(mouseX, mouseY, 204, 126, 114, 34)) {
                 graphics.setComponentTooltipForNextFrame(font, List.of(Component.literal(xyz), Component.literal(target.dimension())), mouseX, mouseY, ItemStack.EMPTY);
             }
-        } else { graphics.text(font, label("rule.any_target"), left + 226, top + 169, 0xFFB8C1C4, false); }
+        } else { graphics.text(font, font.plainSubstrByWidth(label("rule.any_target").getString(), 88), left + 226, top + 131, 0xFFB8C1C4, false); }
     }
 
     private void updateIcon() {

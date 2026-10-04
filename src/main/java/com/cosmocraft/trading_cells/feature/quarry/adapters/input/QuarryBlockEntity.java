@@ -19,7 +19,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -33,7 +32,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -47,8 +45,9 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
     public static final int PICKAXE_SLOT = 1;
     public static final int UPGRADE_SLOT = 2;
     public static final int FIRST_OUTPUT_SLOT = 3;
-    public static final int OUTPUT_SLOT_COUNT = 18;
-    public static final int CONTAINER_SIZE = FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT;
+    public static final int OUTPUT_SLOT_COUNT = 27;
+    public static final int SPEED_SLOT = FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT;
+    public static final int CONTAINER_SIZE = SPEED_SLOT + 1;
     public static final int QUARRY_DATA_VERSION = 1;
 
     private static final String DATA_VERSION_TAG = "QuarryDataVersion";
@@ -61,8 +60,8 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
     private static final String PENDING_SLOT_PREFIX = "PendingResult";
     private static final String PENDING_MATERIAL_TAG = "PendingMaterial";
     private static final String PENDING_PREVIEW_TAG = "PendingPreview";
-    private static final int[] INPUT_SLOTS = {WORKER_SLOT, PICKAXE_SLOT, UPGRADE_SLOT};
-    private static final int[] OUTPUT_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, CONTAINER_SIZE).toArray();
+    private static final int[] INPUT_SLOTS = {WORKER_SLOT, PICKAXE_SLOT, UPGRADE_SLOT, SPEED_SLOT};
+    private static final int[] OUTPUT_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, SPEED_SLOT).toArray();
     private static final int[] NO_SLOTS = new int[0];
     private static final String NITWIT_PROFESSION = "minecraft:nitwit";
 
@@ -88,6 +87,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
     private boolean cachedWorkerValid;
     private boolean workerCacheInitialized;
     private ItemStack cachedDurationPickaxe = ItemStack.EMPTY;
+    private int cachedSpeedTier;
     private boolean durationCacheInitialized;
 
     private final ContainerData dataAccess = new ContainerData() {
@@ -346,6 +346,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             refreshCycleForPickaxeChange();
             updateCycleDuration();
         }
+        if (slot == SPEED_SLOT) { updateCycleDuration(); }
         if (slot <= UPGRADE_SLOT) {
             invalidateCatalog();
         }
@@ -371,6 +372,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             refreshCycleForPickaxeChange();
             updateCycleDuration();
         }
+        if (slot == SPEED_SLOT) { updateCycleDuration(); }
         if (slot <= UPGRADE_SLOT) {
             invalidateCatalog();
         }
@@ -385,9 +387,10 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
 
     @Override
     public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
-        if (insideTransaction && isOutputSlot(slot)) {
-            // Rollback restores produced items without allowing external output insertion.
+        if (insideTransaction && (isOutputSlot(slot) || slot == SPEED_SLOT)) {
+            // Recompute speed only after the transaction has finished.
             items.set(slot, stack);
+            activity.wake();
         } else {
             setItem(slot, stack);
         }
@@ -399,7 +402,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             return;
         }
         ItemStack inserted = stack.copy();
-        int maximum = slot < FIRST_OUTPUT_SLOT ? 1 : Math.min(64, inserted.getMaxStackSize());
+        int maximum = slot < FIRST_OUTPUT_SLOT || slot == SPEED_SLOT ? 1 : Math.min(64, inserted.getMaxStackSize());
         inserted.setCount(Math.min(maximum, inserted.getCount()));
         boolean pickaxeChanged = slot == PICKAXE_SLOT
                 && !ItemStack.isSameItemSameComponents(items.get(slot), inserted);
@@ -409,6 +412,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             refreshCycleForPickaxeChange();
             updateCycleDuration();
         }
+        if (slot == SPEED_SLOT) { updateCycleDuration(); }
         if (slot <= UPGRADE_SLOT) {
             invalidateCatalog();
         }
@@ -432,6 +436,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             case WORKER_SLOT -> isValidWorker(stack);
             case PICKAXE_SLOT -> QuarryPickaxeCatalog.isSupported(stack);
             case UPGRADE_SLOT -> QuarryUpgradeItems.isUpgrade(stack);
+            case SPEED_SLOT -> com.cosmocraft.trading_cells.platform.neoforge.machine.MachineSpeedUpgrade.accepts(stack);
             default -> false;
         };
     }
@@ -452,7 +457,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
 
     @Override
     public boolean canPlaceItemThroughFace(int slot, @NonNull ItemStack stack, @Nullable Direction direction) {
-        return direction != Direction.DOWN && slot < FIRST_OUTPUT_SLOT && canPlaceItem(slot, stack);
+        return direction != Direction.DOWN && (slot < FIRST_OUTPUT_SLOT || slot == SPEED_SLOT) && canPlaceItem(slot, stack);
     }
 
     @Override
@@ -552,7 +557,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
     }
 
     public static boolean isOutputSlot(int slot) {
-        return slot >= FIRST_OUTPUT_SLOT && slot < CONTAINER_SIZE;
+        return slot >= FIRST_OUTPUT_SLOT && slot < SPEED_SLOT;
     }
 
     public static boolean isValidWorker(QuarryKind kind, ItemStack stack) {
@@ -642,26 +647,17 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
         updateCycleDuration();
     }
 
-    private int efficiencyLevel() {
-        if (!(level instanceof ServerLevel serverLevel) || items.get(PICKAXE_SLOT).isEmpty()) {
-            return 0;
-        }
-        return serverLevel.registryAccess().lookup(Registries.ENCHANTMENT)
-                .flatMap(enchantments -> enchantments.get(Enchantments.EFFICIENCY))
-                .map(items.get(PICKAXE_SLOT)::getEnchantmentLevel)
-                .orElse(0);
-    }
-
     private int effectiveCycleTicks() {
         return quarryService.durationTicks(
                 QuarryPickaxeCatalog.timingPosition(items.get(PICKAXE_SLOT)),
-                efficiencyLevel()
+                com.cosmocraft.trading_cells.platform.neoforge.machine.MachineSpeedUpgrade.tier(items.get(SPEED_SLOT))
         );
     }
 
     private int updateCycleDuration() {
         ItemStack pickaxe = items.get(PICKAXE_SLOT);
-        if (durationCacheInitialized
+        int speedTier = com.cosmocraft.trading_cells.platform.neoforge.machine.MachineSpeedUpgrade.tier(items.get(SPEED_SLOT));
+        if (durationCacheInitialized && cachedSpeedTier == speedTier
                 && ItemStack.isSameItemSameComponents(cachedDurationPickaxe, pickaxe)) {
             return cycleDurationTicks;
         }
@@ -672,6 +668,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             setChanged();
         }
         cachedDurationPickaxe = pickaxe.copy();
+        cachedSpeedTier = speedTier;
         durationCacheInitialized = true;
         return nextDuration;
     }
@@ -737,7 +734,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
     }
 
     private boolean hasAnyOutputSpace() {
-        for (int slot = FIRST_OUTPUT_SLOT; slot < CONTAINER_SIZE; slot++) {
+        for (int slot = FIRST_OUTPUT_SLOT; slot < SPEED_SLOT; slot++) {
             ItemStack stack = items.get(slot);
             if (stack.isEmpty() || stack.getCount() < stack.getMaxStackSize()) {
                 return true;

@@ -2,6 +2,9 @@ package com.cosmocraft.trading_cells.feature.mobfarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineInsertionLimit;
+import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineInventoryDiagnostics;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticSnapshot;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,6 +27,8 @@ public final class EssenceStabilizerBlockEntity extends SimulationInventoryBlock
             RecipeManager.createCheck(MobFarmRegistrationAdapter.STABILIZATION_TYPE.get());
     private int progress;
     private int duration = 100;
+    private MachineDiagnosticStatus status = MachineDiagnosticStatus.INACTIVE;
+    private String diagnosticReason = "input_required";
     private List<ItemStack> lastInputs = List.of();
     private String activeRecipe = "";
     private static final int[] LEFT_SLOTS = {0, 3, 4, 5}, TOP_SLOTS = {1, 3, 4, 5}, RIGHT_SLOTS = {2, 3, 4, 5}, OUTPUT_SLOTS = {3, 4, 5};
@@ -36,6 +41,10 @@ public final class EssenceStabilizerBlockEntity extends SimulationInventoryBlock
         super(MobFarmRegistrationAdapter.STABILIZER_BLOCK_ENTITY.get(), pos, state, 6, 3);
     }
     @Override public boolean supportsRedstoneControl() { return false; }
+    @Override public MachineDiagnosticSnapshot machineDiagnosticSnapshot() {
+        var output = MachineInventoryDiagnostics.outputUsage(this, 3, 3);
+        return new MachineDiagnosticSnapshot(status, diagnosticReason, progress, duration, 0, output.used(), output.capacity());
+    }
     @Override public int[] getSlotsForFace(Direction side) {
         Direction front = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING);
         return side == Direction.UP ? TOP_SLOTS : side == front.getClockWise() ? LEFT_SLOTS
@@ -69,6 +78,8 @@ public final class EssenceStabilizerBlockEntity extends SimulationInventoryBlock
     private List<ItemStack> snapshotInputs() { return items.subList(0, 3).stream().map(ItemStack::copy).toList(); }
     @Override public void processTick() {
         if (!(level instanceof ServerLevel server)) { return; }
+        status = MachineDiagnosticStatus.INACTIVE;
+        diagnosticReason = "input_required";
         boolean changed = lastInputs.size() != 3;
         for (int i = 0; i < lastInputs.size(); i++) { changed |= !ItemStack.matches(lastInputs.get(i), items.get(i)); }
         if (changed) { progress = 0; lastInputs = snapshotInputs(); }
@@ -89,7 +100,14 @@ public final class EssenceStabilizerBlockEntity extends SimulationInventoryBlock
             if (count > bottles.getMaxStackSize()) { return; }
             bottles.setCount((int) count);
         }
-        if (core.isEmpty() || !fits(3, core) || !fits(4, vial) || !fits(5, bottles)) { return; }
+        if (core.isEmpty()) { return; }
+        if (!fits(3, core) || !fits(4, vial) || !fits(5, bottles)) {
+            status = MachineDiagnosticStatus.BLOCKED;
+            diagnosticReason = "output_full";
+            return;
+        }
+        status = MachineDiagnosticStatus.RUNNING;
+        diagnosticReason = MachineDiagnosticSnapshot.NONE;
         if (++progress < duration) { setChanged(); return; }
         items.get(0).shrink(1);
         items.get(1).shrink(recipe.amethyst().count());

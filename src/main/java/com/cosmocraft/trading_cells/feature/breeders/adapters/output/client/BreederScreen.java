@@ -4,6 +4,7 @@ import com.cosmocraft.trading_cells.feature.breeders.adapters.input.BreederBlock
 import com.cosmocraft.trading_cells.feature.breeders.adapters.input.BreederMenu;
 import com.cosmocraft.trading_cells.feature.breeders.domain.model.BreederKind;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotSprites;
@@ -11,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -21,15 +22,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 
-public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
-    private static final Identifier OAK_PLANKS = Identifier.fromNamespaceAndPath(
-            "minecraft",
-            "textures/block/oak_planks.png"
-    );
-    private static final Identifier CRIMSON_PLANKS = Identifier.fromNamespaceAndPath(
-            "minecraft",
-            "textures/block/crimson_planks.png"
-    );
+public final class BreederScreen extends MachineContainerScreen<BreederMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
     private static final int PROGRESS_FRAME_X = MachineScreenLayout.machineX(54);
     private static final int PROGRESS_FRAME_Y = 65;
     private static final int PROGRESS_X = PROGRESS_FRAME_X + MachineScreenLayout.PROGRESS_FILL_X_OFFSET;
@@ -91,8 +84,7 @@ public final class BreederScreen extends AbstractContainerScreen<BreederMenu> { 
         MachineScreenTheme theme = villager
                 ? MachineScreenTheme.VILLAGER_BREEDER
                 : MachineScreenTheme.PIGLIN_BREEDER;
-        Identifier surface = villager ? OAK_PLANKS : CRIMSON_PLANKS;
-        MachineScreenLayout.drawBackground(graphics, x, y, surface, theme);
+        MachineScreenLayout.drawBackground(graphics, x, y, MachineGuiSkin.forTheme(theme), theme);
 
         MachineScreenLayout.drawSlot(graphics, x, y, BreederMenu.FOOD_SLOT_X, BreederMenu.FOOD_SLOT_Y, theme);
         if (!menu.getSlot(BreederBlockEntity.FOOD_SLOT).hasItem()) {

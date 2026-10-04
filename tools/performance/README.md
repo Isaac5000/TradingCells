@@ -1,5 +1,19 @@
 # Medicion de rendimiento
 
+`--ui-fixture interaction-farm` prepara dos granjas independientes, comprueba
+pausa/reanudacion manual mediante el menu real, ausencia del control de redstone
+y captura la cuadricula 9x3, trabajador con
+uno/dos objetos y receta de 50.000 XP en REI. Usar los cuatro perfiles
+OpenGL/Vulkan con/sin REI; no es una medicion comparativa de rendimiento.
+
+`--ui-fixture machine-fixes` revisa 18 menus reales: cultivos/canteras,
+las dos granjas, trueque de netherita, mesa, estabilizador, infusor, criaderos,
+incubadoras, hierro, convertidor y trocadores de aldeanos. Comprueba las siete
+cuadriculas 9x3, insercion de velocidad, siluetas vacias y clic del modo XP.
+Abre 12 categorias tematicas cuando REI esta instalado y despues ejecuta
+`interaction-farm`, incluidos mecanismo y bandejas. Capturas `fixes-<id>-empty.png`,
+`fixes-<id>-control.png` y `fixes-rei-<categoria>.png` en cada copia desechable.
+
 `--ui-fixture item-textures` muestra cuatro capturadores, fragmento con su capa
 electrica y las 25 mejoras usando los modelos reales. Guarda dos capturas para
 comprobar animacion. `--ui-fixture pipe-hands` muestra tuberias en ambas manos,
@@ -54,7 +68,10 @@ una camara mas lejana cierra el menu por la validacion nativa de distancia.
 del mod con informacion normal/avanzada, nombres traducidos y tooltips de REI
 si esta instalado. Verifica eliminacion del titulo del tab, pie unico del mod,
 conservacion de nombres/descripciones personalizados e imagenes, y aislamiento
-de items vanilla. Captura un tooltip real sobre la granja en la barra rapida.
+de items vanilla. Comprueba ademas el nombre de Toque del Granjero, explicacion
+plegada/desplegada y colores del aviso compartido con generadores: Shift cian,
+resto gris claro. Captura un tooltip real sobre la granja en la barra rapida.
+Requiere `--open-block` para preparar la fixture, aunque no abre ese bloque.
 Los cambios de inventario y modo creativo se limitan a la copia de ensayo.
 `infusion-models` coloca el infusor en sus cuatro orientaciones y lo sostiene
 en la mano para revisar la piedra del End de su base. La fixture `infusion`

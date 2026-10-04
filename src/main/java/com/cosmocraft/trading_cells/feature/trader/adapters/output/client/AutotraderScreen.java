@@ -7,7 +7,6 @@ import com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRe
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.TradeExperienceDisplay;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerGuiThemeColors;
-import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerGuiTextures;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenCommon;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeSprites;
@@ -21,7 +20,7 @@ import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.WidgetSprites;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -37,12 +36,12 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
+public final class AutotraderScreen extends MachineContainerScreen<AutotraderMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
     private static final int OFFSCREEN_MOUSE_COORDINATE = -10_000;
     private static final Identifier RESET_NORMAL =
-            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "trader/reset/reset_trades");
+            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "shared/trading/buttons/reset_trades");
     private static final Identifier RESET_HOVERED =
-            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "trader/reset/reset_trades_hovered");
+            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "shared/trading/buttons/reset_trades_hovered");
     private static final WidgetSprites RESET_SPRITES = new WidgetSprites(RESET_NORMAL, RESET_HOVERED);
 
     private static final int SELECTOR_X = VillagerTradeMenuLayout.AUTOTRADER_SELECTOR_X;
@@ -143,9 +142,9 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         VillagerTradeScreenLayout.drawBackground(
                 graphics,
-                VillagerGuiTextures.resolve(),
                 leftPos,
-                topPos
+                topPos,
+                com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin.AUTOTRADER
         );
         VillagerTradeScreenLayout.drawCommonSlots(
                 graphics,
@@ -329,7 +328,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 Component.translatable("gui.trading_cells.trades"),
                 VillagerTradeScreenLayout.TRADES_TITLE_CENTER_X,
                 VillagerTradeScreenLayout.HEADER_TEXT_Y,
-                VillagerTradeScreenCommon.TEXT_DARK
+                VillagerTradeScreenCommon.TEXT_LIGHT
         );
         VillagerTradeScreenCommon.drawCenteredText(
                 graphics,
@@ -337,7 +336,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 VillagerTradeScreenCommon.professionDisplayName(menu.villagerData()),
                 VillagerTradeScreenLayout.PROFESSION_TITLE_CENTER_X,
                 VillagerTradeScreenLayout.HEADER_TEXT_Y,
-                VillagerTradeScreenCommon.TEXT_DARK
+                VillagerTradeScreenCommon.TEXT_LIGHT
         );
         graphics.text(
                 font,
@@ -348,7 +347,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 ),
                 VillagerTradeScreenLayout.LEVEL_TEXT_X,
                 VillagerTradeScreenLayout.PROFESSION_TEXT_Y,
-                VillagerTradeScreenCommon.TEXT_DARK,
+                VillagerTradeScreenCommon.TEXT_LIGHT,
                 false
         );
         Component xpText = VillagerTradeScreenCommon.professionExperienceText(
@@ -360,7 +359,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 xpText,
                 VillagerTradeScreenLayout.PROFESSION_XP_RIGHT_X - font.width(xpText),
                 VillagerTradeScreenLayout.PROFESSION_TEXT_Y,
-                VillagerTradeScreenCommon.TEXT_DARK,
+                VillagerTradeScreenCommon.TEXT_LIGHT,
                 false
         );
         VillagerTradeScreenCommon.drawStoredExperienceText(
@@ -386,7 +385,7 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 Component.translatable("gui.trading_cells.inventory"),
                 VillagerTradeScreenLayout.INVENTORY_LABEL_X,
                 VillagerTradeScreenLayout.INVENTORY_LABEL_Y,
-                VillagerTradeScreenCommon.TEXT_DARK,
+                VillagerTradeScreenCommon.TEXT_LIGHT,
                 false
         );
         drawSelectionPanelTitle(graphics, "gui.trading_cells.input_1",
@@ -470,17 +469,13 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
     }
 
     private void drawSelector(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        graphics.blit(
+        graphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
                 VillagerTradeSprites.DROPDOWN,
                 leftPos + SELECTOR_X,
                 topPos + SELECTOR_Y,
-                0,
-                0,
                 SELECTOR_W,
-                SELECTOR_H,
-                102,
-                18
+                SELECTOR_H
         );
         MerchantOffer offer = menu.selectedOffer();
         if (offer == null) {
@@ -518,8 +513,8 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
         graphics.itemDecorations(font, offer.getResult(), resultX, itemY);
         VillagerTradeScreenCommon.drawDropdownChevron(
                 graphics,
-                leftPos + SELECTOR_X + 94,
-                topPos + SELECTOR_Y + 8,
+                leftPos + SELECTOR_X + 91,
+                topPos + SELECTOR_Y + 7,
                 true,
                 selectorHovered
         );
@@ -542,15 +537,11 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
         MerchantOffer offer = menu.selectedOffer();
         if (offer == null || offer.getItemCostB().isEmpty()) {
             for (int index = 0; index < AutotraderPolicy.INPUT_SLOTS_PER_COST; index++) {
-                graphics.blit(
+                graphics.blitSprite(
                         RenderPipelines.GUI_TEXTURED,
                         VillagerTradeSprites.DISABLED_SLOT_OVERLAY,
                         leftPos + VillagerTradeMenuLayout.AUTOTRADER_ROW_X + index * 18,
                         topPos + VillagerTradeMenuLayout.AUTOTRADER_INPUT_B_Y,
-                        0,
-                        0,
-                        18,
-                        18,
                         18,
                         18
                 );
@@ -673,17 +664,13 @@ public final class AutotraderScreen extends AbstractContainerScreen<AutotraderMe
                 index == focusedOffer,
                 hovered
         );
-        graphics.blit(
+        graphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
                 VillagerTradeSprites.dropdownRow(state),
                 x,
                 y,
-                0,
-                0,
                 DROPDOWN_VIEW_W,
-                DROPDOWN_ROW_H,
-                VillagerTradeSprites.DROPDOWN_ROW_WIDTH,
-                VillagerTradeSprites.DROPDOWN_ROW_HEIGHT
+                DROPDOWN_ROW_H
         );
         int costAX = x + TRADE_COST_A_OFFSET;
         int costBX = x + TRADE_COST_B_OFFSET;

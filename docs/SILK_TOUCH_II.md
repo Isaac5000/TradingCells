@@ -81,6 +81,18 @@ resumen localizado con los campos relevantes. El huevo confiable tampoco muestra
 la advertencia roja y, al usarse, consume una unidad y genera la jerarquia
 guardada.
 
+Un generador sostenido sigue siendo un bloque: usarlo en el aire no lo convierte
+ni consume. Para extraer su huevo, colocar el bloque y usar Shift + clic derecho:
+el huevo aparece sobre el generador, con demora de recogida y sin ocupar el
+inventario directamente. No requiere mano vacia; el objeto sostenido se conserva.
+El clic normal no extrae huevos. Shift tiene prioridad sobre instalar comparadores.
+Un generador sostenido contra una superficie mantiene la colocacion normal. Instalar un
+huevo conservado en un generador normal sustituye el arbol completo (montura,
+jinetes, pasajeros y equipo), no solo el ID de la montura. Un huevo vanilla
+sustituye ese arbol por su especie limpia, sin conservar pasajeros anteriores.
+Se invalidan la vista cacheada y los potenciales antiguos, manteniendo los
+tiempos y el control de redstone del bloque. Cada instalacion consume un huevo.
+
 Para elegir el icono y la entidad descrita se recorre la cadena desde el
 pasajero superior hacia la montura y se prioriza la primera entidad cuyo modelo
 admite armadura humanoide. Si ninguna la admite, se usa el jinete superior. El

@@ -4,132 +4,23 @@ import argparse
 from pathlib import Path
 from typing import Final
 
-from PIL import Image, ImageChops, ImageDraw
+from PIL import Image, ImageDraw
 
 ROOT: Final = Path(__file__).resolve().parents[1] / "src/main/resources/assets/trading_cells/textures/gui"
-TRADER: Final = ROOT / "trader"
-BACKGROUNDS: Final = TRADER / "backgrounds"
-WIDGETS: Final = TRADER / "widgets"
-ROWS: Final = WIDGETS / "rows"
-SELECTOR: Final = WIDGETS / "selector"
-ARROWS: Final = WIDGETS / "arrows"
-SLOTS: Final = WIDGETS / "slots"
 SPRITES: Final = ROOT / "sprites"
-RESET_SPRITES: Final = SPRITES / "trader" / "reset"
-EQUIPMENT_SPRITES: Final = SPRITES / "container" / "slot"
-CAPTURE_SPRITES: Final = SPRITES / "captures"
+ROWS: Final = SPRITES / "villager_trading_cell" / "rows"
+SELECTOR: Final = SPRITES / "autotrader" / "selector"
+ARROWS: Final = SPRITES / "shared" / "arrows"
+SLOTS: Final = SPRITES / "autotrader" / "slots"
+RESET_SPRITES: Final = SPRITES / "shared" / "trading" / "buttons"
+EQUIPMENT_SPRITES: Final = SPRITES / "shared" / "slots" / "equipment"
+CAPTURE_SPRITES: Final = SPRITES / "shared" / "slots"
 TRADE_DROPDOWN_FILE: Final = "trade_dropdown.png"
 DISABLED_SLOT_OVERLAY_FILE: Final = "disabled_slot_overlay.png"
 TRADE_ROW_NORMAL: Final = (26, 26, 26, 179)
 TRADE_ROW_HOVERED: Final = (42, 42, 42, 179)
 TRADE_ROW_SELECTED: Final = (24, 34, 24, 190)
 TRADE_ROW_DISABLED: Final = (24, 24, 24, 118)
-ATLAS_WIDTH: Final = 512
-ATLAS_HEIGHT: Final = 256
-MENU_WIDTH: Final = 348
-MENU_HEIGHT: Final = 210
-MANUAL_SLOT_Y: Final = 52
-PLAYER_INVENTORY_X: Final = 150
-PLAYER_INVENTORY_Y: Final = 116
-PLAYER_HOTBAR_Y: Final = 174
-EQUIPMENT_X: Final = 130
-EQUIPMENT_Y: Final = (108, 126, 144, 162, 180)
-AUTOTRADER_ROW_X: Final = 26
-AUTOTRADER_ROW_Y: Final = (78, 125, 172)
-DYNAMIC_SLOT_ANCHORS: Final = (
-    (165, MANUAL_SLOT_Y),
-    (191, MANUAL_SLOT_Y),
-    (249, MANUAL_SLOT_Y),
-    *((PLAYER_INVENTORY_X + column * 18, PLAYER_INVENTORY_Y + row * 18) for row in range(3) for column in range(9)),
-    *((PLAYER_INVENTORY_X + column * 18, PLAYER_HOTBAR_Y) for column in range(9)),
-    *((EQUIPMENT_X, y) for y in EQUIPMENT_Y),
-    *((AUTOTRADER_ROW_X + column * 18, y) for y in AUTOTRADER_ROW_Y for column in range(4)),
-)
-
-PALETTES = {
-    "default": {
-        "bg": (194, 199, 188),
-        "panel": (190, 190, 190),
-        "surface": (214, 214, 209),
-        "inner": (87, 87, 87),
-        "light": (235, 235, 229),
-        "dark": (63, 68, 58),
-        "slot_outer": (47, 47, 47),
-        "slot_inner": (190, 190, 190),
-        "slot_highlight": (226, 226, 226),
-        "accent": (126, 157, 100),
-    },
-}
-
-
-def framed_rect(draw: ImageDraw.ImageDraw, x: int, y: int, width: int, height: int, palette: dict, inner: tuple[int, int, int] | None = None) -> None:
-    draw.rectangle((x, y, x + width - 1, y + height - 1), fill=palette["panel"])
-    draw.line((x, y, x + width - 1, y), fill=palette["light"])
-    draw.line((x, y, x, y + height - 1), fill=palette["light"])
-    draw.line((x, y + height - 1, x + width - 1, y + height - 1), fill=palette["dark"])
-    draw.line((x + width - 1, y, x + width - 1, y + height - 1), fill=palette["dark"])
-    if inner is not None and width > 2 and height > 2:
-        draw.rectangle((x + 1, y + 1, x + width - 2, y + height - 2), fill=inner)
-
-
-def generate_theme(theme: str, palette: dict) -> Image.Image:
-    image = Image.new("RGBA", (ATLAS_WIDTH, ATLAS_HEIGHT), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(image)
-    draw.rectangle((0, 0, MENU_WIDTH - 1, MENU_HEIGHT - 1), fill=palette["dark"])
-    draw.rectangle((2, 2, MENU_WIDTH - 3, MENU_HEIGHT - 3), fill=palette["panel"])
-    draw.line((0, 0, MENU_WIDTH - 1, 0), fill=palette["light"])
-    draw.line((0, 0, 0, MENU_HEIGHT - 1), fill=palette["light"])
-    draw.rectangle((4, 4, MENU_WIDTH - 5, MENU_HEIGHT - 5), fill=palette["bg"])
-
-    framed_rect(draw, 5, 5, 114, 200, palette, palette["bg"])
-    framed_rect(draw, 9, 8, 106, 16, palette, palette["surface"])
-    framed_rect(draw, 9, 27, 106, 174, palette, palette["bg"])
-
-    framed_rect(draw, 123, 5, 220, 66, palette, palette["bg"])
-    framed_rect(draw, 128, 8, 210, 16, palette, palette["surface"])
-    framed_rect(draw, 123, 74, 220, 28, palette, palette["bg"])
-
-    framed_rect(draw, 123, 104, 220, 102, palette, palette["bg"])
-
-    validate_theme_image(image, theme, palette)
-    return image
-
-
-def validate_theme_image(image: Image.Image, theme: str, palette: dict) -> None:
-    if image.size != (ATLAS_WIDTH, ATLAS_HEIGHT):
-        raise ValueError(f"{theme}: atlas size is {image.size}, expected {(ATLAS_WIDTH, ATLAS_HEIGHT)}")
-    if image.getbbox() != (0, 0, MENU_WIDTH, MENU_HEIGHT):
-        raise ValueError(
-            f"{theme}: opaque bounds are {image.getbbox()}, expected {(0, 0, MENU_WIDTH, MENU_HEIGHT)}"
-        )
-    for x, y in DYNAMIC_SLOT_ANCHORS:
-        if x < 0 or y < 0 or x + 18 > MENU_WIDTH or y + 18 > MENU_HEIGHT:
-            raise ValueError(f"{theme}: slot anchor {(x, y)} falls outside the visible menu")
-        if image.getpixel((x + 1, y + 1))[:3] != palette["bg"]:
-            raise ValueError(f"{theme}: dynamic slot {(x, y)} is obstructed in the base texture")
-
-
-def check_generated_textures() -> None:
-    failures: list[str] = []
-    for theme, palette in PALETTES.items():
-        path = BACKGROUNDS / f"{theme}.png"
-        if not path.exists():
-            failures.append(f"missing {path.relative_to(ROOT.parent)}")
-            continue
-        expected = generate_theme(theme, palette)
-        with Image.open(path) as source:
-            actual = source.convert("RGBA")
-        try:
-            validate_theme_image(actual, theme, palette)
-        except ValueError as error:
-            failures.append(str(error))
-            continue
-        if actual.size != expected.size or ImageChops.difference(actual, expected).getbbox() is not None:
-            failures.append(f"{theme}: texture does not match the current generator")
-    if failures:
-        raise SystemExit("\n".join(failures))
-    validate_widgets()
-    print(f"Validated neutral villager GUI texture and widgets at {MENU_WIDTH}x{MENU_HEIGHT}.")
 
 
 def validate_widgets() -> None:
@@ -139,13 +30,12 @@ def validate_widgets() -> None:
     validate_equipment_sprites(failures)
     validate_capture_sprites(failures)
     validate_trade_state_colors(failures)
-    validate_removed_legacy_textures(failures)
     if failures:
         raise SystemExit("\n".join(failures))
 
 
-def validate_widget_sizes(failures: list[str]) -> None:
-    expected_sizes = {
+def widget_sizes() -> dict[Path, tuple[int, int]]:
+    return {
         ROWS / "trade_row.png": (100, 24),
         ROWS / "trade_row_hovered.png": (100, 24),
         ROWS / "trade_row_selected.png": (100, 24),
@@ -161,7 +51,10 @@ def validate_widget_sizes(failures: list[str]) -> None:
         ARROWS / "trade_arrow_selected.png": (14, 10),
         ARROWS / "trade_arrow_disabled.png": (14, 10),
     }
-    for path, expected_size in expected_sizes.items():
+
+
+def validate_widget_sizes(failures: list[str]) -> None:
+    for path, expected_size in widget_sizes().items():
         name = path.name
         if not path.exists():
             failures.append(f"missing widget {path.relative_to(ROOT)}")
@@ -228,12 +121,6 @@ def validate_capture_sprites(failures: list[str]) -> None:
         path = CAPTURE_SPRITES / name
         if not path.exists():
             failures.append(f"missing capture sprite {path.relative_to(ROOT)}")
-
-
-def validate_removed_legacy_textures(failures: list[str]) -> None:
-    for path in legacy_generated_textures():
-        if path.exists():
-            failures.append(f"legacy generated texture remains at {path.relative_to(ROOT)}")
 
 
 def generate_widgets() -> None:
@@ -356,37 +243,6 @@ def generate_reset_sprites() -> None:
         image.save(RESET_SPRITES / f"{name}.png")
 
 
-def legacy_generated_textures() -> list[Path]:
-    return [
-        *(ROOT / "widgets" / name for name in (
-            "trade_row.png",
-            "trade_row_hovered.png",
-            "trade_row_selected.png",
-            "trade_row_disabled.png",
-            TRADE_DROPDOWN_FILE,
-            "trade_dropdown_row.png",
-            "trade_dropdown_row_hovered.png",
-            "trade_dropdown_row_selected.png",
-            "trade_dropdown_row_disabled.png",
-            DISABLED_SLOT_OVERLAY_FILE,
-            "trade_arrow.png",
-            "trade_arrow_hovered.png",
-            "trade_arrow_selected.png",
-            "trade_arrow_disabled.png",
-        )),
-        TRADER / "default.png",
-        SPRITES / "reset_trades.png",
-        SPRITES / "reset_trades_hovered.png",
-    ]
-
-
-def remove_legacy_generated_textures() -> None:
-    for path in legacy_generated_textures():
-        path.unlink(missing_ok=True)
-    legacy_widgets = ROOT / "widgets"
-    if legacy_widgets.exists() and not any(legacy_widgets.iterdir()):
-        legacy_widgets.rmdir()
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate and validate villager trade GUI textures.")
     parser.add_argument(
@@ -396,8 +252,11 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    if args.check:
+        validate_widgets()
+        print("Villager trade widgets valid.")
+        return
     for directory in (
-        BACKGROUNDS,
         ROWS,
         SELECTOR,
         ARROWS,
@@ -405,17 +264,9 @@ def main() -> None:
         RESET_SPRITES,
     ):
         directory.mkdir(parents=True, exist_ok=True)
-    if args.check:
-        check_generated_textures()
-        return
-    remove_legacy_generated_textures()
-    for stale_texture in BACKGROUNDS.glob("*.png"):
-        if stale_texture.stem not in PALETTES:
-            stale_texture.unlink()
-    for theme, palette in PALETTES.items():
-        generate_theme(theme, palette).save(BACKGROUNDS / f"{theme}.png")
     generate_widgets()
-    check_generated_textures()
+    validate_widgets()
+    print("Villager trade widgets valid.")
 
 
 if __name__ == "__main__":

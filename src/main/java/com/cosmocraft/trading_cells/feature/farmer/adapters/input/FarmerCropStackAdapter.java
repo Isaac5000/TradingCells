@@ -284,13 +284,17 @@ public final class FarmerCropStackAdapter {
             return customHarvest(level, option, fortuneLevel, silkTouch);
         }
         try {
+            ItemStack lootTool = hoe.copy();
+            net.minecraft.world.item.enchantment.EnchantmentHelper.updateEnchantments(lootTool,
+                    enchantments -> enchantments.removeIf(enchantment ->
+                            enchantment.is(net.minecraft.world.item.enchantment.Enchantments.EFFICIENCY)));
             List<ItemStack> drops = Block.getDrops(
                     matureState(option.block()),
                     level,
                     pos,
                     null,
                     null,
-                    hoe
+                    lootTool
             ).stream().filter(stack -> !stack.isEmpty()).map(ItemStack::copy).toList();
             return drops.isEmpty() ? fallbackDynamicHarvest(cropStack, fortuneLevel) : drops;
         } catch (RuntimeException exception) {

@@ -8,17 +8,22 @@ import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
 
 public final class MobFarmClientRegistrationAdapter {
     private MobFarmClientRegistrationAdapter() { }
+    public static void onRegisterRenderStateModifiers(net.neoforged.neoforge.client.renderstate.RegisterRenderStateModifiersEvent event) {
+        SyringeArmAnimation.register(event);
+    }
     public static void onRegisterModelProperties(net.neoforged.neoforge.client.event.RegisterRangeSelectItemModelPropertyEvent event) {
         event.register(Identifier.fromNamespaceAndPath("trading_cells", "essence_tier"), EssenceTierProperty.CODEC);
         event.register(Identifier.fromNamespaceAndPath("trading_cells", "syringe_load"), SyringeLoadProperty.CODEC);
         event.register(Identifier.fromNamespaceAndPath("trading_cells", "syringe_extraction"), SyringeExtractionProperty.CODEC);
     }
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
+        event.register(MobFarmRegistrationAdapter.INTERACTION_MENU.get(), EntityInteractionFarmScreen::new);
         event.register(MobFarmRegistrationAdapter.MENU.get(), MobFarmScreen::new);
         event.register(MobFarmRegistrationAdapter.WORKBENCH_MENU.get(), EssenceWorkbenchScreen::new);
         event.register(MobFarmRegistrationAdapter.STABILIZER_MENU.get(), EssenceStabilizerScreen::new);
     }
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(MobFarmRegistrationAdapter.INTERACTION_BLOCK_ENTITY.get(), EntityInteractionFarmRenderer::new);
         event.registerBlockEntityRenderer(MobFarmRegistrationAdapter.BLOCK_ENTITY.get(), MobFarmBlockEntityRenderer::new);
     }
     public static void onRegisterSpecialModelRenderers(RegisterSpecialModelRendererEvent event) {

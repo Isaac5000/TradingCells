@@ -27,10 +27,10 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class MobFarmMenu extends AbstractContainerMenu {
-    public static final int WIDTH = 374;
-    public static final int HEIGHT = 246;
-    public static final int PLAYER_X = 199;
-    public static final int PLAYER_Y = 152;
+    public static final int WIDTH = 348;
+    public static final int HEIGHT = 204;
+    public static final int PLAYER_X = 174;
+    public static final int PLAYER_Y = 124;
     private final Container container;
     private final ContainerData data;
     private final Player owner;
@@ -58,7 +58,7 @@ public final class MobFarmMenu extends AbstractContainerMenu {
         checkContainerDataCount(data, 7);
         for (int index = 0; index < 5; index++) {
             final int input = index;
-            addSlot(new Slot(container, index, 199 + index * 36, 35) {
+            addSlot(new Slot(container, index, PLAYER_X + index * 36, 28) {
                 @Override public int getMaxStackSize() { return 1; }
                 @Override public boolean mayPlace(ItemStack stack) {
                     return switch (input) {
@@ -73,8 +73,8 @@ public final class MobFarmMenu extends AbstractContainerMenu {
                 }
             });
         }
-        for (int index = 0; index < 18; index++) {
-            addSlot(new Slot(container, index + 5, 199 + (index % 9) * 18, 91 + (index / 9) * 18) {
+        for (int index = 0; index < MobFarmBlockEntity.OUTPUT_SLOT_COUNT; index++) {
+            addSlot(new Slot(container, index + 5, PLAYER_X + (index % 9) * 18, 56 + (index / 9) * 18) {
                 @Override public boolean mayPlace(ItemStack stack) { return false; }
             });
         }
@@ -161,7 +161,8 @@ public final class MobFarmMenu extends AbstractContainerMenu {
         if (!slot.hasItem() || !slot.mayPickup(player)) { return ItemStack.EMPTY; }
         ItemStack stack = slot.getItem();
         ItemStack before = stack.copy();
-        if (index < 23 ? !moveItemStackTo(stack, 23, 59, true) : !moveItemStackTo(stack, 0, 5, false)) { return ItemStack.EMPTY; }
+        int start = MobFarmBlockEntity.CONTAINER_SIZE;
+        if (index < start ? !moveItemStackTo(stack, start, start + 36, true) : !moveItemStackTo(stack, 0, 5, false)) { return ItemStack.EMPTY; }
         if (stack.isEmpty()) { slot.setByPlayer(ItemStack.EMPTY); } else { slot.setChanged(); }
         slot.onTake(player, stack);
         return before;

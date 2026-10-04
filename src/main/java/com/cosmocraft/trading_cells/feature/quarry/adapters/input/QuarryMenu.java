@@ -78,6 +78,8 @@ public final class QuarryMenu extends AbstractContainerMenu {
                     outputSlotY(index)
             ));
         }
+        addSlot(new com.cosmocraft.trading_cells.platform.neoforge.menu.MachineSpeedUpgradeSlot(
+                container, QuarryBlockEntity.SPEED_SLOT, 17, 142));
         addStandardInventorySlots(
                 inventory,
                 playerInventoryX(),
@@ -345,6 +347,9 @@ public final class QuarryMenu extends AbstractContainerMenu {
         }
         if (QuarryUpgradeItems.isUpgrade(stack)) {
             return moveItemStackTo(stack, QuarryBlockEntity.UPGRADE_SLOT, QuarryBlockEntity.UPGRADE_SLOT + 1, false);
+        }
+        if (com.cosmocraft.trading_cells.platform.neoforge.machine.MachineSpeedUpgrade.accepts(stack)) {
+            return moveItemStackTo(stack, QuarryBlockEntity.SPEED_SLOT, QuarryBlockEntity.SPEED_SLOT + 1, false);
         }
         return index < PLAYER_INVENTORY_END
                 ? moveItemStackTo(stack, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)

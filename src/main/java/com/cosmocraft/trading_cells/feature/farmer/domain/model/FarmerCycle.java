@@ -1,22 +1,10 @@
 package com.cosmocraft.trading_cells.feature.farmer.domain.model;
 
 import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
+import com.cosmocraft.trading_cells.shared.machines.domain.model.ToolMachineSpeed;
 
 public final class FarmerCycle {
-    private static final int MAX_EFFECTIVE_EFFICIENCY_LEVEL = 5;
     private static final int MINIMUM_GROWTH_TICKS = 20;
-    private static final int TICKS_PER_SECOND = 20;
-    private static final double WOODEN_BASE_SECONDS = 120.0D;
-    private static final double WOODEN_MAX_EFFICIENCY_SECONDS = 30.0D;
-    private static final double NETHERITE_BASE_SECONDS = 20.0D;
-    private static final double NETHERITE_MAX_EFFICIENCY_SECONDS = 5.0D;
-    private static final double MINIMUM_DURATION_SECONDS = 1.0D;
-    private static final double NETHERITE_POSITION = VanillaHoeTier.NETHERITE.timingPosition();
-    private static final double TIER_RATIO = Math.pow(
-            NETHERITE_BASE_SECONDS / WOODEN_BASE_SECONDS,
-            1.0D / NETHERITE_POSITION
-    );
-    private static final double ROUNDING_EPSILON = 1.0E-9D;
     private static final int FUNGUS_BASE_CHANCE = 3_500;
     private static final int FUNGUS_FORTUNE_BONUS = 1_000;
     private static final int FUNGUS_MAX_CHANCE = 7_500;
@@ -134,56 +122,14 @@ public final class FarmerCycle {
             int configuredBaseTicks,
             double toolSpeed,
             double tierPosition,
-            int efficiencyLevel
+            int speedTier
     ) {
         int configuredMaximum = Math.max(MINIMUM_GROWTH_TICKS, configuredBaseTicks);
         if (toolSpeed <= 0.0D) {
-            return configuredMaximum;
+            return ToolMachineSpeed.apply(configuredMaximum, speedTier);
         }
-        return Math.min(
-                configuredMaximum,
-                villagerToolDurationSeconds(tierPosition, efficiencyLevel) * TICKS_PER_SECOND
-        );
-    }
-
-    private static int villagerToolDurationSeconds(double tierPosition, int efficiencyLevel) {
-        int efficiency = Math.clamp(efficiencyLevel, 0, MAX_EFFECTIVE_EFFICIENCY_LEVEL);
-        double position = Double.isFinite(tierPosition) ? Math.max(0.0D, tierPosition) : 0.0D;
-        double startingDuration = villagerStartingDuration(position);
-        double maximumEfficiencyDuration = villagerMaximumEfficiencyDuration(position);
-        double progress = efficiency / (double) MAX_EFFECTIVE_EFFICIENCY_LEVEL;
-        double startingDistance = Math.max(
-                Double.MIN_NORMAL,
-                startingDuration - MINIMUM_DURATION_SECONDS
-        );
-        double endingDistance = Math.max(
-                Double.MIN_NORMAL,
-                Math.min(startingDistance, maximumEfficiencyDuration - MINIMUM_DURATION_SECONDS)
-        );
-        double duration = MINIMUM_DURATION_SECONDS
-                + startingDistance * Math.pow(endingDistance / startingDistance, progress);
-        return Math.max(
-                (int) MINIMUM_DURATION_SECONDS,
-                (int) Math.floor(duration + ROUNDING_EPSILON)
-        );
-    }
-
-    private static double villagerStartingDuration(double position) {
-        if (position <= NETHERITE_POSITION) {
-            return WOODEN_BASE_SECONDS * Math.pow(TIER_RATIO, position);
-        }
-        return MINIMUM_DURATION_SECONDS
-                + (NETHERITE_BASE_SECONDS - MINIMUM_DURATION_SECONDS)
-                * Math.pow(TIER_RATIO, position - NETHERITE_POSITION);
-    }
-
-    private static double villagerMaximumEfficiencyDuration(double position) {
-        if (position <= NETHERITE_POSITION) {
-            return WOODEN_MAX_EFFICIENCY_SECONDS * Math.pow(TIER_RATIO, position);
-        }
-        return MINIMUM_DURATION_SECONDS
-                + (NETHERITE_MAX_EFFICIENCY_SECONDS - MINIMUM_DURATION_SECONDS)
-                * Math.pow(TIER_RATIO, position - NETHERITE_POSITION);
+        return ToolMachineSpeed.apply(Math.min(configuredMaximum,
+                ToolMachineSpeed.baseTicks(tierPosition, VanillaHoeTier.NETHERITE.timingPosition())), speedTier);
     }
 
     public static int rescaleProgress(int ticks, int previousMaximum, int newMaximum) {

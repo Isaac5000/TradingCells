@@ -32,11 +32,9 @@ public final class MachineScreenLayout {
     /** Fills the complete nine-pixel interior, including its bottom row. */
     public static final int PROGRESS_FILL_HEIGHT = 9;
 
-    private static final int TILE_SIZE = 16;
     public static final int MACHINE_PANEL_X = 4;
     public static final int MACHINE_PANEL_Y = 22;
     public static final int MACHINE_PANEL_WIDTH = WIDTH - 8;
-    public static final int MACHINE_PANEL_HEIGHT = 95;
 
     private MachineScreenLayout() {
     }
@@ -49,22 +47,10 @@ public final class MachineScreenLayout {
             GuiGraphicsExtractor graphics,
             int x,
             int y,
-            Identifier surfaceTexture,
+            MachineGuiSkin skin,
             MachineScreenTheme theme
     ) {
-        graphics.blit(
-                RenderPipelines.GUI_TEXTURED,
-                theme.backgroundTexture(),
-                x,
-                y,
-                0.0F,
-                0.0F,
-                WIDTH,
-                HEIGHT,
-                WIDTH,
-                HEIGHT
-        );
-        drawMachineSurface(graphics, x, y, surfaceTexture);
+        skin.draw(graphics, x, y, WIDTH, HEIGHT);
         drawPlayerInventory(graphics, x, y, theme);
         drawEquipmentPanel(graphics, x, y, theme);
     }
@@ -188,59 +174,4 @@ public final class MachineScreenLayout {
         graphics.fill(x + 2, y + 2, x + PROGRESS_FRAME_WIDTH - 2, y + PROGRESS_FRAME_HEIGHT - 2, theme.slotInner());
     }
 
-    private static void drawMachineSurface(
-            GuiGraphicsExtractor graphics,
-            int x,
-            int y,
-            Identifier surfaceTexture
-    ) {
-        drawMachinePanelSurface(
-                graphics,
-                x + MACHINE_PANEL_X,
-                y + MACHINE_PANEL_Y,
-                surfaceTexture
-        );
-    }
-
-    /**
-     * Draws only the textured machine work area. Integrations such as REI use
-     * this crop so their recipes stay visually identical to the real screen.
-     */
-    public static void drawMachinePanelSurface(
-            GuiGraphicsExtractor graphics,
-            int x,
-            int y,
-            Identifier surfaceTexture
-    ) {
-        tile(graphics, surfaceTexture, x, y, MACHINE_PANEL_WIDTH, MACHINE_PANEL_HEIGHT);
-        graphics.fill(x, y, x + MACHINE_PANEL_WIDTH, y + MACHINE_PANEL_HEIGHT, 0x24000000);
-    }
-
-    private static void tile(
-            GuiGraphicsExtractor graphics,
-            Identifier texture,
-            int x,
-            int y,
-            int width,
-            int height
-    ) {
-        for (int offsetY = 0; offsetY < height; offsetY += TILE_SIZE) {
-            int tileHeight = Math.min(TILE_SIZE, height - offsetY);
-            for (int offsetX = 0; offsetX < width; offsetX += TILE_SIZE) {
-                int tileWidth = Math.min(TILE_SIZE, width - offsetX);
-                graphics.blit(
-                        RenderPipelines.GUI_TEXTURED,
-                        texture,
-                        x + offsetX,
-                        y + offsetY,
-                        0.0F,
-                        0.0F,
-                        tileWidth,
-                        tileHeight,
-                        TILE_SIZE,
-                        TILE_SIZE
-                );
-            }
-        }
-    }
 }

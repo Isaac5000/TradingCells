@@ -1,5 +1,9 @@
 package com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client;
 
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotGhosts;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotSprites;
+
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.MobFarmMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRenderer;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
@@ -9,7 +13,7 @@ import java.util.Locale;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -17,8 +21,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
-public final class MobFarmScreen extends AbstractContainerScreen<MobFarmMenu> {
-    private static final int VISIBLE_ROWS = 7;
+public final class MobFarmScreen extends MachineContainerScreen<MobFarmMenu> {
+    private static final int VISIBLE_ROWS = 5;
     private int scroll;
     private boolean probabilities;
     private boolean filterClick;
@@ -31,12 +35,12 @@ public final class MobFarmScreen extends AbstractContainerScreen<MobFarmMenu> {
 
     @Override protected void init() {
         super.init();
-        addRenderableWidget(SimulationScreenWidgets.checkButton(leftPos + 344, topPos + 8, label("enabled"),
+        addRenderableWidget(SimulationScreenWidgets.checkButton(leftPos + 319, topPos + 8, label("enabled"),
                 menu::enabled, button -> command(0)));
-        addRenderableWidget(SimulationScreenWidgets.checkButton(leftPos + 161, topPos + 28, label("probabilities"),
+        addRenderableWidget(SimulationScreenWidgets.checkButton(leftPos + 136, topPos + 28, label("probabilities"),
                 () -> probabilities, button -> probabilities = !probabilities));
         var xp = addRenderableWidget(Button.builder(Component.literal("XP"), button -> command(1))
-                .bounds(leftPos + 147, topPos + 220, 32, 18).build());
+                .bounds(leftPos + 122, topPos + 182, 32, 18).build());
         xp.setTooltip(Tooltip.create(Component.translatable("button.trading_cells.withdraw_xp")));
     }
 
@@ -51,52 +55,55 @@ public final class MobFarmScreen extends AbstractContainerScreen<MobFarmMenu> {
 
     @Override public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        SimulationScreenWidgets.background(graphics, leftPos, topPos, imageWidth, imageHeight);
+        com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin.MOB_FARM.draw(graphics, leftPos, topPos, imageWidth, imageHeight);
         for (var slot : menu.slots) { SimulationScreenWidgets.slot(graphics, leftPos + slot.x, topPos + slot.y); }
-        graphics.fill(leftPos + 190, topPos + 28, leftPos + 191, topPos + 237, 0xFF566166);
-        graphics.fill(leftPos + 199, topPos + 61, leftPos + 361, topPos + 67, 0xFF161D20);
+        MachineSlotGhosts.sprite(graphics, menu.getSlot(0), leftPos, topPos, MachineSlotSprites.VILLAGER_HEAD);
+        MachineSlotGhosts.item(graphics, menu.getSlot(1), leftPos, topPos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_SWORD));
+        MachineSlotGhosts.item(graphics, menu.getSlot(2), leftPos, topPos, MobFarmRegistrationAdapter.ENTITY_MODULE.get().getDefaultInstance());
+        MachineSlotGhosts.item(graphics, menu.getSlot(3), leftPos, topPos, MobFarmRegistrationAdapter.UPGRADES.get(0).get().getDefaultInstance());
+        MachineSlotGhosts.item(graphics, menu.getSlot(4), leftPos, topPos, MobFarmRegistrationAdapter.UPGRADES.get(5).get().getDefaultInstance());
+        graphics.fill(leftPos + 165, topPos + 28, leftPos + 166, topPos + imageHeight - 9, 0xFF566166);
+        graphics.fill(leftPos + 174, topPos + 48, leftPos + 336, topPos + 54, 0xFF161D20);
         int progress = (int) Math.clamp((long) menu.cycleTicks() * 160 / Math.max(1, menu.cycleDurationTicks()), 0, 160);
-        graphics.fill(leftPos + 200, topPos + 62, leftPos + 200 + progress, topPos + 66, SimulationScreenWidgets.ACCENT);
+        graphics.fill(leftPos + 175, topPos + 49, leftPos + 175 + progress, topPos + 53, SimulationScreenWidgets.ACCENT);
         var entries = menu.lootEntries();
         for (int row = 0; row < VISIBLE_ROWS && row + scroll < entries.size(); row++) {
             var entry = entries.get(row + scroll);
             int y = topPos + 51 + row * 22;
-            graphics.fill(leftPos + 11, y, leftPos + 180, y + 21, 0xFF343C40);
+            graphics.fill(leftPos + 11, y, leftPos + 155, y + 21, 0xFF343C40);
             SimulationScreenWidgets.check(graphics, leftPos + 15, y + 5, entry.enabled());
             graphics.fakeItem(entry.stack(), leftPos + 32, y + 2);
-            FittedTextRenderer.left(graphics, font, entry.stack().getHoverName(), leftPos + 53, leftPos + 176,
+            FittedTextRenderer.left(graphics, font, entry.stack().getHoverName(), leftPos + 53, leftPos + 151,
                     y + (probabilities ? 1 : 5), 11, SimulationScreenWidgets.TEXT, false);
             if (probabilities) {
-                FittedTextRenderer.left(graphics, font, chance(entry), leftPos + 53, leftPos + 176, y + 11, 9,
+                FittedTextRenderer.left(graphics, font, chance(entry), leftPos + 53, leftPos + 151, y + 11, 9,
                         SimulationScreenWidgets.ACCENT, false);
             }
         }
         int maximum = Math.max(0, entries.size() - VISIBLE_ROWS);
         if (maximum > 0) {
-            int thumb = Math.max(12, 154 * VISIBLE_ROWS / entries.size());
-            int y = topPos + 51 + scroll * (154 - thumb) / maximum;
-            graphics.fill(leftPos + 182, y, leftPos + 186, y + thumb, SimulationScreenWidgets.MUTED);
+            int thumb = Math.max(12, 110 * VISIBLE_ROWS / entries.size());
+            int y = topPos + 51 + scroll * (110 - thumb) / maximum;
+            graphics.fill(leftPos + 157, y, leftPos + 161, y + thumb, SimulationScreenWidgets.MUTED);
         }
     }
 
     @Override protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        FittedTextRenderer.left(graphics, font, title, 12, 189, 8, 16, SimulationScreenWidgets.TEXT, true);
+        FittedTextRenderer.left(graphics, font, title, 12, 164, 8, 16, SimulationScreenWidgets.TEXT, true);
         Component enabled = label("enabled");
-        FittedTextRenderer.left(graphics, font, enabled, Math.max(199, 338 - font.width(enabled)), 338,
+        FittedTextRenderer.left(graphics, font, enabled, Math.max(174, 313 - font.width(enabled)), 313,
                 8, 16, SimulationScreenWidgets.MUTED, false);
         graphics.text(font, label("loot"), 12, 33, SimulationScreenWidgets.MUTED, false);
-        graphics.text(font, "%", 149, 33, SimulationScreenWidgets.MUTED, false);
+        graphics.text(font, "%", 124, 33, SimulationScreenWidgets.MUTED, false);
         graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, SimulationScreenWidgets.MUTED, false);
-        FittedTextRenderer.left(graphics, font, label("cycle", menu.simulatedKills(), Math.max(1, MachineScreenUtil.durationSeconds(menu.cycleDurationTicks()))),
-                199, 361, 70, 12, SimulationScreenWidgets.MUTED, false);
+        FittedTextRenderer.left(graphics, font, menu.pendingOutput() ? label("output_waiting")
+                : label("cycle", menu.simulatedKills(), Math.max(1, MachineScreenUtil.durationSeconds(menu.cycleDurationTicks()))),
+                12, 155, 164, 12, SimulationScreenWidgets.MUTED, false);
         FittedTextRenderer.left(graphics, font, Component.literal(Integer.toString(menu.storedExperience()) + " XP"),
-                12, 143, 222, 14, 0xFFC4EA83, false);
+                12, 120, 184, 14, 0xFFC4EA83, false);
         if (menu.lootEntries().isEmpty()) {
             FittedTextRenderer.left(graphics, font, label(menu.creature().isEmpty() ? "module_required" : "no_loot"),
-                    12, 177, 56, 22, SimulationScreenWidgets.MUTED, false);
-        }
-        if (menu.pendingOutput()) {
-            FittedTextRenderer.left(graphics, font, label("output_waiting"), 199, 361, 127, 12, 0xFFFFCB82, false);
+                    12, 152, 56, 22, SimulationScreenWidgets.MUTED, false);
         }
     }
 
@@ -123,7 +130,7 @@ public final class MobFarmScreen extends AbstractContainerScreen<MobFarmMenu> {
     }
 
     private int rowAt(double x, double y) {
-        if (x < leftPos + 11 || x >= leftPos + 180 || y < topPos + 51 || y >= topPos + 205) { return -1; }
+        if (x < leftPos + 11 || x >= leftPos + 155 || y < topPos + 51 || y >= topPos + 161) { return -1; }
         int index = scroll + (int) ((y - topPos - 51) / 22);
         return index < menu.lootEntries().size() ? index : -1;
     }
@@ -145,7 +152,7 @@ public final class MobFarmScreen extends AbstractContainerScreen<MobFarmMenu> {
         return super.mouseReleased(event);
     }
     @Override public boolean mouseScrolled(double x, double y, double dx, double dy) {
-        if (x >= leftPos + 11 && x < leftPos + 187 && y >= topPos + 51 && y < topPos + 205) {
+        if (x >= leftPos + 11 && x < leftPos + 162 && y >= topPos + 51 && y < topPos + 161) {
             scroll = Math.clamp(scroll - (int) Math.signum(dy), 0, Math.max(0, menu.lootEntries().size() - VISIBLE_ROWS));
             return true;
         }

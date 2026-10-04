@@ -14,7 +14,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
@@ -26,10 +26,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
-public final class NetworkTerminalScreen extends AbstractContainerScreen<NetworkTerminalMenu> {
-    public static final int WIDTH = 374;
-    public static final int HEIGHT = 238;
-    private static final int GRID_X = 198, GRID_Y = 71, GRID_WIDTH = 160, GRID_HEIGHT = 156, CELL = 20;
+public final class NetworkTerminalScreen extends MachineContainerScreen<NetworkTerminalMenu> {
+    public static final int WIDTH = 348;
+    public static final int HEIGHT = 204;
+    private static final int GRID_X = 186, GRID_Y = 71, GRID_WIDTH = 144, GRID_HEIGHT = 126, CELL = 18;
     private static final int WHITE = 0xFFF5F5F5, MUTED = 0xFFB8C1C4;
     private String query = "";
     private boolean recipes;
@@ -47,7 +47,7 @@ public final class NetworkTerminalScreen extends AbstractContainerScreen<Network
 
     public NetworkTerminalScreen(NetworkTerminalMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, WIDTH, HEIGHT);
-        inventoryLabelY = 141;
+        inventoryLabelY = 112;
         inventoryLabelX = 12;
     }
 
@@ -60,14 +60,14 @@ public final class NetworkTerminalScreen extends AbstractContainerScreen<Network
                 recipes = false;
                 resetScroll();
                 ClientPacketDistributor.sendToServer(NetworkTerminalActionPayload.view(menu.containerId, type, 0, query));
-            }).bounds(leftPos + 12 + index++ * 70, topPos + 25, 68, 18).build());
+            }).bounds(leftPos + 12 + index++ * 65, topPos + 25, 63, 18).build());
         }
         if (menu.crafting()) {
             addRenderableWidget(Button.builder(label("recipes"), ignored -> {
                 recipes = !recipes;
                 resetScroll();
                 sendView(0);
-            }).bounds(leftPos + 294, topPos + 25, 68, 18).build());
+            }).bounds(leftPos + 272, topPos + 25, 63, 18).build());
         }
         EditBox search = addRenderableWidget(new EditBox(font, leftPos + GRID_X, topPos + 48, GRID_WIDTH, 18, label("search")));
         search.setMaxLength(64);
@@ -76,7 +76,7 @@ public final class NetworkTerminalScreen extends AbstractContainerScreen<Network
         search.setResponder(value -> { query = value; debounce = 5; });
         depositContainer = arrowButton(112, 77, false, "insert", () ->
                 sendAction(NetworkTerminalActionPayload.Action.CONTAINER_DEPOSIT, 0, Long.MAX_VALUE, null));
-        withdrawContainer = arrowButton(112, 104, true, "withdraw", () -> {
+        withdrawContainer = arrowButton(112, 100, true, "withdraw", () -> {
             if (selectedContainerEntry != null) {
                 sendAction(NetworkTerminalActionPayload.Action.CONTAINER_WITHDRAW, 0, Long.MAX_VALUE, selectedContainerEntry);
             }
@@ -138,7 +138,7 @@ public final class NetworkTerminalScreen extends AbstractContainerScreen<Network
             slot(graphics, x, y, CELL, 0xFF5D6568);
             if (index < entries.size()) {
                 var entry = entries.get(index);
-                graphics.fakeItem(entry.icon(), x + 2, y + 1);
+                graphics.fakeItem(entry.icon(), x + 1, y + 1);
                 if (!recipes) {
                     drawAmount(graphics, entry.amount(), x, y);
                 }
@@ -156,10 +156,10 @@ public final class NetworkTerminalScreen extends AbstractContainerScreen<Network
                 graphics.setComponentTooltipForNextFrame(font, entryTooltip(selectedContainerEntry), mouseX, mouseY, ItemStack.EMPTY);
             }
         }
-        graphics.fill(leftPos + 361, topPos + GRID_Y, leftPos + 367, topPos + GRID_Y + GRID_HEIGHT, 0xFF15191B);
+        graphics.fill(leftPos + 333, topPos + GRID_Y, leftPos + 339, topPos + GRID_Y + GRID_HEIGHT, 0xFF15191B);
         int thumbHeight = Math.max(12, (int) (GRID_HEIGHT * (double) GRID_HEIGHT / Math.max(GRID_HEIGHT, menu.totalPages() * CELL)));
         int thumbY = topPos + GRID_Y + (int) (maximumScroll() == 0 ? 0 : scroll / maximumScroll() * (GRID_HEIGHT - thumbHeight));
-        graphics.fill(leftPos + 361, thumbY, leftPos + 367, thumbY + thumbHeight, MUTED);
+        graphics.fill(leftPos + 333, thumbY, leftPos + 339, thumbY + thumbHeight, MUTED);
         for (var inventorySlot : menu.slots) {
             if (inventorySlot.isActive()) {
                 slot(graphics, leftPos + inventorySlot.x - 1, topPos + inventorySlot.y - 1, 18, 0xFF727D82);
@@ -167,15 +167,15 @@ public final class NetworkTerminalScreen extends AbstractContainerScreen<Network
         }
         if (menu.crafting() && menu.selectedType() == LogisticsResourceType.ITEM) {
             for (int index = 0; index < 9; index++) {
-                int x = leftPos + 23 + index % 3 * 18, y = topPos + 76 + index / 3 * 18;
+                int x = leftPos + 23 + index % 3 * 18, y = topPos + 52 + index / 3 * 18;
                 slot(graphics, x, y, 18, 0xFF727D82);
                 graphics.fakeItem(menu.craftingGrid().get(index), x + 1, y + 1);
             }
-            drawArrow(graphics, leftPos + 95, topPos + 97, false, WHITE);
-            slot(graphics, leftPos + 132, topPos + 93, 22, 0xFF96907D);
-            graphics.fakeItem(menu.craftingResult(), leftPos + 135, topPos + 96);
-            graphics.itemDecorations(font, menu.craftingResult(), leftPos + 135, topPos + 96);
-            if (!menu.craftingResult().isEmpty() && inside(mouseX, mouseY, leftPos + 132, topPos + 93, 22, 22)) {
+            drawArrow(graphics, leftPos + 95, topPos + 73, false, WHITE);
+            slot(graphics, leftPos + 132, topPos + 69, 22, 0xFF96907D);
+            graphics.fakeItem(menu.craftingResult(), leftPos + 135, topPos + 72);
+            graphics.itemDecorations(font, menu.craftingResult(), leftPos + 135, topPos + 72);
+            if (!menu.craftingResult().isEmpty() && inside(mouseX, mouseY, leftPos + 132, topPos + 69, 22, 22)) {
                 graphics.setComponentTooltipForNextFrame(font, getTooltipFromItem(minecraft, menu.craftingResult()), mouseX, mouseY, menu.craftingResult());
             }
         }
@@ -207,7 +207,7 @@ public final class NetworkTerminalScreen extends AbstractContainerScreen<Network
                 return true;
             }
         }
-        if (event.button() == 0 && inside(event.x(), event.y(), leftPos + 360, topPos + GRID_Y, 8, GRID_HEIGHT)) {
+        if (event.button() == 0 && inside(event.x(), event.y(), leftPos + 332, topPos + GRID_Y, 8, GRID_HEIGHT)) {
             draggingScroll = true;
             dragScrollbar(event.y());
             return true;
@@ -247,13 +247,13 @@ public final class NetworkTerminalScreen extends AbstractContainerScreen<Network
         }
         if (menu.crafting() && menu.selectedType() == LogisticsResourceType.ITEM) {
             for (int index = 0; index < 9; index++) {
-                if (inside(event.x(), event.y(), leftPos + 23 + index % 3 * 18, topPos + 76 + index / 3 * 18, 18, 18)) {
+                if (inside(event.x(), event.y(), leftPos + 23 + index % 3 * 18, topPos + 52 + index / 3 * 18, 18, 18)) {
                     virtualClick = true;
                     sendAction(NetworkTerminalActionPayload.Action.GHOST, index, event.button() == 1 ? 0 : 1, null);
                     return true;
                 }
             }
-            if (inside(event.x(), event.y(), leftPos + 132, topPos + 93, 22, 22)) {
+            if (inside(event.x(), event.y(), leftPos + 132, topPos + 69, 22, 22)) {
                 virtualClick = true;
                 sendAction(event.hasShiftDown() ? NetworkTerminalActionPayload.Action.CRAFT_STACK
                         : NetworkTerminalActionPayload.Action.CRAFT_CURSOR, 0, 1, null);

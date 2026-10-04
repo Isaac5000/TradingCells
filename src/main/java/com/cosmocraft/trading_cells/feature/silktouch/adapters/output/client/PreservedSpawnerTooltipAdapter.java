@@ -3,7 +3,7 @@ package com.cosmocraft.trading_cells.feature.silktouch.adapters.output.client;
 import com.cosmocraft.trading_cells.feature.silktouch.adapters.input.PreservedSpawnerItemAdapter;
 import com.cosmocraft.trading_cells.feature.silktouch.adapters.input.SpawnerRedstoneControlAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
-import com.mojang.blaze3d.platform.InputConstants;
+import com.cosmocraft.trading_cells.platform.neoforge.client.ItemDetailsTooltip;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
@@ -19,7 +19,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
-import org.lwjgl.glfw.GLFW;
 
 /** Adds concise, localized entity details to trusted spawners and modified eggs. */
 @EventBusSubscriber(modid = TradingCells.MOD_ID, value = Dist.CLIENT)
@@ -27,7 +26,6 @@ public final class PreservedSpawnerTooltipAdapter {
     private static final ChatFormatting LABEL_COLOR = ChatFormatting.DARK_AQUA;
     private static final ChatFormatting ARMOR_LABEL_COLOR = ChatFormatting.AQUA;
     private static final ChatFormatting VALUE_COLOR = ChatFormatting.WHITE;
-    private static final ChatFormatting SHIFT_HINT_COLOR = ChatFormatting.BLUE;
     private static final ChatFormatting FEATURE_COLOR = ChatFormatting.RED;
 
     private PreservedSpawnerTooltipAdapter() {
@@ -44,7 +42,7 @@ public final class PreservedSpawnerTooltipAdapter {
         }
 
         var level = Minecraft.getInstance().level;
-        boolean detailsVisible = isDetailsKeyDown();
+        boolean detailsVisible = ItemDetailsTooltip.keyDown();
         List<Component> lines = new ArrayList<>();
         if (entityDescription && level != null) {
             PreservedSpawnerItemAdapter.describe(level, stack).ifPresent(description -> {
@@ -74,8 +72,7 @@ public final class PreservedSpawnerTooltipAdapter {
             return List.copyOf(lines);
         }
         if (!detailsVisible) {
-            lines.add(Component.translatable("tooltip.trading_cells.spawner.shift_details")
-                    .withStyle(SHIFT_HINT_COLOR));
+            lines.add(ItemDetailsTooltip.hint());
             return List.copyOf(lines);
         }
 
@@ -105,8 +102,7 @@ public final class PreservedSpawnerTooltipAdapter {
 
         List<Component> lines = new ArrayList<>(baseLines);
         if (!detailsVisible) {
-            Component hint = Component.translatable("tooltip.trading_cells.spawner.shift_details")
-                    .withStyle(SHIFT_HINT_COLOR);
+            Component hint = ItemDetailsTooltip.hint();
             if (lines.stream().noneMatch(line -> line.getString().equals(hint.getString()))) {
                 lines.add(hint);
             }
@@ -211,12 +207,6 @@ public final class PreservedSpawnerTooltipAdapter {
         return Component.literal("- ").withStyle(VALUE_COLOR)
                 .append(Component.translatable(labelKey).withStyle(LABEL_COLOR))
                 .append(Component.literal(":").withStyle(LABEL_COLOR));
-    }
-
-    private static boolean isDetailsKeyDown() {
-        var window = Minecraft.getInstance().getWindow();
-        return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_SHIFT)
-                || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_SHIFT);
     }
 
     private record ArmorEntry(String labelKey, ItemStack stack) {

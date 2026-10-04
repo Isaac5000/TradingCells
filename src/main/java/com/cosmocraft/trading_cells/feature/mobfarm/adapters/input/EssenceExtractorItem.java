@@ -17,7 +17,9 @@ import net.minecraft.world.level.Level;
 
 public final class EssenceExtractorItem extends Item {
     public static final int RELOAD_TICKS = 24;
-    public static final int EXTRACTION_TICKS = 24;
+    public static int extractionTicks(int tier) {
+        return com.cosmocraft.trading_cells.feature.mobfarm.domain.model.SyringeAnimation.extractionTicks(tier);
+    }
     private static final String LOADED = "TradingCellsSyringeLoaded";
     private static final String EXTRACTION = "TradingCellsSyringeExtraction";
     public EssenceExtractorItem(Properties properties) { super(properties); }
@@ -88,7 +90,11 @@ public final class EssenceExtractorItem extends Item {
         return InteractionResult.CONSUME;
     }
     @Override public int getUseDuration(ItemStack stack, LivingEntity user) {
-        return extractionTier(stack) > 0 ? EXTRACTION_TICKS : RELOAD_TICKS;
+        int tier = extractionTier(stack);
+        return tier > 0 ? extractionTicks(tier) : RELOAD_TICKS;
+    }
+    @Override public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        return slotChanged || !ItemStack.isSameItem(oldStack, newStack);
     }
     @Override public ItemUseAnimation getUseAnimation(ItemStack stack) { return ItemUseAnimation.NONE; }
     @Override public void onUseTick(Level level, LivingEntity user, ItemStack stack, int remaining) {
@@ -111,7 +117,6 @@ public final class EssenceExtractorItem extends Item {
                 player.sendOverlayMessage(Component.translatable("message.trading_cells.essence.unsupported"));
                 return stack;
             }
-            player.getCooldowns().addCooldown(stack, 40);
             if (!player.getAbilities().instabuild) {
                 setLoaded(stack, false);
                 stack.hurtAndBreak(1, player, player.getUsedItemHand());

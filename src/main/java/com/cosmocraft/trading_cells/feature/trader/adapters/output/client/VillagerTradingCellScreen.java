@@ -4,7 +4,6 @@ import com.cosmocraft.trading_cells.feature.trader.adapters.input.VillagerTradin
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.TradeExperienceDisplay;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerGuiThemeColors;
-import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerGuiTextures;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenCommon;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeScreenLayout;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader.VillagerTradeSprites;
@@ -21,7 +20,7 @@ import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.WidgetSprites;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -38,11 +37,11 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-public final class VillagerTradingCellScreen extends AbstractContainerScreen<VillagerTradingCellMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
+public final class VillagerTradingCellScreen extends MachineContainerScreen<VillagerTradingCellMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
     private static final Identifier RESET_NORMAL =
-            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "trader/reset/reset_trades");
+            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "shared/trading/buttons/reset_trades");
     private static final Identifier RESET_HOVERED =
-            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "trader/reset/reset_trades_hovered");
+            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "shared/trading/buttons/reset_trades_hovered");
     private static final WidgetSprites RESET_SPRITES = new WidgetSprites(RESET_NORMAL, RESET_HOVERED);
 
     private static final int ROW_X = VillagerTradeScreenLayout.MANUAL_ROW_X;
@@ -149,7 +148,8 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        VillagerTradeScreenLayout.drawBackground(graphics, currentTexture(), leftPos, topPos);
+        VillagerTradeScreenLayout.drawBackground(graphics, leftPos, topPos,
+                com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin.VILLAGER_TRADING_CELL);
         VillagerTradeScreenLayout.drawCommonSlots(
                 graphics,
                 leftPos,
@@ -250,10 +250,6 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
         return true;
     }
 
-    private Identifier currentTexture() {
-        return VillagerGuiTextures.resolve();
-    }
-
     private void drawCommonText(GuiGraphicsExtractor graphics) {
         VillagerTradeScreenCommon.drawCenteredText(
                 graphics,
@@ -261,7 +257,7 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
                 Component.translatable("gui.trading_cells.trades"),
                 VillagerTradeScreenLayout.TRADES_TITLE_CENTER_X,
                 VillagerTradeScreenLayout.HEADER_TEXT_Y,
-                VillagerTradeScreenCommon.TEXT_DARK
+                VillagerTradeScreenCommon.TEXT_LIGHT
         );
         VillagerTradeScreenCommon.drawCenteredText(
                 graphics,
@@ -269,14 +265,14 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
                 VillagerTradeScreenCommon.professionDisplayName(menu.villagerData()),
                 VillagerTradeScreenLayout.PROFESSION_TITLE_CENTER_X,
                 VillagerTradeScreenLayout.HEADER_TEXT_Y,
-                VillagerTradeScreenCommon.TEXT_DARK
+                VillagerTradeScreenCommon.TEXT_LIGHT
         );
         graphics.text(
                 font,
                 Component.translatable("gui.trading_cells.inventory"),
                 VillagerTradeScreenLayout.INVENTORY_LABEL_X,
                 VillagerTradeScreenLayout.INVENTORY_LABEL_Y,
-                VillagerTradeScreenCommon.TEXT_DARK,
+                VillagerTradeScreenCommon.TEXT_LIGHT,
                 false
         );
         graphics.text(
@@ -288,7 +284,7 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
                 ),
                 VillagerTradeScreenLayout.LEVEL_TEXT_X,
                 VillagerTradeScreenLayout.PROFESSION_TEXT_Y,
-                VillagerTradeScreenCommon.TEXT_DARK,
+                VillagerTradeScreenCommon.TEXT_LIGHT,
                 false
         );
         Component xpText = VillagerTradeScreenCommon.professionExperienceText(
@@ -300,7 +296,7 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
                 xpText,
                 VillagerTradeScreenLayout.PROFESSION_XP_RIGHT_X - font.width(xpText),
                 VillagerTradeScreenLayout.PROFESSION_TEXT_Y,
-                VillagerTradeScreenCommon.TEXT_DARK,
+                VillagerTradeScreenCommon.TEXT_LIGHT,
                 false
         );
         VillagerTradeScreenCommon.drawStoredExperienceText(
@@ -368,17 +364,13 @@ public final class VillagerTradingCellScreen extends AbstractContainerScreen<Vil
                     index == selectedOffer,
                     hovered
             );
-            graphics.blit(
+            graphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
                     VillagerTradeSprites.row(state),
                     x,
                     y,
-                    0,
-                    0,
                     ROW_WIDTH,
-                    ROW_HEIGHT,
-                    VillagerTradeSprites.ROW_WIDTH,
-                    VillagerTradeSprites.ROW_HEIGHT
+                    ROW_HEIGHT
             );
             drawOfferItems(graphics, offer, x, y, mouseX, mouseY, state);
         }

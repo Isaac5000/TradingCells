@@ -360,9 +360,9 @@ public final class TradingCellsReiDisplays {
 
     private static void addFarming(List<TradingCellsReiDisplay> displays) {
         FarmerUseCase farmer = FeatureComposition.farmer();
-        EntryIngredient optionalHoe = described(
+        EntryIngredient requiredHoe = described(
                 HoeTierCatalog.itemStacks(),
-                tooltip("rei.trading_cells.optional_hoe")
+                tooltip("rei.trading_cells.required_hoe")
         );
         for (FarmerKind kind : FarmerKind.values()) {
             boolean villager = kind == FarmerKind.VILLAGER;
@@ -372,7 +372,7 @@ public final class TradingCellsReiDisplays {
                     true
             );
             if (villager) {
-                addVillagerFarming(displays, farmer, adultWorker, optionalHoe);
+                addVillagerFarming(displays, farmer, adultWorker, requiredHoe);
                 continue;
             }
             for (FarmerCrop crop : FarmerCrop.supportedBy(kind)) {
@@ -384,7 +384,7 @@ public final class TradingCellsReiDisplays {
                         displays,
                         farmer,
                         adultWorker,
-                        optionalHoe,
+                        requiredHoe,
                         FarmerCropStackAdapter.input(crop),
                         outputs,
                         "piglin_farming/" + crop.name().toLowerCase(Locale.ROOT),
@@ -398,7 +398,7 @@ public final class TradingCellsReiDisplays {
             List<TradingCellsReiDisplay> displays,
             FarmerUseCase farmer,
             EntryIngredient adultWorker,
-            EntryIngredient optionalHoe
+            EntryIngredient requiredHoe
     ) {
         for (FarmerCropStackAdapter.Option option : FarmerCropStackAdapter.villagerOptions()) {
             List<EntryIngredient> outputs;
@@ -423,7 +423,7 @@ public final class TradingCellsReiDisplays {
                     displays,
                     farmer,
                     adultWorker,
-                    optionalHoe,
+                    requiredHoe,
                     new ItemStack(option.item()),
                     outputs,
                     "farming/" + itemId.getNamespace() + "/" + itemId.getPath(),
@@ -436,7 +436,7 @@ public final class TradingCellsReiDisplays {
             List<TradingCellsReiDisplay> displays,
             FarmerUseCase farmer,
             EntryIngredient adultWorker,
-            EntryIngredient optionalHoe,
+            EntryIngredient requiredHoe,
             ItemStack crop,
             List<EntryIngredient> outputs,
             String path,
@@ -447,7 +447,7 @@ public final class TradingCellsReiDisplays {
                 villager ? TradingCellsReiClientPlugin.FARMING : TradingCellsReiClientPlugin.PIGLIN_FARMING,
                 villager ? TradingCellsReiLayout.FARMING : TradingCellsReiLayout.PIGLIN_FARMING,
                 path,
-                List.of(adultWorker, cropInput, optionalHoe),
+                List.of(adultWorker, cropInput, requiredHoe),
                 List.of(adultWorker, cropInput),
                 outputs,
                 farmer.baseGrowthTicks(),

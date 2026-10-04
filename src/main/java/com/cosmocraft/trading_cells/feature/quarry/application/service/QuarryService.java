@@ -6,8 +6,8 @@ import com.cosmocraft.trading_cells.shared.machines.domain.model.TimedProcess;
 
 public final class QuarryService implements QuarryUseCase {
     @Override
-    public int durationTicks(double tierPosition, int efficiencyLevel) {
-        return QuarryCycle.durationTicks(tierPosition, efficiencyLevel);
+    public int durationTicks(double tierPosition, int speedTier) {
+        return QuarryCycle.durationTicks(tierPosition, speedTier);
     }
 
     @Override

@@ -3,23 +3,22 @@ package com.cosmocraft.trading_cells.feature.trader.adapters.output.client;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.NetheritePiglinBarteringCellBlockEntity;
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.NetheritePiglinBarteringCellMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotSprites;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
 public final class NetheritePiglinBarteringCellScreen
-        extends AbstractContainerScreen<NetheritePiglinBarteringCellMenu> {
+        extends MachineContainerScreen<NetheritePiglinBarteringCellMenu> {
     private static final MachineScreenTheme THEME = MachineScreenTheme.IRON_FARM;
-    private static final Identifier NETHERITE =
-            Identifier.fromNamespaceAndPath("minecraft", "textures/block/netherite_block.png");
     private static final int MAX_TITLE_WIDTH = 188;
-    private static final int FILTER_WARNING_Y = 108;
+    private static final int FILTER_WARNING_Y = 44;
 
     public NetheritePiglinBarteringCellScreen(
             NetheritePiglinBarteringCellMenu menu,
@@ -37,7 +36,7 @@ public final class NetheritePiglinBarteringCellScreen
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         int x = leftPos;
         int y = topPos;
-        MachineScreenLayout.drawBackground(graphics, x, y, NETHERITE, THEME);
+        MachineScreenLayout.drawBackground(graphics, x, y, MachineGuiSkin.NETHERITE_PIGLIN_BARTERING_CELL, THEME);
 
         drawControlSlot(
                 graphics,
@@ -96,14 +95,8 @@ public final class NetheritePiglinBarteringCellScreen
             int y,
             Component warning
     ) {
-        graphics.text(
-                font,
-                warning,
-                x + (MachineScreenLayout.WIDTH - font.width(warning)) / 2,
-                y + FILTER_WARNING_Y,
-                0xFFFF6666,
-                true
-        );
+        com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRenderer.left(
+                graphics, font, warning, x + 32, x + 194, y + FILTER_WARNING_Y, 10, 0xFFFF6666, true);
     }
 
     private void drawControlSlot(

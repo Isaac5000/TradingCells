@@ -6,18 +6,15 @@ import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScree
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotSprites;
+import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Checkbox;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
 import net.minecraft.world.entity.player.Inventory;
 
-public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> {
-    private static final Identifier COBBLESTONE = Identifier.fromNamespaceAndPath(
-            "minecraft",
-            "textures/block/cobblestone.png"
-    );
+public final class IronFarmScreen extends MachineContainerScreen<IronFarmMenu> {
     private static final MachineScreenTheme THEME = MachineScreenTheme.IRON_FARM;
     private static final int INFO_TEXT_COLOR = 0xFFFFFFFF;
     private static final int PROGRESS_FRAME_X = MachineScreenLayout.machineX(54);
@@ -26,7 +23,6 @@ public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> 
     private static final int PROGRESS_Y = PROGRESS_FRAME_Y + MachineScreenLayout.PROGRESS_FILL_Y_OFFSET;
     private static final int PROGRESS_WIDTH = MachineScreenLayout.PROGRESS_FILL_WIDTH;
     private static final int PROGRESS_HEIGHT = MachineScreenLayout.PROGRESS_FILL_HEIGHT;
-    private static final int FLOWERS_X = MachineScreenLayout.machineX(8) - 14;
     private Checkbox flowersCheckbox;
 
     public IronFarmScreen(IronFarmMenu menu, Inventory inventory, Component title) {
@@ -55,11 +51,12 @@ public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> 
             removeWidget(flowersCheckbox);
         }
         flowersCheckbox = addRenderableWidget(Checkbox.builder(Component.translatable("label.trading_cells.flowers"), font)
-                .pos(leftPos + FLOWERS_X, topPos + 93)
+                .pos(leftPos + PlayerEquipmentSlots.X, topPos)
                 .maxWidth(74)
                 .selected(menu.flowersEnabled())
                 .onValueChange((checkbox, selected) -> setFlowersEnabled(selected))
                 .build());
+        flowersCheckbox.setY(topPos + PlayerEquipmentSlots.HEAD_Y - flowersCheckbox.getHeight() - 2);
     }
 
     @Override
@@ -67,7 +64,7 @@ public final class IronFarmScreen extends AbstractContainerScreen<IronFarmMenu> 
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         int x = leftPos;
         int y = topPos;
-        MachineScreenLayout.drawBackground(graphics, x, y, COBBLESTONE, THEME);
+        MachineScreenLayout.drawBackground(graphics, x, y, MachineGuiSkin.IRON_FARM, THEME);
         for (int index = 0; index < IronFarmBlockEntity.VILLAGER_SLOT_COUNT; index++) {
             int slotX = IronFarmMenu.VILLAGER_ROW_X + index * 24;
             MachineScreenLayout.drawSlot(

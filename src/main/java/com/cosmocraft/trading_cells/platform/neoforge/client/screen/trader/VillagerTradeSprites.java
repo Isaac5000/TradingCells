@@ -5,10 +5,6 @@ import net.minecraft.resources.Identifier;
 
 /** Shared textures and visual states for every villager trade presentation. */
 public final class VillagerTradeSprites {
-    public static final int ROW_WIDTH = 100;
-    public static final int ROW_HEIGHT = 24;
-    public static final int DROPDOWN_ROW_WIDTH = 94;
-    public static final int DROPDOWN_ROW_HEIGHT = 18;
     public static final int ARROW_WIDTH = 14;
     public static final int ARROW_HEIGHT = 10;
 
@@ -71,10 +67,9 @@ public final class VillagerTradeSprites {
     }
 
     private static Identifier texture(String name) {
-        return Identifier.fromNamespaceAndPath(
-                TradingCells.MOD_ID,
-                "textures/gui/trader/widgets/" + name + ".png"
-        );
+        String owner = name.startsWith("rows/") ? "villager_trading_cell/"
+                : name.startsWith("arrows/") ? "shared/" : "autotrader/";
+        return Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, owner + name);
     }
 
     public enum State {

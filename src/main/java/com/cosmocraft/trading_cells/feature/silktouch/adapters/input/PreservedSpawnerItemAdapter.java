@@ -101,6 +101,31 @@ public final class PreservedSpawnerItemAdapter {
         return rootEntityData(spawnerStack).flatMap(rootData -> createSpawnEgg(level, rootData));
     }
 
+    /** Replaces the whole tree, never just the mount's id while retaining old riders. */
+    public static boolean configureSpawner(ServerLevel level, SpawnerBlockEntity spawner, ItemStack egg) {
+        CompoundTag entity;
+        if (isTrustedEgg(egg)) {
+            entity = sanitizeEntityTree(trustedEggRootEntityData(egg).orElseThrow());
+        } else {
+            EntityType<?> type = SpawnEggItem.getType(egg);
+            if (type == null || !type.canSpawn(level)) { return false; }
+            entity = new CompoundTag();
+            entity.putString("id", BuiltInRegistries.ENTITY_TYPE.getKey(type).toString());
+        }
+        Entity root = loadEntity(level, entity);
+        if (root == null || !root.getType().canSpawn(level)) { return false; }
+        CompoundTag data = spawner.saveCustomOnly(level.registryAccess());
+        CompoundTag spawnData = new CompoundTag();
+        spawnData.put("entity", entity);
+        data.put("SpawnData", spawnData);
+        data.remove("SpawnPotentials");
+        spawner.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), data));
+        ((BaseSpawnerAccessor) (Object) spawner.getSpawner()).tradingCells$setDisplayEntity(null);
+        spawner.setChanged();
+        level.sendBlockUpdated(spawner.getBlockPos(), spawner.getBlockState(), spawner.getBlockState(), 3);
+        return true;
+    }
+
     /** Atomically removes the configured entity from a placed spawner and returns its egg. */
     public static Optional<ItemStack> extractSpawnEgg(ServerLevel level, SpawnerBlockEntity spawner) {
         CompoundTag blockEntityData = spawner.saveCustomOnly(level.registryAccess());

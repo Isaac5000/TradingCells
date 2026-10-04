@@ -4,7 +4,9 @@ from io import BytesIO
 import hashlib
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
@@ -12,10 +14,13 @@ from PIL.PngImagePlugin import PngInfo
 import injector_geometry
 import simulation_worker_texture
 import essence_tier_textures
+import machine_gui_art
+import generate_machine_gui
+import generate_villager_trade_gui
 from generate_logistics_resources import ASSETS, resource_matches, resources
 from generate_mob_simulation_resources import outlined_union, resources as simulation_resources
 from generate_pipe_textures import TEXTURES as PIPE_TEXTURES, blend
-from generate_family_upgrades import BASES, FAMILIES, MATERIALS, MOB_FARM_SWORD_REGIONS, TERMINAL_BODY, family_base, family_texture, generated, luminance, material_ramp, recolor, rivet_pixels
+from generate_family_upgrades import BASES, FAMILIES, MATERIALS, TERMINAL_BODY, family_base, family_texture, generated, luminance, material_ramp, recolor, rivet_pixels, utility_emblem
 from generate_family_upgrades import WOOD_PALETTE, fixed_emblem_pixels, wooden_emblem_pixels
 from generate_family_upgrades import ORIGINALS, FRAMES, emblem_pixels, quarry_frame, generic_frame
 from generate_family_upgrades import TERMINALS, TERMINAL_ORIGINALS, TERMINAL_STEEL, logistics_terminal_texture
@@ -28,6 +33,87 @@ def encoded(image: Image.Image, **options) -> bytes:
 
 
 class LogisticsResourceTests(unittest.TestCase):
+    def test_gui_backgrounds_live_with_their_machine_resources(self):
+        assets = machine_gui_art.generated_assets()
+        self.assertEqual(len(assets), 71, "Nineteen menus, thirteen REI backgrounds and one XP summary")
+        owners = set(machine_gui_art.SCREENS) | set(machine_gui_art.RECIPE_THEMES)
+        blockstates = machine_gui_art.OUTPUT.parents[1] / "blockstates"
+        for path in assets:
+            relative = path.relative_to(machine_gui_art.OUTPUT)
+            self.assertEqual(relative.parts[0], "container")
+            self.assertIn(relative.parts[1], owners)
+            self.assertTrue((blockstates / f"{relative.parts[1]}.json").is_file())
+            self.assertIn(relative.name, {"background.png", "background_compact.png", "background_small.png",
+                                          "recipe.png", "xp_summary.png"})
+
+    def test_gui_generator_rejects_rgb_changes_with_unchanged_alpha(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "panel.png"
+            expected = Image.new("RGBA", (2, 2), (10, 20, 30, 255))
+            expected.save(path)
+            with (patch.object(generate_machine_gui, "ROOT", Path(directory)),
+                  patch.object(generate_machine_gui, "generated_assets", return_value={path: expected}),
+                  patch.object(generate_machine_gui, "manually_maintained_sprites", return_value={}),
+                  patch.object(generate_villager_trade_gui, "widget_sizes", return_value={})):
+                generate_machine_gui.validate(True)
+                changed = expected.copy()
+                changed.putpixel((0, 0), (11, 20, 30, 255))
+                changed.save(path)
+                with self.assertRaisesRegex(SystemExit, "does not match generator"):
+                    generate_machine_gui.validate(True)
+
+    def test_gui_inventory_has_no_undeclared_textures(self):
+        expected = (generate_machine_gui.generated_assets().keys()
+                    | generate_machine_gui.manually_maintained_sprites().keys()
+                    | generate_villager_trade_gui.widget_sizes().keys())
+        self.assertEqual(len(expected), 103)
+        self.assertEqual(set(generate_machine_gui.ROOT.rglob("*.png")), expected)
+
+    def test_gui_validator_rejects_an_unused_texture(self):
+        with TemporaryDirectory() as directory:
+            Image.new("RGBA", (2, 2)).save(Path(directory) / "unused.png")
+            with (patch.object(generate_machine_gui, "ROOT", Path(directory)),
+                  patch.object(generate_machine_gui, "generated_assets", return_value={}),
+                  patch.object(generate_machine_gui, "manually_maintained_sprites", return_value={}),
+                  patch.object(generate_villager_trade_gui, "widget_sizes", return_value={})):
+                with self.assertRaisesRegex(SystemExit, "without a declared consumer"):
+                    generate_machine_gui.validate(True)
+
+    def test_painted_gui_content_excludes_all_decorative_frame_texels(self):
+        source = Image.new("RGBA", (256, 256), (255, 0, 255, 255))
+        source.paste((20, 30, 40, 255), (56, 56, 200, 200))
+        for _, size in machine_gui_art.SCREENS.values():
+            for width, height in [size, (200, 124), (78, 36)]:
+                for outset in (0,) if (width, height) == (78, 36) else machine_gui_art.FRAME_OUTSETS:
+                    fitted = machine_gui_art.fit_panel(source, (width, height), outset)
+                    self.assertEqual(fitted.size, (width + 2 * outset, height + 2 * outset))
+                    self.assertEqual(set(fitted.crop((outset + 3, outset + 3, outset + width - 3, outset + height - 3)).get_flattened_data()),
+                                     {(20, 30, 40, 255)}, "No frame pixels under controls or labels")
+
+    def test_painted_gui_frames_retain_decorative_depth(self):
+        source = Image.new("RGBA", (256, 256), (255, 0, 255, 255))
+        source.paste((20, 30, 40, 255), (56, 56, 200, 200))
+        panel = machine_gui_art.fit_panel(source, (256, 228))
+        self.assertEqual(panel.size, (298, 270))
+        self.assertEqual(set(panel.crop((0, 0, 24, 270)).get_flattened_data()), {(255, 0, 255, 255)})
+        self.assertEqual(set(panel.crop((0, 0, 298, 24)).get_flattened_data()), {(255, 0, 255, 255)})
+        self.assertEqual(panel.getpixel((24, 24)), (20, 30, 40, 255))
+
+    def test_gui_corner_proportions_and_edge_details_do_not_stretch(self):
+        source = Image.frombytes("RGBA", (256, 256), bytes(
+            component for y in range(256) for x in range(256) for component in (x, y, 80, 255)))
+        for outset in machine_gui_art.FRAME_OUTSETS:
+            frame = outset + 3
+            corner = source.crop((0, 0, 56, 56)).resize((frame, frame), Image.Resampling.NEAREST)
+            length = round(144 * frame / 56)
+            edge = source.crop((56, 0, 200, 56)).resize((length, frame), Image.Resampling.NEAREST)
+            for size in ((204, 215), (348, 228), (200, 124)):
+                panel = machine_gui_art.fit_panel(source, size, outset)
+                self.assertEqual(panel.crop((0, 0, frame, frame)).tobytes(), corner.tobytes())
+                for repeat in range(2):
+                    x = frame + repeat * length
+                    self.assertEqual(panel.crop((x, 0, x + length, frame)).tobytes(), edge.tobytes())
+
     def setUp(self):
         self.image = Image.new("RGBA", (2, 2), (10, 20, 30, 255))
         self.expected = encoded(self.image)
@@ -49,6 +135,28 @@ class LogisticsResourceTests(unittest.TestCase):
         actual = encoded(self.image, pnginfo=metadata)
         self.assertNotEqual(actual, self.expected)
         self.assertTrue(resource_matches("sprite.png", actual, self.expected))
+
+    def test_pipe_wrench_uses_the_authored_32_pixel_sprite(self):
+        root = Path(__file__).resolve().parents[1]
+        with Image.open(root / "tools/assets/logistics/pipe_wrench.png") as source, \
+                Image.open(root / "src/main/resources/assets/trading_cells/textures/item/pipe_wrench.png") as actual:
+            self.assertEqual(actual.size, (32, 32))
+            self.assertEqual(actual.convert("RGBA").tobytes(), source.convert("RGBA").tobytes())
+            self.assertEqual(actual.getchannel("A").getextrema()[0], 0)
+            self.assertGreaterEqual(actual.getchannel("A").getextrema()[1], 250)
+
+    def test_pipe_wrench_reverses_only_held_orientation(self):
+        model = json.loads(resources()[f"{ASSETS}/models/item/pipe_wrench.json"])
+        self.assertEqual(model["textures"]["layer0"], "trading_cells:item/pipe_wrench")
+        self.assertEqual(model["parent"], "minecraft:item/handheld")
+        for hand, original in (("right", 1), ("left", -1)):
+            for view, angle in (("firstperson", 25), ("thirdperson", 55)):
+                pose = model["display"][f"{view}_{hand}hand"]
+                expected = [0, 90 * original, angle * original]
+                self.assertEqual(pose["rotation"], expected)
+                if view == "thirdperson":
+                    self.assertEqual(pose["translation"], [0, 5.33, 0.94])
+        self.assertEqual(len(model["display"]), 4)
 
     def test_rgb_change_with_unchanged_alpha_is_rejected(self):
         self.image.putpixel((0, 0), (11, 20, 30, 255))
@@ -146,6 +254,44 @@ class PipePaletteTests(unittest.TestCase):
 
 
 class SimulationModelTests(unittest.TestCase):
+    def test_interaction_machine_keeps_cage_trays_and_articulated_arm(self):
+        generated = simulation_resources()
+        model = json.loads(generated[f"{ASSETS}/models/block/entity_interaction_farm.json"])
+        self.assertEqual(model["textures"]["base"], "minecraft:block/black_concrete")
+        self.assertEqual(model["textures"]["edge"], "trading_cells:block/logistics/fluid_pipe/fluid_pipe")
+        self.assertEqual(model["textures"]["mechanism"], "trading_cells:block/interaction_mechanism")
+        self.assertEqual(model["textures"]["mechanism_edge"], "trading_cells:block/interaction_mechanism_edge")
+        root = Path(__file__).resolve().parents[1] / "src/main/resources" / ASSETS / "textures/block"
+        for name in ("interaction_mechanism", "interaction_mechanism_edge"):
+            self.assertFalse((root / f"{name}.png.mcmeta").exists(), "Arm textures are static")
+        elements = model["elements"]
+        self.assertLessEqual(len(elements), 700, "Static mechanism must keep a bounded quad count")
+        self.assertTrue(all(0 <= part["from"][axis] <= part["to"][axis] <= 16
+                            for part in elements for axis in range(3)))
+
+        def surface_at(x, y, z):
+            return any("up" in part["faces"] and part["from"][1] == part["to"][1] == y
+                       and part["from"][0] <= x <= part["to"][0]
+                       and part["from"][2] <= z <= part["to"][2] for part in elements)
+
+        for x in (1, 15):
+            for z in (1, 15):
+                self.assertTrue(surface_at(x, 16, z), "Keep all four cage pillars")
+        self.assertTrue(surface_at(3.5, 2.75, 3), "ITEM tray must remain below the worker")
+        self.assertTrue(surface_at(12, 2.75, 3), "TOOL tray must remain below the target")
+        self.assertTrue(surface_at(11, 4.5, 8), "Target pedestal must remain solid")
+        self.assertTrue(surface_at(4.5, 6, 12.5), "Keep rear processing core")
+        mechanism = [part for part in elements
+                     if any(face["texture"] == "#mechanism" for face in part["faces"].values())]
+        self.assertGreater(len(mechanism), 12, "Keep the arm joints and end effector")
+        self.assertTrue(all(part["from"][1] >= 4 and part["to"][1] <= 11.5
+                            and part["from"][2] >= 8 for part in mechanism),
+                        "Arm stays behind the operator and target, below the cage top")
+        panel = [part for part in elements
+                 if any(face["texture"] == "#panel" for face in part["faces"].values())]
+        self.assertFalse(panel, "Front sign was removed")
+        self.assertNotIn("panel", model["textures"])
+
     def test_entity_previews_keep_the_baked_pedestal(self):
         generated = simulation_resources()
         for name, base, renderer in (("mob_farm", "block/mob_farm", "block_entity_item"),):
@@ -250,11 +396,6 @@ class UpgradePaletteTests(unittest.TestCase):
                     for point in wooden_emblem_pixels(family):
                         self.assertEqual(result.getpixel(point), base.getpixel(point))
         self.assertEqual(images[ORIGINALS / "quarry/copper_upgrade.png"].tobytes(), quarry.tobytes())
-        for material in MATERIALS:
-            speed = images[ORIGINALS / "mob_farm_speed" / f"{material}_upgrade.png"]
-            capacity = images[ORIGINALS / "mob_farm_capacity" / f"{material}_upgrade.png"]
-            for bounds in MOB_FARM_SWORD_REGIONS:
-                self.assertEqual(speed.crop(bounds).tobytes(), capacity.crop(bounds).tobytes())
 
     def test_generic_frames_keep_quarry_colors_without_the_pickaxe(self):
         quarry = family_base("quarry")
@@ -332,6 +473,56 @@ class UpgradePaletteTests(unittest.TestCase):
             if frame == 32:
                 self.assertEqual(elements, original)
 
+    def test_syringe_reload_approaches_from_opposite_side_above_socket(self):
+        root = Path(__file__).resolve().parents[1] / "src/main/resources" / ASSETS
+        original = injector_geometry.vial()[0]["from"]
+        for frame in range(33):
+            right = json.loads((root / f"models/item/essence/syringe_vial_{frame:02d}.json").read_text())
+            left = json.loads((root / f"models/item/essence/syringe_vial_{frame:02d}_left.json").read_text())
+            r, l = right["elements"][0]["from"], left["elements"][0]["from"]
+            self.assertGreaterEqual(r[1], original[1], "Vial must never come from below")
+            self.assertEqual(r[:2], l[:2])
+            self.assertAlmostEqual(r[2] - original[2], original[2] - l[2], places=4)
+            self.assertLessEqual(r[2], original[2])
+            if frame >= 24:
+                self.assertEqual(r, original, "Vial stays seated while the opposite arm retracts")
+        body = json.loads((root / "models/item/essence_extractor.json").read_text())
+        self.assertEqual(body["display"]["firstperson_righthand"]["translation"], [0, 2, -1])
+        self.assertEqual(body["display"]["firstperson_lefthand"]["translation"], [0, 2, -1])
+        definition = json.loads((root / "items/essence_extractor.json").read_text())["model"]["fallback"]
+        for entry in definition["entries"]:
+            self.assertEqual(entry["model"]["models"][0]["model"], "trading_cells:item/essence_extractor",
+                             "Body remains present in every reload frame")
+
+    def test_syringe_third_person_needle_points_away_and_grip_is_in_palm(self):
+        import math
+
+        def rotate(point, axis, degrees):
+            angle = math.radians(degrees)
+            c, s = math.cos(angle), math.sin(angle)
+            x, y, z = point
+            return ((x, c * y - s * z, s * y + c * z) if axis == 0 else
+                    (c * x + s * z, y, -s * x + c * z) if axis == 1 else
+                    (c * x - s * y, s * x + c * y, z))
+
+        root = Path(__file__).resolve().parents[1] / "src/main/resources" / ASSETS / "models/item"
+        model = json.loads((root / "essence_extractor.json").read_text())
+        for left in (False, True):
+            transform = model["display"]["thirdperson_lefthand" if left else "thirdperson_righthand"]
+
+            def display(point):
+                value = tuple(p * scale for p, scale in zip(point, transform["scale"]))
+                for axis in (2, 1, 0):
+                    value = rotate(value, axis, transform["rotation"][axis] * (-1 if left and axis != 0 else 1))
+                return value
+
+            # ItemInHandLayer: Y 180, X -90; raised humanoid arm: X -90.
+            needle = rotate(rotate(rotate(display((1, 0, 0)), 1, 180), 0, -90), 0, -90)
+            self.assertLess(needle[2], -0.8, "Needle must point forward, not into the player")
+            grip = display((3.8 - 8, 4.8 - 8, 0))
+            for coordinate, translation in zip(grip, transform["translation"]):
+                self.assertAlmostEqual(coordinate + translation, 0, places=4)
+
     def test_injector_liquid_stays_inside_vial_through_extraction(self):
         root = Path(__file__).resolve().parents[1] / "src/main/resources" / ASSETS / "models/item/essence"
         for tier in range(1, 5):
@@ -389,12 +580,21 @@ class UpgradePaletteTests(unittest.TestCase):
                     self.assertEqual(model["textures"]["layer0"], f"trading_cells:{model_name}")
                     with Image.open(root / f"textures/{model_name}.png") as colored:
                         self.assertEqual(colored.size, original.size)
-                        self.assertEqual(colored.getchannel("A").tobytes(), original.getchannel("A").tobytes())
-                        self.assertEqual(colored.tobytes(), essence_tier_textures.variant(name, original, tier).tobytes())
-                        for y in range(32):
-                            for x in range(32):
-                                if (x, y) not in mask:
-                                    self.assertEqual(colored.getpixel((x, y)), original.getpixel((x, y)))
+                        if name == "raw_creature_essence_vial":
+                            source = Path(__file__).resolve().parent / "assets/essence/inventory_vials" / f"{name}_tier_{tier}.png"
+                            with Image.open(source) as authored:
+                                self.assertEqual(authored.size, (32, 32))
+                                self.assertEqual(colored.tobytes(), authored.convert("RGBA").tobytes())
+                            low, high = colored.getchannel("A").getextrema()
+                            self.assertEqual(low, 0)
+                            self.assertGreaterEqual(high, 254)
+                        else:
+                            self.assertEqual(colored.getchannel("A").tobytes(), original.getchannel("A").tobytes())
+                            self.assertEqual(colored.tobytes(), essence_tier_textures.variant(name, original, tier).tobytes())
+                            for y in range(32):
+                                for x in range(32):
+                                    if (x, y) not in mask:
+                                        self.assertEqual(colored.getpixel((x, y)), original.getpixel((x, y)))
                         red, green, blue, _ = colored.getpixel((15, 17))
                         if tier == 1:
                             self.assertGreater(green, max(red, blue))
@@ -481,38 +681,29 @@ class UpgradePaletteTests(unittest.TestCase):
                                 self.assertGreater(red, blue)
                                 self.assertGreater(red, green)
 
-    def test_simulation_upgrades_match_the_quarry_footprint_and_sword_model(self):
+    def test_utility_upgrades_bake_vanilla_icons_without_changing_frames(self):
         with Image.open(BASES / "quarry.png") as source:
             bounds = source.convert("RGBA").getchannel("A").getbbox()
-        swords = []
-        for family in ("mob_farm_speed", "mob_farm_capacity"):
+        icons = []
+        for family in ("speed", "mob_farm_capacity"):
             base = family_base(family)
             self.assertEqual(base.getchannel("A").getbbox(), bounds)
-            # Shared blade, crossguard and pommel silhouette, excluding the side indicators.
-            silhouette = []
-            for left, top, right, bottom in ((28, 18, 36, 34), (24, 35, 40, 40), (28, 42, 35, 47)):
-                for y in range(top, bottom):
-                    for x in range(left, right):
-                        red, green, blue, _ = base.getpixel((x, y))
-                        silhouette.append(green > red * 1.15 and blue > red * 1.15
-                                          or max(red, green, blue) - min(red, green, blue) < 25
-                                          and max(red, green, blue) > 100)
-            swords.append(silhouette)
-            for y in (16, 17, 48, 49):
-                for x in range(27, 37):
-                    red, green, blue, _ = base.getpixel((x, y))
-                    self.assertGreater(red, green, "Orange gap must separate the sword and the frame")
-                    self.assertGreater(red, blue)
-        self.assertEqual(swords[0], swords[1], "Both upgrades must depict the same sword model")
-        for material in MATERIALS:
-            first = family_texture(family_base("mob_farm_speed"), material, "mob_farm_speed")
-            second = family_texture(family_base("mob_farm_capacity"), material, "mob_farm_capacity")
-            for bounds in MOB_FARM_SWORD_REGIONS:
-                self.assertEqual(first.crop(bounds).tobytes(), second.crop(bounds).tobytes(),
-                                 "Sword pixels must match exactly at every material tier")
+            icon = utility_emblem(family)
+            icons.append(icon.tobytes())
+            left, top, right, bottom = icon.getchannel("A").getbbox()
+            self.assertTrue(18 <= left < right <= 46 and 18 <= top < bottom <= 46)
+            mask = emblem_pixels(family, base)
+            for material in MATERIALS:
+                result = generated()[ORIGINALS / family / f"{material}_upgrade.png"]
+                frame = generic_frame(material)
+                for y in range(64):
+                    for x in range(64):
+                        expected = icon if (x, y) in mask else frame
+                        self.assertEqual(result.getpixel((x, y)), expected.getpixel((x, y)))
+        self.assertNotEqual(icons[0], icons[1], "Clock and bundle remain different vanilla symbols")
 
     def test_emblem_wood_and_gold_do_not_follow_the_upgrade_material(self):
-        for family in ("quarry", "piglin_barter", "mob_farm_speed", "mob_farm_capacity"):
+        for family in ("quarry", "piglin_barter"):
             base = family_base(family)
             mask = fixed_emblem_pixels(family, base)
             self.assertGreater(len(mask), 10)
@@ -534,6 +725,8 @@ class UpgradePaletteTests(unittest.TestCase):
     def test_all_upgrade_items_use_only_their_family_texture(self):
         root = Path(__file__).resolve().parents[1] / "src/main/resources"
         names = [f"{family}_{material}_upgrade" for family in FAMILIES if family != "pipe" for material in MATERIALS]
+        names = [name.removeprefix("mob_farm_") for name in names]
+        names = [name.removeprefix("mob_farm_") for name in names]
         names += [f"{tier}_pipe_upgrade" for tier in ("copper", "iron", "gold", "diamond", "netherite")]
         generated_resources = resources()
         for name in names:

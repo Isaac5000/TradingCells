@@ -29,7 +29,7 @@ las traducciones puras de API permanecen en adaptadores.
 | `combat` | Decapitacion, Toque del Guerrero, Fragmentos de la Tormenta y eventos globales de combate. |
 | `breeders` | Alimentos, coste, tiempo y produccion de criaderos. |
 | `incubators` | Crecimiento de entidades capturadas. |
-| `farmer` | Cultivos para aldeanos y piglins, fortuna, eficiencia y desgaste de azadas. |
+| `farmer` | Cultivos para aldeanos y piglins, fortuna, mejora de velocidad y desgaste de azadas. |
 | `quarry` | Canteras para aldeanos y piglins, catalogos de materiales, herramientas y minado profundo. |
 | `converter` | Estados de infeccion, curacion y descuento. |
 | `ironfarm` | Produccion, multiplicadores y animacion temporal. |

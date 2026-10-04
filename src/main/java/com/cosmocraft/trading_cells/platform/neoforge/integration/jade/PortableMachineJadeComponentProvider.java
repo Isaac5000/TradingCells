@@ -29,6 +29,11 @@ public final class PortableMachineJadeComponentProvider implements IBlockCompone
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
         tooltip.remove(JadeIds.UNIVERSAL_FLUID_STORAGE);
         var data = accessor.getServerData();
+        for (String channel : new String[]{"item", "tool"}) {
+            String key = channel.equals("item") ? PortableMachineJadeDataProvider.INTERACTION_ITEM : PortableMachineJadeDataProvider.INTERACTION_TOOL;
+            data.getString(key).ifPresent(status -> tooltip.add(Component.translatable("gui.trading_cells.interaction." + channel)
+                    .append(": ").append(Component.translatable("gui.trading_cells.interaction.status." + status))));
+        }
         data.getInt(PortableMachineJadeDataProvider.EXPERIENCE).ifPresent(experience -> {
             int line = tooltip.size();
             tooltip.add(new ExperienceOrbJadeElement());
@@ -79,6 +84,9 @@ public final class PortableMachineJadeComponentProvider implements IBlockCompone
 
     private static int progressColor(BlockAccessor accessor) {
         String path = BuiltInRegistries.BLOCK.getKey(accessor.getBlockState().getBlock()).getPath();
+        if (path.equals("mob_farm") || path.equals("entity_interaction_farm") || path.equals("essence_stabilizer")) {
+            return 0xFF26C6DA;
+        }
         if (path.contains("iron_farm")) {
             return 0xFFD7D7D7;
         }

@@ -32,7 +32,7 @@ public final class EssenceStabilizerMenu extends AbstractContainerMenu {
                 }
             });
         }
-        addStandardInventorySlots(inventory, 37, 130);
+        addStandardInventorySlots(inventory, 37, 124);
         addDataSlots(data);
     }
     public int progress() { return data.get(0); }

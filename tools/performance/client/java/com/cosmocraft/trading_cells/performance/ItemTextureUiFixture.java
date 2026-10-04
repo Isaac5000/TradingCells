@@ -22,7 +22,7 @@ final class ItemTextureUiFixture {
 
     private ItemTextureUiFixture() { }
 
-    static boolean active() { return mode().equals("item-textures") || mode().equals("pipe-hands"); }
+    static boolean active() { return mode().equals("item-textures") || mode().equals("pipe-hands") || mode().equals("vanilla-icons"); }
     static boolean ready() { return ready; }
     private static String mode() { return System.getProperty("trading_cells.performance.client.uiFixture", ""); }
 
@@ -40,6 +40,7 @@ final class ItemTextureUiFixture {
                 || !minecraft.player.getInventory().getItem(0).is(stack("item_pipe").getItem())
                 || minecraft.gui.screen() != null) { return; }
         minecraft.player.getInventory().setSelectedSlot(0);
+        if (mode().equals("vanilla-icons")) { minecraft.gui.setScreen(new VanillaIcons()); return; }
         if (mode().equals("pipe-hands")) {
             minecraft.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
             minecraft.options.fov().set(45);
@@ -69,7 +70,7 @@ final class ItemTextureUiFixture {
             super(Component.literal("Item textures"));
             for (String name : new String[]{"villager_capturer", "piglin_capturer", "unbreakable_villager_capturer",
                     "unbreakable_piglin_capturer", "storm_shard"}) { items.add(stack(name)); }
-            for (String family : new String[]{"quarry", "piglin_barter", "pipe", "mob_farm_speed", "mob_farm_capacity"}) {
+            for (String family : new String[]{"quarry", "piglin_barter", "pipe", "speed", "capacity"}) {
                 String[] materials = {"copper", "iron", "gold", "diamond", "netherite"};
                 String[] pipeTiers = {"basic", "improved", "advanced", "ultimate", "infinite"};
                 for (int tier = 0; tier < materials.length; tier++) {
@@ -97,5 +98,19 @@ final class ItemTextureUiFixture {
 
         @Override
         public boolean isPauseScreen() { return false; }
+    }
+
+    private static final class VanillaIcons extends Screen {
+        VanillaIcons() { super(Component.literal("Vanilla inventory icon export")); }
+        @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+            graphics.fill(0, 0, width, height, 0xFFFF00FF);
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(80, 80);
+            graphics.pose().scale(2, 2);
+            graphics.item(new ItemStack(net.minecraft.world.item.Items.CHEST), 0, 0);
+            graphics.pose().popMatrix();
+            ready = true;
+        }
+        @Override public boolean isPauseScreen() { return false; }
     }
 }

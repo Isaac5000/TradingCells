@@ -13,7 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public final class EssenceWorkbenchMenu extends AbstractContainerMenu {
-    public static final int WIDTH = 332, HEIGHT = 246;
+    public static final int WIDTH = 332, HEIGHT = 204;
     private final Container container;
     private final Player owner;
     private final ContainerData data;
@@ -31,7 +31,7 @@ public final class EssenceWorkbenchMenu extends AbstractContainerMenu {
         owner = inventory.player;
         checkContainerSize(container, 4);
         checkContainerDataCount(data, 5);
-        int[] xs = {18, 58, 18};
+        int[] xs = {18, 58, 138};
         for (int index = 0; index < 3; index++) {
             final int input = index;
             addSlot(new Slot(container, index, xs[index], index == 2 ? 84 : 50) {
@@ -58,7 +58,7 @@ public final class EssenceWorkbenchMenu extends AbstractContainerMenu {
             }
             @Override public boolean isFake() { return true; }
         });
-        addStandardInventorySlots(inventory, 84, 158);
+        addStandardInventorySlots(inventory, 12, 124);
         addDataSlots(data);
     }
 

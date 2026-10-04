@@ -16,6 +16,7 @@
   "slots": [
     "mainhand"
   ],
-  "supported_items": "#minecraft:hoes",
+  "supported_items": "#trading_cells:enchantable/farmers_touch",
+  "primary_items": "#minecraft:hoes",
   "weight": 1
 }

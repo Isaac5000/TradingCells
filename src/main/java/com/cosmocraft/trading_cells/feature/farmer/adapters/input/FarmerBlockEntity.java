@@ -46,14 +46,16 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
     public static final int HOE_SLOT = 2;
     public static final int FIRST_OUTPUT_SLOT = 3;
     public static final int OUTPUT_SLOT_COUNT = FarmerHarvest.MAX_DISTINCT_OUTPUTS;
-    public static final int CONTAINER_SIZE = FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT;
+    public static final int SPEED_SLOT = FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT;
+    public static final int CAPACITY_SLOT = SPEED_SLOT + 1;
+    public static final int CONTAINER_SIZE = CAPACITY_SLOT + 1;
 
     private static final String SLOT_TAG_PREFIX = "Slot";
     private static final String GROWTH_TICKS_TAG = "GrowthTicks";
     private static final String GROWTH_DURATION_TICKS_TAG = "GrowthDurationTicks";
     private static final int[] TOP_SLOTS = new int[]{CROP_SLOT};
-    private static final int[] SIDE_SLOTS = new int[]{WORKER_SLOT, HOE_SLOT};
-    private static final int[] BOTTOM_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, CONTAINER_SIZE).toArray();
+    private static final int[] SIDE_SLOTS = new int[]{WORKER_SLOT, HOE_SLOT, SPEED_SLOT, CAPACITY_SLOT};
+    private static final int[] BOTTOM_SLOTS = IntStream.range(FIRST_OUTPUT_SLOT, SPEED_SLOT).toArray();
     private static final int[] NO_SLOTS = new int[0];
     private final FarmerKind kind;
     private final NonNullList<ItemStack> items = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
@@ -75,7 +77,6 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
     private ItemStack cachedHoe = ItemStack.EMPTY;
     private double cachedHoeSpeed;
     private double cachedHoeTierPosition;
-    private int cachedEfficiencyLevel;
     private int cachedFortuneLevel;
     private boolean cachedSilkTouch;
     private boolean hoeCacheInitialized;
@@ -162,6 +163,9 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
                 && !isAdultWorkerUncached(items.get(WORKER_SLOT))) {
             reason = "worker_required";
         } else if (current == MachineActivityController.Activity.INACTIVE
+                && !HoeTierCatalog.isSupported(items.get(HOE_SLOT))) {
+            reason = "tool_required";
+        } else if (current == MachineActivityController.Activity.INACTIVE
                 && !FarmerCropStackAdapter.isSupported(kind, items.get(CROP_SLOT))) {
             reason = "input_required";
         } else {
@@ -188,7 +192,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
         }
 
         refreshRuntimeCaches();
-        boolean canCultivate = cachedAdultWorker
+        boolean canCultivate = cachedAdultWorker && HoeTierCatalog.isSupported(items.get(HOE_SLOT))
                 && (cachedCrop != FarmerCrop.NONE || cachedDynamicCrop);
         int maximumGrowthTicks = updateGrowthDuration();
         boolean completingCycle = growthTicks >= maximumGrowthTicks - 1;
@@ -250,19 +254,36 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
             return;
         }
 
-        if (cachedDynamicCrop) {
-            List<ItemStack> completedHarvest = pendingDynamicHarvest;
-            storeStacks(completedHarvest);
-            boolean nextHarvestCanFit = completedHarvest.isEmpty() || canStoreAny(completedHarvest);
-            clearPendingDynamicHarvest();
+        int harvests = com.cosmocraft.trading_cells.platform.neoforge.machine.MachineCapacityUpgrade.multiplier(items.get(CAPACITY_SLOT));
+        for (int harvest = 0; harvest < harvests; harvest++) {
+            boolean nextHarvestCanFit;
+            if (cachedDynamicCrop) {
+                if (harvest > 0) {
+                    pendingDynamicHarvest = FarmerCropStackAdapter.dynamicHarvest(serverLevel, worldPosition, kind,
+                            items.get(CROP_SLOT), items.get(HOE_SLOT), cachedFortuneLevel, cachedSilkTouch);
+                }
+                List<ItemStack> completedHarvest = pendingDynamicHarvest;
+                storeStacks(completedHarvest);
+                nextHarvestCanFit = completedHarvest.isEmpty() || canStoreAny(completedHarvest);
+                clearPendingDynamicHarvest();
+            } else {
+                storeHarvest(cachedHarvest);
+                nextHarvestCanFit = canStoreAny(cachedMaximumHarvest);
+            }
+            damageHoeAfterHarvest();
+            refreshHoeCache();
+            refreshHarvestCache();
+            if (!HoeTierCatalog.isSupported(items.get(HOE_SLOT))) {
+                activity.transition(MachineActivityController.Activity.INACTIVE);
+                setCultivating(false);
+                break;
+            }
             if (!nextHarvestCanFit) {
                 activity.transition(MachineActivityController.Activity.BLOCKED);
                 setCultivating(false);
+                break;
             }
-        } else {
-            storeHarvest(cachedHarvest);
         }
-        damageHoeAfterHarvest();
         markChangedAndSync();
     }
 
@@ -320,7 +341,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
             clearPendingDynamicHarvest();
         }
         invalidateCache(slot);
-        if (slot == HOE_SLOT) {
+        if (slot == HOE_SLOT || slot == SPEED_SLOT) {
             updateGrowthDuration();
         }
         markChangedAndSync();
@@ -343,7 +364,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
             clearPendingDynamicHarvest();
         }
         invalidateCache(slot);
-        if (slot == HOE_SLOT) {
+        if (slot == HOE_SLOT || slot == SPEED_SLOT) {
             updateGrowthDuration();
         }
         return removed;
@@ -351,9 +372,10 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
 
     @Override
     public void setItem(int slot, @NonNull ItemStack stack, boolean insideTransaction) {
-        if (insideTransaction && isOutputSlot(slot)) {
-            // Rollback restores produced items without allowing external output insertion.
+        if (insideTransaction && (isOutputSlot(slot) || slot == SPEED_SLOT || slot == CAPACITY_SLOT)) {
+            // Recompute speed on the next tick, after the transaction commits or rolls back.
             items.set(slot, stack);
+            activity.wake();
         } else {
             setItem(slot, stack);
         }
@@ -370,7 +392,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
         ItemStack previous = items.get(slot);
         updateGrowthDuration();
         ItemStack inserted = stack.copy();
-        int max = slot == WORKER_SLOT || slot == CROP_SLOT || slot == HOE_SLOT
+        int max = slot == WORKER_SLOT || slot == CROP_SLOT || slot == HOE_SLOT || slot == SPEED_SLOT || slot == CAPACITY_SLOT
                 ? 1
                 : Math.min(64, inserted.getMaxStackSize());
         inserted.setCount(Math.min(max, inserted.getCount()));
@@ -384,7 +406,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
             clearPendingDynamicHarvest();
         }
         invalidateCache(slot);
-        if (slot == HOE_SLOT) {
+        if (slot == HOE_SLOT || slot == SPEED_SLOT) {
             updateGrowthDuration();
         }
         markChangedAndSync();
@@ -401,6 +423,8 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
             case WORKER_SLOT -> isAdultWorkerUncached(stack);
             case CROP_SLOT -> FarmerCropStackAdapter.isSupported(kind, stack);
             case HOE_SLOT -> HoeTierCatalog.isSupported(stack);
+            case SPEED_SLOT -> com.cosmocraft.trading_cells.platform.neoforge.machine.MachineSpeedUpgrade.accepts(stack);
+            case CAPACITY_SLOT -> com.cosmocraft.trading_cells.platform.neoforge.machine.MachineCapacityUpgrade.accepts(stack);
             default -> false;
         };
     }
@@ -511,7 +535,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
         return farmerService.effectiveGrowthTicks(
                 cachedHoeSpeed,
                 cachedHoeTierPosition,
-                cachedEfficiencyLevel
+                com.cosmocraft.trading_cells.platform.neoforge.machine.MachineSpeedUpgrade.tier(items.get(SPEED_SLOT))
         );
     }
 
@@ -631,7 +655,6 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
         cachedHoe = hoe.copy();
         cachedHoeSpeed = HoeTierCatalog.miningSpeed(hoe);
         cachedHoeTierPosition = HoeTierCatalog.timingPosition(hoe);
-        cachedEfficiencyLevel = enchantmentLevel(hoe, Enchantments.EFFICIENCY);
         cachedFortuneLevel = enchantmentLevel(hoe, Enchantments.FORTUNE);
         cachedSilkTouch = enchantmentLevel(hoe, Enchantments.SILK_TOUCH) > 0;
         hoeCacheInitialized = true;
@@ -691,7 +714,7 @@ public abstract class FarmerBlockEntity extends PortableMachineBlockEntity imple
     }
 
     private static boolean isOutputSlot(int slot) {
-        return slot >= FIRST_OUTPUT_SLOT && slot < CONTAINER_SIZE;
+        return slot >= FIRST_OUTPUT_SLOT && slot < SPEED_SLOT;
     }
 
     private static boolean isValidSlot(int slot) {

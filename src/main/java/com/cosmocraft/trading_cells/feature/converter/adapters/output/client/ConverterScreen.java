@@ -8,16 +8,12 @@ import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScree
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotSprites;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
 import net.minecraft.world.entity.player.Inventory;
 
-public final class ConverterScreen extends AbstractContainerScreen<ConverterMenu> {
-    private static final Identifier MOSSY_COBBLESTONE = Identifier.fromNamespaceAndPath(
-            "minecraft",
-            "textures/block/mossy_cobblestone.png"
-    );
+public final class ConverterScreen extends MachineContainerScreen<ConverterMenu> {
     private static final MachineScreenTheme THEME = MachineScreenTheme.CONVERTER;
     private static final int PROGRESS_FRAME_X = MachineScreenLayout.machineX(54);
     private static final int PROGRESS_FRAME_Y = 95;
@@ -38,7 +34,7 @@ public final class ConverterScreen extends AbstractContainerScreen<ConverterMenu
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         int x = leftPos;
         int y = topPos;
-        MachineScreenLayout.drawBackground(graphics, x, y, MOSSY_COBBLESTONE, THEME);
+        MachineScreenLayout.drawBackground(graphics, x, y, MachineGuiSkin.CONVERTER, THEME);
         MachineScreenLayout.drawSlot(
                 graphics,
                 x,

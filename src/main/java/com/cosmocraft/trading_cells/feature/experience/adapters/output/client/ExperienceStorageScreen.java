@@ -12,15 +12,13 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
-public final class ExperienceStorageScreen extends AbstractContainerScreen<ExperienceStorageMenu> {
-    private static final Identifier SURFACE =
-            Identifier.withDefaultNamespace("textures/block/smooth_stone.png");
+public final class ExperienceStorageScreen extends MachineContainerScreen<ExperienceStorageMenu> {
     private static final MachineScreenTheme THEME = MachineScreenTheme.IRON_FARM;
     private static final int STORAGE_BOX_X = 8;
     private static final int PLAYER_BOX_X = 104;
@@ -31,7 +29,7 @@ public final class ExperienceStorageScreen extends AbstractContainerScreen<Exper
     private static final int FIELD_Y = 72;
     private static final int FIELD_WIDTH = 148;
     private static final int FIELD_HEIGHT = 18;
-    private static final int BUTTON_Y = 95;
+    private static final int BUTTON_Y = 92;
     private static final int BUTTON_WIDTH = 72;
     private static final int CONVERTER_BUTTON_X = 180;
     private static final int CONVERTER_PANEL_X = 8;
@@ -135,7 +133,7 @@ public final class ExperienceStorageScreen extends AbstractContainerScreen<Exper
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         int x = leftPos;
         int y = topPos;
-        MachineScreenLayout.drawBackground(graphics, x, y, SURFACE, THEME);
+        MachineScreenLayout.drawBackground(graphics, x, y, MachineGuiSkin.EXPERIENCE_STORAGE, THEME);
         if (converterOpen) {
             drawExperienceConverter(graphics, x, y);
         } else {

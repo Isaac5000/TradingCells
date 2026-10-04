@@ -12,6 +12,7 @@ import com.cosmocraft.trading_cells.feature.trader.adapters.input.NetheritePigli
 import com.cosmocraft.trading_cells.feature.trader.adapters.input.NetheritePiglinBarteringCellMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.FeatureComposition;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.SlotRenderer;
@@ -35,8 +36,10 @@ final class TradingCellsReiMachineDisplay {
     private static final int PANEL_FRAME_SIZE = 2;
     private static final int ENTRY_CONTENT_OFFSET = -1;
 
-    static final int WIDTH = MachineScreenLayout.MACHINE_PANEL_WIDTH + PANEL_FRAME_SIZE * 2;
-    static final int HEIGHT = MachineScreenLayout.MACHINE_PANEL_HEIGHT + PANEL_FRAME_SIZE * 2;
+    private static final int CONTENT_WIDTH = MachineScreenLayout.MACHINE_PANEL_WIDTH + PANEL_FRAME_SIZE * 2;
+    private static final int CONTENT_HEIGHT = 124;
+    static final int WIDTH = CONTENT_WIDTH + 2 * MachineGuiSkin.FRAME_OUTSET;
+    static final int HEIGHT = CONTENT_HEIGHT + 2 * MachineGuiSkin.FRAME_OUTSET;
 
     private static final int CONVERTER_ENTITY_INPUT_X = 20;
     private static final int CONVERTER_ENTITY_OUTPUT_X = 166;
@@ -45,18 +48,21 @@ final class TradingCellsReiMachineDisplay {
     private static final int BARTER_GOLD_X = 56;
     private static final int BARTER_OUTPUT_X = 168;
     private static final int BARTER_SLOT_Y = 51;
-    private static final int NETHERITE_PIGLIN_X = 166;
-    private static final int NETHERITE_PIGLIN_Y = 57;
-    private static final int FARMER_WORKER_X = 64;
-    private static final int FARMER_HOE_X = 94;
-    private static final int FARMER_CROP_X = 124;
+    private static final int NETHERITE_PIGLIN_X = 43;
+    private static final int NETHERITE_PIGLIN_Y = 36;
+    private static final int FARMER_WORKER_X = (MachineScreenLayout.WIDTH - (4 * 36 + 16)) / 2;
+    private static final int FARMER_HOE_X = FARMER_WORKER_X + 36;
+    private static final int FARMER_CROP_X = FARMER_WORKER_X + 72;
+    private static final int FARMER_SPEED_X = FARMER_WORKER_X + 108;
+    private static final int FARMER_CAPACITY_X = FARMER_WORKER_X + 144;
+    private static final int SPEED_INPUT_X = 146;
     private static final int FARMER_INPUT_Y = 30;
     private static final int FARMER_OUTPUT_FIRST_X = 22;
     private static final int FARMER_OUTPUT_FIRST_Y = 82;
-    private static final int QUARRY_WORKER_X = 58;
-    private static final int QUARRY_PICKAXE_X = 94;
-    private static final int QUARRY_UPGRADE_X = 130;
-    private static final int QUARRY_INPUT_Y = 24;
+    private static final int QUARRY_WORKER_X = 38;
+    private static final int QUARRY_PICKAXE_X = 74;
+    private static final int QUARRY_UPGRADE_X = 110;
+    private static final int QUARRY_INPUT_Y = 30;
     private static final int QUARRY_OUTPUT_FIRST_X = 22;
     private static final int QUARRY_OUTPUT_FIRST_Y = 81;
     private static final int COMPACT_OUTPUT_COLUMN_COUNT = 9;
@@ -77,10 +83,10 @@ final class TradingCellsReiMachineDisplay {
 
     static List<Widget> setup(TradingCellsReiDisplay display, Rectangle suppliedBounds) {
         Rectangle bounds = new Rectangle(
-                suppliedBounds.getCenterX() - WIDTH / 2,
-                suppliedBounds.y,
-                WIDTH,
-                HEIGHT
+                suppliedBounds.getCenterX() - CONTENT_WIDTH / 2,
+                suppliedBounds.y + MachineGuiSkin.FRAME_OUTSET,
+                CONTENT_WIDTH,
+                CONTENT_HEIGHT
         );
         List<Widget> widgets = new ArrayList<>();
         widgets.add(createBackground(display, bounds));
@@ -113,26 +119,10 @@ final class TradingCellsReiMachineDisplay {
         return Widgets.createDrawableWidget((graphics, mouseX, mouseY, delta) -> {
             TradingCellsReiLayout layout = display.layout();
             MachineScreenTheme theme = layout.theme();
-            graphics.fill(
-                    bounds.x,
-                    bounds.y,
-                    bounds.x + bounds.width,
-                    bounds.y + bounds.height,
-                    theme.frameDark()
-            );
-            graphics.fill(
-                    bounds.x + 1,
-                    bounds.y + 1,
-                    bounds.x + bounds.width - 1,
-                    bounds.y + bounds.height - 1,
-                    theme.frameLight()
-            );
-            MachineScreenLayout.drawMachinePanelSurface(
-                    graphics,
-                    bounds.x + PANEL_FRAME_SIZE,
-                    bounds.y + PANEL_FRAME_SIZE,
-                    layout.surface()
-            );
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+                    layout.skin().texture(CONTENT_WIDTH, CONTENT_HEIGHT),
+                    bounds.x - MachineGuiSkin.FRAME_OUTSET, bounds.y - MachineGuiSkin.FRAME_OUTSET,
+                    0, 0, WIDTH, HEIGHT - 5, WIDTH, HEIGHT, WIDTH, HEIGHT);
             drawSlotFrames(graphics, display, bounds);
             if (layout.kind() == TradingCellsReiLayout.Kind.ARCANE_INFUSION) {
                 drawArcaneInfusionInfo(graphics, display, bounds);
@@ -173,6 +163,8 @@ final class TradingCellsReiMachineDisplay {
                 drawSlot(graphics, bounds, FARMER_WORKER_X, FARMER_INPUT_Y, display);
                 drawSlot(graphics, bounds, FARMER_HOE_X, FARMER_INPUT_Y, display);
                 drawSlot(graphics, bounds, FARMER_CROP_X, FARMER_INPUT_Y, display);
+                drawSlot(graphics, bounds, FARMER_SPEED_X, FARMER_INPUT_Y, display);
+                drawSlot(graphics, bounds, FARMER_CAPACITY_X, FARMER_INPUT_Y, display);
                 for (int index = 0; index < FarmerBlockEntity.OUTPUT_SLOT_COUNT; index++) {
                     drawSlot(
                             graphics,
@@ -266,6 +258,7 @@ final class TradingCellsReiMachineDisplay {
                 drawSlot(graphics, bounds, QUARRY_WORKER_X, QUARRY_INPUT_Y, display);
                 drawSlot(graphics, bounds, QUARRY_PICKAXE_X, QUARRY_INPUT_Y, display);
                 drawSlot(graphics, bounds, QUARRY_UPGRADE_X, QUARRY_INPUT_Y, display);
+                drawSlot(graphics, bounds, SPEED_INPUT_X, QUARRY_INPUT_Y, display);
                 for (int index = 0; index < QuarryBlockEntity.OUTPUT_SLOT_COUNT; index++) {
                     drawSlot(
                             graphics,
@@ -527,6 +520,10 @@ final class TradingCellsReiMachineDisplay {
         addInput(widgets, bounds, FARMER_WORKER_X, FARMER_INPUT_Y, input(display, 0));
         addInput(widgets, bounds, FARMER_HOE_X, FARMER_INPUT_Y, input(display, 2));
         addInput(widgets, bounds, FARMER_CROP_X, FARMER_INPUT_Y, input(display, 1));
+        addSpeedUpgrades(widgets, bounds, FARMER_SPEED_X, FARMER_INPUT_Y);
+        var upgrades = com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.UPGRADES;
+        addPreview(widgets, bounds, FARMER_CAPACITY_X, FARMER_INPUT_Y,
+                EntryIngredient.of(upgrades.stream().skip(5).map(item -> EntryStacks.of(item.get())).toList()));
         for (int index = 0; index < display.getOutputEntries().size(); index++) {
             addOutput(
                     widgets,
@@ -647,6 +644,7 @@ final class TradingCellsReiMachineDisplay {
     ) {
         addInput(widgets, bounds, QUARRY_WORKER_X, QUARRY_INPUT_Y, input(display, 0));
         addInput(widgets, bounds, QUARRY_PICKAXE_X, QUARRY_INPUT_Y, input(display, 1));
+        addSpeedUpgrades(widgets, bounds, SPEED_INPUT_X, QUARRY_INPUT_Y);
         if (display.getInputEntries().size() > 2 && !input(display, 2).isEmpty()) {
             addInput(widgets, bounds, QUARRY_UPGRADE_X, QUARRY_INPUT_Y, input(display, 2));
         }
@@ -774,7 +772,7 @@ final class TradingCellsReiMachineDisplay {
             case IRON_FARM -> new Point(MachineScreenLayout.machineX(54), 47);
             case DECAPITATION_SMITHING -> new Point(SMITHING_ARROW_X, SMITHING_SLOT_Y);
             case PIGLIN_BARTERING -> new Point(88, 53);
-            case NETHERITE_PIGLIN_BARTERING -> new Point(88, 58);
+            case NETHERITE_PIGLIN_BARTERING -> new Point(88, 52);
             case QUARRY -> new Point(
                     (MachineScreenLayout.WIDTH - MachineScreenLayout.PROGRESS_FRAME_WIDTH) / 2,
                     64
@@ -792,6 +790,12 @@ final class TradingCellsReiMachineDisplay {
             EntryIngredient entries
     ) {
         addEntry(widgets, bounds, normalX, normalY, entries, Slot.INPUT);
+    }
+
+    private static void addSpeedUpgrades(List<Widget> widgets, Rectangle bounds, int x, int y) {
+        var upgrades = com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.UPGRADES;
+        addPreview(widgets, bounds, x, y,
+                EntryIngredient.of(upgrades.stream().limit(5).map(item -> EntryStacks.of(item.get())).toList()));
     }
 
     private static void addOutput(

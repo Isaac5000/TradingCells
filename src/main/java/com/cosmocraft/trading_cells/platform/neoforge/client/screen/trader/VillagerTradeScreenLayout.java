@@ -1,16 +1,13 @@
 package com.cosmocraft.trading_cells.platform.neoforge.client.screen.trader;
 
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.SlotRenderer;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.VillagerTradeMenuLayout;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.Identifier;
 
 public final class VillagerTradeScreenLayout {
     public static final int WIDTH = VillagerTradeMenuLayout.WIDTH;
     public static final int HEIGHT = VillagerTradeMenuLayout.HEIGHT;
-    public static final int ATLAS_WIDTH = VillagerTradeMenuLayout.ATLAS_WIDTH;
-    public static final int ATLAS_HEIGHT = VillagerTradeMenuLayout.ATLAS_HEIGHT;
 
     public static final int MANUAL_VISIBLE_ROWS = 7;
     public static final int MANUAL_ROW_HEIGHT = 24;
@@ -77,19 +74,8 @@ public final class VillagerTradeScreenLayout {
         return visibleRows * DROPDOWN_ROW_HEIGHT;
     }
 
-    public static void drawBackground(GuiGraphicsExtractor graphics, Identifier texture, int left, int top) {
-        graphics.blit(
-                RenderPipelines.GUI_TEXTURED,
-                texture,
-                left,
-                top,
-                0.0F,
-                0.0F,
-                WIDTH,
-                HEIGHT,
-                ATLAS_WIDTH,
-                ATLAS_HEIGHT
-        );
+    public static void drawBackground(GuiGraphicsExtractor graphics, int left, int top, MachineGuiSkin skin) {
+        skin.draw(graphics, left, top, WIDTH, HEIGHT);
     }
 
     public static void drawCommonSlots(

@@ -22,6 +22,7 @@ public final class PortableMachineJadeDataProvider implements IServerDataProvide
     static final String EXPERIENCE = "TradingCellsExperience";
     static final String PROGRESS = "TradingCellsProgress";
     static final String PROGRESS_MAXIMUM = "TradingCellsProgressMaximum";
+    static final String INTERACTION_ITEM = "TradingCellsInteractionItem", INTERACTION_TOOL = "TradingCellsInteractionTool";
 
     private PortableMachineJadeDataProvider() {
     }
@@ -29,6 +30,12 @@ public final class PortableMachineJadeDataProvider implements IServerDataProvide
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         Object target = accessor.getBlockEntity();
+        if (target instanceof com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EntityInteractionFarmBlockEntity farm) {
+            data.putString(INTERACTION_ITEM, farm.status(com.cosmocraft.trading_cells.feature.mobfarm.domain.model.InteractionSource.ITEM)
+                    .name().toLowerCase(java.util.Locale.ROOT));
+            data.putString(INTERACTION_TOOL, farm.status(com.cosmocraft.trading_cells.feature.mobfarm.domain.model.InteractionSource.TOOL)
+                    .name().toLowerCase(java.util.Locale.ROOT));
+        }
         int experience = storedExperience(target);
         if (experience >= 0) {
             data.putInt(EXPERIENCE, experience);

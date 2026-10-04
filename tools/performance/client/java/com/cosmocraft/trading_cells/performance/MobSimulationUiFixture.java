@@ -167,18 +167,18 @@ final class MobSimulationUiFixture {
         if (System.nanoTime() - started > 25_000_000_000L) { throw new IllegalStateException("Simulation UI timeout at " + phase); }
         if (screen instanceof MobFarmScreen farm) {
             var menu = farm.getMenu();
-            int x = (screen.width - 374) / 2, y = (screen.height - 246) / 2;
+            int x = farm.getLeftPos(), y = farm.getTopPos();
             switch (phase) {
                 case 0 -> {
                     if (menu.lootEntries().isEmpty()) { return; }
                     if (menu.lootEntries().stream().anyMatch(entry -> entry.probability() <= 0)) {
                         throw new IllegalStateException("Native cow preview contains unknown or impossible loot");
                     }
-                    click(screen, x + 169, y + 36);
+                    click(screen, x + 144, y + 36);
                 }
                 case 1 -> click(screen, x + 20, y + 60);
-                case 2 -> { if (menu.lootEntries().getFirst().enabled()) { return; } click(screen, x + 351, y + 16); }
-                case 3 -> { if (menu.enabled()) { return; } click(screen, x + 160, y + 228); }
+                case 2 -> { if (menu.lootEntries().getFirst().enabled()) { return; } click(screen, x + 327, y + 16); }
+                case 3 -> { if (menu.enabled()) { return; } click(screen, x + 136, y + 190); }
                 case 4 -> { if (menu.storedExperience() != 0) { return; } click(screen, x + 20, y + 60); }
                 case 5 -> {
                     if (!menu.lootEntries().getFirst().enabled()) { return; }
@@ -190,7 +190,7 @@ final class MobSimulationUiFixture {
             }
         } else if (screen instanceof EssenceWorkbenchScreen bench) {
             var menu = bench.getMenu();
-            int x = (screen.width - 236) / 2, y = (screen.height - 260) / 2;
+            int x = bench.getLeftPos(), y = bench.getTopPos();
             switch (phase) {
                 case 0 -> { if (!menu.canSynthesize()) { return; } click(screen, x + 110, y + 144); }
                 case 1 -> {
@@ -241,11 +241,11 @@ final class MobSimulationUiFixture {
         var creative = com.cosmocraft.trading_cells.platform.neoforge.registration.CreativeTabRegistration.FARMS_TAB.get().getDisplayItems();
         var missing = creative.stream().filter(stack -> !items.contains(stack.getItem()))
                 .map(stack -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString()).toList();
-        if (creative.size() != 19 || !missing.isEmpty()) {
+        if (creative.size() != 15 || !missing.isEmpty()) {
             throw new IllegalStateException("Simulation creative entries=" + creative.size()
                     + ", REI entries=" + items.size() + ", missing=" + missing);
         }
-        System.out.println("Simulation catalog checked: 19 creative/REI entries and no legacy farm items");
+        System.out.println("Simulation catalog checked: 15 creative/REI entries and no legacy farm items");
         return true;
     }
 }

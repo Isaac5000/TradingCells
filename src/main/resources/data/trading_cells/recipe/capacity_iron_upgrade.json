@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CBC",
+    "BSB",
+    "CBC"
+  ],
+  "key": {
+    "C": "minecraft:iron_block",
+    "B": "minecraft:iron_block",
+    "S": "trading_cells:capacity_copper_upgrade"
+  },
+  "result": {
+    "id": "trading_cells:capacity_iron_upgrade",
+    "count": 1
+  },
+  "show_notification": false
+}

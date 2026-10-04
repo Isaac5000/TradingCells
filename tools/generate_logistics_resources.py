@@ -159,23 +159,15 @@ def resources():
         "G": "trading_cells:gas_pipe", "E": "trading_cells:energy_pipe", "A": "minecraft:amethyst_block"}, 16)
     recipe("pipe_wrench", [" II", " CI", "S  "], {
         "I": "minecraft:iron_ingot", "C": "minecraft:copper_ingot", "S": "minecraft:stick"})
-    wrench_pixels = (
-        ".........###....", "........#HH#....", ".......#HLS#..#.", ".......#HLS#.#H#",
-        ".......#HLL##LS#", "........#HLLLLS#", ".......##SHHLS#.", "......#HL###S#..",
-        ".....#HLS#..#...", "....#CBDS#......", "...#CBDS#.......", "..#CBDS#........",
-        ".#CBDS#.........", "#HLSS#..........", "#HOS#...........", ".###............",
-    )
-    palette = {".": (0, 0, 0, 0), "#": (29, 34, 40, 255), "H": (235, 242, 245, 255),
-               "L": (185, 201, 211, 255), "S": (101, 125, 141, 255), "C": (200, 111, 65, 255),
-               "B": (237, 159, 87, 255), "D": (76, 62, 57, 255), "O": (39, 45, 51, 255)}
-    assert all(len(row) == 16 for row in wrench_pixels)
-    wrench = Image.new("RGBA", (16, 16))
-    wrench.putdata([palette[pixel] for row in wrench_pixels for pixel in row])
-    encoded = BytesIO()
-    wrench.save(encoded, format="PNG", optimize=False)
-    result[f"{ASSETS}/textures/item/pipe_wrench.png"] = encoded.getvalue()
+    result[f"{ASSETS}/textures/item/pipe_wrench.png"] = (Path(__file__).resolve().parent / "assets/logistics/pipe_wrench.png").read_bytes()
     put(f"{ASSETS}/models/item/pipe_wrench.json", {
-        "parent": "minecraft:item/handheld", "textures": {"layer0": "trading_cells:item/pipe_wrench"}})
+        "parent": "minecraft:item/handheld", "textures": {"layer0": "trading_cells:item/pipe_wrench"},
+        "display": {
+            "thirdperson_righthand": {"rotation": [0, 90, 55], "translation": [0, 5.33, 0.94], "scale": [0.85] * 3},
+            "thirdperson_lefthand": {"rotation": [0, -90, -55], "translation": [0, 5.33, 0.94], "scale": [0.85] * 3},
+            "firstperson_righthand": {"rotation": [0, 90, 25], "translation": [1.13, 3.2, 1.13], "scale": [0.68] * 3},
+            "firstperson_lefthand": {"rotation": [0, -90, -25], "translation": [1.13, 3.2, 1.13], "scale": [0.68] * 3},
+        }})
     item("pipe_wrench", "trading_cells:item/pipe_wrench")
 
     selector_pixels = (
@@ -184,7 +176,9 @@ def resources():
         ".#L#DDCDD##LS#..", ".#L#DDCDD##LS#..", ".#L########LS#..", ".#LSSSSSSSSLS#..",
         ".#LSCCSSBBSLS#..", ".#LSSSSSSSSLS#..", ".#HLLLLLLLLLS#..", "..###########...",
     )
-    selector_palette = {**palette, "C": (62, 218, 225, 255), "D": (32, 68, 77, 255)}
+    selector_palette = {".": (0, 0, 0, 0), "#": (29, 34, 40, 255), "H": (235, 242, 245, 255),
+                        "L": (185, 201, 211, 255), "S": (101, 125, 141, 255), "B": (237, 159, 87, 255),
+                        "C": (62, 218, 225, 255), "D": (32, 68, 77, 255)}
     assert all(len(row) == 16 for row in selector_pixels)
     selector = Image.new("RGBA", (16, 16))
     selector.putdata([selector_palette[pixel] for row in selector_pixels for pixel in row])

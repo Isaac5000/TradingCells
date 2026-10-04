@@ -15,14 +15,14 @@ import net.minecraft.world.item.Items;
 import org.jspecify.annotations.NonNull;
 
 public final class NetheritePiglinBarteringCellMenu extends AbstractContainerMenu {
-    public static final int CONTROL_SLOT_X = MachineMenuLayout.machineX(8);
-    public static final int UPGRADE_SLOT_Y = 42;
-    public static final int FILTER_SLOT_Y = 68;
+    public static final int CONTROL_SLOT_X = 12;
+    public static final int UPGRADE_SLOT_Y = 30;
+    public static final int FILTER_SLOT_Y = 50;
     public static final int GOLD_ROW_X = MachineMenuLayout.machineX(55);
-    public static final int GOLD_ROW_Y = 36;
-    public static final int OUTPUT_ROW_X = MachineMenuLayout.machineX(55);
-    public static final int OUTPUT_ROW_Y = 72;
-    public static final int OUTPUT_COLUMN_COUNT = 4;
+    public static final int GOLD_ROW_Y = 26;
+    public static final int OUTPUT_ROW_X = MachineMenuLayout.PLAYER_INVENTORY_X;
+    public static final int OUTPUT_ROW_Y = 56;
+    public static final int OUTPUT_COLUMN_COUNT = 9;
     public static final int OUTPUT_ROW_SPACING = 18;
     public static final int LANE_SPACING = 18;
 

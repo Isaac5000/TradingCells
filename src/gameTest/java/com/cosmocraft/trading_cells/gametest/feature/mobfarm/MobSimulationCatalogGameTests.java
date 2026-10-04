@@ -24,12 +24,18 @@ public final class MobSimulationCatalogGameTests {
         var tab = CreativeTabRegistration.FARMS_TAB.get();
         helper.assertTrue(tab.getIconItem().is(MobFarmRegistrationAdapter.ITEM.get()), "General farm is the tab icon");
         var items = tab.getDisplayItems().stream().map(stack -> stack.getItem()).toList();
-        helper.assertValueEqual(items.size(), 19, "Farm, two essence machines, syringe, empty vial, four bases and ten upgrades");
+        helper.assertValueEqual(items.size(), 10, "Two farms, two essence machines, syringe, empty vial and four bases");
         helper.assertTrue(items.contains(MobFarmRegistrationAdapter.ITEM.get()), "General farm available in creative");
+        helper.assertTrue(items.contains(MobFarmRegistrationAdapter.INTERACTION_ITEM.get()), "Interaction farm available in creative");
         helper.assertTrue(items.contains(MobFarmRegistrationAdapter.WORKBENCH_ITEM.get()), "Workbench available in creative");
         helper.assertTrue(items.contains(MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get()), "Extractor available in creative");
-        MobFarmRegistrationAdapter.UPGRADES.forEach(upgrade ->
-                helper.assertTrue(items.contains(upgrade.get()), "Every speed/capacity tier available in creative"));
+        var utilities = CreativeTabRegistration.ITEMS_TAB.get().getDisplayItems().stream().map(stack -> stack.getItem()).toList();
+        for (int tier = 0; tier < 5; tier++) {
+            var speed = MobFarmRegistrationAdapter.UPGRADES.get(tier).get();
+            helper.assertTrue(utilities.contains(speed) && !items.contains(speed), "Speed upgrades only in Items tab");
+            var capacity = MobFarmRegistrationAdapter.UPGRADES.get(5 + tier).get();
+            helper.assertTrue(utilities.contains(capacity) && !items.contains(capacity), "Capacity upgrades only in Items tab");
+        }
         helper.succeed();
     }
 

@@ -57,7 +57,7 @@ public final class NetheritePiglinBarteringCellBlockEntity extends PortableMachi
     public static final int FIRST_GOLD_SLOT = 2;
     public static final int GOLD_SLOT_COUNT = 4;
     public static final int FIRST_OUTPUT_SLOT = FIRST_GOLD_SLOT + GOLD_SLOT_COUNT;
-    public static final int OUTPUT_SLOT_COUNT = 8;
+    public static final int OUTPUT_SLOT_COUNT = 27;
     public static final int CONTAINER_SIZE = FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT;
 
     private static final int[] INPUT_SLOTS = new int[]{2, 3, 4, 5};

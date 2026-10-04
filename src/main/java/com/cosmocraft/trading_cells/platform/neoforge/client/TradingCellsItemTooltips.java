@@ -25,6 +25,7 @@ public final class TradingCellsItemTooltips {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onItemTooltip(ItemTooltipEvent event) {
         List<Component> lines = event.getToolTip();
+        ItemDetailsTooltip.apply(lines, ItemDetailsTooltip.keyDown());
         if (!isOwnItem(event.getItemStack()) || lines.isEmpty()) {
             return;
         }
