@@ -32,7 +32,7 @@ public final class BreederMenu extends AbstractContainerMenu {
     public static final int BABY_PREVIEW_SLOT_Y = 82;
     public static final int EMPTY_CAPTURER_SLOT_X = MachineMenuLayout.machineX(48);
     public static final int FILLED_CAPTURER_SLOT_X = MachineMenuLayout.machineX(112);
-    public static final int CAPTURER_SLOT_Y = 100;
+    public static final int CAPTURER_SLOT_Y = 88;
     private static final int DATA_COUNT = 7;
     private static final int BREEDER_SLOT_COUNT = BreederBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = BREEDER_SLOT_COUNT;

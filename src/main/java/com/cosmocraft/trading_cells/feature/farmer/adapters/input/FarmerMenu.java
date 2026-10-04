@@ -71,6 +71,10 @@ public final class FarmerMenu extends AbstractContainerMenu {
                     outputSlotY(index)
             ));
         }
+        addSlot(new com.cosmocraft.trading_cells.platform.neoforge.menu.MachineSpeedUpgradeSlot(
+                container, FarmerBlockEntity.SPEED_SLOT, 17, 142));
+        addSlot(new com.cosmocraft.trading_cells.platform.neoforge.menu.MachineCapacityUpgradeSlot(
+                container, FarmerBlockEntity.CAPACITY_SLOT, 17, 177));
         addStandardInventorySlots(inventory, playerInventoryX(), playerInventoryY());
         for (Slot equipmentSlot : PlayerEquipmentSlots.create(
                 inventory,
@@ -276,6 +280,12 @@ public final class FarmerMenu extends AbstractContainerMenu {
                     FarmerBlockEntity.HOE_SLOT + 1,
                     false
             );
+        }
+        if (com.cosmocraft.trading_cells.platform.neoforge.machine.MachineSpeedUpgrade.accepts(stack)) {
+            return moveItemStackTo(stack, FarmerBlockEntity.SPEED_SLOT, FarmerBlockEntity.SPEED_SLOT + 1, false);
+        }
+        if (com.cosmocraft.trading_cells.platform.neoforge.machine.MachineCapacityUpgrade.accepts(stack)) {
+            return moveItemStackTo(stack, FarmerBlockEntity.CAPACITY_SLOT, FarmerBlockEntity.CAPACITY_SLOT + 1, false);
         }
         return index < PLAYER_INVENTORY_END
                 ? moveItemStackTo(stack, PLAYER_INVENTORY_END, PLAYER_HOTBAR_END, false)

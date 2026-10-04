@@ -4,24 +4,16 @@ import com.cosmocraft.trading_cells.feature.incubators.adapters.input.IncubatorB
 import com.cosmocraft.trading_cells.feature.incubators.adapters.input.IncubatorMenu;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenUtil;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotSprites;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
-public final class IncubatorScreen extends AbstractContainerScreen<IncubatorMenu> {
-    private static final Identifier YELLOW_WOOL = Identifier.fromNamespaceAndPath(
-            "minecraft",
-            "textures/block/yellow_wool.png"
-    );
-    private static final Identifier RED_WOOL = Identifier.fromNamespaceAndPath(
-            "minecraft",
-            "textures/block/red_wool.png"
-    );
+public final class IncubatorScreen extends MachineContainerScreen<IncubatorMenu> {
     private static final int PROGRESS_FRAME_X = MachineScreenLayout.machineX(54);
     private static final int PROGRESS_FRAME_Y = 77;
     private static final int PROGRESS_X = PROGRESS_FRAME_X + MachineScreenLayout.PROGRESS_FILL_X_OFFSET;
@@ -42,12 +34,11 @@ public final class IncubatorScreen extends AbstractContainerScreen<IncubatorMenu
         int x = leftPos;
         int y = topPos;
         boolean villager = menu.kind() == CapturedMobKind.VILLAGER;
-        Identifier surface = villager ? YELLOW_WOOL : RED_WOOL;
         MachineScreenTheme theme = villager
                 ? MachineScreenTheme.VILLAGER_INCUBATOR
                 : MachineScreenTheme.PIGLIN_INCUBATOR;
 
-        MachineScreenLayout.drawBackground(graphics, x, y, surface, theme);
+        MachineScreenLayout.drawBackground(graphics, x, y, MachineGuiSkin.forTheme(theme), theme);
         int inputSlotX = MachineScreenLayout.machineX(45);
         MachineScreenLayout.drawSlot(graphics, x, y, inputSlotX, 48, theme);
         MachineScreenLayout.drawSlot(graphics, x, y, MachineScreenLayout.machineX(115), 48, theme);

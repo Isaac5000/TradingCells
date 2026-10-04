@@ -27,6 +27,7 @@
     "trading_cells:network_terminal",
     "trading_cells:network_crafting_terminal",
     "trading_cells:mob_farm",
+    "trading_cells:entity_interaction_farm",
     "trading_cells:essence_workbench",
     "trading_cells:essence_stabilizer"
   ]

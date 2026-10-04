@@ -4,24 +4,22 @@ package com.cosmocraft.trading_cells.platform.neoforge.menu;
  * Logical visible bounds for the shared villager trader screens.
  *
  * <p>The PNG atlas remains 512x256, while the rendered/interactive menu uses
- * 348x210 pixels. This preserves the real vanilla-style visible footprint and
+ * 348x204 pixels. This preserves the real vanilla-style visible footprint and
  * only extends the original barter layout moderately to the right and by the
  * allowed thirty pixels downwards.</p>
  */
 public final class VillagerTradeMenuLayout {
-    public static final int ATLAS_WIDTH = 512;
-    public static final int ATLAS_HEIGHT = 256;
     public static final int WIDTH = 348;
-    public static final int HEIGHT = 210;
+    public static final int HEIGHT = 204;
 
     public static final int TRADES_PANEL_X = 5;
     public static final int TRADES_PANEL_Y = 5;
     public static final int TRADES_PANEL_WIDTH = 114;
-    public static final int TRADES_PANEL_HEIGHT = 200;
+    public static final int TRADES_PANEL_HEIGHT = 194;
     public static final int TRADES_CONTENT_X = 9;
     public static final int TRADES_CONTENT_Y = 28;
     public static final int TRADES_CONTENT_WIDTH = 106;
-    public static final int TRADES_CONTENT_HEIGHT = 172;
+    public static final int TRADES_CONTENT_HEIGHT = 168;
 
     public static final int RIGHT_PANEL_X = 123;
     public static final int RIGHT_PANEL_Y = 5;
@@ -41,7 +39,7 @@ public final class VillagerTradeMenuLayout {
     public static final int INVENTORY_PANEL_X = 123;
     public static final int INVENTORY_PANEL_Y = 104;
     public static final int INVENTORY_PANEL_WIDTH = 220;
-    public static final int INVENTORY_PANEL_HEIGHT = 102;
+    public static final int INVENTORY_PANEL_HEIGHT = 96;
 
     public static final int PLAYER_INVENTORY_X = 150;
     public static final int PLAYER_INVENTORY_Y = 116;

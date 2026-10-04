@@ -17,8 +17,8 @@ final class FarmerDomainVerification {
     }
 
     private static void verifyFarmerRules() {
-        require(FarmerHarvest.MAX_DISTINCT_OUTPUTS == 18,
-                "Villager and piglin crop farms must expose eighteen output slots");
+        require(FarmerHarvest.MAX_DISTINCT_OUTPUTS == 27,
+                "Villager and piglin crop farms must expose twenty-seven output slots");
         require(FarmerCycle.rescaleProgress(50, 100, 200) == 100,
                 "Changing a stack count or tool must preserve proportional progress");
         require(FarmerCycle.effectiveGrowthTicks(
@@ -40,10 +40,10 @@ final class FarmerDomainVerification {
                         VanillaHoeTier.NETHERITE.miningSpeed(),
                         VanillaHoeTier.NETHERITE.timingPosition(),
                         5
-                ) == 100,
-                "A netherite Efficiency V hoe must give both crop farms a five-second duration");
-        require(FarmerCycle.effectiveGrowthTicks(3_000, 0.0D, 0.0D, 5) == 3_000,
-                "A crop farm without a hoe must retain its configured duration");
+                ) == 20,
+                "Netherite speed reaches the one-second minimum with a netherite hoe");
+        require(FarmerCycle.effectiveGrowthTicks(3_000, 0.0D, 0.0D, 5) == 94,
+                "Without a hoe speed upgrades still divide the configured duration");
         require(FarmerCycle.effectiveGrowthTicks(
                         3_000,
                         VanillaHoeTier.IRON.miningSpeed(),
@@ -55,7 +55,7 @@ final class FarmerDomainVerification {
                         VanillaHoeTier.IRON.timingPosition(),
                         7
                 ),
-                "Crop-farm Efficiency levels above five must not reduce duration further");
+                "Crop-farm speed tiers above five must not reduce duration further");
         require(FarmerCycle.effectiveGrowthTicks(
                         3_000,
                         VanillaHoeTier.GOLDEN.miningSpeed(),

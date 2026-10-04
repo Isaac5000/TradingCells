@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CBC",
+    "BSB",
+    "CBC"
+  ],
+  "key": {
+    "C": "minecraft:copper_block",
+    "B": "minecraft:copper_block",
+    "S": "minecraft:clock"
+  },
+  "result": {
+    "id": "trading_cells:speed_copper_upgrade",
+    "count": 1
+  },
+  "show_notification": false
+}

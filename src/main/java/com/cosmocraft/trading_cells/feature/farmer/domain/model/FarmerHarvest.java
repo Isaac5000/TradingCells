@@ -4,12 +4,12 @@ import java.util.Arrays;
 import java.util.List;
 
 public record FarmerHarvest(List<FarmerYield> yields) {
-    public static final int MAX_DISTINCT_OUTPUTS = 18;
+    public static final int MAX_DISTINCT_OUTPUTS = 27;
 
     public FarmerHarvest {
         yields = List.copyOf(yields);
         if (yields.size() > MAX_DISTINCT_OUTPUTS) {
-            throw new IllegalArgumentException("A farmer harvest cannot exceed eighteen distinct outputs");
+            throw new IllegalArgumentException("A farmer harvest cannot exceed twenty-seven distinct outputs");
         }
     }
 

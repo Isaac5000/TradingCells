@@ -37,7 +37,7 @@ Todas las rutas Java siguientes parten de
 | Canteras | `feature/quarry/` | catalogo, herramientas y minado profundo |
 | Conversion | `feature/converter/` | infeccion, curacion, ofertas y descuentos |
 | Hierro | `feature/ironfarm/` | ciclos, salidas y multiplicadores |
-| Simulacion de entidades | `feature/mobfarm/` | granja general, esencias, modulos y catalogo dinamico; `docs/ESSENCE_AUTOMATION.md` (estado actual), `docs/ENTITY_SIMULATION_REWORK.md` (historial) |
+| Simulacion de entidades | `feature/mobfarm/` | granja general, esencias, modulos y catalogo dinamico; `docs/ESSENCE_AUTOMATION.md`, `docs/ENTITY_INTERACTION_FARM.md` (granja independiente), `docs/ENTITY_SIMULATION_REWORK.md` (historial) |
 | Experiencia | `feature/experience/` | almacenamiento, calculo y fluido XP |
 | Logistica | `feature/logistics/` | tuberias, mejoras, reglas, canales, marcador y terminales; `docs/LOGISTICS.md` |
 | Infusor | `feature/infusion/` | `ArcaneInfuserBlockEntity`; `docs/ARCANE_INFUSER.md` |
@@ -65,6 +65,8 @@ La estructura de capas y las dependencias permitidas estan en `ARCHITECTURE.md`.
 ## Recursos y pruebas
 
 - Assets: `src/main/resources/assets/trading_cells/`.
+- Interfaces: `textures/gui/container/<block_id>/` y `textures/gui/sprites/`;
+  convencion, consumidores y auditoria en `docs/GUI_RESOURCES.md`.
 - Datos y recetas: `src/main/resources/data/trading_cells/`.
 - Unitarios/contratos puros: `src/test/java/`.
 - GameTests: `src/gameTest/java/.../gametest/feature/<feature>/`; fixtures en
@@ -85,7 +87,7 @@ La estructura de capas y las dependencias permitidas estan en `ARCHITECTURE.md`.
 | Renderizado | `checkGraphicsBackendIndependence` y matriz de `docs/GRAPHICS_BACKENDS.md` |
 | Recursos, modelos o recetas | `checkProjectResources` y generador afectado con `--check` |
 | Logistica | `checkLogisticsResources`; GameTests `feature/logistics/` |
-| Simulacion de entidades | `checkMobSimulationResources`, `testLogisticsResourceValidation`; GameTests `feature/mobfarm/`; fixture vigente `essence-automation`, tambien `simulation`, `simulation-models` |
+| Simulacion de entidades | `checkMobSimulationResources`, `testLogisticsResourceValidation`; GameTests `feature/mobfarm/`, `feature/machine/ProductionMachineGameTests`; fixtures `essence-automation`, `interaction-farm`, `machine-fixes`, `simulation`, `simulation-models` |
 | Persistencia o mecanica | suite GameTest afectada y `runGameTestServer` |
 | Cambio normal completo | `check` |
 | Candidata publicable | `clean releaseCheck` |

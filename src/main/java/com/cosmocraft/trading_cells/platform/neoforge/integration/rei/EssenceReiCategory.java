@@ -40,8 +40,10 @@ public record EssenceReiCategory(boolean synthesis) implements DisplayCategory<E
                     bounds.y + 30,
                     0xFFB8C1C4
             );
-            Component cost = Component.translatable(synthesis ? "rei.trading_cells.arcane_experience" : "rei.trading_cells.essence.duration", display.cost());
-            FittedTextRenderer.centered(graphics, font, cost, bounds.x + 6, bounds.getMaxX() - 6, bounds.y + 62, 12, 0xFFB5ED92, false);
+            if (synthesis) {
+                Component cost = Component.translatable("rei.trading_cells.arcane_experience", display.cost());
+                FittedTextRenderer.centered(graphics, font, cost, bounds.x + 6, bounds.getMaxX() - 6, bounds.y + 62, 12, 0xFFB5ED92, false);
+            }
         }));
         for (int i = 0; i < display.getInputEntries().size(); i++) {
             widgets.add(Widgets.createSlot(new Rectangle(bounds.x + 12 + i * 23, bounds.y + 29, 18, 18))
@@ -53,6 +55,6 @@ public record EssenceReiCategory(boolean synthesis) implements DisplayCategory<E
         }
         return widgets;
     }
-    @Override public int getDisplayHeight() { return 82; }
+    @Override public int getDisplayHeight() { return synthesis ? 82 : 62; }
     @Override public int getDisplayWidth(EssenceReiDisplay display) { return 200; }
 }

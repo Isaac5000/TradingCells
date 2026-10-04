@@ -48,14 +48,24 @@ Esencias antiguas pasan a Core; modelos antiguos no requieren refabricacion.
 
 Jeringa tipo pistola con cuerpo cerrado 3D, empunadura a 90 grados y aguja hacia
 fuera. Modelos de ambas manos, inventario y suelo; no extrusion de sprite 2D.
-Recarga manual de 24 ticks: levantar/alinear/encajar vial superior, 33 poses.
+Recarga manual de 24 ticks: acercar desde la mano opuesta y encajar vial superior,
+33 poses reflejadas por mano. Brazos de tercera persona coordinados con el vial;
+agarre centrado en el mango sin modificar la transformacion de primera persona.
+Los cambios de carga/datos no activan reequipado ni ocultan el arma.
 Consume un vial al terminar, no al cancelar. Estado TradingCellsSyringeLoaded.
-Extraccion de 24 ticks: avance del arma y llenado gradual con el color del tier,
+Extraccion de 40/80/120/160 ticks (2/4/6/8 segundos, tiers I/II/III/IV): brazo
+levantado, avance fijo de 6 ticks (0,3 s), seguido de llenado gradual con el color
+del tier durante el tiempo restante. Solo el llenado se ralentiza entre tiers;
 25 poses por tier. Objetivo vivo, alcance y linea de vision comprobados de nuevo
 al terminar. Cancelacion, objetivo perdido o serializacion fallida no consumen.
-Una carga y un uso por extraccion, durabilidad 256, cooldown posterior 40 ticks.
+Una carga y un uso por extraccion, durabilidad 256, sin cooldown posterior.
+Recarga disponible inmediatamente; no se puede extraer otra vez sin cargar vial.
 Excepciones de creativo conservadas. Inventario lleno entrega resultado una vez
 al mundo; no modifica salud, UUID ni loot de la entidad original.
+
+Receta de jeringa: `III/ LB/  B`; I lingote de hierro, L lapislazuli y B hormigon
+negro. Capacidad usa `capacity_<material>_upgrade`; los cinco IDs antiguos
+`mob_farm_capacity_<material>_upgrade` permanecen como alias de registro.
 
 ## Estabilizador y mesa
 
@@ -66,6 +76,8 @@ Devuelve tambien dos botellas al usar aliento. Copia integra de datos al Core.
 Si falta espacio en cualquier salida, no consume.
 Entradas relativas al frontal: vial izquierda, amatista arriba, reactivo derecha.
 Automatizacion acepta solo lo pendiente de una ejecucion, segun el vial actual.
+Jade muestra progreso y segundos mediante el diagnostico comun, con barra cian
+igual que ambas granjas de entidades. REI omite la nota de ticks y coste nulo.
 
 Mesa: Core y base del mismo tier, costes 1000/4000/16000/64000 XP interna.
 Vista previa se fabrica al recoger la salida, sin boton Create Model.

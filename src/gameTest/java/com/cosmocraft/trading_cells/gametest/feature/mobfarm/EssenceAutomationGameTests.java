@@ -105,9 +105,12 @@ public final class EssenceAutomationGameTests {
             BlockEntityStateFixtures.fillIndexedSlots(helper, machine, "Slot", 4, 1, new ItemStack(MobFarmRegistrationAdapter.EMPTY_VIAL.get(), 64));
             for (int tick = 0; tick < 110; tick++) { machine.processTick(); }
             helper.assertTrue(ItemStack.matches(machine.getItem(0), vial), "Blocked returned vial prevents consumption");
+            helper.assertValueEqual(machine.machineDiagnosticSnapshot().reason(), "output_full", "Jade reports blocked stabilization");
             machine.removeItem(4, 64);
             for (int tick = 0; tick < 99; tick++) { machine.processTick(); }
             helper.assertTrue(machine.getItem(3).isEmpty(), "Processing takes 100 ticks");
+            helper.assertValueEqual(machine.machineDiagnosticSnapshot().progress(), 99, "Jade receives elapsed stabilization ticks");
+            helper.assertValueEqual(machine.machineDiagnosticSnapshot().progressMaximum(), 100, "Jade receives stabilization duration");
             CompoundTag saved = machine.saveWithFullMetadata(helper.getLevel().registryAccess());
             machine.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved));
             machine.processTick();

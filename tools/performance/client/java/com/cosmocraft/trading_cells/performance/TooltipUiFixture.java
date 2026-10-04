@@ -75,6 +75,7 @@ final class TooltipUiFixture {
     }
 
     private static void verifyTooltips(Minecraft minecraft, ProbeCreativeScreen screen) {
+        verifyDescriptions(minecraft);
         CreativeModeTabs.tryRebuildTabContents(minecraft.level.enabledFeatures(), true, minecraft.level.registryAccess());
         var tabs = ownedTabTitles();
         boolean originalAdvanced = minecraft.options.advancedItemTooltips;
@@ -134,6 +135,35 @@ final class TooltipUiFixture {
         } finally {
             minecraft.options.advancedItemTooltips = originalAdvanced;
         }
+    }
+
+    private static void verifyDescriptions(Minecraft minecraft) {
+        var enchantment = minecraft.level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(com.cosmocraft.trading_cells.platform.neoforge.machine.MachineToolEnchantments.FARMERS_TOUCH);
+        var book = net.minecraft.world.item.enchantment.EnchantmentHelper.createBook(
+                new net.minecraft.world.item.enchantment.EnchantmentInstance(enchantment, 1));
+        var title = net.minecraft.world.item.enchantment.Enchantment.getFullname(enchantment, 1);
+        var hint = com.cosmocraft.trading_cells.platform.neoforge.client.ItemDetailsTooltip.hint();
+        var description = Component.translatable("enchantment.trading_cells.farmers_touch.description.2");
+        var lines = Screen.getTooltipFromItem(minecraft, book);
+        require(lines.stream().anyMatch(line -> line.getString().equals(title.getString())), "Enchantment name must remain visible");
+        require(lines.contains(hint) && lines.stream().noneMatch(line -> line.getString().equals(description.getString())), "Description collapsed behind Shift");
+        var expanded = new ArrayList<Component>(List.of(book.getHoverName(), title, description));
+        com.cosmocraft.trading_cells.platform.neoforge.client.ItemDetailsTooltip.apply(expanded, true);
+        require(expanded.contains(description), "Shift preserves descriptions");
+        com.cosmocraft.trading_cells.platform.neoforge.client.ItemDetailsTooltip.apply(expanded, false);
+        require(expanded.contains(title) && expanded.contains(hint) && !expanded.contains(description), "Only description hidden");
+        hint.visit((style, text) -> {
+            if (!text.isBlank()) {
+                int expected = text.equals("Shift") ? 0x55FFFF : 0xAAAAAA;
+                require(style.getColor() != null && style.getColor().getValue() == expected, "Only Shift uses cyan");
+            }
+            return java.util.Optional.empty();
+        }, net.minecraft.network.chat.Style.EMPTY);
+        var spawner = com.cosmocraft.trading_cells.feature.silktouch.adapters.output.client.PreservedSpawnerTooltipAdapter
+                .withSpawnerFeatures(List.of(), true, false);
+        require(spawner.equals(List.of(hint)), "Spawners share the styled Shift hint");
+        System.out.println("Descriptions verified: name visible, Shift details and cyan-only key hint");
     }
 
     private static void verifyOwn(ItemStack stack, List<Component> lines, Screen screen, List<Component> tabs) {

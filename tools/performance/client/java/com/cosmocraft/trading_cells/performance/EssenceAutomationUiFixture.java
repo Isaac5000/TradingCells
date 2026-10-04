@@ -34,7 +34,10 @@ final class EssenceAutomationUiFixture {
     private static volatile int extractionTarget = -1;
     private static Screen stabilizerScreen;
     private EssenceAutomationUiFixture() { }
-    static boolean active() { return System.getProperty("trading_cells.performance.client.uiFixture", "").equals("essence-automation"); }
+    static boolean active() {
+        String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
+        return fixture.equals("essence-automation") || fixture.equals("syringe");
+    }
     static boolean ready() { return rendered; }
     static boolean prepared() { return prepared; }
 
@@ -52,6 +55,12 @@ final class EssenceAutomationUiFixture {
         player.setExperienceLevels(0);
         player.setItemInHand(InteractionHand.MAIN_HAND, MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get().getDefaultInstance());
         player.getInventory().setItem(9, new ItemStack(MobFarmRegistrationAdapter.EMPTY_VIAL.get(), 3));
+        if (System.getProperty("trading_cells.performance.client.uiFixture", "").equals("syringe")) {
+            player.inventoryMenu.broadcastChanges();
+            phase = 11;
+            prepared = true;
+            return;
+        }
         var cow = EntityTypes.COW.create(level, EntitySpawnReason.LOAD);
         level.setBlockAndUpdate(pos, MobFarmRegistrationAdapter.ESSENCE_WORKBENCH.get().defaultBlockState());
         var bench = (EssenceWorkbenchBlockEntity) level.getBlockEntity(pos);
@@ -72,16 +81,17 @@ final class EssenceAutomationUiFixture {
 
     static void inspect(Minecraft minecraft) {
         if (rendered || !prepared || minecraft.player == null || minecraft.level == null || System.nanoTime() < nextAction) { return; }
+        if (phase >= 26 && phase <= 29 && minecraft.player.isUsingItem()) { assertExtractionArm(minecraft); }
         if (started == 0) { started = System.nanoTime(); }
         if (System.nanoTime() - started > 45_000_000_000L) { throw new IllegalStateException("Essence UI phase timed out: " + phase); }
         var screen = minecraft.gui.screen();
         if (phase <= 5) {
             if (!(screen instanceof EssenceWorkbenchScreen bench)) { return; }
             var menu = bench.getMenu();
-            int x = (screen.width - EssenceWorkbenchMenu.WIDTH) / 2, y = (screen.height - EssenceWorkbenchMenu.HEIGHT) / 2;
+            int x = bench.getLeftPos(), y = bench.getTopPos();
             switch (phase) {
-                case 0 -> { if (menu.getSlot(3).getItem().isEmpty()) { return; } click(screen, x + 240, y + 129); }
-                case 1 -> { if (!menu.fillStorage()) { return; } click(screen, x + 240, y + 129); }
+                case 0 -> { if (menu.getSlot(3).getItem().isEmpty()) { return; } click(screen, x + 191, y + 133); }
+                case 1 -> { if (!menu.fillStorage()) { return; } click(screen, x + 191, y + 133); }
                 case 2 -> { if (menu.fillStorage()) { return; } click(screen, x + 278, y + 107); }
                 case 3 -> { if (menu.storedExperience() != 0) { return; } click(screen, x + 198, y + 107); }
                 case 4 -> {
@@ -130,10 +140,10 @@ final class EssenceAutomationUiFixture {
             // Slot coordinates remain correct even if the recipe book moves the screen.
             int x = infuser.getGuiLeft(), y = infuser.getGuiTop();
             switch (phase) {
-                case 7 -> { if (menu.automationDisplay() == null) { return; } click(screen, x + 98, y + 90); }
+                case 7 -> { if (menu.automationDisplay() == null) { return; } click(screen, x + 98, y + 84); }
                 case 8 -> {
                     if (menu.lockState() != 1 || !menu.lockedRecipeName().endsWith("experience_bottle_infusion")) { return; }
-                    click(screen, x + 78, y + 90);
+                    click(screen, x + 78, y + 84);
                 }
                 case 9 -> {
                     if (!menu.fillStorage() || menu.lockState() != 1) { return; }
@@ -157,6 +167,13 @@ final class EssenceAutomationUiFixture {
             switch (phase) {
                 case 11 -> {
                     if (screen != null) { return; }
+                    if (!minecraft.player.getInventory().getItem(0).is(MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get())
+                            || minecraft.player.getInventory().getItem(9).getCount() != 3) { return; }
+                    if (minecraft.player.getInventory().getSelectedSlot() != 0) {
+                        minecraft.player.getInventory().setSelectedSlot(0);
+                        nextAction = System.nanoTime() + 500_000_000L;
+                        return;
+                    }
                     capture(minecraft, "06-syringe-empty");
                     minecraft.options.keyUse.setDown(true);
                     minecraft.gameMode.useItem(minecraft.player, InteractionHand.MAIN_HAND);
@@ -201,12 +218,12 @@ final class EssenceAutomationUiFixture {
                     minecraft.gameMode.interact(minecraft.player, target, new net.minecraft.world.phys.EntityHitResult(target), InteractionHand.MAIN_HAND);
                 }
                 case 18 -> {
-                    if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 13) { return; }
+                    if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 60) { return; }
                     assertExtractionModel(minecraft);
                     capture(minecraft, "11-extraction-half");
                 }
                 case 19 -> {
-                    if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 3) { return; }
+                    if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 10) { return; }
                     assertExtractionModel(minecraft);
                     capture(minecraft, "12-extraction-filled");
                 }
@@ -215,6 +232,88 @@ final class EssenceAutomationUiFixture {
                     minecraft.options.keyUse.setDown(false);
                     if (minecraft.player.getInventory().getNonEquipmentItems().stream().noneMatch(stack -> stack.is(MobFarmRegistrationAdapter.RAW_ESSENCE.get()))) { return; }
                     capture(minecraft, "13-extraction-complete");
+                    minecraft.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
+                    minecraft.options.fov().set(45);
+                    server(minecraft, player -> player.level().getEntity(extractionTarget).setInvisible(true));
+                }
+                case 21 -> {
+                    if (minecraft.player.getCooldowns().isOnCooldown(minecraft.player.getMainHandItem())) { return; }
+                    minecraft.options.keyUse.setDown(true);
+                    minecraft.gameMode.useItem(minecraft.player, InteractionHand.MAIN_HAND);
+                }
+                case 22 -> {
+                    if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 17) { return; }
+                    capture(minecraft, "14-third-person-reload-approach");
+                }
+                case 23 -> {
+                    if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 7) { return; }
+                    capture(minecraft, "15-third-person-reload-seat");
+                }
+                case 24 -> {
+                    if (!EssenceExtractorItem.isLoaded(minecraft.player.getMainHandItem())) { return; }
+                    minecraft.options.keyUse.setDown(false);
+                    capture(minecraft, "16-third-person-reload-finished");
+                }
+                case 25 -> {
+                    minecraft.options.keyUse.setDown(true);
+                    var target = minecraft.level.getEntity(extractionTarget);
+                    minecraft.gameMode.interact(minecraft.player, target, new net.minecraft.world.phys.EntityHitResult(target), InteractionHand.MAIN_HAND);
+                }
+                case 26 -> {
+                    if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 100) { return; }
+                    assertExtractionModel(minecraft);
+                    capture(minecraft, "17-third-person-extraction-start");
+                }
+                case 27 -> {
+                    if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 60) { return; }
+                    assertExtractionModel(minecraft);
+                    capture(minecraft, "18-third-person-extraction-half");
+                }
+                case 28 -> {
+                    if (!minecraft.player.isUsingItem() || minecraft.player.getUseItemRemainingTicks() > 2) { return; }
+                    capture(minecraft, "19-third-person-extraction-filled");
+                }
+                case 29 -> {
+                    if (EssenceExtractorItem.isLoaded(minecraft.player.getMainHandItem())) { return; }
+                    minecraft.options.keyUse.setDown(false);
+                    minecraft.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
+                    minecraft.options.fov().set(70);
+                    server(minecraft, player -> {
+                        var target = player.level().getEntity(extractionTarget);
+                        if (target != null) { target.discard(); }
+                        BlockPos pos = origin.east();
+                        player.level().setBlockAndUpdate(pos, MobFarmRegistrationAdapter.STABILIZER.get().defaultBlockState());
+                        var machine = (EssenceStabilizerBlockEntity) player.level().getBlockEntity(pos);
+                        var cow = EntityTypes.COW.create(player.level(), EntitySpawnReason.LOAD);
+                        machine.setItem(0, EntityEssenceData.rawEssenceOf(cow));
+                        machine.setItem(1, Items.AMETHYST_SHARD.getDefaultInstance());
+                        machine.setItem(2, new ItemStack(Items.REDSTONE, 2));
+                    });
+                }
+                case 30 -> capture(minecraft, "20-stabilizer-jade");
+                case 31 -> {
+                    if (!net.neoforged.fml.ModList.get().isLoaded("roughlyenoughitems")) { phase = 32; break; }
+                    var category = com.cosmocraft.trading_cells.platform.neoforge.integration.rei.EssenceReiDisplay.STABILIZATION;
+                    if (!me.shedaniel.rei.api.client.view.ViewSearchBuilder.builder().addCategory(category).filterCategory(category).open()) {
+                        throw new IllegalStateException("Missing stabilizer REI display");
+                    }
+                }
+                case 32 -> { assertReiOrder(screen); capture(minecraft, "21-stabilizer-rei"); }
+                case 33 -> {
+                    minecraft.gui.setScreen(null);
+                    server(minecraft, player -> {
+                        player.setItemInHand(InteractionHand.MAIN_HAND, net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(
+                                net.minecraft.resources.Identifier.fromNamespaceAndPath("trading_cells", "pipe_wrench")).orElseThrow().getDefaultInstance());
+                        player.inventoryMenu.broadcastChanges();
+                    });
+                }
+                case 34 -> capture(minecraft, "22-wrench-first-person");
+                case 35 -> {
+                    minecraft.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
+                    minecraft.options.fov().set(60);
+                }
+                case 36 -> capture(minecraft, "23-wrench-third-person");
+                case 37 -> {
                     minecraft.gui.setScreen(new EssenceSheet());
                 }
                 default -> { return; }
@@ -222,7 +321,8 @@ final class EssenceAutomationUiFixture {
         }
         System.out.println("Essence automation UI phase " + phase + " passed");
         phase++;
-        nextAction = System.nanoTime() + (phase >= 12 && phase <= 14 || phase >= 18 ? 20_000_000L : 500_000_000L);
+        nextAction = System.nanoTime() + (phase >= 30 ? 1_000_000_000L
+                : phase >= 12 && phase <= 14 || phase >= 18 ? 20_000_000L : 500_000_000L);
     }
 
     private static void server(Minecraft minecraft, java.util.function.Consumer<ServerPlayer> action) {
@@ -256,6 +356,19 @@ final class EssenceAutomationUiFixture {
         if (pose < 4 || pose > 5) { throw new IllegalStateException("Tier III extraction model missing: " + pose); }
         System.out.println("Syringe extraction model pose: " + pose);
     }
+    private static void assertExtractionArm(Minecraft minecraft) {
+        if (minecraft.player.getTicksUsingItem() < 6) { return; }
+        var renderer = minecraft.getEntityRenderDispatcher().getRenderer(minecraft.player);
+        var state = (net.minecraft.client.renderer.entity.state.AvatarRenderState) renderer.createRenderState(minecraft.player, 0);
+        var model = new net.minecraft.client.model.player.PlayerModel(minecraft.getEntityModels().bakeLayer(
+                net.minecraft.client.model.geom.ModelLayers.PLAYER), false);
+        model.setupAnim(state);
+        var arm = model.getArm(minecraft.player.getMainArm());
+        float expected = -net.minecraft.util.Mth.HALF_PI + model.head.xRot * 0.5F;
+        if (Math.abs(arm.xRot - expected) > 0.001F) {
+            throw new IllegalStateException("Extraction arm lowered before filling ended: " + minecraft.player.getUseItemRemainingTicks());
+        }
+    }
     private static void capture(Minecraft minecraft, String name) {
         Screenshot.grab(minecraft.gameDirectory, name + ".png", minecraft.gameRenderer.mainRenderTarget(), 1, message -> { });
     }
@@ -267,6 +380,8 @@ final class EssenceAutomationUiFixture {
             ItemStack loaded = items.getFirst().copy(); EssenceExtractorItem.setLoaded(loaded, true); items.add(loaded);
             items.add(MobFarmRegistrationAdapter.EMPTY_VIAL.get().getDefaultInstance());
             items.add(MobFarmRegistrationAdapter.STABILIZER_ITEM.get().getDefaultInstance());
+            items.add(net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(
+                    net.minecraft.resources.Identifier.fromNamespaceAndPath("trading_cells", "pipe_wrench")).orElseThrow().getDefaultInstance());
             for (var item : java.util.List.of(MobFarmRegistrationAdapter.RAW_ESSENCE, MobFarmRegistrationAdapter.ENTITY_ESSENCE)) {
                 for (int tier = 1; tier <= 4; tier++) {
                     ItemStack stack = item.get().getDefaultInstance();

@@ -92,7 +92,7 @@ public final class NetworkTerminalMenu extends AbstractContainerMenu {
         addStandardInventorySlots(
                 inventory,
                 12,
-                154
+                124
         );
         addSlot(new Slot(resourceContainer, 0, 85, 91) {
             @Override

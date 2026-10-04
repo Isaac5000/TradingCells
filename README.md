@@ -11,13 +11,25 @@ Trading Cells es un mod para Minecraft 26.2 con NeoForge que automatiza el traba
 
 La versión de desarrollo actual es `1.0.0` y todavía no se ha publicado.
 
+## Granja de interacciones
+
+La **Granja de interacciones** obtiene recursos sin matar ni capturar la criatura
+del modelo. Usa un trabajador adulto, un Creature Model, un objeto y una
+herramienta en canales independientes. Admite las mejoras de velocidad actuales,
+tolvas y tuberías; no genera ni consume XP durante sus ciclos. Tiene 27 salidas
+en tres filas de nueve y pausa manual, sin control de redstone ni comparador.
+
+Se fabrica en el Infusor por **50.000 XP**, con cuatro bloques de lapislázuli,
+cuatro de hormigón negro y un dispensador central. Receta visible en REI.
+Contratos, compatibilidad y pruebas: [Granja de interacciones](docs/ENTITY_INTERACTION_FARM.md).
+
 ## Máquinas de aldeanos
 
 - **Trocador de Aldeanos**: conserva un aldeano adulto, su POI, ofertas, descuentos y experiencia de comercio. Admite intercambio masivo con Mayús.
 - **Autotrocador de Aldeanos**: ejecuta automáticamente la oferta elegida usando entradas y salidas automatizables.
 - **Criadero de Aldeanos**: consume alimentos configurados y capturadores vacíos para producir aldeanos bebé.
 - **Incubador de Aldeanos**: convierte un aldeano bebé capturado en adulto.
-- **Cultivo de Aldeanos**: procesa cultivos, árboles, flores, plantas acuáticas, bloques de coral vivo, musgos y chorus del End con dieciocho salidas; el nivel de la azada, Eficiencia y Fortuna afectan al ciclo.
+- **Cultivo de Aldeanos**: procesa cultivos, árboles, flores, plantas acuáticas, bloques de coral vivo, musgos y chorus del End con 27 salidas; el nivel de la azada y una mejora de velocidad independiente determinan el ciclo. Fortuna conserva su efecto sobre la cosecha.
 - **Convertidor de Aldeanos**: zombifica y cura sin perder ofertas, y conserva los descuentos de curación.
 - **Granja de Hierro**: produce hierro con multiplicadores base `x1`, `x2` y `x3` según los aldeanos instalados.
 - **Granja de Esqueletos**: permite elegir entre esqueletos normales, Wither, de hielo, de pantano y del desierto, filtrar sus recompensas y mejorar la caza con una espada.
@@ -28,17 +40,23 @@ La versión de desarrollo actual es `1.0.0` y todavía no se ha publicado.
   Piglins, Blazes, Ghasts, Endermen, Shulkers, Breezes, Phantoms, Animales,
   Peces, Acuáticas, Monturas, Anfibios, Abejas y Creakings. Cada bloque acepta
   por tag criaturas equivalentes de otros mods.
-- **Cantera de Aldeanos**: extrae materiales del Overworld. El pico, su nivel, Eficiencia, Fortuna y Toque de Seda afectan al resultado.
+- **Cantera de Aldeanos**: extrae materiales del Overworld con 27 salidas y una mejora de velocidad independiente. El pico conserva su nivel, Fortuna, Toque de Seda y desgaste.
 
 ## Máquinas de piglins
 
 - **Trocador de Piglins**: automatiza la tabla de trueque vanilla.
-- **Trocador de Piglins de Netherite**: añade ocho salidas, cinco niveles de mejora y filtros en el nivel de Netherite.
+- **Trocador de Piglins de Netherite**: añade 27 salidas, cinco niveles de mejora y filtros en el nivel de Netherite.
 - **Criadero de Piglins** e **Incubador de Piglins**: reproducen y hacen crecer piglins capturados.
-- **Cultivo de Piglins**: cultiva vegetación del Nether con dieciocho salidas; Fortuna aumenta cantidades y las probabilidades de hongos, bloques de verrugas y luz de hongo.
-- **Cantera de Piglins**: extrae materiales del Nether y ofrece minado profundo con las mejoras compatibles.
+- **Cultivo de Piglins**: cultiva vegetación del Nether con 27 salidas y mejora de velocidad independiente; Fortuna aumenta cantidades y las probabilidades de hongos, bloques de verrugas y luz de hongo.
+- **Cantera de Piglins**: extrae materiales del Nether con 27 salidas, mejora de velocidad independiente y minado profundo con las mejoras compatibles.
 
 Las máquinas de comercio y trabajo rechazan aldeanos o piglins bebé cuando su función requiere una criatura adulta.
+
+Las mejoras de velocidad actuales, de cobre a netherita, reducen el tiempo de
+cultivos y canteras a la mitad por nivel, con un mínimo de 20 ticks. La mejora
+de materiales de las canteras conserva su ranura independiente. La granja de
+simulación de entidades también tiene 27 salidas y genera como máximo 10 XP
+por criatura, antes de sumar los lotes; la XP ya almacenada se conserva.
 
 ## Capturadores
 
@@ -58,7 +76,7 @@ La experiencia usa las **Tuberías de Fluidos** o **Universales**. La nueva red 
 
 Las tuberías se configuran con su **llave inglesa**. Cada conexión admite una mejora que conserva sus reglas: cobre habilita el reparto; hierro, los filtros; oro, los canales; diamante, las reglas avanzadas; netherita aumenta el caudal. Los ítems van al inventario más cercano por defecto; líquidos, gases y energía se reparten por igual. El **Marcador de inventarios** registra un inventario para usarlo en una regla. El antiguo Configurador de Máquinas se ha retirado.
 
-Las máquinas automáticas conservan exactamente el progreso cuando la redstone las pausa. Un comparador emite 15 cuando ninguna salida activa puede aceptar más producción y 0 en los demás casos.
+Las máquinas con control de redstone conservan exactamente el progreso al pausarse. En las que admiten comparador, este emite 15 cuando ninguna salida activa puede aceptar más producción y 0 en los demás casos. La granja de interacciones solo tiene pausa manual.
 
 ## Infusor Arcano
 
@@ -103,7 +121,7 @@ El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Bot�
 - Decapitación puede combinarse normalmente o subir exactamente un nivel en la mesa de herrería usando el libro o arma encantada y un Fragmento de la Tormenta, hasta nivel VI.
 - Decapitación detecta cabezas externas con identificadores convencionales y el tag `#minecraft:skulls` sin inventar resultados inexistentes.
 - Los cinco libros están disponibles en creativo y se pueden fabricar mediante Infusión Arcana.
-- Eficiencia se limita funcionalmente al nivel V dentro de Cultivos y Canteras.
+- Eficiencia no modifica los tiempos de Cultivos y Canteras: usan una ranura de velocidad independiente y el nivel de la herramienta.
 - Fortuna continúa escalando por encima del nivel vanilla donde la mecánica lo permite.
 - Las Canteras permiten combinar Fortuna y Toque de Seda; juntos aumentan selección y cantidad de menas.
 - El yunque conserva encantamientos superiores al límite vanilla al añadir otros encantamientos.

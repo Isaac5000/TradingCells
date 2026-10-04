@@ -12,7 +12,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.nbt.CompoundTag;
@@ -24,8 +24,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
-public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeConfigurationMenu> {
-    public static final int WIDTH = 374, HEIGHT = 248;
+public final class PipeConfigurationScreen extends MachineContainerScreen<PipeConfigurationMenu> {
+    public static final int WIDTH = 348, HEIGHT = 204;
     private static final int WHITE = 0xFFF5F5F5, MUTED = 0xFFB8C1C4;
     private PipeFaceConfiguration draft;
     private LogisticsResourceType selected;
@@ -43,7 +43,7 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
         super(menu, inventory, title, WIDTH, HEIGHT);
         draft = menu.initial();
         selected = java.util.Arrays.stream(LogisticsResourceType.values()).filter(menu.kind()::supports).findFirst().orElseThrow();
-        inventoryLabelX = 36; inventoryLabelY = 149;
+        inventoryLabelX = 36; inventoryLabelY = 112;
         for (var type : LogisticsResourceType.values()) {
             var profile = draft.profile(type);
             if (profile.filterMode() != PipeResourceProfile.FilterMode.RULES) { continue; }
@@ -80,14 +80,14 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
                         });
             }
         }
-        priority = addRenderableWidget(new EditBox(font, leftPos + 276, topPos + 28, 86, 18, label("priority")));
+        priority = addRenderableWidget(new EditBox(font, leftPos + 264, topPos + 28, 72, 18, label("priority")));
         priority.setMaxLength(32); priority.setValue(Integer.toString(draft.priority()));
         var routing = draft.effectiveProfile(selected).routingMode();
         ItemStack routingIcon = switch (routing) {
             case NEAREST -> Items.COMPASS.getDefaultInstance(); case FARTHEST -> Items.SPYGLASS.getDefaultInstance();
             case EQUAL -> Items.HOPPER.getDefaultInstance(); case RANDOM -> Items.DROPPER.getDefaultInstance();
         };
-        gate(icon(routingIcon, label("routing." + routing.name().toLowerCase(Locale.ROOT)), 12, 78, 26, false, ignored -> {
+        gate(icon(routingIcon, label("routing." + routing.name().toLowerCase(Locale.ROOT)), 16, 68, 18, false, ignored -> {
             storeFields(); var current = draft.profile(selected);
             setProfile(new PipeResourceProfile(current.enabled(), current.channel(), current.filters(), current.filterMode(),
                     PipeRoutingMode.values()[(current.routingMode().ordinal() + 1) % PipeRoutingMode.values().length]));
@@ -96,7 +96,7 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
             case OFF -> Items.BARRIER.getDefaultInstance(); case BLACKLIST -> Items.COAL.getDefaultInstance();
             case WHITELIST -> Items.PAPER.getDefaultInstance(); case RULES -> Items.WRITABLE_BOOK.getDefaultInstance();
         };
-        gate(icon(filterIcon, label("filter.mode." + profile.filterMode().name().toLowerCase(Locale.ROOT)), 12, 108, 26, false, ignored -> {
+        gate(icon(filterIcon, label("filter.mode." + profile.filterMode().name().toLowerCase(Locale.ROOT)), 16, 90, 18, false, ignored -> {
             storeFields(); var current = draft.profile(selected);
             var next = switch (current.filterMode()) {
                 case OFF, RULES -> PipeResourceProfile.FilterMode.WHITELIST;
@@ -105,28 +105,28 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
             };
             setProfile(new PipeResourceProfile(current.enabled(), current.channel(), current.filters(), next, current.routingMode()));
         }), tier.allowsFilters(), PipeUpgradeTier.IMPROVED);
-        gate(button(label("rule.add"), 198, 124, 50, ignored -> openRule(-1)),
+        gate(button(label("rule.add"), 204, 98, 42, ignored -> openRule(-1)),
                 tier.allowsFilters() && profile.filters().size() < PipeResourceProfile.MAX_FILTERS, PipeUpgradeTier.IMPROVED);
-        gate(button(label("rule.edit"), 252, 124, 52, ignored -> openRule(selectedRule)),
+        gate(button(label("rule.edit"), 248, 98, 42, ignored -> openRule(selectedRule)),
                 tier.allowsFilters() && selectedRule >= 0, PipeUpgradeTier.IMPROVED);
-        gate(button(label("rule.remove"), 308, 124, 54, ignored -> {
+        gate(button(label("rule.remove"), 292, 98, 44, ignored -> {
             storeFields(); var rules = new ArrayList<>(draft.profile(selected).filters());
             if (selectedRule >= 0 && selectedRule < rules.size()) { rules.remove(selectedRule); }
             selectedRule = Math.min(selectedRule, rules.size() - 1); replaceRules(rules);
         }), tier.allowsFilters() && selectedRule >= 0, PipeUpgradeTier.IMPROVED);
-        button(label(profile.enabled() ? "enabled" : "disabled"), 204, 146, 158, ignored -> {
+        button(label(profile.enabled() ? "enabled" : "disabled"), 204, 118, 132, ignored -> {
             storeFields(); var current = draft.profile(selected);
             setProfile(new PipeResourceProfile(!current.enabled(), current.channel(), current.filters(), current.filterMode(), current.routingMode()));
         });
-        channel = addRenderableWidget(new EditBox(font, leftPos + 204, topPos + 179, 158, 18, label("channel")));
+        channel = addRenderableWidget(new EditBox(font, leftPos + 204, topPos + 148, 132, 16, label("channel")));
         channel.setMaxLength(PipeFilterRule.MAX_CHANNEL_LENGTH); channel.setValue(profile.channel());
         gate(channel, tier.allowsChannels(), PipeUpgradeTier.ADVANCED);
         completion = new PipeChannelCompletion(menu, selected, channel, "", () -> draft.profile(selected));
-        button(label("copy"), 204, 202, 76, ignored -> { storeFields(); minecraft.keyboardHandler.setClipboard(PipeConfigurationClipboard.copy(draft)); });
-        button(label("paste"), 284, 202, 78, ignored -> {
+        button(label("copy"), 204, 168, 64, ignored -> { storeFields(); minecraft.keyboardHandler.setClipboard(PipeConfigurationClipboard.copy(draft)); });
+        button(label("paste"), 272, 168, 64, ignored -> {
             storeFields(); draft = PipeConfigurationClipboard.paste(minecraft.keyboardHandler.getClipboard(), draft); rebuildWidgets();
         });
-        button(Component.translatable("gui.done"), 204, 224, 158, ignored -> onClose());
+        button(Component.translatable("gui.done"), 204, 186, 132, ignored -> onClose());
         ruleIcons = profile.filters().stream().map(rule -> PipeEditorIcons.rule(selected, rule)).toList();
         scroll = Math.clamp(scroll, 0, maximumScroll()); targetScroll = Math.clamp(targetScroll, 0, maximumScroll());
     }
@@ -203,7 +203,7 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
         if (completion != null && completion.click(event.x(), event.y())) { ghostClick = true; return true; }
         if (editor != null && editor.click(event.x(), event.y(), event.button(), menu.getCarried())) { ghostClick = true; return true; }
         if (editor == null && overList(event.x(), event.y())) {
-            int index = (int) ((event.y() - topPos - 52 + scroll) / 22);
+            int index = (int) ((event.y() - topPos - 50 + scroll) / 22);
             selectedRule = index < draft.profile(selected).filters().size() ? index : -1;
             storeFields(); rebuildWidgets(); ghostClick = true; return true;
         }
@@ -248,22 +248,22 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
         graphics.fill(leftPos + 2, topPos + 2, leftPos + WIDTH - 2, topPos + HEIGHT - 2, 0xF0272D30);
         for (var slot : menu.slots) { if (slot.isActive()) { drawSlot(graphics, leftPos + slot.x - 1, topPos + slot.y - 1); } }
         if (editor != null) { editor.draw(graphics, mouseX, mouseY); return; }
-        graphics.fill(leftPos + 44, topPos + 50, leftPos + 363, topPos + 122, 0xFF727D82);
-        graphics.fill(leftPos + 46, topPos + 52, leftPos + 361, topPos + 120, 0xFF1F2528);
+        graphics.fill(leftPos + 44, topPos + 48, leftPos + 337, topPos + 96, 0xFF727D82);
+        graphics.fill(leftPos + 46, topPos + 50, leftPos + 335, topPos + 94, 0xFF1F2528);
         scroll += (targetScroll - scroll) * .35;
         var rules = draft.profile(selected).filters();
-        graphics.enableScissor(leftPos + 46, topPos + 52, leftPos + 356, topPos + 120);
+        graphics.enableScissor(leftPos + 46, topPos + 50, leftPos + 330, topPos + 94);
         for (int index = 0; index < rules.size(); index++) {
-            int y = topPos + 52 + index * 22 - (int) scroll;
-            if (y + 22 <= topPos + 52 || y >= topPos + 120) { continue; }
+            int y = topPos + 50 + index * 22 - (int) scroll;
+            if (y + 22 <= topPos + 50 || y >= topPos + 94) { continue; }
             var rule = rules.get(index);
-            graphics.fill(leftPos + 47, y + 1, leftPos + 355, y + 21, index == selectedRule ? 0xFF506663 : 0xFF343C40);
+            graphics.fill(leftPos + 47, y + 1, leftPos + 329, y + 21, index == selectedRule ? 0xFF506663 : 0xFF343C40);
             var icon = ruleIcons.get(index);
             if (!icon.isEmpty()) { graphics.fakeItem(icon, leftPos + 50, y + 3); }
             String name = rule.matchKind() == PipeFilterRule.MatchKind.TAG ? "#" + rule.key() : rule.key();
-            graphics.text(font, font.plainSubstrByWidth(name, 280), leftPos + 72, y + 3, rule.inverted() ? 0xFFFFBC80 : WHITE, false);
+            graphics.text(font, font.plainSubstrByWidth(name, 251), leftPos + 72, y + 3, rule.inverted() ? 0xFFFFBC80 : WHITE, false);
             String detail = rule.routeChannel().isEmpty() ? rule.target() == null ? "" : label("rule.target").getString() : rule.routeChannel();
-            graphics.text(font, font.plainSubstrByWidth(detail, 280), leftPos + 72, y + 12, MUTED, false);
+            graphics.text(font, font.plainSubstrByWidth(detail, 251), leftPos + 72, y + 12, MUTED, false);
             if (overList(mouseX, mouseY) && mouseY >= y && mouseY < y + 22) {
                 var lines = new ArrayList<Component>(); lines.add(Component.literal(name));
                 if (!rule.routeChannel().isEmpty()) { lines.add(Component.literal(rule.routeChannel())); }
@@ -272,9 +272,9 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
             }
         }
         graphics.disableScissor();
-        int thumb = Math.max(10, (int) (68.0 * 68 / Math.max(68, rules.size() * 22)));
-        int y = topPos + 52 + (int) (maximumScroll() == 0 ? 0 : scroll / maximumScroll() * (68 - thumb));
-        graphics.fill(leftPos + 357, y, leftPos + 361, y + thumb, MUTED);
+        int thumb = Math.max(10, (int) (44.0 * 44 / Math.max(44, rules.size() * 22)));
+        int y = topPos + 50 + (int) (maximumScroll() == 0 ? 0 : scroll / maximumScroll() * (44 - thumb));
+        graphics.fill(leftPos + 331, y, leftPos + 335, y + thumb, MUTED);
     }
 
     @Override
@@ -285,8 +285,9 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
                 12 + font.width(title) + 16, 9, MUTED, false);
         graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, MUTED, false);
         if (editor == null) {
-            graphics.text(font, label("priority"), 228, 33, MUTED, false);
-            graphics.text(font, label("channel"), 204, 168, MUTED, false);
+            com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRenderer.left(
+                    graphics, font, label("priority"), 226, 260, 32, 12, MUTED, false);
+            graphics.text(font, label("channel"), 204, 136, MUTED, false);
         }
     }
 
@@ -302,10 +303,10 @@ public final class PipeConfigurationScreen extends AbstractContainerScreen<PipeC
         ClientPacketDistributor.sendToServer(new PipeConfigurationPayload(menu.pos(), menu.face(), menu.hand(), menu.latestRevision(), data));
     }
 
-    private boolean overList(double x, double y) { return x >= leftPos + 46 && x < leftPos + 356 && y >= topPos + 52 && y < topPos + 120; }
-    private double maximumScroll() { return Math.max(0, draft.profile(selected).filters().size() * 22 - 68); }
+    private boolean overList(double x, double y) { return x >= leftPos + 46 && x < leftPos + 330 && y >= topPos + 50 && y < topPos + 94; }
+    private double maximumScroll() { return Math.max(0, draft.profile(selected).filters().size() * 22 - 44); }
     private Button button(Component text, int x, int y, int width, Button.OnPress press) {
-        return addRenderableWidget(Button.builder(text, press).bounds(leftPos + x, topPos + y, width, y == 224 ? 16 : 18).build());
+        return addRenderableWidget(Button.builder(text, press).bounds(leftPos + x, topPos + y, width, y == 186 ? 14 : y >= 118 ? 16 : 18).build());
     }
     private Button icon(ItemStack stack, Component text, int x, int y, int size, boolean selected, Button.OnPress press) {
         var button = addRenderableWidget(new PipeEditorIcons.IconButton(leftPos + x, topPos + y, size, stack, text, selected, press));

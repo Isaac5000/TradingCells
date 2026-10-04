@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--measure-seconds", type=float, default=30.0)
     parser.add_argument("--width", type=int, default=1920)
     parser.add_argument("--height", type=int, default=1080)
+    parser.add_argument("--gui-scale", type=int, default=2, help="Minecraft GUI scale; 0 uses the default automatic scale.")
     parser.add_argument(
         "--camera",
         type=float,
@@ -49,7 +50,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--quick-play-world")
     parser.add_argument("--language", help="Minecraft language for visual checks, for example es_es.")
     parser.add_argument("--main-arm", choices=("left", "right"), help="Player's primary arm for held-model checks.")
-    parser.add_argument("--ui-fixture", choices=("pipe", "rules", "interactions", "crafting", "materials", "connections", "caps", "terminals", "simulation", "essences", "simulation-models", "simulation-models-offhand", "simulation-models-thirdperson", "tooltips", "infusion", "infusion-models", "item-textures", "pipe-hands", "essence-automation"),
+    parser.add_argument("--ui-fixture", choices=("pipe", "rules", "interactions", "crafting", "materials", "connections", "caps", "terminals", "simulation", "essences", "simulation-models", "simulation-models-offhand", "simulation-models-thirdperson", "tooltips", "infusion", "infusion-models", "item-textures", "pipe-hands", "essence-automation", "syringe", "interaction-farm", "machine-fixes", "vanilla-icons"),
                         help="Install a logistics UI fixture in the disposable cloned world; not a performance baseline.")
     parser.add_argument("--output-directory", type=Path)
     parser.add_argument("--without-rei", action="store_true")
@@ -79,7 +80,7 @@ def clone_template(template: Path | None, destination: Path) -> None:
         shutil.move(server_world, client_world)
 
 
-def normalize_options(game_directory: Path, language: str | None = None, main_arm: str | None = None) -> None:
+def normalize_options(game_directory: Path, language: str | None = None, main_arm: str | None = None, gui_scale: int = 2) -> None:
     options_file = game_directory / "options.txt"
     values: dict[str, str] = {}
     order: list[str] = []
@@ -94,7 +95,7 @@ def normalize_options(game_directory: Path, language: str | None = None, main_ar
         "bobView": "false",
         "enableVsync": "false",
         "fullscreen": "false",
-        "guiScale": "2",
+        "guiScale": str(gui_scale),
         "inactivityFpsLimit": '"minimized"',
         "maxFps": "260",
         "pauseOnLostFocus": "false",
@@ -207,7 +208,7 @@ def run_once(
     result_directory = run_root / "result"
     run_root.mkdir(parents=True)
     clone_template(args.template_directory, game_directory)
-    normalize_options(game_directory, args.language, args.main_arm)
+    normalize_options(game_directory, args.language, args.main_arm, args.gui_scale)
     result_directory.mkdir(parents=True)
     jfr = run_root / "client.jfr"
     task = (
@@ -268,7 +269,7 @@ def run_once(
     row = read_summary(summary_file)
     verify_backend(row, args.backend)
     verify_dimensions(row, args.width, args.height)
-    if args.open_block and args.ui_fixture not in ("connections", "caps", "terminals", "simulation-models", "simulation-models-offhand", "simulation-models-thirdperson", "infusion-models", "pipe-hands") and not row.get("screen_class", ""):
+    if args.open_block and args.ui_fixture not in ("connections", "caps", "terminals", "simulation-models", "simulation-models-offhand", "simulation-models-thirdperson", "infusion-models", "pipe-hands", "interaction-farm", "machine-fixes", "vanilla-icons") and not row.get("screen_class", ""):
         raise RuntimeError(
             "The configured block did not leave a container screen open; "
             f"got {row.get('screen_class', '')!r}"
@@ -365,6 +366,7 @@ def write_metadata(
         "warmup_seconds": args.warmup_seconds,
         "measure_seconds": args.measure_seconds,
         "resolution": f"{args.width}x{args.height}",
+        "gui_scale": args.gui_scale,
         "with_rei": not args.without_rei,
         "with_trading_cells": not args.without_trading_cells,
         "quick_play_world": args.quick_play_world or "",

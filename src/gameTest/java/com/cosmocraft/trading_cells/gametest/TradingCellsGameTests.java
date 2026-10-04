@@ -56,14 +56,18 @@ public final class TradingCellsGameTests {
 
     private static List<GameTestCase> collectTests() {
         List<GameTestCase> tests = new ArrayList<>();
+        tests.addAll(com.cosmocraft.trading_cells.gametest.shared.TooltipGameTests.tests());
         tests.addAll(SilkTouchTwoGameTests.tests());
         tests.addAll(FarmerGameTests.tests());
         tests.addAll(PortableMachineGameTests.tests());
         tests.addAll(MachineCapabilityGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.machine.ProductionMachineGameTests.tests());
         tests.addAll(IronFarmGameTests.tests());
         tests.addAll(QuarryGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobFarmLootTableGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.InteractionHarvestGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.InteractionFarmGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.EssenceAutomationGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationLootGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationCatalogGameTests.tests());

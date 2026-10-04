@@ -35,13 +35,13 @@ public final class FarmerService implements FarmerUseCase {
     public int effectiveGrowthTicks(
             double toolSpeed,
             double tierPosition,
-            int efficiencyLevel
+            int speedTier
     ) {
         return FarmerCycle.effectiveGrowthTicks(
                 settings.farmerGrowthTicks(),
                 toolSpeed,
                 tierPosition,
-                efficiencyLevel
+                speedTier
         );
     }
 

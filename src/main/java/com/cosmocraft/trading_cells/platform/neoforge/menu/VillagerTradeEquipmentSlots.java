@@ -21,7 +21,7 @@ public final class VillagerTradeEquipmentSlots {
     }
 
     private static Identifier emptyIcon(String name) {
-        return Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "container/slot/" + name);
+        return Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "shared/slots/equipment/" + name);
     }
 
     public static List<Slot> create(Inventory inventory) {

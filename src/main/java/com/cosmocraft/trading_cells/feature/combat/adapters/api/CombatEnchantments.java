@@ -1,8 +1,8 @@
 package com.cosmocraft.trading_cells.feature.combat.adapters.api;
 
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
+import com.cosmocraft.trading_cells.platform.neoforge.item.StoredEnchantmentLookup;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -14,11 +14,9 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
 
 /** Public combat boundary used by every mob-farm family and global combat event. */
 public final class CombatEnchantments {
@@ -83,28 +81,14 @@ public final class CombatEnchantments {
         return level(stack, registries, Enchantments.SWEEPING_EDGE);
     }
 
-    public static boolean isWarriorsTouchStoredOnBook(ItemStack stack, HolderLookup.Provider registries) {
-        return isStoredOnBook(stack, registries, WARRIORS_TOUCH);
+    public static boolean isWarriorsTouchStoredOnBook(ItemStack stack) {
+        return StoredEnchantmentLookup.contains(stack, WARRIORS_TOUCH);
     }
 
-    public static boolean isDecapitationStoredOnBook(ItemStack stack, HolderLookup.Provider registries) {
-        return isStoredOnBook(stack, registries, DECAPITATION);
+    public static boolean isDecapitationStoredOnBook(ItemStack stack) {
+        return StoredEnchantmentLookup.contains(stack, DECAPITATION);
     }
 
-    private static boolean isStoredOnBook(
-            ItemStack stack,
-            HolderLookup.Provider registries,
-            ResourceKey<Enchantment> key
-    ) {
-        if (!stack.is(Items.ENCHANTED_BOOK)) {
-            return false;
-        }
-        ItemEnchantments stored = stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY);
-        return registries.lookup(Registries.ENCHANTMENT)
-                .flatMap(enchantments -> enchantments.get(key))
-                .map(enchantment -> stored.getLevel(enchantment) > 0)
-                .orElse(false);
-    }
 
     private static double sharpnessEquivalentLevel(int sharpnessLevel) {
         if (sharpnessLevel <= 0) {

@@ -1,6 +1,10 @@
 package com.cosmocraft.trading_cells.feature.mobfarm.adapters.output;
 
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EntityEssenceItem;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EntityInteractionFarmBlock;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EntityInteractionFarmBlockEntity;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EntityInteractionFarmMenu;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.interaction.InteractionHarvestDispatcher;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureModelBaseItem;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceStabilizerBlock;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceStabilizerBlockEntity;
@@ -38,6 +42,14 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 
 public final class MobFarmRegistrationAdapter {
+    public static final DeferredBlock<EntityInteractionFarmBlock> INTERACTION_BLOCK = Registration.BLOCKS.register("entity_interaction_farm",
+            () -> new EntityInteractionFarmBlock(MachineBlockProperties.villager("entity_interaction_farm")));
+    public static final DeferredItem<BlockItem> INTERACTION_ITEM = Registration.ITEMS.register("entity_interaction_farm",
+            () -> new BlockItem(INTERACTION_BLOCK.get(), properties("entity_interaction_farm").useBlockDescriptionPrefix()));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EntityInteractionFarmBlockEntity>> INTERACTION_BLOCK_ENTITY =
+            Registration.BLOCK_ENTITY_TYPES.register("entity_interaction_farm", () -> new BlockEntityType<>(EntityInteractionFarmBlockEntity::new, INTERACTION_BLOCK.get()));
+    public static final DeferredHolder<MenuType<?>, MenuType<EntityInteractionFarmMenu>> INTERACTION_MENU =
+            Registration.MENU_TYPES.register("entity_interaction_farm", () -> new MenuType<>(EntityInteractionFarmMenu::new, FeatureFlags.VANILLA_SET));
     public static final DeferredBlock<MobFarmBlock> BLOCK = Registration.BLOCKS.register("mob_farm",
             () -> new MobFarmBlock(MachineBlockProperties.villager("mob_farm")));
     public static final DeferredItem<BlockItem> ITEM = Registration.ITEMS.register("mob_farm",
@@ -100,7 +112,10 @@ public final class MobFarmRegistrationAdapter {
         String[] materials = {"copper", "iron", "gold", "diamond", "netherite"};
         for (MobFarmUpgradeItem.Kind kind : MobFarmUpgradeItem.Kind.values()) {
             for (int index = 0; index < materials.length; index++) {
-                String id = "mob_farm_" + kind.name().toLowerCase(java.util.Locale.ROOT) + "_" + materials[index] + "_upgrade";
+                String id = (kind == MobFarmUpgradeItem.Kind.SPEED ? "speed_" : "capacity_")
+                        + materials[index] + "_upgrade";
+                Registration.ITEMS.addAlias(Identifier.fromNamespaceAndPath("trading_cells", "mob_farm_" + id),
+                        Identifier.fromNamespaceAndPath("trading_cells", id));
                 int tier = index + 1;
                 upgrades.add(Registration.ITEMS.register(id, () -> new MobFarmUpgradeItem(properties(id).stacksTo(1), kind, tier)));
             }
@@ -111,9 +126,13 @@ public final class MobFarmRegistrationAdapter {
     public static void load(IEventBus bus) {
         bus.addListener(MobFarmRegistrationAdapter::registerCapabilities);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
+                (net.neoforged.neoforge.event.server.ServerStoppedEvent event) ->
+                        InteractionHarvestDispatcher.close(event.getServer()));
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
                 (net.neoforged.neoforge.event.OnDatapackSyncEvent event) -> event.sendRecipes(STABILIZATION_TYPE.get()));
     }
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(Capabilities.Item.BLOCK, INTERACTION_BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
         event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
         event.registerBlockEntity(Capabilities.Item.BLOCK, WORKBENCH_BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
         event.registerBlockEntity(Capabilities.Item.BLOCK, STABILIZER_BLOCK_ENTITY.get(), PortableMachineItemHandler::new);

@@ -53,7 +53,7 @@ public final class QuarryGameTests {
             List<ItemStack> items = (List<ItemStack>) itemsField.get(quarry);
             items.set(QuarryBlockEntity.FIRST_OUTPUT_SLOT, new ItemStack(Items.REDSTONE, 63));
             for (int slot = QuarryBlockEntity.FIRST_OUTPUT_SLOT + 1;
-                 slot < QuarryBlockEntity.CONTAINER_SIZE;
+                 slot < QuarryBlockEntity.FIRST_OUTPUT_SLOT + QuarryBlockEntity.OUTPUT_SLOT_COUNT;
                  slot++) {
                 items.set(slot, new ItemStack(Items.COBBLESTONE, 64));
             }

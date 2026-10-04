@@ -32,7 +32,9 @@ public final class FarmerGameTests {
             new GameTestCase("farmer_crop_datapack_snapshot", 20,
                     FarmerGameTests::farmerCropDatapackSnapshot),
             new GameTestCase("farmer_partial_output_capacity", 20, FarmerGameTests::farmerPartialOutputCapacity),
-            new GameTestCase("farmer_fortune_matrix", 20, FarmerGameTests::farmerFortuneMatrix)
+            new GameTestCase("farmer_fortune_matrix", 20, FarmerGameTests::farmerFortuneMatrix),
+            new GameTestCase("farmer_capacity_and_enchantments", 20, FarmerGameTests::farmerCapacityAndEnchantments),
+            new GameTestCase("farmer_requires_hoe_and_stops_on_break", 20, FarmerGameTests::requiresHoe)
         );
     }
 
@@ -200,6 +202,87 @@ public final class FarmerGameTests {
                 piglinFarmer.getItem(FarmerBlockEntity.FIRST_OUTPUT_SLOT).is(Items.CRIMSON_STEM),
                 "Piglin Farmer must insert the part of a multi-output harvest that still fits"
         );
+        helper.succeed();
+    }
+
+    private static void farmerCapacityAndEnchantments(GameTestHelper helper) {
+        var upgrades = com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.UPGRADES;
+        for (boolean piglin : new boolean[]{false, true}) {
+            for (int tier = 0; tier <= 5; tier++) {
+                helper.setBlock(GameTestFixtures.TEST_POS, Blocks.AIR);
+                helper.setBlock(GameTestFixtures.TEST_POS, piglin ? FarmerRegistrationAdapter.PIGLIN_FARMER_BLOCK.get()
+                        : FarmerRegistrationAdapter.FARMER_BLOCK.get());
+                var farmer = helper.getBlockEntity(GameTestFixtures.TEST_POS, FarmerBlockEntity.class);
+                farmer.setItem(FarmerBlockEntity.WORKER_SLOT, piglin ? GameTestFixtures.adultPiglinCapture(helper)
+                        : GameTestFixtures.adultVillagerCapture(helper));
+                farmer.setItem(FarmerBlockEntity.CROP_SLOT, new ItemStack(piglin ? Items.CRIMSON_FUNGUS : Items.WHEAT_SEEDS));
+                ItemStack hoe = new ItemStack(Items.DIAMOND_HOE);
+                farmer.setItem(FarmerBlockEntity.HOE_SLOT, hoe);
+                int unenchantedDuration = farmer.growthDurationTicks();
+                var registry = helper.getLevel().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+                hoe.enchant(registry.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE), 10);
+                hoe.enchant(registry.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.EFFICIENCY), 10);
+                farmer.setItem(FarmerBlockEntity.HOE_SLOT, hoe);
+                helper.assertValueEqual(farmer.growthDurationTicks(), unenchantedDuration, "Efficiency does not accelerate farming");
+                if (tier > 0) {
+                    farmer.setItem(FarmerBlockEntity.CAPACITY_SLOT, new ItemStack(upgrades.get(4 + tier).get(), 2));
+                    helper.assertValueEqual(farmer.getItem(FarmerBlockEntity.CAPACITY_SLOT).getCount(), 1, "One capacity upgrade only");
+                    BlockEntityStateFixtures.setInt(helper, farmer, "GrowthTicks", 0);
+                    helper.assertTrue(!farmer.getItem(FarmerBlockEntity.CAPACITY_SLOT).isEmpty(), "Capacity survives reload");
+                }
+                completeFarmerCycle(farmer);
+                int count = 0;
+                for (int slot = FarmerBlockEntity.FIRST_OUTPUT_SLOT; slot < FarmerBlockEntity.SPEED_SLOT; slot++) {
+                    var stack = farmer.getItem(slot);
+                    if (stack.is(piglin ? Items.CRIMSON_STEM : Items.WHEAT)) { count += stack.getCount(); }
+                }
+                helper.assertValueEqual(count, (piglin ? 14 : 11) * (1 << tier), "Capacity multiplier preserves Fortune");
+                BlockEntityStateFixtures.clearIndexedSlots(helper, farmer, "Slot",
+                        FarmerBlockEntity.FIRST_OUTPUT_SLOT, FarmerBlockEntity.OUTPUT_SLOT_COUNT);
+                farmer.setItem(FarmerBlockEntity.CROP_SLOT, new ItemStack(piglin ? Items.DEAD_FIRE_CORAL : Items.DEAD_BUSH));
+                completeFarmerCycle(farmer);
+                count = 0;
+                for (int slot = FarmerBlockEntity.FIRST_OUTPUT_SLOT; slot < FarmerBlockEntity.SPEED_SLOT; slot++) {
+                    var stack = farmer.getItem(slot);
+                    if (stack.is(piglin ? Items.COAL : Items.STICK)) { count += stack.getCount(); }
+                }
+                helper.assertValueEqual(count, (piglin ? 1 : 11) * (1 << tier), "Datapack Fortune applies to every capacity harvest");
+                helper.assertTrue(java.util.Arrays.stream(farmer.getSlotsForFace(net.minecraft.core.Direction.NORTH))
+                        .anyMatch(slot -> slot == FarmerBlockEntity.CAPACITY_SLOT), "Capacity accepts side automation");
+                helper.assertTrue(!farmer.canTakeItemThroughFace(FarmerBlockEntity.CAPACITY_SLOT,
+                        farmer.getItem(FarmerBlockEntity.CAPACITY_SLOT), net.minecraft.core.Direction.DOWN),
+                        "Capacity is not an automated output");
+            }
+        }
+        helper.succeed();
+    }
+
+    private static void requiresHoe(GameTestHelper helper) {
+        for (boolean piglin : new boolean[]{false, true}) {
+            helper.setBlock(GameTestFixtures.TEST_POS, Blocks.AIR);
+            helper.setBlock(GameTestFixtures.TEST_POS, piglin ? FarmerRegistrationAdapter.PIGLIN_FARMER_BLOCK.get()
+                    : FarmerRegistrationAdapter.FARMER_BLOCK.get());
+            var farmer = helper.getBlockEntity(GameTestFixtures.TEST_POS, FarmerBlockEntity.class);
+            farmer.setItem(FarmerBlockEntity.WORKER_SLOT, piglin ? GameTestFixtures.adultPiglinCapture(helper)
+                    : GameTestFixtures.adultVillagerCapture(helper));
+            farmer.setItem(FarmerBlockEntity.CROP_SLOT, new ItemStack(piglin ? Items.CRIMSON_FUNGUS : Items.WHEAT_SEEDS));
+            farmer.setItem(FarmerBlockEntity.CAPACITY_SLOT,
+                    com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.UPGRADES.get(9).get().getDefaultInstance());
+            completeFarmerCycle(farmer);
+            helper.assertValueEqual(farmer.machineDiagnosticSnapshot().reason(), "tool_required", "Both crop farms require a hoe");
+            helper.assertTrue(farmer.getItem(FarmerBlockEntity.FIRST_OUTPUT_SLOT).isEmpty(), "No crop without a hoe");
+            var hoe = new ItemStack(Items.WOODEN_HOE);
+            hoe.setDamageValue(hoe.getMaxDamage() - 1);
+            farmer.setItem(FarmerBlockEntity.HOE_SLOT, hoe);
+            completeFarmerCycle(farmer);
+            helper.assertTrue(farmer.getItem(FarmerBlockEntity.HOE_SLOT).isEmpty(), "Last use breaks the hoe");
+            int produced = 0;
+            for (int slot = FarmerBlockEntity.FIRST_OUTPUT_SLOT; slot < FarmerBlockEntity.SPEED_SLOT; slot++) {
+                if (farmer.getItem(slot).is(piglin ? Items.CRIMSON_STEM : Items.WHEAT)) { produced += farmer.getItem(slot).getCount(); }
+            }
+            helper.assertValueEqual(produced, piglin ? 4 : 1, "Capacity stops after the harvest that breaks the hoe");
+            helper.assertValueEqual(farmer.machineDiagnosticSnapshot().reason(), "tool_required", "Broken tool marks the farm inactive");
+        }
         helper.succeed();
     }
 

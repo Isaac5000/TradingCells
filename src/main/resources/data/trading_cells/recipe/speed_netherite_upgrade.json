@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": "minecraft:netherite_upgrade_smithing_template",
+  "base": "trading_cells:speed_diamond_upgrade",
+  "addition": "minecraft:netherite_block",
+  "result": {
+    "id": "trading_cells:speed_netherite_upgrade",
+    "count": 1
+  },
+  "show_notification": false
+}

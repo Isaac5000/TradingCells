@@ -28,16 +28,16 @@ final class PipeInteractionUiFixture {
         int left = screen.getLeftPos(), top = screen.getTopPos();
         switch (phase) {
             case 0 -> {
-                click(screen, 25, 64, 0);
+                click(screen, 25, 58, 0);
                 require(modeActive(screen), "Empty upgrade click disabled the editor");
             }
             case 1 -> {
-                click(screen, 20, 168, 0);
+                click(screen, 44, 132, 0);
                 require(menu.getCarried().getCount() == 64, "Upgrade stack pickup");
             }
             case 2 -> {
-                var down = new MouseButtonEvent(left + 24, top + 63, new MouseButtonInfo(0, 0));
-                var moved = new MouseButtonEvent(left + 25, top + 64, new MouseButtonInfo(0, 0));
+                var down = new MouseButtonEvent(left + 24, top + 57, new MouseButtonInfo(0, 0));
+                var moved = new MouseButtonEvent(left + 25, top + 58, new MouseButtonInfo(0, 0));
                 screen.mouseClicked(down, false);
                 screen.mouseDragged(moved, 1, 1);
                 screen.mouseReleased(moved);
@@ -46,20 +46,20 @@ final class PipeInteractionUiFixture {
             }
             case 3 -> {
                 if (menu.latest().upgradeTier() != PipeUpgradeTier.INFINITE || !modeActive(screen)) { return; }
-                click(screen, 25, 64, 0);
+                click(screen, 25, 58, 0);
                 require(modeActive(screen), "Full upgrade slot no-op disabled the editor");
                 require(menu.getSlot(0).getItem().getCount() == 1 && menu.getCarried().getCount() == 63,
                         "Full slot must preserve both upgrade stacks");
             }
-            case 4 -> click(screen, 20, 168, 0);
+            case 4 -> click(screen, 44, 132, 0);
             case 5 -> {
-                click(screen, 25, 64, 0);
-                click(screen, 74, 168, 0);
+                click(screen, 25, 58, 0);
+                click(screen, 98, 132, 0);
                 require(menu.getCarried().isEmpty(), "Upgrade acknowledgement must not block the next inventory click");
             }
             case 6 -> {
                 if (menu.latest().upgradeTier() != PipeUpgradeTier.BARE || !modeActive(screen)) { return; }
-                click(screen, 20, 168, 1);
+                click(screen, 44, 132, 1);
             }
             case 7 -> {
                 if (menu.latest().upgradeTier() != PipeUpgradeTier.INFINITE || !modeActive(screen)) { return; }
@@ -70,7 +70,7 @@ final class PipeInteractionUiFixture {
                     if (child instanceof EditBox field) { checkTyping(screen, field); }
                 }
                 field(screen, 28).setValue("777");
-                field(screen, 185).setValue("metales");
+                field(screen, 148).setValue("metales");
                 screen.keyPressed(new KeyEvent(256, 0, 0));
                 require(Minecraft.getInstance().gui.screen() != screen, "Escape must still close a focused field");
                 System.out.println("Pipe upgrade drag, full/empty no-op, shift click and inventory conservation verified");
@@ -79,17 +79,17 @@ final class PipeInteractionUiFixture {
                 require(menu.initial().priority() == 777 && menu.initial().profile(
                         com.cosmocraft.trading_cells.feature.logistics.domain.model.LogisticsResourceType.ITEM).channel().equals("metales"),
                         "Typed values must persist after Escape");
-                click(screen, 25, 118, 0);
-                click(screen, 223, 133, 0);
+                click(screen, 21, 98, 0);
+                click(screen, 223, 107, 0);
             }
             case 9 -> {
                 for (var child : screen.children()) {
                     if (child instanceof EditBox field) { checkTyping(screen, field); }
                 }
-                field(screen, 36).setValue("minecraft:iron_ingot");
-                field(screen, 74).setValue("{\"minecraft:custom_data\":{name:\"e1qf\"}}");
-                field(screen, 112).setValue("hierro");
-                click(screen, 320, 238, 0);
+                field(screen, 28).setValue("minecraft:iron_ingot");
+                field(screen, 58).setValue("{\"minecraft:custom_data\":{name:\"e1qf\"}}");
+                field(screen, 88).setValue("hierro");
+                click(screen, 310, 193, 0);
                 screen.onClose();
             }
             case 10 -> {

@@ -12,7 +12,7 @@ public interface FarmerUseCase {
     int effectiveGrowthTicks(
             double toolSpeed,
             double tierPosition,
-            int efficiencyLevel
+            int speedTier
     );
 
     FarmerHarvest harvest(FarmerCrop crop, int fortuneLevel);

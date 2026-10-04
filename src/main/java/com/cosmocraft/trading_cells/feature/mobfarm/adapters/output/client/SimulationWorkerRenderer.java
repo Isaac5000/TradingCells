@@ -35,6 +35,13 @@ final class SimulationWorkerRenderer implements RenderLayerParent<VillagerRender
     void submit(SimulationEntityPreview preview, EntityRenderDispatcher dispatcher,
             double x, double y, double z, int light, PoseStack poseStack,
             SubmitNodeCollector collector, CameraRenderState camera) {
+        submit(preview, dispatcher, x, y, z, light, poseStack, collector, camera, null);
+    }
+
+    void submit(SimulationEntityPreview preview, EntityRenderDispatcher dispatcher,
+            double x, double y, double z, int light, PoseStack poseStack,
+            SubmitNodeCollector collector, CameraRenderState camera,
+            net.minecraft.client.renderer.item.@org.jspecify.annotations.Nullable ItemStackRenderState secondary) {
         if (!hasTexture || !(preview.state() instanceof VillagerRenderState state)) {
             // Keep the ordinary preview if an asset or an optional renderer is unavailable.
             preview.submit(dispatcher, x, y, z, light, poseStack, collector, camera);
@@ -51,7 +58,20 @@ final class SimulationWorkerRenderer implements RenderLayerParent<VillagerRender
             collector.submitModel(model, state, poseStack, model.renderType(TEXTURE),
                     light, OverlayTexture.NO_OVERLAY, -1, null, state.outlineColor, null);
             model.setupAnim(state);
+            poseStack.pushPose();
+            if (secondary != null && !secondary.isEmpty()) { poseStack.translate(-0.22F, 0, 0); }
             heldItem.submit(poseStack, collector, light, state, state.yRot, state.xRot);
+            poseStack.popPose();
+            if (secondary != null && !secondary.isEmpty()) {
+                poseStack.pushPose();
+                model.translateToArms(state, poseStack);
+                poseStack.mulPose(Axis.XP.rotation(0.75F));
+                poseStack.translate(0.25F, 0.13F, -0.34F);
+                poseStack.mulPose(Axis.XP.rotation((float) Math.PI));
+                poseStack.scale(0.8F, 0.8F, 0.8F);
+                secondary.submit(poseStack, collector, light, OverlayTexture.NO_OVERLAY, state.outlineColor);
+                poseStack.popPose();
+            }
         } finally {
             poseStack.popPose();
         }

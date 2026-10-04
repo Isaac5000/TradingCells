@@ -41,14 +41,14 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.Nullable;
 
 public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity implements MenuProvider {
-    private static final int MAX_EXPERIENCE_PER_ENTITY = 20;
+    private static final int MAX_EXPERIENCE_PER_ENTITY = 10;
     public static final int WORKER_SLOT = 0;
     public static final int SWORD_SLOT = 1;
     public static final int MODULE_SLOT = 2;
     public static final int SPEED_SLOT = 3;
     public static final int CAPACITY_SLOT = 4;
     public static final int FIRST_OUTPUT_SLOT = 5;
-    public static final int OUTPUT_SLOT_COUNT = 18;
+    public static final int OUTPUT_SLOT_COUNT = 27;
     public static final int CONTAINER_SIZE = FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT;
     private static final int MAX_PENDING_STACKS = 4_096;
     private static final int MAX_OBSERVED_LOOT = 2_048;

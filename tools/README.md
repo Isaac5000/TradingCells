@@ -37,7 +37,8 @@ binario predeterminado de CI no genera ese archivo.
 ## Generacion manual
 
 - `generate_machine_gui.py` y `generate_villager_trade_gui.py`: regeneran sus
-  texturas sin `--check`.
+  texturas sin `--check`. Fondos por ID de bloque en `gui/container/`; iconos en
+  `gui/sprites/`. `docs/GUI_RESOURCES.md` define propiedad, nombres e inventario.
 - `generate_enchantment_levels.py`: mantiene numerales romanos 11-255 en idiomas.
 - `generate_pipe_textures.py`: valida los sprites editables por tipo de tuberia;
   solo `--write` los sobrescribe. `--preview <directorio>` junto con `--write`

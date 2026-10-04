@@ -2,6 +2,80 @@
 
 ## 1.0.0 - Unreleased
 
+- Renamed capacity upgrade IDs to `capacity_<material>_upgrade`, retaining old
+  save aliases. Updated the syringe recipe to iron, lapis lazuli and black concrete.
+- Syringe extraction takes 2/4/6/8 seconds by tier. Third-person grip and arm
+  poses follow extraction/reloading; mirrored vial paths approach from the other
+  hand. Load-state changes no longer trigger a disappearing reequip animation.
+- Syringe approach lasts six ticks for every tier; only vial filling slows down.
+- Crop farms require a hoe and stop capacity batches when it breaks. Empty speed
+  and capacity slots display faint copper upgrades, including farms and quarries.
+- Stabilizer Jade progress now includes seconds; entity farm progress bars share
+  its cyan color. Removed the redundant stabilization duration/XP note from REI.
+- Replaced the Pipe Wrench sprite with custom transparent 32x32 artwork.
+- Keep the extraction arm extended through the final filling tick. Corrected
+  held Pipe Wrench orientation in both views without changing user-edited pixels.
+- Removed the syringe's post-extraction cooldown; reload alone gates its next use.
+- Moved all five capacity upgrades from Farms to Items in the creative inventory.
+
+- Added capacity upgrades to Villager and Piglin crop farms, preserving saved
+  slot indices. Fortune applies to every harvest; Efficiency does not boost speed.
+- Spawner egg extraction now requires Shift-right-click and drops the egg above
+  the placed block, without requiring an empty hand or inserting into inventory.
+- Adjusted recipe-viewer bottom margins, pipe controls/rule spacing and the
+  Autotrader selector arrow. Preserved the approved hand-finished vial PNGs as
+  generator sources, including their individual glass transparency.
+
+- Standardized GUI resources as `gui/container/<block_id>/` backgrounds and
+  `gui/sprites/<block_id|shared>/` widgets, with explicit screen ownership and
+  validation for undeclared textures. Removed 88 obsolete copies after checking
+  every destination hash; source artwork is retained.
+
+- Compacted machine, terminal and pipe menus to leave a complete REI search
+  footer and at least three item columns at the default automatic GUI scale.
+  Native item/slot sizes and the player's configured scale remain unchanged.
+- Kept Infuser equipment visible and interactive while its recipe book is open;
+  centered the recipe XP cost and separated its bar and controls from the frame.
+- Fixed worldless enchantment tooltip indexing that caused an REI NullPointerException.
+- Held spawner blocks no longer turn into eggs. Installing a preserved egg now
+  restores the complete mount/rider tree; plain eggs clear the previous tree.
+- Added renewable Creaking resin harvesting with axes and the Interaction Farm
+  activation label. Renamed speed upgrade IDs to `speed_<material>_upgrade`,
+  with legacy item aliases; capacity now uses the vanilla bundle icon and recipe.
+
+- Added capacity upgrades to the Interaction Farm, with up to 32 paid operations
+  per channel and cycle, persistent pending results and renewable red/brown
+  Mooshroom shearing. Existing output slot indices remain unchanged.
+- Added vanilla inventory clock/chest emblems to speed/capacity upgrades,
+  updated their early-tier recipes and moved speed upgrades to the Items tab.
+- Replaced machine and REI backgrounds with themed PNG artwork, kept frames
+  outside content, improved trader text contrast and compacted the Interaction
+  Farm menu. Its mechanism now uses static textures without a front sign.
+  Decorative corners keep their proportions; tiled border details and smaller
+  pre-baked variants avoid stretching at compact window sizes.
+- Removed 16 unused GUI backgrounds, three unused rendering helpers and their
+  obsolete generator paths, retaining the source artwork and active widgets.
+  Kept backgrounds in their machine-specific folders and removed 26 unused
+  REI size variants instead of distributing them from a shared themes folder.
+- Renamed the simulation machine to Entity Farm. Enchantment names remain
+  visible while Shift reveals descriptions; only Shift is cyan in the shared hint.
+- Extended Farmer's Touch to interaction tools, preventing standard durability
+  damage inside the Interaction Farm without protecting ordinary world usage.
+- Added a dedicated speed-upgrade input to both Farmers and Quarries, replacing
+  Efficiency timing while preserving tool tiers, Fortune, Silk Touch and wear.
+  Existing stored output indices remain unchanged; speed is appended after outputs.
+- Expanded simulation, interaction, crop, quarry and Netherite Piglin Bartering
+  outputs to 27 slots in a 9x3 grid, including automation and portable storage.
+- Refined crop/quarry screen backgrounds, added empty-input silhouettes to
+  simulation and essence machines, and shared the Infuser XP-mode icon with the Workbench.
+- Added an articulated mechanism, rear processing core, conduits and visible
+  ITEM/TOOL trays inside the Interaction Farm's existing black/blue cage.
+- Capped simulation XP at 10 per entity before batch multiplication without
+  reducing previously stored XP.
+- Added an independent Entity Interaction Farm with two isolated interaction
+  channels, native honey/honeycomb harvesting, atomic persistent pending results,
+  sided hopper/pipe automation, speed upgrades and REI/Jade support.
+  Manual pause only: no redstone control or comparator output; saved legacy redstone modes are ignored.
 - Added vanilla Silk Touch II through Arcane Infusion, including protected tool-specific mining speed, collection of otherwise unobtainable blocks, preserved cake portions and archaeology contents, repeatable distance-activated Trial Spawners, and reusable Vaults without permanent player UUIDs.
 - Added a persistent Comparator-installed redstone controller for normal and Trial Spawners, including frozen previews, state preservation and an optional REI interaction display.
 - Added trusted preserved-Spawner previews and non-duplicating Spawn Egg conversion, including static entity rendering, concise modified-entity tooltips and hierarchy restoration.

@@ -8,6 +8,21 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 
 ## Estado actual
 
+- Correcciones 2026-10-04: IDs de capacidad generales con alias; jeringa con
+  agarre/recarga por ambas manos, extraccion 2/4/6/8 s y avance fijo de 6 ticks;
+  azada obligatoria, siluetas de cobre, Jade cian y llave nueva 32x32.
+  Sin cooldown de jeringa; brazo extendido hasta completar llenado. Capacidad
+  movida al TAB Objetos; llave orientada por el mango sin tocar el PNG del usuario.
+  Cierre `check releaseCheck`: 145 GameTests, 47 pruebas de recursos y 29 de
+  recetas correctos; animaciones OpenGL/Vulkan con/sin REI comprobadas.
+  Evidencias y alcance en `docs/FIXES_20261004.md`. No repetir estos hitos.
+
+- Ajustes 2026-10-03: granjas de cultivos con capacidad x2..x32, Fortuna
+  conservada y Eficiencia sin efecto. Generadores extraen huevo solo con Shift
+  + clic derecho, soltandolo sobre el bloque. Marcos REI reducidos sin recorte;
+  PNG de viales aprobados preservados como fuentes finales. Detalles y pruebas:
+  `docs/FIXES_20261001.md` y `docs/FARMER_CROP_DATAPACKS.md`.
+
 - Version de desarrollo no publicada: `1.0.0` para Minecraft `26.2.0` y
   NeoForge `26.2.0.88`.
 - Java 25 y Gradle Wrapper 9.8.0; `gradlew` esta registrado como ejecutable.
@@ -37,6 +52,49 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
   Marcos de mejoras generales independientes en `tools/assets/upgrade_bases/frames`;
   no recuperar los cinco PNG genericos antiguos. Nombres de mejoras resueltos
   por el usuario: no volver a renombrarlos.
+- Granja de interacciones, 2026-09-27: maquina independiente con canales ITEM y
+  TOOL, entorno desechable, colmena vanilla para abejas, pendientes atomicos y
+  automatizacion lateral. Contratos e hitos: `docs/ENTITY_INTERACTION_FARM.md`.
+  No altera la granja de muerte ni requiere XP operativo. Sin trabajo en GitHub.
+  Cierre 2026-09-28: `clean check releaseCheck`, 131 GameTests y cuatro perfiles
+  visuales OpenGL/Vulkan con/sin REI aprobados; cinco PNG de viales sincronizados
+  con autorizacion del usuario. Implementacion terminada; limites en el contrato.
+- Correcciones posteriores (2026-09-28): progreso en `docs/FIXES_20260928.md`.
+  La granja de interacciones queda sin control de redstone ni salida de comparador;
+  conserva pausa manual e ignora modos antiguos guardados. El usuario cancelo
+  el nuevo boton de automatizacion del estabilizador. Cierre 2026-09-29: velocidad
+  dedicada en cultivos/canteras sin Eficiencia, 27 salidas en las siete maquinas,
+  fondos/siluetas, control XP comun, mecanismo visual de interacciones y maximo
+  10 XP por entidad implementados. `check releaseCheck`, 135/135 GameTests,
+  36 pruebas Python de recursos y matriz visual OpenGL/Vulkan con/sin REI pasan.
+  Hitos terminados; no repetirlos al reanudar.
+- Correcciones nuevas 2026-09-29/30: `docs/FIXES_20260929.md`. Capacidad en
+  interacciones (slot nuevo 32), Mooshrooms renovables, reloj/cofre vanilla en
+  mejoras, recetas y tab de velocidad, fondos PNG tematicos y tooltips con Shift.
+  Toque del Granjero protege herramientas solo en el entorno de interacciones.
+  `check releaseCheck` pasa con 139 GameTests, 37 pruebas Python de recursos y
+  28 de recetas. Matriz visual OpenGL/Vulkan con/sin REI cerrada, incluidos
+  tooltips es/en y menu compacto a 854x480. Hitos terminados; no repetirlos.
+- Revision 2026-10-01: marcos con esquinas proporcionadas y detalles repetidos,
+  variantes compactas sin deformar PNG, contenido y REI fuera del borde.
+  Fondos en la carpeta de cada maquina, no `gui/themes/`. Retirados 16 PNG
+  obsoletos, 26 variantes sin uso y tres helpers de dibujo; fuentes intactas.
+  `check releaseCheck`: 139 GameTests, 42 pruebas de recursos y 28 de recetas.
+  Alcance/evidencia en `docs/CLEANUP_CANDIDATES.md` y `docs/FIXES_20260929.md`.
+- Reorganizacion GUI posterior del 2026-10-01 cerrada: convencion por ID de
+  bloque en `gui/container/` y `gui/sprites/`, documentada en `docs/GUI_RESOURCES.md`.
+  Retiradas las 88 copias anteriores tras verificar hashes; 103 PNG activos y
+  fuentes intactas. `check`/`releaseCheck` vuelven a pasar.
+- Correcciones siguientes del 2026-10-01: `docs/FIXES_20261001.md`. Margen REI,
+  resina del crepitante con hacha, huevos/monturas, tooltips sin mundo, IDs de
+  velocidad generales con alias y mejoras de capacidad con bundle. Consultar
+  ese documento antes de repetir tareas o afirmar cerrada la matriz visual.
+- Cierre 2026-10-02: menus compactados sin cambiar escala ni slots; buscador y
+  tres columnas REI en escala automatica desde 854x480. Infusor con equipo
+  utilizable bajo recetario abierto, coste XP centrado y controles separados.
+  `clean check releaseCheck`: 142 GameTests, 43 pruebas de recursos y 28 de
+  recetas; OpenGL/Vulkan con/sin REI, terminal y tuberias comprobados. JAR limpio
+  verificado; detalles y evidencias en `docs/FIXES_20261001.md`. No repetir hitos.
 
 ## Arquitectura
 
@@ -95,8 +153,9 @@ el estado saneado de Creature Models; no restaurar las implementaciones retirada
 ## Funcionalidades implementadas
 
 - Captura, liberacion, cria, incubacion, comercio manual/automatico y trueque.
-- Cultivos y Canteras para aldeanos y piglins con herramientas, Fortuna/Eficiencia,
-  catalogos dinamicos, salidas parciales y persistencia. Los cultivos aceptan
+- Cultivos y Canteras para aldeanos y piglins con herramientas, Fortuna y mejora
+  independiente de velocidad, catalogos dinamicos, 27 salidas y persistencia.
+  Eficiencia no modifica sus tiempos; el material de la herramienta si. Los cultivos aceptan
   descriptores aditivos `schema_version: 1` mediante snapshots inmutables.
 - Conversion de aldeanos, Granja de Hierro y simulacion general de entidades
   con filtros, objetivos ampliables y XP. Los objetivos se seleccionan mediante

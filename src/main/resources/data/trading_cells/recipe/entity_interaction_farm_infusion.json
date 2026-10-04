@@ -1,0 +1,47 @@
+{
+  "type": "trading_cells:arcane_infusion",
+  "category": "production",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:lapis_block",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:black_concrete",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:lapis_block",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:black_concrete",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:dispenser",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:black_concrete",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:lapis_block",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:black_concrete",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:lapis_block",
+      "count": 1
+    }
+  ],
+  "experience": 50000,
+  "result": {
+    "type": "item",
+    "item": "trading_cells:entity_interaction_farm"
+  }
+}

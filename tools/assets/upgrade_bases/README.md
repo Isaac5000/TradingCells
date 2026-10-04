@@ -1,5 +1,15 @@
 # Bases de mejoras
 
+2026-10-01: capacidad usa `bundle` vanilla en vez del cofre. Reloj y bundle
+conservan silueta y detalle, con saturacion 0.80 y contraste 1.10 para integrarse
+en los marcos. Velocidad se llama `speed` en codigo, recursos e IDs; los cinco
+IDs `mob_farm_speed_*` son alias de lectura para no perder objetos guardados.
+
+2026-09-30: velocidad usa el reloj del inventario vanilla; capacidad, el render
+del cofre vanilla. Fuentes y procedencia en `emblems/README.md`. Sustituyen las
+espadas descritas en el historial inferior, no sus marcos. Cinco niveles con el
+mismo emblema y colores exactos, horneados con `--bake-utility-emblems`.
+
 2026-09-24: los cinco PNG antiguos de `textures/item/upgrades/` fueron eliminados
 por el usuario. No se restauran. `frames/{copper,iron,gold,diamond,netherite}.png`
 son las nuevas bases generales: copia exacta de cada quarry actual sin el pico,
@@ -44,7 +54,7 @@ material. Solo diamante usa lila y netherite rojo, mediante una mascara limitada
 al interior de cada remache. Esta regla sustituye la peticion anterior de poner
 lila en todos los niveles salvo netherite.
 
-Las dos mejoras de granja tienen el mismo limite visible de 60x60 dentro del
+Historial anterior al cambio a reloj/cofre: las dos mejoras de granja tenian el mismo limite visible de 60x60 dentro del
 icono 64x64 que la quarry. La espada esta separada del marco y su recorte canonico
 se ha pegado en el PNG de capacidad, con autorizacion expresa del usuario.
 El PNG fuente y los cinco PNG finales contienen la espada completa; no existe
@@ -66,7 +76,7 @@ Prompts originales normalizados (terminales recoloreados despues a acero):
   el simbolo central por un pico diagonal grande de acero, sin roca ni flechas.
 - `piglin_barter`: mejora de cobre del mismo estilo con un lingote en el
   centro entre dos flechas curvas de intercambio.
-- `mob_farm_speed`: editar la base de quarry conservando marco, remaches de
+- `speed`: editar la base de quarry conservando marco, remaches de
   cobre y proporcion exterior; sustituir el pico por una espada vertical cian
   con acero, mango marron y dos indicadores de velocidad. Reducir la espada
   dentro del panel naranja para que ningun extremo toque el marco.

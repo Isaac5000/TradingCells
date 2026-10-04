@@ -17,6 +17,25 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(SpawnEggItem.class)
 abstract class SpawnEggItemMixin {
+    @Inject(method = "useOn", at = @At("HEAD"), cancellable = true)
+    private void tradingCells$replaceSpawnerTree(net.minecraft.world.item.context.UseOnContext context,
+            CallbackInfoReturnable<InteractionResult> callback) {
+        var level = context.getLevel();
+        var pos = context.getClickedPos();
+        if (!(level.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.SpawnerBlockEntity spawner)) { return; }
+        if (!(level instanceof ServerLevel server)) {
+            callback.setReturnValue(InteractionResult.SUCCESS);
+        } else if (server.isSpawnerBlockEnabled()) {
+            if (!PreservedSpawnerItemAdapter.configureSpawner(server, spawner, context.getItemInHand())) {
+                callback.setReturnValue(InteractionResult.FAIL);
+                return;
+            }
+            level.gameEvent(context.getPlayer(), net.minecraft.world.level.gameevent.GameEvent.BLOCK_CHANGE, pos);
+            context.getItemInHand().shrink(1);
+            callback.setReturnValue(InteractionResult.SUCCESS);
+        }
+    }
+
     @Inject(method = "shouldPrintOpWarning", at = @At("HEAD"), cancellable = true)
     private void tradingCells$hideWarningForTrustedEgg(
             ItemStack stack,

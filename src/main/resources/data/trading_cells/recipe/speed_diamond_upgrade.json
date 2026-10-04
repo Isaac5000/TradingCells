@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CBC",
+    "BSB",
+    "CBC"
+  ],
+  "key": {
+    "C": "minecraft:popped_chorus_fruit",
+    "B": "minecraft:diamond_block",
+    "S": "trading_cells:speed_gold_upgrade"
+  },
+  "result": {
+    "id": "trading_cells:speed_diamond_upgrade",
+    "count": 1
+  },
+  "show_notification": false
+}

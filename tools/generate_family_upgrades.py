@@ -6,7 +6,7 @@ import colorsys
 from functools import lru_cache
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageEnhance
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXTURES = ROOT / "src/main/resources/assets/trading_cells/textures/item"
@@ -14,7 +14,7 @@ ORIGINALS = TEXTURES / "upgrades"
 BASES = Path(__file__).resolve().parent / "assets/upgrade_bases"
 FRAMES = BASES / "frames"
 MATERIALS = ("copper", "iron", "gold", "diamond", "netherite")
-FAMILIES = ("quarry", "piglin_barter", "pipe", "mob_farm_speed", "mob_farm_capacity")
+FAMILIES = ("quarry", "piglin_barter", "pipe", "speed", "mob_farm_capacity")
 TERMINALS = ("network_terminal", "network_crafting_terminal")
 TERMINAL_BODY = "network_terminal_body"
 TERMINAL_ORIGINALS = BASES / "originals/terminals"
@@ -28,7 +28,7 @@ SPECIAL_RIVETS = {
     "netherite": ((25, 4, 4), (65, 8, 5), (125, 17, 9), (185, 30, 14),
                   (230, 60, 25), (255, 115, 57), (255, 212, 140)),
 }
-MOB_FARM_SWORD_REGIONS = ((27, 17, 37, 34), (23, 34, 41, 41), (28, 41, 35, 48))
+UTILITY_EMBLEMS = {"speed": "clock", "mob_farm_capacity": "bundle"}
 # Opaque colors from Minecraft 26.2's stick.png, dark to light.
 WOOD_PALETTE = ((40, 30, 11), (73, 54, 21), (104, 78, 30), (137, 103, 39))
 QUARRY_HANDLE_ROWS = {
@@ -61,12 +61,12 @@ PIGLIN_GOLD_ROWS = {
 def wooden_emblem_pixels(family):
     if family == "quarry":
         return {(x, y) for y, (left, right) in QUARRY_HANDLE_ROWS.items() for x in range(left, right)}
-    if family in ("mob_farm_speed", "mob_farm_capacity"):
-        return {(x, y) for y in range(40, 43) for x in range(29, 34)}
     return set()
 
 
 def fixed_emblem_pixels(family, base):
+    if family in UTILITY_EMBLEMS:
+        return emblem_pixels(family, base)
     if family == "piglin_barter":
         # The ingot and circulating arrows are gold, separate from the copper housing.
         pixels = set()
@@ -81,7 +81,7 @@ def fixed_emblem_pixels(family, base):
 
 def bake_wooden_emblems():
     """Save fixed wood colors into the source PNGs before generating material tiers."""
-    for family in ("quarry", "mob_farm_speed", "mob_farm_capacity"):
+    for family in ("quarry",):
         base = family_base(family)
         pixels = wooden_emblem_pixels(family)
         lights = [luminance(base.getpixel(point)[:3]) for point in pixels
@@ -107,13 +107,25 @@ def family_base(family):
     return base
 
 
-def bake_mob_farm_sword():
-    """Persist the shared sword into the canonical PNG, not a runtime composition."""
-    speed = family_base("mob_farm_speed")
-    capacity = family_base("mob_farm_capacity")
-    for bounds in MOB_FARM_SWORD_REGIONS:
-        capacity.paste(speed.crop(bounds), bounds[:2])
-    capacity.save(BASES / "mob_farm_capacity.png")
+@lru_cache
+def utility_emblem(family):
+    with Image.open(BASES / "emblems" / f"{UTILITY_EMBLEMS[family]}_vanilla.png") as source:
+        icon = source.convert("RGBA")
+        # Keep vanilla silhouettes and detail, with a quieter palette for the metal frames.
+        icon = ImageEnhance.Color(icon).enhance(0.80)
+        icon = ImageEnhance.Contrast(icon).enhance(1.10)
+        icon.putalpha(icon.getchannel("A").point(lambda alpha: 255 if alpha >= 128 else 0))
+        icon = icon.crop(icon.getchannel("A").getbbox())
+        ratio = min(28 / icon.width, 28 / icon.height)
+        icon = icon.resize((round(icon.width * ratio), round(icon.height * ratio)), Image.Resampling.NEAREST)
+        result = Image.new("RGBA", (64, 64))
+        result.paste(icon, ((64 - icon.width) // 2, (64 - icon.height) // 2))
+        return result
+
+
+def bake_utility_emblems():
+    for family in UTILITY_EMBLEMS:
+        Image.alpha_composite(generic_frame("copper"), utility_emblem(family)).save(BASES / f"{family}.png")
 
 
 def rivet_pixels(base):
@@ -151,6 +163,9 @@ def family_texture(base, material, family=None):
 
 def emblem_pixels(family, base):
     """Extract the existing artwork, including its dark outline, but not its panel."""
+    if family in UTILITY_EMBLEMS:
+        icon = utility_emblem(family)
+        return {(x, y) for y in range(64) for x in range(64) if icon.getpixel((x, y))[3]}
     if family == "piglin_barter":
         result = {(x, y) for y, runs in PIGLIN_GOLD_ROWS.items()
                   for left, right in runs for x in range(left, right)}
@@ -323,15 +338,15 @@ def main():
     parser.add_argument("--inspect-bases", type=Path)
     parser.add_argument("--inspect-name")
     parser.add_argument("--extract-background", action="store_true")
-    parser.add_argument("--bake-mob-farm-sword", action="store_true")
+    parser.add_argument("--bake-utility-emblems", action="store_true")
     parser.add_argument("--bake-wooden-emblems", action="store_true")
     parser.add_argument("--bake-terminal-steel", action="store_true")
     parser.add_argument("--bake-generic-frames", action="store_true")
     args = parser.parse_args()
     if args.bake_generic_frames:
         bake_generic_frames()
-    if args.bake_mob_farm_sword:
-        bake_mob_farm_sword()
+    if args.bake_utility_emblems:
+        bake_utility_emblems()
     if args.bake_wooden_emblems:
         bake_wooden_emblems()
     if args.bake_terminal_steel:
@@ -363,7 +378,7 @@ def main():
                 pending.extend(((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)))
         # Inventory pixel art needs opaque texels, not near-opaque generated alpha.
         image.putalpha(image.getchannel("A").point(lambda alpha: 255 if alpha >= 128 else 0))
-        if family in ("mob_farm_speed", "mob_farm_capacity"):
+        if family in ("speed", "mob_farm_capacity"):
             with Image.open(BASES / "quarry.png") as reference:
                 left, top, right, bottom = reference.convert("RGBA").getchannel("A").getbbox()
             visible = image.getchannel("A").getbbox()

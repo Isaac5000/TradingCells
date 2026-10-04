@@ -16,8 +16,9 @@ public record SyringeExtractionProperty() implements RangeSelectItemModelPropert
         var entity = owner == null ? null : owner.asLivingEntity();
         if (tier < 1 || tier > 4 || entity == null || !entity.isUsingItem() || entity.getUseItem() != stack) { return -1; }
         float partial = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        return (tier - 1) * 2 + Math.clamp((EssenceExtractorItem.EXTRACTION_TICKS - entity.getUseItemRemainingTicks() + partial)
-                / EssenceExtractorItem.EXTRACTION_TICKS, 0, 1);
+        int duration = EssenceExtractorItem.extractionTicks(tier);
+        return (tier - 1) * 2 + com.cosmocraft.trading_cells.feature.mobfarm.domain.model.SyringeAnimation.modelProgress(
+                tier, duration - entity.getUseItemRemainingTicks() + partial);
     }
     @Override public MapCodec<SyringeExtractionProperty> type() { return CODEC; }
 }

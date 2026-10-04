@@ -15,6 +15,7 @@ import org.jspecify.annotations.Nullable;
 /** Shared visual rules for the manual and automatic villager trade screens. */
 public final class VillagerTradeScreenCommon {
     public static final int TEXT_DARK = 0xFF3A3A3A;
+    public static final int TEXT_LIGHT = 0xFFE0E0D8;
     private static final int EXPERIENCE_TEXT_COLOR = 0xFF80FF20;
     private static final float EXPERIENCE_TEXT_SCALE = 0.85F;
     private static final int DISCOUNT_OLD_PRICE_COLOR = 0xFFFFFFFF;
@@ -217,15 +218,11 @@ public final class VillagerTradeScreenCommon {
             int y,
             VillagerTradeSprites.State state
     ) {
-        graphics.blit(
+        graphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
                 VillagerTradeSprites.arrow(state),
                 x,
                 y,
-                0,
-                0,
-                VillagerTradeSprites.ARROW_WIDTH,
-                VillagerTradeSprites.ARROW_HEIGHT,
                 VillagerTradeSprites.ARROW_WIDTH,
                 VillagerTradeSprites.ARROW_HEIGHT
         );

@@ -11,8 +11,8 @@
     "feature/skeletonfarm/adapters/input/SkeletonFarmBlockEntity.java",
     "feature/zombiefarm/adapters/input/ZombieFarmBlockEntity.java"
   ],
-  "recipe_catalog_count": 164,
-  "recipe_catalog_sha256": "6A376F3195E1FDE69F74E7CA6A621CCDFBB771AA578D01405569D83D06385D8A",
+  "recipe_catalog_count": 165,
+  "recipe_catalog_sha256": "EFF85F40FF86F7043CDAB7B6B6C04CB74C53AFE289DF11BAACB9E47068DB6A17",
   "payload_ids": {
     "ArcaneInfuserTransferPayload": "arcane_infuser_transfer",
     "InfuserAutomationPayload": "infuser_automation",

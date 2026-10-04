@@ -277,6 +277,7 @@ public final class TradingCellsPerformanceClient {
 
     private void openConfiguredBlock(Minecraft minecraft) {
         if (EssenceAutomationUiFixture.active() && EssenceAutomationUiFixture.prepared()) { return; }
+        if (MachineFixesUiFixture.active() && MachineFixesUiFixture.prepared()) { return; }
         if (LogisticsUiFixture.worldScene() && LogisticsUiFixture.readyForCapture()) { return; }
         if (openBlock == null
                 || minecraft.level == null

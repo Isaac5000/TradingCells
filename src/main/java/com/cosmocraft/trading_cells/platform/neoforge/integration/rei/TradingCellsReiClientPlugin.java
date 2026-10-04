@@ -21,7 +21,16 @@ import com.cosmocraft.trading_cells.feature.quarry.adapters.output.client.Villag
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.bootstrap.TradingCells;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenLayout;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.MobFarmScreen;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.EntityInteractionFarmScreen;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.EssenceWorkbenchScreen;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.EssenceStabilizerScreen;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.VillagerTradingCellScreen;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.AutotraderScreen;
+import com.cosmocraft.trading_cells.feature.trader.adapters.output.client.NetheritePiglinBarteringCellScreen;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import me.shedaniel.math.Rectangle;
 import me.shedaniel.rei.api.client.plugins.REIClientPlugin;
@@ -29,12 +38,14 @@ import me.shedaniel.rei.api.client.registry.category.CategoryRegistry;
 import me.shedaniel.rei.api.client.registry.display.DisplayRegistry;
 import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
 import me.shedaniel.rei.api.client.registry.screen.ClickArea;
+import me.shedaniel.rei.api.client.registry.screen.DisplayBoundsProvider;
 import me.shedaniel.rei.api.client.registry.screen.ScreenRegistry;
 import me.shedaniel.rei.api.client.registry.transfer.TransferHandlerRegistry;
 import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import me.shedaniel.rei.forge.REIPluginClient;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
@@ -252,6 +263,24 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
 
     @Override
     public void registerScreens(ScreenRegistry registry) {
+        registry.registerDecider(new DisplayBoundsProvider<AbstractContainerScreen<?>>() {
+            private final Set<Class<?>> screens = Set.of(BreederScreen.class, IncubatorScreen.class,
+                    VillagerFarmerScreen.class, PiglinFarmerScreen.class, VillagerQuarryScreen.class,
+                    PiglinQuarryScreen.class, ConverterScreen.class, IronFarmScreen.class,
+                    ArcaneInfuserScreen.class, MobFarmScreen.class, EntityInteractionFarmScreen.class,
+                    EssenceWorkbenchScreen.class, EssenceStabilizerScreen.class, VillagerTradingCellScreen.class,
+                    AutotraderScreen.class, NetheritePiglinBarteringCellScreen.class,
+                    com.cosmocraft.trading_cells.feature.experience.adapters.output.client.ExperienceStorageScreen.class);
+
+            @Override public <R extends Screen> boolean isHandingScreen(Class<R> screen) { return screens.contains(screen); }
+            @Override public double getPriority() { return 100; }
+            @Override public Rectangle getScreenBounds(AbstractContainerScreen<?> screen) {
+                int outset = MachineGuiSkin.frameOutset(screen.getLeftPos(), screen.getTopPos(),
+                        screen.getImageWidth(), screen.getImageHeight(), screen.width, screen.height);
+                return new Rectangle(screen.getLeftPos() - outset, screen.getTopPos() - outset,
+                        screen.getImageWidth() + 2 * outset, screen.getImageHeight() + 2 * outset);
+            }
+        });
         registry.registerContainerClickArea(new Rectangle(86, 50, 24, 16),
                 com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.EssenceWorkbenchScreen.class,
                 EssenceReiDisplay.SYNTHESIS);

@@ -28,6 +28,8 @@ final class LogisticsUiFixture {
     private LogisticsUiFixture() { }
 
     static void inspect(net.minecraft.client.Minecraft minecraft) {
+        if (MachineFixesUiFixture.active()) { MachineFixesUiFixture.inspect(minecraft); return; }
+        if (InteractionFarmUiFixture.active()) { InteractionFarmUiFixture.inspect(minecraft); return; }
         if (EssenceAutomationUiFixture.active()) { EssenceAutomationUiFixture.inspect(minecraft); return; }
         if (ItemTextureUiFixture.active()) { ItemTextureUiFixture.inspect(minecraft); return; }
         if (InfusionUiFixture.active()) { InfusionUiFixture.inspect(minecraft); return; }
@@ -60,7 +62,8 @@ final class LogisticsUiFixture {
         if (System.nanoTime() - checkStarted > 30_000_000_000L) {
             throw new IllegalStateException("Logistics UI action timed out at phase " + phase);
         }
-        int left = (screen.width - 374) / 2, top = (screen.height - 238) / 2;
+        int left = screen.getLeftPos(), top = screen.getTopPos();
+        if (phase == 0) { MachineFixesUiFixture.verifySearchFooter(screen, 0); }
         switch (phase) {
             case 0 -> {
                 if (!terminalKeyboardChecked) {
@@ -73,11 +76,11 @@ final class LogisticsUiFixture {
                 int index = java.util.stream.IntStream.range(0, menu.entries().size())
                         .filter(i -> menu.entries().get(i).icon().is(Items.OAK_LOG)).findFirst().orElse(-1);
                 if (index < 0) { return; }
-                click(screen, left + 198 + index % 8 * 20 + 8, top + 71 + index / 8 * 20 + 8);
+                click(screen, left + 186 + index % 8 * 18 + 8, top + 71 + index / 8 * 18 + 8);
             }
             case 1 -> {
                 if (!menu.getCarried().is(Items.OAK_LOG)) { return; }
-                click(screen, left + 31, top + 84);
+                click(screen, left + 31, top + 60);
             }
             case 2 -> {
                 if (!menu.craftingResult().is(Items.OAK_PLANKS)) { return; }
@@ -85,7 +88,7 @@ final class LogisticsUiFixture {
             }
             case 3 -> {
                 if (!menu.getCarried().isEmpty()) { return; }
-                click(screen, left + 143, top + 104);
+                click(screen, left + 143, top + 80);
             }
             case 4 -> {
                 if (!menu.getCarried().is(Items.OAK_PLANKS) || menu.getCarried().getCount() != 4) {
@@ -101,7 +104,7 @@ final class LogisticsUiFixture {
                 terminal.mouseScrolled(left + 220, top + 110, 0, -3);
                 for (int index = 0; index < 36; index++) {
                     var slot = menu.slots.get(index);
-                    if (!slot.isActive() || slot.x < 12 || slot.x > 156 || slot.y < 154 || slot.y > 212) {
+                    if (!slot.isActive() || slot.x < 12 || slot.x > 156 || slot.y < 124 || slot.y > 182) {
                         throw new IllegalStateException("Terminal player slot moved outside its inventory: " + index);
                     }
                 }
@@ -113,11 +116,11 @@ final class LogisticsUiFixture {
             case 8 -> click(screen, left + 45, top + 34);
             case 9 -> {
                 if (menu.selectedType() != LogisticsResourceType.ITEM) { return; }
-                click(screen, left + 92, top + 162);
+                click(screen, left + 92, top + 132);
             }
             case 10 -> {
                 if (!menu.getCarried().is(Items.STICK)) { return; }
-                var event = new net.minecraft.client.input.MouseButtonEvent(left + 20, top + 162,
+                var event = new net.minecraft.client.input.MouseButtonEvent(left + 20, top + 132,
                         new net.minecraft.client.input.MouseButtonInfo(0, 1));
                 screen.mouseClicked(event, false);
                 screen.mouseReleased(event);
@@ -131,7 +134,7 @@ final class LogisticsUiFixture {
                         || !menu.getSlot(3).getItem().has(net.minecraft.core.component.DataComponents.CUSTOM_NAME)) {
                     throw new IllegalStateException("Shift double-click changed the cursor or a different item variant");
                 }
-                click(screen, left + 92, top + 162);
+                click(screen, left + 92, top + 132);
                 System.out.println("Terminal Shift double-click deposits matching stacks with a carried item and preserves variants");
             }
             default -> { }
@@ -141,6 +144,8 @@ final class LogisticsUiFixture {
     }
 
     static boolean readyForCapture() {
+        if (MachineFixesUiFixture.active()) { return MachineFixesUiFixture.ready(); }
+        if (InteractionFarmUiFixture.active()) { return InteractionFarmUiFixture.ready(); }
         if (EssenceAutomationUiFixture.active()) { return EssenceAutomationUiFixture.ready(); }
         if (ItemTextureUiFixture.active()) { return ItemTextureUiFixture.ready(); }
         if (InfusionUiFixture.active()) { return InfusionUiFixture.ready(); }
@@ -153,27 +158,29 @@ final class LogisticsUiFixture {
     }
 
     static boolean worldScene() {
+        if (MachineFixesUiFixture.active()) { return true; }
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
-        return EssenceAutomationUiFixture.active() || ItemTextureUiFixture.active() || TooltipUiFixture.active() || fixture.equals("connections") || fixture.equals("caps") || fixture.equals("terminals")
+        return InteractionFarmUiFixture.active() || EssenceAutomationUiFixture.active() || ItemTextureUiFixture.active() || TooltipUiFixture.active() || fixture.equals("connections") || fixture.equals("caps") || fixture.equals("terminals")
                 || MobSimulationUiFixture.modelScene() || InfusionUiFixture.modelScene();
     }
 
     private static void checkPipeEditor(com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.PipeConfigurationScreen screen) {
         boolean advanced = System.getProperty("trading_cells.performance.client.uiFixture", "").equals("rules");
         if (phase >= (advanced ? 8 : 2) || System.nanoTime() < nextAction) { return; }
-        int left = (screen.width - 374) / 2, top = (screen.height - 248) / 2;
+        int left = screen.getLeftPos(), top = screen.getTopPos();
+        if (phase == 0) { MachineFixesUiFixture.verifySearchFooter(screen, 0); }
         if (advanced && phase >= 2) {
             var menu = screen.getMenu();
             if (phase >= 6) {
                 var field = screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
-                        .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.getY() == top + 112).findFirst().orElseThrow();
+                        .map(net.minecraft.client.gui.components.EditBox.class::cast).filter(box -> box.getY() == top + 92).findFirst().orElseThrow();
                 if (phase == 6) {
-                    click(screen, left + 25, top + 120); field.setValue("me"); phase++;
+                    click(screen, left + 25, top + 96); field.setValue("me"); phase++;
                 } else {
                     var suggestions = menu.channelSuggestions();
                     if (suggestions == null || !suggestions.complete() || !suggestions.prefix().equals("almacen/me")) { return; }
                     if (!suggestions.channels().contains("almacen/metales")) { throw new IllegalStateException("Channel completion missed saved rule"); }
-                    click(screen, left + 35, top + 136);
+                    click(screen, left + 35, top + 112);
                     if (!field.getValue().equals("metales")) { throw new IllegalStateException("Completion duplicated the parent channel"); }
                     System.out.println("Bounded server channel completion and subchannel prefix verified"); phase++;
                 }
@@ -190,22 +197,22 @@ final class LogisticsUiFixture {
                     System.out.println("Advanced pipe rule, marker ghost slot, NBT, inversion and subchannel verified");
                 }
                 click(screen, left + 90, top + 60);
-                click(screen, left + 278, top + 133);
+                click(screen, left + 268, top + 107);
                 phase++;
             } else if (phase == 3) {
                 screen.children().stream().filter(net.minecraft.client.gui.components.EditBox.class::isInstance)
                         .map(net.minecraft.client.gui.components.EditBox.class::cast).forEach(box -> {
-                            if (box.getY() == top + 74) { box.setValue("{\"minecraft:custom_data\":{grade:1}}"); }
-                            if (box.getY() == top + 112) { box.setValue("metales"); }
+                            if (box.getY() == top + 58) { box.setValue("{\"minecraft:custom_data\":{grade:1}}"); }
+                            if (box.getY() == top + 92) { box.setValue("metales"); }
                         });
-                click(screen, left + 326, top + 82);
-                click(screen, left + 214, top + 211);
-                click(screen, left + 152, top + 168);
+                click(screen, left + 300, top + 66);
+                click(screen, left + 214, top + 172);
+                click(screen, left + 152, top + 132);
                 if (!(menu.getCarried().getItem() instanceof PipeTargetSelectorItem)) { throw new IllegalStateException("Marker pickup failed"); }
-                click(screen, left + 212, top + 172);
+                click(screen, left + 212, top + 134);
                 if (!(menu.getCarried().getItem() instanceof PipeTargetSelectorItem)) { throw new IllegalStateException("Ghost destination consumed marker"); }
-                click(screen, left + 152, top + 168);
-                click(screen, left + 320, top + 238);
+                click(screen, left + 152, top + 132);
+                click(screen, left + 310, top + 193);
                 phase++;
             } else {
                 screen.onClose(); phase++;
@@ -217,14 +224,14 @@ final class LogisticsUiFixture {
             screen.children().stream().filter(child -> child instanceof net.minecraft.client.gui.components.EditBox)
                     .map(child -> (net.minecraft.client.gui.components.EditBox) child).forEach(box -> {
                         if (box.getY() == top + 28) { box.setValue("100000"); }
-                        if (box.getY() == top + 179) { box.setValue("almacen"); }
+                        if (box.getY() == top + 148) { box.setValue("almacen"); }
                     });
-            click(screen, left + 25, top + 118);
-            click(screen, left + 223, top + 133);
+            click(screen, left + 21, top + 98);
+            click(screen, left + 223, top + 107);
             screen.children().stream().filter(child -> child instanceof net.minecraft.client.gui.components.EditBox)
                     .map(child -> (net.minecraft.client.gui.components.EditBox) child)
-                    .filter(box -> box.getY() == top + 36).forEach(box -> box.setValue("minecraft:iron_ingot"));
-            click(screen, left + 320, top + 238);
+                    .filter(box -> box.getY() == top + 24).forEach(box -> box.setValue("minecraft:iron_ingot"));
+            click(screen, left + 310, top + 193);
             screen.onClose();
             phase = 1;
         } else {
@@ -248,6 +255,8 @@ final class LogisticsUiFixture {
     static void prepare(ServerPlayer player, BlockPos pos) {
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
         if (fixture.isEmpty() || !PREPARED.add(player.getUUID())) { return; }
+        if (MachineFixesUiFixture.active()) { MachineFixesUiFixture.prepare(player, pos); return; }
+        if (InteractionFarmUiFixture.active()) { InteractionFarmUiFixture.prepare(player, pos); return; }
         var level = player.level();
         if (EssenceAutomationUiFixture.active()) { EssenceAutomationUiFixture.prepare(player, pos); return; }
         if (ItemTextureUiFixture.active()) { ItemTextureUiFixture.prepare(player); return; }

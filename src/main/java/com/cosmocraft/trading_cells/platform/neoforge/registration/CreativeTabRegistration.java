@@ -81,6 +81,7 @@ public final class CreativeTabRegistration {
                         output.accept(CaptureRegistrationAdapter.PIGLIN_CAPTURER_ITEM.get());
                         output.accept(CaptureRegistrationAdapter.UNBREAKABLE_VILLAGER_CAPTURER_ITEM.get());
                         output.accept(CaptureRegistrationAdapter.UNBREAKABLE_PIGLIN_CAPTURER_ITEM.get());
+                        MobFarmRegistrationAdapter.UPGRADES.forEach(item -> output.accept(item.get()));
                     })
                     .build());
 
@@ -121,12 +122,12 @@ public final class CreativeTabRegistration {
                     .icon(() -> MobFarmRegistrationAdapter.ITEM.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(MobFarmRegistrationAdapter.ITEM.get());
+                        output.accept(MobFarmRegistrationAdapter.INTERACTION_ITEM.get());
                         output.accept(MobFarmRegistrationAdapter.WORKBENCH_ITEM.get());
                         output.accept(MobFarmRegistrationAdapter.STABILIZER_ITEM.get());
                         output.accept(MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get());
                         output.accept(MobFarmRegistrationAdapter.EMPTY_VIAL.get());
                         MobFarmRegistrationAdapter.MODEL_BASES.forEach(item -> output.accept(item.get()));
-                        MobFarmRegistrationAdapter.UPGRADES.forEach(item -> output.accept(item.get()));
                     })
                     .build());
 

@@ -22,6 +22,7 @@ final class ScreenLayoutDomainVerification {
         verifyVillagerTradeGeometry();
     }
 
+
     private static void verifyDurationFormatting() {
         require("1m 57s".equals(MachineScreenUtil.formatDuration(2_334)),
                 "Machine and REI durations must round 116.7 seconds up to 1m 57s");
@@ -154,8 +155,12 @@ final class ScreenLayoutDomainVerification {
             int equipmentOffhandY
     ) {
         int slotSize = 16;
-        require(width == 348 && height == 210, name + " must retain the 348x210 menu format");
-        require(inputX.length == 3 && inputY.length == 3, name + " must expose exactly three inputs");
+        require(width == 348 && height == 204, name + " must fit the compact 348x204 menu without scaling slots");
+        require(width + 12 + 3 * 18 <= 427 && height + 12 + 22 <= 240,
+                name + " must leave a footer and three REI columns at the default 854x480 automatic scale");
+        require(inputX.length == 3 && inputY.length == 3, name + " must retain its three original inputs");
+        require(142 > inputY[2] + slotSize && 142 + slotSize < height - 6,
+                name + " separate speed slot fits below the original inputs");
         for (int index = 0; index < inputX.length; index++) {
             require(inputX[index] >= 7 && inputX[index] + slotSize <= 116,
                     name + " input left the left panel horizontally");
@@ -163,20 +168,20 @@ final class ScreenLayoutDomainVerification {
                     name + " input left the left panel vertically");
         }
         int outputLastX = outputFirstX + (outputColumns - 1) * outputSpacing;
-        int outputLastY = outputFirstY + outputSpacing;
+        int outputLastY = outputFirstY + 2 * outputSpacing;
         require(outputColumns == 9 && outputFirstX >= 124 && outputLastX + slotSize <= 342,
                 name + " output matrix left the machine panel horizontally");
-        require(outputFirstY >= 27 && outputLastY + slotSize <= 102,
+        require(outputFirstY >= 27 && outputLastY + slotSize < inventoryY - 12,
                 name + " output matrix left the machine panel vertically");
         require(inventoryX >= 124 && inventoryX + 8 * 18 + slotSize <= 342,
                 name + " inventory left the lower panel horizontally");
-        require(inventoryY >= 104 && inventoryY + 2 * 18 + slotSize <= 204,
+        require(inventoryY >= 122 && inventoryY + 2 * 18 + slotSize <= height - 6,
                 name + " inventory left the lower panel vertically");
-        require(hotbarY >= inventoryY + 3 * 18 && hotbarY + slotSize <= 204,
+        require(hotbarY >= inventoryY + 3 * 18 && hotbarY + slotSize <= height - 6,
                 name + " hotbar overlaps the inventory or leaves the panel");
         require(equipmentX >= 124 && equipmentX + slotSize < inventoryX,
                 name + " equipment column overlaps the inventory");
-        require(equipmentOffhandY + slotSize <= 204,
+        require(equipmentOffhandY + slotSize <= height - 6,
                 name + " equipment column leaves the lower panel");
     }
 
@@ -189,8 +194,8 @@ final class ScreenLayoutDomainVerification {
     }
 
     private static void verifyVillagerTradeGeometry() {
-        require(VillagerTradeMenuLayout.WIDTH == 348 && VillagerTradeMenuLayout.HEIGHT == 210,
-                "Villager trade menus must keep their 348x210 visible bounds");
+        require(VillagerTradeMenuLayout.WIDTH == 348 && VillagerTradeMenuLayout.HEIGHT == 204,
+                "Villager trade menus must fit their compact 348x204 visible bounds");
         require(SlotRenderer.FRAME_SIZE == 18 && SlotRenderer.ITEM_SIZE == 16,
                 "Trade slots must use an 18x18 frame around a 16x16 item area");
         require(

@@ -51,7 +51,7 @@ public final class MobFarmEquipmentSlots {
     private static Identifier emptyIcon(String path) {
         return Identifier.fromNamespaceAndPath(
                 TradingCells.MOD_ID,
-                "container/slot/" + path
+                "shared/slots/equipment/" + path
         );
     }
 

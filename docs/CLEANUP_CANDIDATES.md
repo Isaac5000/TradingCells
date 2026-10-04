@@ -1,4 +1,85 @@
-# Limpieza completada: 2026-09-22
+# Limpieza de recursos y codigo
+
+## Reorganizacion GUI posterior, cerrada
+
+La peticion posterior exige un estandar por maquina, no solo mover `themes`.
+Convencion, auditoria y estado actual: `docs/GUI_RESOURCES.md`. Las 88 texturas
+restantes se revisaron antes de copiar y todas tenian consumidores. El nuevo
+codigo usa `container/<block_id>` y `sprites/<block_id|shared>`. Retiradas las 88
+copias anteriores tras verificar las 103 huellas de destino. El usuario elimino
+las carpetas vacias. Inventario GUI exacto y verificaciones globales aprobados;
+las fuentes de arte permanecen intactas.
+
+## Revision 2026-10-01
+
+Alcance: fondos GUI sustituidos por los temas actuales y codigo de dibujo sin
+consumidores. Sin cambios en IDs, NBT, payloads, mecanicas ni GitHub. No se han
+retirado mundos, resultados de pruebas ni originales de `tools/assets/`.
+
+Retirados 16 PNG, 178.564 bytes, bajo
+`src/main/resources/assets/trading_cells/textures/gui/`:
+
+- `machines/backgrounds/{villager_breeder,piglin_breeder,converter,farmer,villager_incubator,piglin_incubator,iron_farm}.png`:
+  siete fondos sin llamadas a `MachineScreenTheme.backgroundTexture()`.
+- `trader/backgrounds/default.png`: el parametro que lo recibia ya se ignoraba;
+  el comercio usa `MachineGuiSkin.TRADER`.
+- `farmer/{villager,piglin}_{background,surface_overlay}.png` y
+  `quarry/{villager,piglin}_{background,surface_overlay}.png`: ocho fondos sin
+  referencias en Java, JSON ni herramientas activas.
+
+Retiradas tambien 26 variantes recientes de REI sin consumidores (935.505
+bytes): variantes compactas `_200x124_12.png` y `_200x124_6.png`, mas los fondos
+200x124 de comercio manual y simulacion. Total de esta revision: 42 PNG y
+1.114.069 bytes. Esto reduce recursos empaquetados; no se afirma una mejora
+medida de FPS.
+
+Los fondos activos se trasladaron desde `gui/themes/` a sus carpetas:
+`farmer/`, `quarry/`, `machines/backgrounds/`, `trader/backgrounds/`, `mobfarm/`
+y `arcane_infuser/`. Los 82 archivos trasladados conservaron su SHA-256;
+despues se retiraron las 26 variantes sin uso. Quedan 56 fondos activos.
+La carpeta `themes` se elimino una vez vacia; generador, referencias Java y
+entradas de validacion Gradle apuntan a las ubicaciones correspondientes.
+
+Retirados tres helpers bajo `platform/neoforge/client/screen/`:
+`MachineWorkSurface`, `TiledSurfaceRenderer` y `trader/VillagerGuiTextures`.
+El primero solo alimentaba la ruta de dibujo antigua; el segundo solo tenia
+ese consumidor. El resolutor del comercio solo proporcionaba un argumento
+ignorado. Eliminados tambien ese argumento, constantes de atlas, superficies
+privadas sin llamadas y campos/getters de tema sin uso.
+
+`generate_machine_gui.py` conserva solo los fondos actuales y la validacion de
+siluetas activas. `generate_villager_trade_gui.py` conserva los widgets activos,
+sin fabricar el atlas retirado. Sus tareas Gradle mantienen los nombres y
+vigilan las entradas reales. Nuevas pruebas impiden regenerar fondos obsoletos
+y detectan cambios RGB aunque el canal alfa siga siendo identico. El modo
+`--check` del generador de comercio no crea directorios. La fixture visual usa
+los accesores de posicion actuales, sin las dos llamadas marcadas para retirada.
+
+Metodo: referencias Java, valores de recursos JSON, generadores y revision de
+las llamadas. No basta con que un nombre no aparezca literalmente: se conservan
+recursos resueltos por convenciones, registros o integraciones opcionales.
+Rutas absolutas comprobadas bajo la carpeta GUI antes del borrado individual.
+
+Validacion: compilacion principal/fixture, `check` y `releaseCheck` aprobados
+el 2026-10-01. Pasan 139 GameTests, 42 pruebas Python de recursos y 28 de recetas;
+1186 JSON y 241 PNG validados. Contratos intactos: 16 payloads, 74 claves NBT,
+165 recetas, schema 1 y protocolo 2. El JAR contiene los 56 fondos con bytes
+identicos a los del proyecto y ninguna textura/clase retirada ni `gui/themes/`.
+Todos los PNG de `tools/assets/` conservan su huella conjunta anterior:
+`008609E30C68277C80E43E82B245AFB881FBB014BA965F03A46417A8900D3316`.
+
+Cliente OpenGL con REI y las rutas finales: 18 menus y 12 categorias revisados
+en `artifacts/cleanup-frames-opengl-rei-20261001/`. Vulkan sin REI tambien pasa
+los 18 menus en `artifacts/cleanup-paths-vulkan-no-rei-20261001/`.
+El resto de evidencia de
+marcos se detalla en `docs/FIXES_20260929.md`. Esta limpieza acotada no certifica
+la ausencia de codigo muerto en todo el repositorio.
+
+## Historial: limpieza completada 2026-09-22
+
+Lo siguiente describe el estado de aquella fecha. Las cinco mejoras genericas
+fueron retiradas posteriormente por el usuario; no restaurarlas. Las bases
+vigentes estan en `tools/assets/upgrade_bases/frames/`.
 
 Inventario aplicado por peticion del usuario. Rutas relativas a la raiz del
 proyecto. Retirados cinco archivos Java, siete directorios de codigo vacios,

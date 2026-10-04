@@ -13,10 +13,6 @@ final class SimulationScreenWidgets {
     static final int ACCENT = 0xFF62D6D3;
     private SimulationScreenWidgets() { }
 
-    static void background(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
-        graphics.fill(x, y, x + width, y + height, 0xFF899296);
-        graphics.fill(x + 2, y + 2, x + width - 2, y + height - 2, 0xFF2B3236);
-    }
     static void slot(GuiGraphicsExtractor graphics, int x, int y) {
         graphics.fill(x - 1, y - 1, x + 17, y + 17, 0xFF727D82);
         graphics.fill(x, y, x + 16, y + 16, 0xFF343C40);

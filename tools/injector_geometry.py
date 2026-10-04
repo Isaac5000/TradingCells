@@ -84,7 +84,7 @@ def vial():
     return result
 
 
-def shifted(elements, dx, dy=0):
+def shifted(elements, dx, dy=0, dz=0):
     result = deepcopy(elements)
     for element in result:
         points = [element["from"], element["to"]]
@@ -93,6 +93,7 @@ def shifted(elements, dx, dy=0):
         for point in points:
             point[0] = round(point[0] + dx, 5)
             point[1] = round(point[1] + dy, 5)
+            point[2] = round(point[2] + dz, 5)
     return result
 
 

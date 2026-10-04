@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.platform.neoforge.integration.rei;
 
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineScreenTheme;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin;
 import net.minecraft.resources.Identifier;
 
 enum TradingCellsReiLayout {
@@ -122,6 +123,24 @@ enum TradingCellsReiLayout {
 
     public Identifier surface() {
         return surface;
+    }
+
+    public MachineGuiSkin skin() {
+        return switch (this) {
+            case VILLAGER_BREEDING -> MachineGuiSkin.VILLAGER_BREEDER;
+            case VILLAGER_INCUBATION -> MachineGuiSkin.VILLAGER_INCUBATOR;
+            case PIGLIN_BREEDING -> MachineGuiSkin.PIGLIN_BREEDER;
+            case PIGLIN_INCUBATION -> MachineGuiSkin.PIGLIN_INCUBATOR;
+            case FARMING -> MachineGuiSkin.FARMER;
+            case PIGLIN_FARMING -> MachineGuiSkin.PIGLIN_FARMER;
+            case QUARRY -> MachineGuiSkin.QUARRY;
+            case PIGLIN_QUARRY -> MachineGuiSkin.PIGLIN_QUARRY;
+            case CONVERSION -> MachineGuiSkin.CONVERTER;
+            case PIGLIN_BARTERING -> MachineGuiSkin.PIGLIN_BARTERING_CELL;
+            case NETHERITE_PIGLIN_BARTERING -> MachineGuiSkin.NETHERITE_PIGLIN_BARTERING_CELL;
+            case ARCANE_INFUSION -> MachineGuiSkin.ARCANE_INFUSER;
+            default -> MachineGuiSkin.IRON_FARM;
+        };
     }
 
     public int progressColor() {

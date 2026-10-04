@@ -58,7 +58,7 @@ public final class PipeConfigurationMenu extends AbstractContainerMenu {
         if (pipe != null && stillValid(inventory.player)) { pipe.reclaimLegacyUpgrades(face, inventory.player); }
         var upgrades = pipe == null ? new SimpleContainer(1) : pipe.upgrades(face);
         for (int index = 0; index < 1; index++) {
-            addSlot(new Slot(upgrades, index, 17, 56) {
+            addSlot(new Slot(upgrades, index, 17, 50) {
                 @Override
                 public boolean mayPlace(ItemStack stack) { return stack.getItem() instanceof PipeUpgradeItem; }
                 @Override
@@ -67,9 +67,9 @@ public final class PipeConfigurationMenu extends AbstractContainerMenu {
                 public boolean isActive() { return !ruleEditing; }
             });
         }
-        addStandardInventorySlots(inventory, 36, 160);
+        addStandardInventorySlots(inventory, 36, 124);
         com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots
-                .create(inventory, 12, 146, 164, 182, 200, 218).forEach(this::addSlot);
+                .create(inventory, 12, 110, 128, 146, 164, 182).forEach(this::addSlot);
         trackedUpgrade = upgrades.getItem(0);
         trackedEmpty = trackedUpgrade.isEmpty();
     }

@@ -284,6 +284,15 @@ class SpecificRecipeTests(unittest.TestCase):
             "minecraft:lapis_block", "trading_cells:storm_shard", "minecraft:lapis_block")])
         self.assertEqual(farm["experience"], 50_000)
 
+    def test_interaction_farm_exact_infusion(self):
+        recipe = read_json(RECIPES / "entity_interaction_farm_infusion.json")
+        self.assertEqual(recipe["type"], "trading_cells:arcane_infusion")
+        self.assertEqual(recipe["experience"], 50_000)
+        self.assertEqual(recipe["ingredients"], [{"ingredient": "minecraft:" + item, "count": 1} for item in (
+            "lapis_block", "black_concrete", "lapis_block", "black_concrete", "dispenser",
+            "black_concrete", "lapis_block", "black_concrete", "lapis_block")])
+        self.assertEqual(recipe["result"], {"type": "item", "item": "trading_cells:entity_interaction_farm"})
+
     def test_essence_stabilization_and_bottle_costs(self):
         for tier, reagent in enumerate(("redstone", "glowstone_dust", "ender_pearl", "dragon_breath"), 1):
             recipe = read_json(RECIPES / f"essence_stabilization_{tier}.json")
@@ -311,9 +320,10 @@ class SpecificRecipeTests(unittest.TestCase):
             }[name]
             self.assertEqual(grid[4], expected_center)
         for family in ("speed", "capacity"):
-            previous = "minecraft:diamond_sword"
+            previous = "minecraft:clock" if family == "speed" else "minecraft:bundle"
+            prefix = family
             for material in ("copper", "iron", "gold", "diamond", "netherite"):
-                name = f"mob_farm_{family}_{material}_upgrade"
+                name = f"{prefix}_{material}_upgrade"
                 recipe = read_json(RECIPES / f"{name}.json")
                 if material == "netherite":
                     self.assertEqual(recipe["type"], "minecraft:smithing_transform")
@@ -322,11 +332,17 @@ class SpecificRecipeTests(unittest.TestCase):
                     self.assertEqual(recipe["addition"], "minecraft:netherite_block")
                 else:
                     grid = crafting_grid(recipe)
-                    corner = "popped_chorus_fruit" if material == "diamond" else "chest" if family == "capacity" else "clock"
+                    corner = "popped_chorus_fruit" if material == "diamond" else f"{material}_block"
                     self.assertEqual([grid[i] for i in CORNERS], [f"minecraft:{corner}"] * 4)
                     self.assertEqual([grid[i] for i in EDGES], [f"minecraft:{material}_block"] * 4)
                     self.assertEqual(grid[4], previous)
                 previous = f"trading_cells:{name}"
+
+    def test_syringe_recipe_has_iron_barrel_lapis_and_concrete_grip(self):
+        recipe = read_json(RECIPES / "essence_extractor.json")
+        self.assertEqual(recipe["pattern"], ["III", " LB", "  B"])
+        self.assertEqual(recipe["key"], {"I": "minecraft:iron_ingot", "L": "minecraft:lapis_lazuli", "B": "minecraft:black_concrete"})
+        self.assertEqual(recipe["result"], {"id": "trading_cells:essence_extractor", "count": 1})
 
     def test_all_pipe_tiers_use_their_material_and_keep_the_upgrade_chain(self):
         generated = resources()

@@ -233,7 +233,7 @@ public final class MobSimulationLootGameTests {
         farm.processTick();
         helper.assertTrue(farm.storedExperience() >= 0 && farm.storedExperience() <= 5,
                 "Filtering rewards preserves the entity XP reward");
-        for (int slot = 5; slot < 23; slot++) {
+        for (int slot = 5; slot < MobFarmBlockEntity.CONTAINER_SIZE; slot++) {
             helper.assertFalse(farm.getItem(slot).is(CombatItems.stormShard()), "Disabled supplement is discarded");
         }
         Identifier discovered = Identifier.withDefaultNamespace("emerald");

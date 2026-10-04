@@ -627,6 +627,49 @@ public final class SilkTouchTwoGameTests {
 
         var player = helper.makeMockServerPlayer(GameType.SURVIVAL);
         ItemStack eggToSpawn = modifiedEgg.copy();
+        player.setItemInHand(InteractionHand.MAIN_HAND, modifiedDrop.copyWithCount(2));
+        var heldBefore = player.getMainHandItem().copy();
+        var airClick = new net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem(player, InteractionHand.MAIN_HAND);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(airClick);
+        helper.assertTrue(!airClick.isCanceled() && ItemStack.matches(heldBefore, player.getMainHandItem()),
+                "Using a held spawner in the air must not convert or consume it");
+
+        helper.setBlock(GameTestFixtures.TEST_POS, Blocks.STONE);
+        helper.setBlock(GameTestFixtures.TEST_POS.above(), Blocks.AIR);
+        var support = helper.absolutePos(GameTestFixtures.TEST_POS);
+        var placementHit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(support), Direction.UP, support, false);
+        var placement = new net.minecraft.world.item.context.UseOnContext(player, InteractionHand.MAIN_HAND, placementHit);
+        helper.assertTrue(player.getMainHandItem().useOn(placement).consumesAction(), "Held spawner places normally");
+        var placedFromHand = helper.getBlockEntity(GameTestFixtures.TEST_POS.above(), SpawnerBlockEntity.class);
+        var placedTree = PreservedSpawnerItemAdapter.rootEntityData(placedFromHand.saveCustomOnly(helper.getLevel().registryAccess())).orElseThrow();
+        helper.assertValueEqual(placedTree.getStringOr("id", ""), "minecraft:hoglin", "Placement retains the root species");
+        helper.assertValueEqual(player.getMainHandItem().getCount(), 1, "Placement consumes one block, not an egg");
+
+        helper.setBlock(GameTestFixtures.TEST_POS, Blocks.SPAWNER);
+        var placed = helper.getBlockEntity(GameTestFixtures.TEST_POS, SpawnerBlockEntity.class);
+        for (int round = 0; round < 2; round++) {
+            player.setItemInHand(InteractionHand.MAIN_HAND, modifiedEgg.copyWithCount(2));
+            var pos = helper.absolutePos(GameTestFixtures.TEST_POS);
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(pos), Direction.UP, pos, false);
+            var context = new net.minecraft.world.item.context.UseOnContext(player, InteractionHand.MAIN_HAND, hit);
+            helper.assertValueEqual(player.getMainHandItem().getItem().useOn(context), net.minecraft.world.InteractionResult.SUCCESS,
+                    "Preserved egg configures a placed spawner");
+            helper.assertValueEqual(player.getMainHandItem().getCount(), 1, "Installing consumes exactly one egg");
+            var tree = PreservedSpawnerItemAdapter.rootEntityData(placed.saveCustomOnly(helper.getLevel().registryAccess())).orElseThrow();
+            helper.assertValueEqual(tree.getStringOr("id", ""), "minecraft:hoglin", "Mount does not become its rider");
+            var restoredDescription = PreservedSpawnerItemAdapter.describeEntityTree(helper.getLevel(), tree).orElseThrow();
+            helper.assertValueEqual(restoredDescription.selected().getType(), EntityTypes.SKELETON, "Rider survives installing");
+            helper.assertTrue(restoredDescription.passengers().contains(EntityTypes.PARROT), "Nested passengers survive installing");
+            modifiedEgg = PreservedSpawnerItemAdapter.extractSpawnEgg(helper.getLevel(), placed).orElseThrow();
+            helper.assertTrue(PreservedSpawnerItemAdapter.extractSpawnEgg(helper.getLevel(), placed).isEmpty(), "Extraction cannot duplicate eggs");
+        }
+        PreservedSpawnerItemAdapter.configureSpawner(helper.getLevel(), placed, modifiedEgg);
+        assertSneakingEggDrop(helper, player, placed);
+        helper.assertTrue(PreservedSpawnerItemAdapter.configureSpawner(helper.getLevel(), placed, new ItemStack(Items.COW_SPAWN_EGG)),
+                "Ordinary eggs replace the entire hierarchy");
+        var replacement = PreservedSpawnerItemAdapter.rootEntityData(placed.saveCustomOnly(helper.getLevel().registryAccess())).orElseThrow();
+        helper.assertValueEqual(replacement.getStringOr("id", ""), "minecraft:cow", "Replacement type");
+        helper.assertTrue(!replacement.contains("Passengers"), "Old passengers are not retained by ordinary eggs");
         helper.assertValueEqual(
                 PreservedSpawnerItemAdapter.spawnTrustedEgg(
                         player,
@@ -640,6 +683,39 @@ public final class SilkTouchTwoGameTests {
                 "Modified hierarchy spawn result"
         );
         helper.assertTrue(eggToSpawn.isEmpty(), "Spawning the hierarchy must consume exactly one egg");
+    }
+
+    private static void assertSneakingEggDrop(GameTestHelper helper, net.minecraft.world.entity.player.Player player,
+            SpawnerBlockEntity spawner) {
+        var pos = spawner.getBlockPos();
+        var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(pos), Direction.UP, pos, false);
+        var bounds = new net.minecraft.world.phys.AABB(pos).expandTowards(0, 2, 0);
+        player.setShiftKeyDown(false);
+        // A normal click with an empty hand must leave the configured entity intact.
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        var normal = new net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock(
+                player, InteractionHand.MAIN_HAND, pos, hit);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(normal);
+        helper.assertTrue(!normal.isCanceled(), "Ordinary click does not extract an egg");
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.COMPARATOR, 2));
+        player.setShiftKeyDown(true);
+        var shifted = new net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock(
+                player, InteractionHand.MAIN_HAND, pos, hit);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(shifted);
+        var drops = helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, bounds);
+        helper.assertTrue(shifted.isCanceled() && drops.size() == 1, "Shift-click drops exactly one egg");
+        var drop = drops.getFirst();
+        helper.assertTrue(drop.getY() > pos.getY() + 1 && drop.getX() == pos.getX() + 0.5
+                && drop.getZ() == pos.getZ() + 0.5, "Egg is centered above the spawner");
+        helper.assertTrue(PreservedSpawnerItemAdapter.isTrustedEgg(drop.getItem()), "Dropped egg retains hierarchy");
+        helper.assertValueEqual(player.getInventory().countItem(drop.getItem().getItem()), 0,
+                "Extraction does not insert the egg into the inventory");
+        helper.assertTrue(player.getMainHandItem().is(Items.COMPARATOR) && player.getMainHandItem().getCount() == 2,
+                "Extraction preserves the occupied hand, including comparators");
+        helper.assertTrue(PreservedSpawnerItemAdapter.extractSpawnEgg(helper.getLevel(), spawner).isEmpty(),
+                "Shift extraction cannot duplicate the egg");
+        drop.discard();
+        player.setShiftKeyDown(false);
     }
 
     private static ItemStack enchantedTool(GameTestHelper helper, Item item, int silkTouchLevel) {

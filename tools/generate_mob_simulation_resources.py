@@ -105,6 +105,33 @@ def resources():
     frame_boxes.extend([([8, 2, 4], [14, 3, 12]), ([9, 3, 5], [13, 4.5, 11])])
     frame = outlined_union(frame_boxes, "base")
     add(f"{ASSETS}/models/block/mob_farm.json", block_model(frame))
+    interaction_boxes = frame_boxes + [
+        ([2, 2, 2], [5.5, 2.75, 4.5]),  # ITEM tray, below the operator.
+        ([10.5, 2, 2], [14, 2.75, 4.5]),  # TOOL tray, below the work platform.
+        ([2.5, 2, 11.5], [6.5, 6, 13.5]),  # Rear processing core.
+        ([6.5, 2, 12], [12.5, 2.75, 13]),  # Protected conduit to the arm.
+        ([12, 2, 11.75], [14, 4, 13.75]),  # Arm mounting shoe.
+    ]
+    interaction_model = block_model(outlined_union(interaction_boxes, "base"))
+    interaction_model["textures"]["mechanism"] = "trading_cells:block/interaction_mechanism"
+    arm = [
+        ([12.25, 4, 12], [13.5, 10.25, 13.5]),  # Upright actuator.
+        ([11.75, 9.5, 11.5], [14, 11.5, 14]),  # Shoulder joint.
+        ([7.5, 10, 11.75], [12, 11.25, 13]),  # Horizontal articulated link.
+        ([7, 9.5, 11.25], [8.75, 11.5, 13.5]),  # Elbow.
+        ([7.5, 9.75, 8.75], [8.5, 10.75, 11.25]),
+        ([7, 8.75, 8.5], [9, 9.75, 9.5]),  # End effector above the operating gap.
+        ([7, 8, 8], [7.5, 9.25, 9.5]),
+        ([8.5, 8, 8], [9, 9.25, 9.5]),
+    ]
+    arm_elements = outlined_union(arm, "mechanism")
+    for element in arm_elements:
+        for face in element["faces"].values():
+            if face["texture"] == "#edge":
+                face["texture"] = "#mechanism_edge"
+    interaction_model["textures"]["mechanism_edge"] = "trading_cells:block/interaction_mechanism_edge"
+    interaction_model["elements"].extend(arm_elements)
+    add(f"{ASSETS}/models/block/entity_interaction_farm.json", interaction_model)
 
     table_boxes = [([1, 10, 1], [15, 13, 15]), ([3, 13, 3], [13, 14, 13])]
     for x in (2, 12):
@@ -117,11 +144,11 @@ def resources():
             face: {"texture": "#atlas", "uv": uv, "cullface": face} for face, uv in {
                 "up": [0, 0, 8, 8], "north": [8, 0, 16, 8], "down": [8, 8, 16, 16],
                 "south": [0, 8, 8, 16], "east": [0, 8, 8, 16], "west": [0, 8, 8, 16]}.items()}}]})
-    for name in ("mob_farm", "essence_workbench", "essence_stabilizer"):
+    for name in ("mob_farm", "essence_workbench", "essence_stabilizer", "entity_interaction_farm"):
         add(f"{ASSETS}/blockstates/{name}.json", {"variants": {
             f"facing={facing}": {"model": f"trading_cells:block/{name}", "y": index * 90}
             for index, facing in enumerate(("north", "east", "south", "west"))}})
-        if name == "mob_farm":
+        if name in ("mob_farm", "entity_interaction_farm"):
             entity_item(name, f"block/{name}", "block_entity_item")
         else:
             model_item(name, f"block/{name}")
@@ -181,8 +208,8 @@ def resources():
     syringe_display = {
         "firstperson_righthand": {"rotation": [0, 70, 0], "translation": [0, 2, -1], "scale": [0.8] * 3},
         "firstperson_lefthand": {"rotation": [0, -110, 0], "translation": [0, 2, -1], "scale": [0.8] * 3},
-        "thirdperson_righthand": {"rotation": [0, 90, 90], "translation": [0, 3, 0], "scale": [0.85] * 3},
-        "thirdperson_lefthand": {"rotation": [0, -90, -90], "translation": [0, 3, 0], "scale": [0.85] * 3},
+        "thirdperson_righthand": {"rotation": [0, 90, 0], "translation": [0, 2.72, -3.57], "scale": [0.85] * 3},
+        "thirdperson_lefthand": {"rotation": [0, -90, 0], "translation": [0, 2.72, -3.57], "scale": [0.85] * 3},
         "gui": {"rotation": [15, -25, 0], "scale": [1, 1, 1]},
     }
     textures = {"atlas": injector_geometry.ATLAS, "particle": "#atlas"}
@@ -198,25 +225,25 @@ def resources():
     loading = []
     for frame in range(33):
         progress = frame / 32
-        if progress < 0.4:
-            fraction = progress / 0.4
-            fraction = fraction * fraction * (3 - 2 * fraction)
-            dx, dy = 5 * (1 - fraction), -6 + 10 * fraction
-        elif progress < 0.75:
-            dx, dy = 0, 4 - 3.25 * (progress - 0.4) / 0.35
-        else:
-            dx, dy = 0, 0.75 * (1 - progress) / 0.25
+        fraction = min(1, progress / 0.75)
+        fraction = fraction * fraction * (3 - 2 * fraction)
+        dy, dz = 2 * (1 - fraction), 6 * (1 - fraction)
         name = f"syringe_vial_{frame:02d}"
-        add(f"{ASSETS}/models/item/essence/{name}.json", syringe_model(shifted(vial, dx, dy)))
+        add(f"{ASSETS}/models/item/essence/{name}.json", syringe_model(shifted(vial, 0, dy, -dz)))
+        add(f"{ASSETS}/models/item/essence/{name}_left.json", syringe_model(shifted(vial, 0, dy, dz)))
+        right = {"type": "minecraft:model", "model": f"trading_cells:item/essence/{name}"}
+        left = {"type": "minecraft:model", "model": f"trading_cells:item/essence/{name}_left"}
         loading.append({"threshold": progress, "model": {"type": "minecraft:composite", "models": [
-            syringe, {"type": "minecraft:model", "model": f"trading_cells:item/essence/{name}"}]}})
+            syringe, {"type": "minecraft:select", "property": "minecraft:display_context",
+                      "cases": [{"when": ["firstperson_lefthand", "thirdperson_lefthand"], "model": left}],
+                      "fallback": right}]}})
     extracting = []
     for tier in range(1, 5):
         for frame in range(25):
             progress = frame / 24
-            advance = min(1, progress / 0.15) * min(1, (1 - progress) / 0.2)
+            advance = min(1, progress / 0.25)
             advance = advance * advance * (3 - 2 * advance)
-            fill = max(0, min(1, (progress - 0.15) / 0.7))
+            fill = max(0, min(1, (progress - 0.25) / 0.75))
             liquid = injector_geometry.liquid(fill)
             name = f"syringe_extract_{tier}_{frame:02d}"
             # Submit the opaque fill before the translucent vial walls.
@@ -229,13 +256,15 @@ def resources():
         "property": "trading_cells:syringe_load", "fallback": syringe, "entries": loading}}})
 
     for family in ("speed", "capacity"):
+        prefix = family
+        texture_family = "speed" if family == "speed" else "mob_farm_capacity"
         for index, material in enumerate(MATERIALS):
-            name = f"mob_farm_{family}_{material}_upgrade"
+            name = f"{prefix}_{material}_upgrade"
             add(f"{ASSETS}/models/item/{name}.json", {"parent": "minecraft:item/generated", "textures": {
-                "layer0": f"trading_cells:item/upgrades/mob_farm_{family}/{material}_upgrade"}})
+                "layer0": f"trading_cells:item/upgrades/{texture_family}/{material}_upgrade"}})
             model_item(name, f"item/{name}")
-            previous = "minecraft:diamond_sword" if index == 0 \
-                else f"trading_cells:mob_farm_{family}_{MATERIALS[index - 1]}_upgrade"
+            previous = ("minecraft:clock" if family == "speed" else "minecraft:bundle") if index == 0 \
+                else f"trading_cells:{prefix}_{MATERIALS[index - 1]}_upgrade"
             if material == "netherite":
                 add(f"{DATA}/recipe/{name}.json", {"type": "minecraft:smithing_transform",
                     "template": "minecraft:netherite_upgrade_smithing_template", "base": previous,
@@ -243,8 +272,7 @@ def resources():
             else:
                 add(f"{DATA}/recipe/{name}.json", {"type": "minecraft:crafting_shaped", "category": "misc",
                     "pattern": ["CBC", "BSB", "CBC"], "key": {
-                        "C": "minecraft:popped_chorus_fruit" if material == "diamond" else
-                             "minecraft:clock" if family == "speed" else "minecraft:chest",
+                        "C": "minecraft:popped_chorus_fruit" if material == "diamond" else f"minecraft:{material}_block",
                         "B": f"minecraft:{material}_block", "S": previous},
                     "result": {"id": f"trading_cells:{name}", "count": 1}})
 
@@ -253,8 +281,8 @@ def resources():
         "C": "trading_cells:experience_storage", "S": "trading_cells:storm_shard"},
         "result": {"id": "trading_cells:essence_workbench", "count": 1}})
     add(f"{DATA}/recipe/essence_extractor.json", {"type": "minecraft:crafting_shaped", "category": "equipment",
-        "pattern": ["  A", " G ", "I  "], "key": {"I": "minecraft:iron_ingot", "A": "minecraft:amethyst_shard",
-        "G": "minecraft:glass_pane"}, "result": {"id": "trading_cells:essence_extractor", "count": 1}})
+        "pattern": ["III", " LB", "  B"], "key": {"I": "minecraft:iron_ingot", "L": "minecraft:lapis_lazuli",
+        "B": "minecraft:black_concrete"}, "result": {"id": "trading_cells:essence_extractor", "count": 1}})
     add(f"{DATA}/recipe/empty_essence_vial.json", {"type": "minecraft:crafting_shaped", "category": "misc",
         "pattern": ["A", "G", "G"], "key": {"G": "minecraft:glass", "A": "minecraft:amethyst_shard"},
         "result": {"id": "trading_cells:empty_essence_vial", "count": 4}})
@@ -268,6 +296,11 @@ def resources():
     add(f"{DATA}/recipe/mob_farm_infusion.json", {"type": "trading_cells:arcane_infusion", "category": "production",
         "ingredients": [{"ingredient": item, "count": 1} for item in farm_inputs], "experience": 50_000,
         "result": {"type": "item", "item": "trading_cells:mob_farm"}})
+    interaction_inputs = ("lapis_block", "black_concrete", "lapis_block", "black_concrete", "dispenser",
+                          "black_concrete", "lapis_block", "black_concrete", "lapis_block")
+    add(f"{DATA}/recipe/entity_interaction_farm_infusion.json", {"type": "trading_cells:arcane_infusion", "category": "production",
+        "ingredients": [{"ingredient": "minecraft:" + item, "count": 1} for item in interaction_inputs],
+        "experience": 50_000, "result": {"type": "item", "item": "trading_cells:entity_interaction_farm"}})
     add(f"{DATA}/recipe/experience_bottle_infusion.json", {"type": "trading_cells:arcane_infusion", "category": "misc",
         "shapeless": True,
         "ingredients": [{"ingredient": "minecraft:glass_bottle", "count": 1} if slot == 4 else {"empty": True}
@@ -280,6 +313,13 @@ def texture_resources():
     """Preserve generated silhouettes; tier variants change palette only."""
     result = {}
     sources = Path(__file__).resolve().parent / "assets/essence"
+    for name, pipe in (("interaction_mechanism", "item"), ("interaction_mechanism_edge", "fluid")):
+        path = ROOT / f"{ASSETS}/textures/block/logistics/{pipe}_pipe/{pipe}_pipe.png"
+        with Image.open(path) as source:
+            panel = source.convert("RGBA").crop((0, 0, 32, 32))
+        stream = io.BytesIO()
+        panel.save(stream, format="PNG")
+        result[f"{ASSETS}/textures/block/{name}.png"] = stream.getvalue()
     with Image.open(sources / "villager_reference.png") as reference, \
             Image.open(sources / "simulation_worker_clothing.png") as clothing:
         worker = simulation_worker_texture.texture(reference.convert("RGBA"), clothing.convert("RGBA"))
@@ -293,14 +333,20 @@ def texture_resources():
         result[f"{ASSETS}/textures/item/essence/injector_atlas.png"] = stream.getvalue()
     for name in ("essence_extractor", "empty_essence_vial", "raw_creature_essence_vial", "entity_essence", "essence_stabilizer"):
         size = 128 if name == "essence_stabilizer" else 32
-        image = Image.open(sources / f"{name}.png").convert("RGBA").resize((size, size), Image.Resampling.NEAREST)
+        source = sources / ("inventory_vials" if name == "empty_essence_vial" else "") / f"{name}.png"
+        image = Image.open(source).convert("RGBA").resize((size, size), Image.Resampling.NEAREST)
         stream = io.BytesIO()
         image.save(stream, format="PNG")
         path = "block/essence_stabilizer" if name == "essence_stabilizer" else f"item/essence/{name}"
         result[f"{ASSETS}/textures/{path}.png"] = stream.getvalue()
         if name in ("raw_creature_essence_vial", "entity_essence"):
             for tier in range(1, 5):
-                variant = essence_tier_textures.variant(name, image, tier)
+                # Approved inventory vials include hand-finished glass edges and alpha.
+                if name == "raw_creature_essence_vial":
+                    with Image.open(sources / "inventory_vials" / f"{name}_tier_{tier}.png") as authored:
+                        variant = authored.convert("RGBA")
+                else:
+                    variant = essence_tier_textures.variant(name, image, tier)
                 stream = io.BytesIO()
                 variant.save(stream, format="PNG")
                 result[f"{ASSETS}/textures/item/essence/{name}_tier_{tier}.png"] = stream.getvalue()
