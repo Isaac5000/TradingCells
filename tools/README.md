@@ -87,5 +87,8 @@ Resultados y decisiones historicas versionadas: `performance/RESULTS.md`,
 ## Dependencias
 
 Pillow, fijado en `requirements.txt`, solo para imagenes. JFR y microbenchmarks
-usan el JDK 25 mediante `JAVA_HOME`, `PATH` o toolchains de Gradle. Ninguna
-herramienta necesita PowerShell, Bash, CMD ni coreutils.
+usan el JDK 25 mediante el toolchain de Gradle, que lo descarga automáticamente
+si no está instalado (`org.gradle.java.installations.auto-download=true`).
+El proceso que inicia Gradle aún necesita cualquier JDK compatible; no hace falta
+configurar manualmente que sea Java 25. Ninguna herramienta necesita PowerShell,
+Bash, CMD ni coreutils.
