@@ -19,6 +19,7 @@ public final class Config {
     public static final ModConfigSpec.IntValue LOGISTICS_TOPOLOGY_VISITS;
     public static final ModConfigSpec.IntValue LOGISTICS_TERMINAL_ENDPOINTS;
     public static final ModConfigSpec.IntValue LOGISTICS_TERMINAL_REFRESH_TICKS;
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> CREATURE_GENERATOR_BLACKLIST;
 
     public static final ModConfigSpec SPEC;
 
@@ -87,6 +88,13 @@ public final class Config {
                 1,
                 32_767
         );
+        BUILDER.pop();
+
+        BUILDER.comment("Creature generator restrictions. Only crafting is affected.").push("creatureGenerator");
+        CREATURE_GENERATOR_BLACKLIST = BUILDER.comment("Entity IDs that cannot be converted into spawn eggs. Mod entity IDs are supported.")
+                .defineListAllowEmpty("blacklist", java.util.List.of("minecraft:wither", "minecraft:ender_dragon"),
+                        () -> "minecraft:wither", value -> value instanceof String id
+                                && net.minecraft.resources.Identifier.tryParse(id.trim().toLowerCase(java.util.Locale.ROOT)) != null);
         BUILDER.pop();
 
         SPEC = BUILDER.build();

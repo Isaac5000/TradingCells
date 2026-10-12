@@ -279,13 +279,10 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         return lockedRecipe == null ? 0 : cachedPreviewRecipe == null ? 2 : 1;
     }
     public void toggleRecipeLock() {
-        toggleRecipeLock(null);
-    }
-    public void toggleRecipeLock(@Nullable Identifier selected) {
         refreshPreview();
         if (lockedRecipe != null) { lockedRecipe = null; }
         else {
-            Identifier candidate = cachedPreviewResult.isEmpty() ? selected : cachedRecipeId;
+            Identifier candidate = cachedPreviewResult.isEmpty() ? null : cachedRecipeId;
             if (recipe(candidate) == null) { return; }
             lockedRecipe = candidate;
         }
@@ -450,6 +447,12 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         }
         experience.load(input);
         String recipeId = input.getStringOr("LockedRecipe", "");
+        recipeId = switch (recipeId) {
+            case "trading_cells:farmers_touch_infusion" -> "trading_cells:farmer_touch_infusion";
+            case "trading_cells:miners_touch_infusion" -> "trading_cells:miner_touch_infusion";
+            case "trading_cells:warriors_touch_infusion" -> "trading_cells:warrior_touch_infusion";
+            default -> recipeId;
+        };
         lockedRecipe = recipeId.isEmpty() ? null : Identifier.tryParse(recipeId);
         invalidatePreview();
     }
@@ -606,7 +609,7 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
     private void playCompletionFeedback(ServerLevel serverLevel, ArcaneInfusionRecipe recipe) {
         boolean happyParticles = recipe.result().usesHappyVillagerParticles();
         serverLevel.sendParticles(
-                happyParticles ? ParticleTypes.HAPPY_VILLAGER : ParticleTypes.SCULK_SOUL,
+                happyParticles ? ParticleTypes.HAPPY_VILLAGER : ParticleTypes.ELECTRIC_SPARK,
                 worldPosition.getX() + 0.5D,
                 worldPosition.getY() + 0.7D,
                 worldPosition.getZ() + 0.5D,
@@ -619,7 +622,7 @@ public final class ArcaneInfuserBlockEntity extends PortableMachineBlockEntity
         serverLevel.playSound(
                 null,
                 worldPosition,
-                SoundEvents.ENCHANTMENT_TABLE_USE,
+                SoundEvents.BEACON_POWER_SELECT,
                 SoundSource.BLOCKS,
                 0.8F,
                 0.9F + serverLevel.getRandom().nextFloat() * 0.2F

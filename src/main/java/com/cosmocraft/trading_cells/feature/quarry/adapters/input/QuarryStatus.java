@@ -7,7 +7,8 @@ public enum QuarryStatus {
     PICKAXE_BROKEN("pickaxe_broken"),
     NO_COMPATIBLE_MATERIALS("no_compatible_materials"),
     INVENTORY_FULL("inventory_full"),
-    MINING("mining");
+    MINING("mining"),
+    PAUSED("paused");
 
     private final String translationPath;
 

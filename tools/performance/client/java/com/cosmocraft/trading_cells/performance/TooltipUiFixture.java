@@ -49,6 +49,7 @@ final class TooltipUiFixture {
         player.getInventory().clearContent();
         player.getInventory().setItem(0, MobFarmRegistrationAdapter.ITEM.get().getDefaultInstance());
         player.inventoryMenu.broadcastChanges();
+        if (ModList.get().isLoaded("jade")) { JadeProbe.verify(player); }
         prepared = true;
     }
 
@@ -139,12 +140,12 @@ final class TooltipUiFixture {
 
     private static void verifyDescriptions(Minecraft minecraft) {
         var enchantment = minecraft.level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
-                .getOrThrow(com.cosmocraft.trading_cells.platform.neoforge.machine.MachineToolEnchantments.FARMERS_TOUCH);
+                .getOrThrow(com.cosmocraft.trading_cells.platform.neoforge.machine.MachineToolEnchantments.FARMER_TOUCH);
         var book = net.minecraft.world.item.enchantment.EnchantmentHelper.createBook(
                 new net.minecraft.world.item.enchantment.EnchantmentInstance(enchantment, 1));
         var title = net.minecraft.world.item.enchantment.Enchantment.getFullname(enchantment, 1);
         var hint = com.cosmocraft.trading_cells.platform.neoforge.client.ItemDetailsTooltip.hint();
-        var description = Component.translatable("enchantment.trading_cells.farmers_touch.description.2");
+        var description = Component.translatable("enchantment.trading_cells.farmer_touch.description.2");
         var lines = Screen.getTooltipFromItem(minecraft, book);
         require(lines.stream().anyMatch(line -> line.getString().equals(title.getString())), "Enchantment name must remain visible");
         require(lines.contains(hint) && lines.stream().noneMatch(line -> line.getString().equals(description.getString())), "Description collapsed behind Shift");
@@ -219,6 +220,49 @@ final class TooltipUiFixture {
             var slot = getMenu().slots.stream().filter(s -> s.container == minecraft.player.getInventory()
                     && s.getContainerSlot() == 0).findFirst().orElseThrow();
             super.extractRenderState(graphics, leftPos + slot.x + 8, topPos + slot.y + 8, partialTick);
+        }
+    }
+
+    private static final class JadeProbe {
+        static void verify(ServerPlayer player) {
+            var level = player.level();
+            var pos = player.blockPosition().offset(0, 2, 4);
+            var previous = level.getBlockState(pos);
+            level.setBlockAndUpdate(pos, net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState());
+            try {
+                var chest = (net.minecraft.world.level.block.entity.ChestBlockEntity) level.getBlockEntity(pos);
+                var kind = com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind.VILLAGER;
+                var item = com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter.capturerItem(kind);
+                for (int slot = 0; slot < 27; slot++) {
+                    var stack = new ItemStack(item);
+                    var data = new net.minecraft.nbt.CompoundTag();
+                    data.putInt("Age", slot);
+                    data.putString("Brain", "x".repeat(35_554));
+                    stack.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(data));
+                    chest.setItem(slot, stack);
+                }
+                var data = new net.minecraft.nbt.CompoundTag();
+                var accessor = new snownee.jade.impl.BlockAccessorImpl.Builder().level(level).player(player)
+                        .serverData(data).serverConnected(true).showDetails(true)
+                        .hit(new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(pos),
+                                net.minecraft.core.Direction.NORTH, pos, false))
+                        .blockState(chest.getBlockState()).blockEntity(chest).build();
+                snownee.jade.addon.universal.ItemStorageProvider.putData(accessor);
+                var packet = data.getByteArray("minecraft:item_storage").orElseThrow();
+                require(packet.length < 14_000, "Jade chest preview exceeds packet budget: " + packet.length);
+                var groups = accessor.decodeFromNbt(snownee.jade.api.view.ViewGroup.listCodec(ItemStack.OPTIONAL_STREAM_CODEC),
+                        data.get("minecraft:item_storage")).orElseThrow();
+                require(groups.getKey().toString().equals("trading_cells:entity_item_preview"), "Jade selected the wrong storage provider");
+                require(groups.getValue().stream().flatMap(group -> group.views.stream()).anyMatch(stack -> !stack.isEmpty()), "Jade preview is not empty");
+                require(chest.getItem(0).get(DataComponents.CUSTOM_DATA).copyTag().getStringOr("Brain", "").length() == 35_554,
+                        "Jade must not modify real captured villager data");
+                System.out.println("Jade actual storage packet checked: " + packet.length + " bytes; captured NBT preserved");
+            } finally {
+                // This fixture runs only in a disposable cloned world.
+                var chest = (net.minecraft.world.level.block.entity.ChestBlockEntity) level.getBlockEntity(pos);
+                if (chest != null) { chest.clearContent(); }
+                level.setBlockAndUpdate(pos, previous);
+            }
         }
     }
 }

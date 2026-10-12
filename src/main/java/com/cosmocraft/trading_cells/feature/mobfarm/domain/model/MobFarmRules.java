@@ -16,7 +16,7 @@ public final class MobFarmRules {
         double tier = Double.isFinite(weaponTier) ? Math.clamp(weaponTier, 0.0, 6.0) : 0.0;
         double damage = Double.isFinite(damageLevel) ? Math.clamp(damageLevel, 0.0, 10.0) : 0.0;
         double bonus = 1.0 + tier * 0.08 + damage * 0.03 + Math.clamp(sweepingLevel, 0, 5) * 0.03;
-        return Math.max(20, (int) Math.ceil(1_200.0 / multiplier(speedTier) / bonus));
+        return Math.max(10, (int) Math.ceil(1_200.0 / multiplier(speedTier) / bonus));
     }
 
     public static int rescaleProgress(int progress, int oldDuration, int newDuration) {
@@ -25,6 +25,4 @@ public final class MobFarmRules {
     }
 
     public static int essenceExperienceCost(boolean highLevel) { return highLevel ? 3_000 : 300; }
-    public static int essenceShardCost(boolean highLevel) { return highLevel ? 16 : 4; }
-    public static int essenceMaterialCost(boolean highLevel) { return highLevel ? 1 : 4; }
 }

@@ -23,6 +23,8 @@ public final class MachineItemCapabilityRegistration {
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.Item.BLOCK,
+                com.cosmocraft.trading_cells.feature.combat.adapters.output.CombatRegistrationAdapter.STATION_ENTITY.get(), PortableMachineItemHandler::new);
+        event.registerBlockEntity(Capabilities.Item.BLOCK,
                 AutotraderRegistrationAdapter.AUTOTRADER_BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
         event.registerBlockEntity(Capabilities.Item.BLOCK,
                 TraderRegistrationAdapter.PIGLIN_BARTERING_CELL_BLOCK_ENTITY.get(), PortableMachineItemHandler::new);

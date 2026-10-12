@@ -11,16 +11,16 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 
 public final class QuarryEnchantments {
-    public static final ResourceKey<Enchantment> MINERS_TOUCH = ResourceKey.create(
+    public static final ResourceKey<Enchantment> MINER_TOUCH = ResourceKey.create(
             Registries.ENCHANTMENT,
-            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "miners_touch")
+            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "miner_touch")
     );
 
     private QuarryEnchantments() {
     }
 
     public static boolean protectsPickaxe(ItemStack stack, HolderLookup.Provider registries) {
-        return enchantmentLevel(stack, registries, MINERS_TOUCH) > 0;
+        return enchantmentLevel(stack, registries, MINER_TOUCH) > 0;
     }
 
     public static int fortuneLevel(ItemStack stack, HolderLookup.Provider registries) {
@@ -32,7 +32,7 @@ public final class QuarryEnchantments {
     }
 
     public static boolean isStoredOnBook(ItemStack stack) {
-        return StoredEnchantmentLookup.contains(stack, MINERS_TOUCH);
+        return StoredEnchantmentLookup.contains(stack, MINER_TOUCH);
     }
 
     public static boolean isFortuneStoredOnBook(ItemStack stack) {

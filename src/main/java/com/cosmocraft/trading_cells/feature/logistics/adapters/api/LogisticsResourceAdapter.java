@@ -36,6 +36,11 @@ public interface LogisticsResourceAdapter<H, R> {
 
     List<LogisticsResourceSnapshot<R>> contents(H handler);
 
+    default List<LogisticsListingEntry<R>> listingContents(H handler, ServerLevel level, BlockPos pos, Direction side) {
+        return contents(handler).stream().map(resource -> new LogisticsListingEntry<>(
+                new LogisticsListingEntry.StorageKey(handler, resource.resource()), resource)).toList();
+    }
+
     boolean matches(R resource, String componentFingerprint, PipeFilterRule rule);
 
     long extract(H source, R resource, long maximumAmount, TransactionContext transaction);

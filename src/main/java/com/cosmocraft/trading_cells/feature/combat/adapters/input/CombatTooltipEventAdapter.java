@@ -28,12 +28,12 @@ public final class CombatTooltipEventAdapter {
             ItemStack stack,
             Consumer<Component> builder
     ) {
-        if (CombatEnchantments.isWarriorsTouchStoredOnBook(stack)) {
+        if (CombatEnchantments.isWarriorTouchStoredOnBook(stack)) {
             builder.accept(Component.translatable(
-                    "enchantment.trading_cells.warriors_touch.description.1"
+                    "enchantment.trading_cells.warrior_touch.description.1"
             ).withStyle(ChatFormatting.DARK_GREEN));
             builder.accept(Component.translatable(
-                    "enchantment.trading_cells.warriors_touch.description.2"
+                    "enchantment.trading_cells.warrior_touch.description.2"
             ).withStyle(ChatFormatting.DARK_GREEN));
         }
         if (CombatEnchantments.isDecapitationStoredOnBook(stack)) {

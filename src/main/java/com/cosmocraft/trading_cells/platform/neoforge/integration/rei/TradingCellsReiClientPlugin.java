@@ -156,7 +156,7 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         "category.trading_cells.spawner_redstone_control",
                         Items.SPAWNER
                 ),
-                new ArcaneInfusionReiCategory(), new EssenceReiCategory(false), new EssenceReiCategory(true)
+                new ArcaneInfusionReiCategory(), new EssenceReiCategory(false), new EssenceReiCategory(true), new EssenceReiCategory(true, true)
         ));
 
         registry.addWorkstations(EssenceReiDisplay.STABILIZATION,
@@ -165,6 +165,9 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                 EntryStacks.of(com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.WORKBENCH_ITEM.get()));
         registry.configure(EssenceReiDisplay.STABILIZATION, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
         registry.configure(EssenceReiDisplay.SYNTHESIS, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
+        registry.addWorkstations(EssenceReiDisplay.GENERATION,
+                EntryStacks.of(com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.CREATURE_GENERATOR_ITEM.get()));
+        registry.configure(EssenceReiDisplay.GENERATION, configuration -> configuration.setQuickCraftingEnabledByDefault(false));
 
         registry.addWorkstations(
                 VILLAGER_BREEDING,
@@ -255,6 +258,7 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
     public void registerDisplays(DisplayRegistry registry) {
         for (var tier : com.cosmocraft.trading_cells.feature.mobfarm.domain.model.EssenceTier.values()) {
             registry.add(EssenceReiDisplay.synthesis(tier));
+            registry.add(EssenceReiDisplay.generation(tier));
         }
         for (TradingCellsReiDisplay display : TradingCellsReiDisplays.createAll()) {
             registry.add(display);
@@ -268,7 +272,8 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                     VillagerFarmerScreen.class, PiglinFarmerScreen.class, VillagerQuarryScreen.class,
                     PiglinQuarryScreen.class, ConverterScreen.class, IronFarmScreen.class,
                     ArcaneInfuserScreen.class, MobFarmScreen.class, EntityInteractionFarmScreen.class,
-                    EssenceWorkbenchScreen.class, EssenceStabilizerScreen.class, VillagerTradingCellScreen.class,
+                    EssenceWorkbenchScreen.class, com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.CreatureGeneratorScreen.class,
+                    EssenceStabilizerScreen.class, VillagerTradingCellScreen.class,
                     AutotraderScreen.class, NetheritePiglinBarteringCellScreen.class,
                     com.cosmocraft.trading_cells.feature.experience.adapters.output.client.ExperienceStorageScreen.class);
 
@@ -281,6 +286,9 @@ public final class TradingCellsReiClientPlugin implements REIClientPlugin {
                         screen.getImageWidth() + 2 * outset, screen.getImageHeight() + 2 * outset);
             }
         });
+        registry.registerContainerClickArea(new Rectangle(86, 50, 24, 16),
+                com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.CreatureGeneratorScreen.class,
+                EssenceReiDisplay.GENERATION);
         registry.registerContainerClickArea(new Rectangle(86, 50, 24, 16),
                 com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client.EssenceWorkbenchScreen.class,
                 EssenceReiDisplay.SYNTHESIS);

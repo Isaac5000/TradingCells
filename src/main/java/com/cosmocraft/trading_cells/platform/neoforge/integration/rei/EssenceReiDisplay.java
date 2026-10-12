@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.platform.neoforge.integration.rei;
 
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceStabilizationRecipe;
+import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureGeneratorEggs;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.mobfarm.domain.model.EssenceTier;
 import com.mojang.serialization.Codec;
@@ -9,6 +10,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.display.DisplaySerializer;
 import me.shedaniel.rei.api.common.display.basic.BasicDisplay;
@@ -16,6 +18,7 @@ import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.api.common.util.EntryIngredients;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -30,6 +33,7 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 public final class EssenceReiDisplay extends BasicDisplay {
     public static final CategoryIdentifier<EssenceReiDisplay> STABILIZATION = CategoryIdentifier.of("trading_cells", "essence_stabilization");
     public static final CategoryIdentifier<EssenceReiDisplay> SYNTHESIS = CategoryIdentifier.of("trading_cells", "essence_synthesis");
+    public static final CategoryIdentifier<EssenceReiDisplay> GENERATION = CategoryIdentifier.of("trading_cells", "creature_generation");
     public static final Identifier ID = Identifier.fromNamespaceAndPath("trading_cells", "essence_processing");
     private final boolean synthesis;
     private final int tier;
@@ -90,6 +94,15 @@ public final class EssenceReiDisplay extends BasicDisplay {
                 List.of(EntryIngredients.of(tierStack(MobFarmRegistrationAdapter.ENTITY_MODULE.get(), tier.id()))),
                 Identifier.fromNamespaceAndPath("trading_cells", "essence_synthesis_" + tier.id()), true, tier.id(), tier.modelExperience());
     }
+    public static EssenceReiDisplay generation(EssenceTier tier) {
+        var eggs = EntryIngredient.of(StreamSupport.stream(
+                BuiltInRegistries.ITEM.getTagOrEmpty(CreatureGeneratorEggs.INGREDIENTS).spliterator(), false)
+                .map(holder -> EntryStacks.of(holder.value())).toList());
+        return new EssenceReiDisplay(List.of(EntryIngredients.of(tierStack(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get(), tier.id())),
+                eggs),
+                List.of(EntryIngredients.of(CreatureGeneratorEggs.preview(tier))),
+                Identifier.fromNamespaceAndPath("trading_cells", "creature_generation_" + tier.id()), true, tier.id(), tier.modelExperience());
+    }
     private static ItemStack tierStack(Item item, int tier) {
         ItemStack stack = item.getDefaultInstance();
         CompoundTag root = new CompoundTag(), data = new CompoundTag();
@@ -100,6 +113,9 @@ public final class EssenceReiDisplay extends BasicDisplay {
     public boolean synthesis() { return synthesis; }
     public int tier() { return tier; }
     public int cost() { return cost; }
-    @Override public CategoryIdentifier<EssenceReiDisplay> getCategoryIdentifier() { return synthesis ? SYNTHESIS : STABILIZATION; }
+    @Override public CategoryIdentifier<EssenceReiDisplay> getCategoryIdentifier() {
+        return getDisplayLocation().orElseThrow().getPath().startsWith("creature_generation_")
+                ? GENERATION : synthesis ? SYNTHESIS : STABILIZATION;
+    }
     @Override public DisplaySerializer<EssenceReiDisplay> getSerializer() { return SERIALIZER; }
 }

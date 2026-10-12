@@ -1,0 +1,13 @@
+{
+  "model": {
+    "type": "minecraft:range_dispatch",
+    "property": "trading_cells:essence_tier",
+    "entries": [
+      {"threshold": 1, "model": {"type": "minecraft:model", "model": "trading_cells:item/generic_spawn_egg", "tints": [{"type": "minecraft:constant", "value": -11147670}]}},
+      {"threshold": 2, "model": {"type": "minecraft:model", "model": "trading_cells:item/generic_spawn_egg", "tints": [{"type": "minecraft:constant", "value": -13250561}]}},
+      {"threshold": 3, "model": {"type": "minecraft:model", "model": "trading_cells:item/generic_spawn_egg", "tints": [{"type": "minecraft:constant", "value": -5219073}]}},
+      {"threshold": 4, "model": {"type": "minecraft:model", "model": "trading_cells:item/generic_spawn_egg", "tints": [{"type": "minecraft:constant", "value": -11442}]}}
+    ],
+    "fallback": {"type": "minecraft:model", "model": "trading_cells:item/generic_spawn_egg", "tints": [{"type": "minecraft:constant", "value": -11147670}]}
+  }
+}

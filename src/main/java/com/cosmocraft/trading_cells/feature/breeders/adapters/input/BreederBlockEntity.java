@@ -326,6 +326,19 @@ public abstract class BreederBlockEntity extends BlockEntity
     }
 
     private CompoundTag makeBabyData(CompoundTag source) {
+        if (kind == BreederKind.VILLAGER) {
+            // Offspring inherit the selected appearance, never a parent's saved entity state.
+            // This also sanitizes BabyTemplate data saved by previous versions.
+            CompoundTag baby = new CompoundTag();
+            baby.putString("id", "minecraft:villager");
+            baby.putInt("Age", -24000);
+            CompoundTag villagerData = new CompoundTag();
+            villagerData.putString("type", VillagerVariantSelection.id(villagerVariant));
+            villagerData.putString("profession", "minecraft:none");
+            villagerData.putInt("level", 1);
+            baby.put("VillagerData", villagerData);
+            return baby;
+        }
         CompoundTag baby = source.copy();
         baby.remove("UUID");
         baby.remove("CustomName");
@@ -334,19 +347,13 @@ public abstract class BreederBlockEntity extends BlockEntity
         baby.remove("LoveCauseMost");
         baby.remove("AgeLocked");
         baby.putInt("Age", -24000);
-        if (kind == BreederKind.VILLAGER) {
-            CompoundTag villagerData = baby.getCompound("VillagerData").map(CompoundTag::copy).orElseGet(CompoundTag::new);
-            villagerData.putString("type", VillagerVariantSelection.id(villagerVariant));
-            baby.put("VillagerData", villagerData);
-        } else {
-            baby.putBoolean("IsBaby", true);
-            // Babies produced by the breeder must always be completely unarmed.
-            baby.remove("HandItems");
-            baby.remove("ArmorItems");
-            baby.remove("HandDropChances");
-            baby.remove("ArmorDropChances");
-            baby.remove("equipment");
-        }
+        baby.putBoolean("IsBaby", true);
+        // Babies produced by the breeder must always be completely unarmed.
+        baby.remove("HandItems");
+        baby.remove("ArmorItems");
+        baby.remove("HandDropChances");
+        baby.remove("ArmorDropChances");
+        baby.remove("equipment");
         return baby;
     }
 

@@ -13,6 +13,8 @@ import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnost
 import com.cosmocraft.trading_cells.shared.machines.domain.model.MachineDiagnosticStatus;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import net.minecraft.core.BlockPos;
@@ -21,6 +23,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
@@ -72,6 +75,10 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
     private int cycleTicks;
     private int cycleDurationTicks = quarryService.durationTicks(0.0D, 0);
     private boolean deepMining;
+    private boolean enabled = true;
+    private boolean whitelist;
+    private final Set<Identifier> listedMaterials = new HashSet<>();
+    private int filterRevision;
     private boolean mining;
     private QuarryStatus status = QuarryStatus.STOPPED;
     private ItemStack lastResult = ItemStack.EMPTY;
@@ -102,6 +109,8 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
                 case 5 -> status.ordinal();
                 case 6 -> lastResult.isEmpty() ? 0 : BuiltInRegistries.ITEM.getId(lastResult.getItem());
                 case 7 -> QuarryMaterialCatalog.revision();
+                case 8 -> enabled ? 1 : 0;
+                case 9 -> whitelist ? 1 : 0;
                 default -> 0;
             };
         }
@@ -117,7 +126,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
 
         @Override
         public int getCount() {
-            return 8;
+            return 10;
         }
     };
 
@@ -137,6 +146,43 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
 
     public ContainerData dataAccess() {
         return dataAccess;
+    }
+
+    public boolean enabled() { return enabled; }
+    public boolean whitelist() { return whitelist; }
+    public int filterRevision() { return filterRevision; }
+    public Set<Identifier> listedMaterials() { return Set.copyOf(listedMaterials); }
+    public boolean collects(Identifier material) { return listedMaterials.contains(material) == whitelist; }
+
+    public void toggleEnabled() {
+        enabled = !enabled;
+        setMining(false);
+        setStatus(enabled ? QuarryStatus.STOPPED : QuarryStatus.PAUSED);
+        activity.wake();
+        markChangedAndSync();
+    }
+
+    public void toggleFilterMode() {
+        whitelist = !whitelist;
+        filterChanged();
+    }
+
+    public boolean toggleMaterial(Identifier material) {
+        if (catalogSnapshot().entries().stream().noneMatch(entry -> entry.definition().id().equals(material))) {
+            return false;
+        }
+        if (!listedMaterials.remove(material)) {
+            if (listedMaterials.size() >= 2_048) { return false; }
+            listedMaterials.add(material);
+        }
+        filterChanged();
+        return true;
+    }
+
+    private void filterChanged() {
+        filterRevision++;
+        activity.wake();
+        markChangedAndSync();
     }
 
     public ItemStack lastResult() {
@@ -185,11 +231,13 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
                 OUTPUT_SLOT_COUNT
         );
         MachineDiagnosticStatus diagnosticStatus = switch (status) {
+            case PAUSED -> MachineDiagnosticStatus.PAUSED;
             case MINING -> MachineDiagnosticStatus.RUNNING;
             case INVENTORY_FULL -> MachineDiagnosticStatus.BLOCKED;
             default -> MachineDiagnosticStatus.INACTIVE;
         };
         String reason = switch (status) {
+            case PAUSED -> "manual";
             case WORKER_REQUIRED -> "worker_required";
             case PICKAXE_REQUIRED, PICKAXE_BROKEN -> "tool_required";
             case NO_COMPATIBLE_MATERIALS -> "missing_recipe";
@@ -236,6 +284,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
+        if (!enabled) { return; }
         if (activity.remainsInactive()) {
             return;
         }
@@ -265,17 +314,16 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
                 pause(QuarryStatus.NO_COMPATIBLE_MATERIALS);
                 return;
             }
-            if (!hasAnyOutputSpace()) {
-                pause(QuarryStatus.INVENTORY_FULL);
-                return;
-            }
             if (!preparePendingResult(serverLevel, catalog, pickaxe)) {
                 pause(QuarryStatus.NO_COMPATIBLE_MATERIALS);
                 return;
             }
             prepared = true;
         }
-        if (!canStoreAny(pendingResult)) {
+        // Selection and its rolled loot remain intact until the full cycle ends.
+        Identifier material = pendingMaterial == null ? null : Identifier.tryParse(pendingMaterial);
+        boolean collect = material == null ? !whitelist : collects(material);
+        if (collect && !canStoreAny(pendingResult)) {
             activity.transition(MachineActivityController.Activity.BLOCKED);
             pause(QuarryStatus.INVENTORY_FULL, prepared);
             return;
@@ -292,9 +340,12 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             return;
         }
 
-        storeStacks(pendingResult);
-        lastResult = pendingResult.getFirst().copy();
-        lastResult.setCount(1);
+        if (collect) {
+            storeStacks(pendingResult);
+            lastResult = pendingResult.getFirst().copyWithCount(1);
+        } else {
+            lastResult = ItemStack.EMPTY;
+        }
         clearPendingResult();
         cycleTicks = 0;
         damagePickaxeAfterCycle(serverLevel);
@@ -483,6 +534,14 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
         cycleDurationTicks = Math.max(1, input.getIntOr(CYCLE_DURATION_TAG, effectiveCycleTicks()));
         cycleTicks = Math.clamp(input.getIntOr(CYCLE_TICKS_TAG, 0), 0, Math.max(0, cycleDurationTicks - 1));
         boolean savedDeepMining = input.getBooleanOr(DEEP_MINING_TAG, false);
+        enabled = input.getBooleanOr("Enabled", true);
+        whitelist = input.getBooleanOr("MaterialWhitelist", false);
+        listedMaterials.clear();
+        for (int index = 0, count = Math.clamp(input.getIntOr("ListedMaterialCount", 0), 0, 2_048); index < count; index++) {
+            Identifier id = Identifier.tryParse(input.getStringOr("ListedMaterial" + index, ""));
+            if (id != null) { listedMaterials.add(id); }
+        }
+        filterRevision++;
         deepMining = savedDeepMining && deepMiningAvailable();
         lastResult = input.read(LAST_RESULT_TAG, ItemStack.CODEC).orElse(ItemStack.EMPTY);
         int pendingCount = Math.clamp(input.getIntOr(PENDING_COUNT_TAG, 0), 0, OUTPUT_SLOT_COUNT);
@@ -500,7 +559,7 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
             pendingPreview = previewForMaterial(pendingMaterial, deepMining);
         }
         mining = false;
-        status = QuarryStatus.STOPPED;
+        status = enabled ? QuarryStatus.STOPPED : QuarryStatus.PAUSED;
         invalidateCatalog();
         invalidateWorker();
         invalidateDuration();
@@ -520,6 +579,13 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
         output.putInt(CYCLE_TICKS_TAG, cycleTicks);
         output.putInt(CYCLE_DURATION_TAG, cycleDurationTicks);
         output.putBoolean(DEEP_MINING_TAG, deepMining);
+        output.putBoolean("Enabled", enabled);
+        output.putBoolean("MaterialWhitelist", whitelist);
+        List<Identifier> listed = listedMaterials.stream().sorted().toList();
+        output.putInt("ListedMaterialCount", listed.size());
+        for (int index = 0; index < listed.size(); index++) {
+            output.putString("ListedMaterial" + index, listed.get(index).toString());
+        }
         if (!lastResult.isEmpty()) {
             output.store(LAST_RESULT_TAG, ItemStack.CODEC, lastResult);
         }
@@ -545,6 +611,10 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
         cycleTicks = 0;
         cycleDurationTicks = quarryService.durationTicks(0.0D, 0);
         deepMining = false;
+        enabled = true;
+        whitelist = false;
+        listedMaterials.clear();
+        filterRevision++;
         mining = false;
         status = QuarryStatus.STOPPED;
         lastResult = ItemStack.EMPTY;
@@ -731,16 +801,6 @@ public abstract class QuarryBlockEntity extends PortableMachineBlockEntity imple
         }
         status = value;
         return true;
-    }
-
-    private boolean hasAnyOutputSpace() {
-        for (int slot = FIRST_OUTPUT_SLOT; slot < SPEED_SLOT; slot++) {
-            ItemStack stack = items.get(slot);
-            if (stack.isEmpty() || stack.getCount() < stack.getMaxStackSize()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private boolean canStoreAny(List<ItemStack> stacks) {

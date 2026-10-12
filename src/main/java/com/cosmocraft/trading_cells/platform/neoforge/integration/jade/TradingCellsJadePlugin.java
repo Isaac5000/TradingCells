@@ -19,6 +19,7 @@ import snownee.jade.api.WailaPlugin;
 public final class TradingCellsJadePlugin implements IWailaPlugin {
     @Override
     public void register(IWailaCommonRegistration registration) {
+        registration.registerItemStorage(EntityItemStorageProvider.INSTANCE, Object.class);
         registration.registerBlockDataProvider(
                 PortableMachineJadeDataProvider.INSTANCE,
                 PortableMachineBlockEntity.class
@@ -39,6 +40,7 @@ public final class TradingCellsJadePlugin implements IWailaPlugin {
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
+        registration.registerItemStorageClient(EntityItemStorageProvider.INSTANCE);
         registration.registerBlockComponent(
                 PortableMachineJadeComponentProvider.INSTANCE,
                 AbstractPortableMachineBlock.class

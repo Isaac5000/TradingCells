@@ -46,106 +46,19 @@ def ingredient_signature(recipe):
 
 
 class SpawnEggRecipeTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.recipes = {
-            path.name.removesuffix("_spawn_egg_infusion.json"): read_json(path)
-            for path in sorted(RECIPES.glob("*_spawn_egg_infusion.json"))
-        }
+    def test_eggs_are_not_active_infusions(self):
+        for path in RECIPES.glob("*.json"):
+            recipe = read_json(path)
+            self.assertFalse(recipe.get("type") == "trading_cells:arcane_infusion"
+                             and recipe.get("result", {}).get("item", "").endswith("_spawn_egg"), path.name)
 
-    def test_nine_single_item_slots_with_an_egg_in_the_center(self):
-        for entity, recipe in self.recipes.items():
-            with self.subTest(entity=entity):
-                self.assertEqual(recipe["type"], "trading_cells:arcane_infusion")
-                self.assertEqual(recipe["category"], "generators")
-                self.assertEqual(len(recipe["ingredients"]), 9)
-                self.assertEqual(recipe["ingredients"][4], {"ingredient": EGG, "count": 1})
-                for index, slot in enumerate(recipe["ingredients"]):
-                    self.assertEqual(set(slot), {"ingredient", "count"})
-                    self.assertEqual(slot["count"], 1)
-                    if index != 4:
-                        self.assertTrue(slot["ingredient"].startswith("minecraft:"))
-                        self.assertFalse(slot["ingredient"].endswith("_spawn_egg"))
-                self.assertEqual(recipe["result"], {
-                    "type": "item", "item": f"minecraft:{entity}_spawn_egg",
-                })
-
-    def test_at_most_two_thematic_materials_in_symmetric_rings(self):
-        for entity, recipe in self.recipes.items():
-            with self.subTest(entity=entity):
-                slots = recipe["ingredients"]
-                materials = {slot["ingredient"] for slot in slots} - {EGG}
-                self.assertGreaterEqual(len(materials), 1)
-                self.assertLessEqual(len(materials), 2)
-                self.assertEqual(len({slots[i]["ingredient"] for i in CORNERS}), 1)
-                self.assertEqual(len({slots[i]["ingredient"] for i in EDGES}), 1)
-
-    def test_no_duplicate_layouts_or_reordered_ingredient_combinations(self):
-        layouts, combinations = {}, {}
-        for entity, recipe in self.recipes.items():
-            with self.subTest(entity=entity):
-                layout = tuple(slot["ingredient"] for slot in recipe["ingredients"])
-                signature = ingredient_signature(recipe)
-                self.assertNotIn(layout, layouts, f"Same layout as {layouts.get(layout)}")
-                self.assertNotIn(signature, combinations,
-                                 f"Same materials as {combinations.get(signature)}")
-                layouts[layout] = entity
-                combinations[signature] = entity
-
-    def test_signature_rejects_reordering_and_cost_only_differences(self):
-        original = self.recipes["axolotl"]
-        changed = {**original, "experience": 9990,
-                   "ingredients": list(reversed(original["ingredients"][1:]))
-                   + original["ingredients"][:1]}
-        self.assertEqual(ingredient_signature(original), ingredient_signature(changed))
-
-    def test_positive_experience_in_multiples_of_ten(self):
-        for entity, recipe in self.recipes.items():
-            with self.subTest(entity=entity):
-                self.assertIs(type(recipe["experience"]), int)
-                self.assertGreater(recipe["experience"], 0)
-                self.assertEqual(recipe["experience"] % 10, 0)
-
-    def test_powerful_creatures_cost_more_than_ordinary_targets(self):
-        for entity, minimum in {
-            "piglin_brute": 600, "evoker": 800, "iron_golem": 800,
-            "ravager": 1000, "elder_guardian": 1500,
-            "warden": 5000, "wither": 10000, "ender_dragon": 20000,
-        }.items():
-            with self.subTest(entity=entity):
-                self.assertGreaterEqual(self.recipes[entity]["experience"], minimum)
-        for strong, ordinary in (
-            ("elder_guardian", "guardian"), ("piglin_brute", "piglin"),
-            ("ravager", "pillager"), ("wither", "wither_skeleton"),
-            ("warden", "creaking"), ("ender_dragon", "enderman"),
-        ):
-            self.assertGreater(self.recipes[strong]["experience"],
-                               self.recipes[ordinary]["experience"])
-
-    def test_llama_and_horse_have_different_materials(self):
-        self.assertNotEqual(ingredient_signature(self.recipes["llama"]),
-                            ingredient_signature(self.recipes["horse"]))
-        self.assertIn("minecraft:white_wool", {
-            slot["ingredient"] for slot in self.recipes["llama"]["ingredients"]
-        })
-
-    def test_camel_uses_four_cactus_flowers_instead_of_cactus(self):
-        ingredients = Counter(slot["ingredient"] for slot in self.recipes["camel"]["ingredients"])
-        self.assertEqual(ingredients["minecraft:cactus_flower"], 4)
-        self.assertNotIn("minecraft:cactus", ingredients)
-
-    def test_reference_axolotl_and_creaking_recipes_are_preserved(self):
-        for entity, corner, edge, experience in (
-            ("axolotl", "clay_ball", "tropical_fish", 180),
-            ("creaking", "resin_clump", "pale_moss_block", 500),
-        ):
-            recipe = self.recipes[entity]
-            self.assertEqual(recipe["experience"], experience)
-            self.assertEqual([slot["ingredient"] for slot in recipe["ingredients"]], [
-                f"minecraft:{corner}", f"minecraft:{edge}", f"minecraft:{corner}",
-                f"minecraft:{edge}", EGG, f"minecraft:{edge}",
-                f"minecraft:{corner}", f"minecraft:{edge}", f"minecraft:{corner}",
-            ])
+    def test_retired_recipes_are_recoverable_except_bosses(self):
+        archive = ROOT / "docs/archive/arcane_infusions"
+        archived = {path.stem for path in archive.glob("*_spawn_egg_infusion.json")}
+        self.assertEqual(len(archived), 86)
+        for name in ("wither_spawn_egg_infusion", "ender_dragon_spawn_egg_infusion"):
+            self.assertNotIn(name, archived)
+            self.assertFalse((RECIPES / (name + ".json")).exists())
 
 
 class CurrentMinecraftRegistryTests(unittest.TestCase):
@@ -187,18 +100,8 @@ class CurrentMinecraftRegistryTests(unittest.TestCase):
         self.assertEqual(len(eggs), 88)
         self.assertEqual(eggs, self.registered_eggs)
 
-    def test_exactly_one_recipe_for_every_registered_vanilla_egg(self):
-        results = Counter(recipe["result"]["item"] for recipe in self.recipes)
-        self.assertEqual(set(results), self.registered_eggs)
-        self.assertTrue(all(count == 1 for count in results.values()))
-
-    def test_every_spawn_egg_ingredient_exists_in_the_current_jar(self):
-        for recipe in self.recipes:
-            for slot in recipe["ingredients"]:
-                ingredient = slot["ingredient"]
-                if ingredient != EGG:
-                    with self.subTest(result=recipe["result"]["item"], ingredient=ingredient):
-                        self.assertIn(ingredient, self.items)
+    def test_active_catalog_has_no_spawn_egg_infusions(self):
+        self.assertEqual(self.recipes, [])
 
 
 class SpecificRecipeTests(unittest.TestCase):
@@ -245,24 +148,6 @@ class SpecificRecipeTests(unittest.TestCase):
             "items": "trading_cells:experience_storage",
             "components": {"!minecraft:block_entity_data": {}},
         })
-
-    def test_infuser_end_stone_is_visible_in_world_and_inventory_models(self):
-        models = RESOURCE_ROOT / ASSETS / "models"
-        for name, parent in (("arcane_infuser", "villager_breeder"), ("arcane_infuser_frame", "machine_cage_frame")):
-            with self.subTest(model=name):
-                model = read_json(models / "block" / f"{name}.json")
-                self.assertEqual(model["parent"], f"trading_cells:block/{parent}")
-                self.assertEqual(model["textures"]["base_center"], "minecraft:block/end_stone")
-                for part in ("base", "base_left", "base_right"):
-                    self.assertEqual(model["textures"][part], "minecraft:block/end_stone")
-                self.assertEqual(model["textures"]["frame"], "minecraft:block/crying_obsidian")
-                geometry = read_json(models / "block" / f"{parent}.json")
-                center = [element for element in geometry["elements"]
-                          if element["faces"].get("up", {}).get("texture") == "#base_center"]
-                self.assertEqual(len(center), 1)
-                self.assertEqual(center[0]["from"], [6, 0, 2])
-                self.assertEqual(center[0]["to"], [10, 2, 14])
-        self.assertEqual(read_json(models / "item/arcane_infuser.json")["parent"], "trading_cells:block/arcane_infuser")
 
     def test_essence_machine_recipes(self):
         grid = crafting_grid(read_json(RECIPES / "essence_workbench.json"))
@@ -416,15 +301,10 @@ class SimulationRecipeValidationTests(unittest.TestCase):
             recipe[field] = value
             self.assertTrue(any("simulation recipe" in error for error in self.validate({"mob_farm_infusion.json": recipe})))
 
-    def test_spawn_egg_center_cost_and_duplicates_are_checked(self):
-        name = "spider_spawn_egg_infusion.json"
-        original = read_json(RECIPES / name)
-        wrong_center = deepcopy(original)
-        wrong_center["ingredients"][4]["ingredient"] = "minecraft:egg"
-        invalid_cost = {**original, "experience": 15}
-        duplicate = {**original, "ingredients": read_json(RECIPES / "cow_spawn_egg_infusion.json")["ingredients"]}
-        for recipe, expected in ((wrong_center, "center slot"), (invalid_cost, "multiple of ten"), (duplicate, "duplicate")):
-            self.assertTrue(any(expected in error for error in self.validate({name: recipe})))
+    def test_spawn_egg_infusions_cannot_be_restored_accidentally(self):
+        path = "cow_spawn_egg_infusion.json"
+        recipe = read_json(ROOT / "docs/archive/arcane_infusions" / path)
+        self.assertTrue(any("creature generator" in error for error in self.validate({path: recipe})))
 
 
 if __name__ == "__main__":

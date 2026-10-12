@@ -3,6 +3,8 @@ package com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotGhosts;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotSprites;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineToggleButton;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.ResourceFilterButton;
 
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.MobFarmMenu;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRenderer;
@@ -35,8 +37,9 @@ public final class MobFarmScreen extends MachineContainerScreen<MobFarmMenu> {
 
     @Override protected void init() {
         super.init();
-        addRenderableWidget(SimulationScreenWidgets.checkButton(leftPos + 319, topPos + 8, label("enabled"),
+        addRenderableWidget(new MachineToggleButton(leftPos + 174, topPos + 8, 163,
                 menu::enabled, button -> command(0)));
+        addRenderableWidget(new ResourceFilterButton(leftPos + 94, topPos + 28, menu::whitelist, button -> command(2)));
         addRenderableWidget(SimulationScreenWidgets.checkButton(leftPos + 136, topPos + 28, label("probabilities"),
                 () -> probabilities, button -> probabilities = !probabilities));
         var xp = addRenderableWidget(Button.builder(Component.literal("XP"), button -> command(1))
@@ -71,7 +74,7 @@ public final class MobFarmScreen extends MachineContainerScreen<MobFarmMenu> {
             var entry = entries.get(row + scroll);
             int y = topPos + 51 + row * 22;
             graphics.fill(leftPos + 11, y, leftPos + 155, y + 21, 0xFF343C40);
-            SimulationScreenWidgets.check(graphics, leftPos + 15, y + 5, entry.enabled());
+            SimulationScreenWidgets.check(graphics, leftPos + 15, y + 5, menu.whitelist() == entry.enabled());
             graphics.fakeItem(entry.stack(), leftPos + 32, y + 2);
             FittedTextRenderer.left(graphics, font, entry.stack().getHoverName(), leftPos + 53, leftPos + 151,
                     y + (probabilities ? 1 : 5), 11, SimulationScreenWidgets.TEXT, false);
@@ -90,9 +93,6 @@ public final class MobFarmScreen extends MachineContainerScreen<MobFarmMenu> {
 
     @Override protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         FittedTextRenderer.left(graphics, font, title, 12, 164, 8, 16, SimulationScreenWidgets.TEXT, true);
-        Component enabled = label("enabled");
-        FittedTextRenderer.left(graphics, font, enabled, Math.max(174, 313 - font.width(enabled)), 313,
-                8, 16, SimulationScreenWidgets.MUTED, false);
         graphics.text(font, label("loot"), 12, 33, SimulationScreenWidgets.MUTED, false);
         graphics.text(font, "%", 124, 33, SimulationScreenWidgets.MUTED, false);
         graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, SimulationScreenWidgets.MUTED, false);

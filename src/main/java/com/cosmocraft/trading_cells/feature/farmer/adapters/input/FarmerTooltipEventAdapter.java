@@ -30,10 +30,10 @@ public final class FarmerTooltipEventAdapter {
     ) {
         if (FarmerEnchantments.isStoredOnBook(stack)) {
             builder.accept(Component.translatable(
-                    "enchantment.trading_cells.farmers_touch.description.1"
+                    "enchantment.trading_cells.farmer_touch.description.1"
             ).withStyle(ChatFormatting.DARK_GREEN));
             builder.accept(Component.translatable(
-                    "enchantment.trading_cells.farmers_touch.description.2"
+                    "enchantment.trading_cells.farmer_touch.description.2"
             ).withStyle(ChatFormatting.DARK_GREEN));
         }
     }

@@ -76,7 +76,7 @@ capacity attempts stop immediately. Inserting a replacement resumes operation.
 Capacity upgrades add 2/4/8/16/32 harvest attempts per cycle, with ordinary tool
 wear per harvest. Speed upgrades control cycle acceleration. Efficiency
 on the hoe does not increase speed; Fortune, Silk Touch and
-Farmer's Touch retain their behavior. Capacity is appended after the existing
+Farmer Touch retain their behavior. Capacity is appended after the existing
 speed slot, preserving old saved inventory indices and accepting side insertion.
 Fortune applies independently to every harvest, including the extra harvests
 from capacity upgrades and custom datapack outputs.

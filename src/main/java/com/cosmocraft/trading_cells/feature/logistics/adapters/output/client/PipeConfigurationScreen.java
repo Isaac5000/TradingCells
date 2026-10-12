@@ -114,10 +114,11 @@ public final class PipeConfigurationScreen extends MachineContainerScreen<PipeCo
             if (selectedRule >= 0 && selectedRule < rules.size()) { rules.remove(selectedRule); }
             selectedRule = Math.min(selectedRule, rules.size() - 1); replaceRules(rules);
         }), tier.allowsFilters() && selectedRule >= 0, PipeUpgradeTier.IMPROVED);
-        button(label(profile.enabled() ? "enabled" : "disabled"), 204, 118, 132, ignored -> {
+        addRenderableWidget(new com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineToggleButton(
+                leftPos + 204, topPos + 118, 132, () -> draft.profile(selected).enabled(), ignored -> {
             storeFields(); var current = draft.profile(selected);
             setProfile(new PipeResourceProfile(!current.enabled(), current.channel(), current.filters(), current.filterMode(), current.routingMode()));
-        });
+        }));
         channel = addRenderableWidget(new EditBox(font, leftPos + 204, topPos + 148, 132, 16, label("channel")));
         channel.setMaxLength(PipeFilterRule.MAX_CHANNEL_LENGTH); channel.setValue(profile.channel());
         gate(channel, tier.allowsChannels(), PipeUpgradeTier.ADVANCED);

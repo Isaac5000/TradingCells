@@ -12,7 +12,7 @@ public record MobFarmWeaponSnapshot(
         double effectiveDamageLevel,
         int lootingLevel,
         int sweepingEdgeLevel,
-        boolean warriorsTouch,
+        boolean warriorTouch,
         int decapitationLevel
 ) {
     public static MobFarmWeaponSnapshot inspect(

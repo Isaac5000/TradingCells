@@ -19,7 +19,7 @@ abstract class InteractionToolWearMixin {
     private void tradingCells$protectedInteraction(int amount, ServerLevel level, @Nullable LivingEntity owner,
             CallbackInfoReturnable<Integer> callback) {
         if (amount > 0 && level instanceof DisposableInteractionLevel && InteractionIsolation.active()
-                && MachineToolEnchantments.farmersTouch((ItemStack) (Object) this, level.registryAccess())) {
+                && MachineToolEnchantments.farmerTouch((ItemStack) (Object) this, level.registryAccess())) {
             callback.setReturnValue(0);
         }
     }

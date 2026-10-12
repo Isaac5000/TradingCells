@@ -5,7 +5,7 @@ Trading Cells es un mod para Minecraft 26.2 con NeoForge que automatiza el traba
 ## Requisitos
 
 - Minecraft `26.2.0`
-- NeoForge `26.2.0.88` o posterior compatible con Minecraft 26.2
+- NeoForge `26.2.0.90` o posterior compatible con Minecraft 26.2
 - Java `25`
 - Roughly Enough Items `26.2.820` o posterior es opcional
 
@@ -78,32 +78,31 @@ Las tuberías se configuran con su **llave inglesa**. Cada conexión admite una 
 
 Las máquinas con control de redstone conservan exactamente el progreso al pausarse. En las que admiten comparador, este emite 15 cuando ninguna salida activa puede aceptar más producción y 0 en los demás casos. La granja de interacciones solo tiene pausa manual.
 
-## Infusor Arcano
+## Sintetizador de materia
 
-El **Infusor Arcano** usa nueve entradas como una mesa de trabajo, una salida de previsualización y un depósito de hasta `2.147.483.647` puntos de experiencia. No tiene modo automático ni acepta objetos mediante tolvas: solo consume los recursos de forma atómica cuando el jugador retira manualmente un resultado válido. Su libro lila muestra todas las recetas desde el principio, con buscador, categorias, filtro de fabricables y colocacion de un lote o del maximo con Mayus. Las recetas pueden exigir huecos vacios.
+El **Sintetizador de materia** (antes Infusor Arcano, ID conservado `arcane_infuser`) usa nueve entradas, una salida y hasta `2.147.483.647` XP. Tiene cámara central, emisores y pantalla superior. En modo libre fabrica al retirar la salida; al bloquear una receta permite fabricación automática y abastecimiento por tolvas/tuberías. Su libro conserva buscador, categorías, filtro de fabricables y colocación de lotes. [Contrato completo](docs/ARCANE_INFUSER.md).
 
 - **Toque del Granjero** (`15.000` XP): libro central, flor de chorus, tótem, estrella del Nether, bloque de netherita y patata, remolacha, trigo y zanahoria en las esquinas.
 - **Toque del Minero** (`30.000` XP): libro central, fragmento de eco, tótem, estrella del Nether, bloque de netherita y dos piedras del End más dos catalizadores de sculk en las esquinas.
 - **Toque de Seda II** (`75.000` XP): libro con Toque de Seda I en el centro, cuatro fragmentos de eco, un fragmento de amatista, dos huevos de tortuga y una estrella del Nether. Permite recoger bloques especiales que normalmente desaparecen.
 - **Nitwit** (`5.000` XP): transforma un aldeano capturado sin empleo, conservando todos sus demás datos y el tipo de capturador.
-- **Granja de Esqueletos** (`50.000` XP): combina los huevos generadores de cinco variantes; el caballo esqueleto se selecciona por separado y su base usa musgo pálido.
-- **Granja de Zombis** (`50.000` XP): combina los huevos de cinco variantes alrededor de un spawner; el zoglin se selecciona en la máquina, pero no encarece su receta. Su base usa musgo pálido.
-- **Granja de Saqueadores** (`100.000` XP): combina huevos de saqueador, invocador, devastador y bruja con un spawner y cualquier frasco ominoso. El saqueador normal incluye el estandarte ominoso entre sus filtros.
-- **Granja de Creepers** (`25.000` XP): combina un huevo de Creeper, dos Fragmentos de la Tormenta, polvora, musgo palido, un spawner, un Almacen de XP y un Bloque de hierro.
-- **Diecisiete granjas adicionales** (`20.000-90.000` XP): Artrópodos, Slimes,
-  Guardianes, Piglins, Blazes, Ghasts, Endermen, Shulkers, Breezes, Phantoms,
-  Animales, Peces, Acuáticas, Monturas, Anfibios, Abejas y Creakings.
-  Todas usan el Almacen de XP central y `Spawner | base | Bloque de hierro` en
-  la fila inferior.
+- **Maquinaria**: granja de entidades, interacciones y otras recetas activas. Las antiguas granjas por familia están retiradas.
 - **Toque del Guerrero** (`45.000` XP): crea un libro que evita el desgaste de espadas dentro de todas las granjas de criaturas del mod.
 - **Decapitación** (`25.000` XP): usa un Fragmento de la Tormenta en cada esquina para crear un libro aplicable a espadas y hachas.
-- **Huevos generadores** (`60-550` XP): 67 recetas crean los huevos de las criaturas
-  integradas que disponen de uno. El limite superior equivale a veinte niveles;
-  los detalles y costes estan en [`docs/ARCANE_INFUSER.md`](docs/ARCANE_INFUSER.md).
+- **Huevos generadores**: se fabrican en la Mesa de generacion de criaturas,
+  no en el sintetizador. Núcleo y huevo de `#trading_cells:arcane_infusion_eggs`, con `1.000/4.000/16.000/64.000`
+  XP. Usa huevos registrados o un huevo generico para entidades de mods sin uno.
+  Wither y Ender Dragon estan bloqueados por defecto mediante configuracion.
 
-El spawner es renovable mediante una receta tardía con barrotes de hierro, obsidiana, un aliento de dragón y una estrella del Nether. La Granja de Esqueletos usa ese bloque en su propia infusión y muestra el objetivo seleccionado inmóvil sobre un spawner interior.
+El spawner es renovable mediante una receta tardía con barrotes de hierro, obsidiana, un aliento de dragón y una estrella del Nether.
 
-El depósito mantiene entrada y salida de experiencia líquida, además de transferencias manuales de niveles. Los ocho ingredientes exteriores se renderizan sobre pedestales y el central sobre la mesa de encantamientos. Con el menú abierto, REI puede mover los nueve ingredientes a su posición; la experiencia se introduce siempre por separado.
+El depósito mantiene entrada y salida de experiencia líquida y transferencias manuales de niveles. Los ingredientes aparecen dentro de la cámara. REI puede transferirlos; la experiencia se introduce por separado.
+
+## Equipo eléctrico
+
+Condensadores de **128/256 cargas**, recargables en la Estación de tormentas sin cambiar de ranura. Cada fragmento de tormenta aporta **16 cargas**, consumiéndose entero aunque sobre energía. La fulgurita se ha retirado por completo.
+
+El soldador mantiene un haz ramificado: gasta una carga al pulsar y otra cada segundo. La porra añade **10 puntos de daño** con carga. Ambos usan baterías del inventario, sin exigir mano secundaria ni generar rayos del cielo. [Contrato y compatibilidad](docs/ELECTRIC_EQUIPMENT.md).
 
 El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Botín puede añadir entre cero y su nivel al fragmento y garantiza entre uno y su nivel de catalizadores de sculk adicionales. Las ciudades antiguas mantienen su obtención habitual de fragmentos de eco.
 

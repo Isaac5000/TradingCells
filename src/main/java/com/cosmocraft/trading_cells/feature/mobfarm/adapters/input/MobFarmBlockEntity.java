@@ -52,6 +52,7 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
     public static final int CONTAINER_SIZE = FIRST_OUTPUT_SLOT + OUTPUT_SLOT_COUNT;
     private static final int MAX_PENDING_STACKS = 4_096;
     private static final int MAX_OBSERVED_LOOT = 2_048;
+    // The legacy NBT name is retained; in whitelist mode these are the accepted IDs.
     private final Set<Identifier> disabledLoot = new HashSet<>();
     private final Set<Identifier> knownLoot = new LinkedHashSet<>();
     private final Set<Identifier> observedLoot = new LinkedHashSet<>();
@@ -66,6 +67,7 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
     private int legacyCycleKills;
     private boolean legacyPendingReady;
     private boolean enabled = true;
+    private boolean lootWhitelist;
     private boolean inputsDirty = true;
     private boolean adultWorker;
     private boolean hunting;
@@ -84,11 +86,12 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
                 case 4 -> enabled ? 1 : 0;
                 case 5 -> isHunting() ? 1 : 0;
                 case 6 -> pendingLoot.isEmpty() ? 0 : 1;
+                case 7 -> lootWhitelist ? 1 : 0;
                 default -> 0;
             };
         }
         @Override public void set(int index, int value) { }
-        @Override public int getCount() { return 7; }
+        @Override public int getCount() { return 8; }
     };
 
     public MobFarmBlockEntity(BlockPos pos, BlockState state) {
@@ -106,7 +109,13 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
     public boolean isHunting() { return hunting && enabled && !isPausedByRedstone(); }
     public ExperienceFluidHandler experienceFluidHandler() { return experience; }
     public int lootRevision() { return lootRevision; }
-    public boolean lootEnabled(Identifier id) { return !disabledLoot.contains(id); }
+    public boolean lootEnabled(Identifier id) { return disabledLoot.contains(id) == lootWhitelist; }
+    public boolean lootWhitelist() { return lootWhitelist; }
+    public void toggleFilterMode() {
+        lootWhitelist = !lootWhitelist;
+        lootRevision++;
+        markChangedAndSync();
+    }
     public List<Identifier> lootItems() { return knownLoot.stream().sorted().toList(); }
     public @Nullable LivingEntity simulationTarget() { return target; }
 
@@ -140,7 +149,10 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
     public void toggleEnabled() { enabled = !enabled; hunting = false; markChangedAndSync(); }
     public void toggleLoot(Identifier id) {
         if (!knownLoot.contains(id)) { return; }
-        if (!disabledLoot.remove(id)) { disabledLoot.add(id); }
+        if (!disabledLoot.remove(id)) {
+            if (disabledLoot.size() >= 2_048) { return; }
+            disabledLoot.add(id);
+        }
         lootRevision++;
         markChangedAndSync();
     }
@@ -260,7 +272,7 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
             }
         }
         storedExperience = (int) Math.min(Integer.MAX_VALUE, storedExperience + cycleExperience);
-        if (!weapon.warriorsTouch()) {
+        if (!weapon.warriorTouch()) {
             items.get(SWORD_SLOT).hurtAndBreak(1, server, (LivingEntity) null, ignored -> items.set(SWORD_SLOT, ItemStack.EMPTY));
             inputsDirty = true;
         }
@@ -313,6 +325,7 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
         cycleTicks = Math.clamp(input.getIntOr("CycleTicks", 0), 0, cycleDuration);
         storedExperience = Math.max(0, input.getIntOr("StoredExperience", 0));
         enabled = input.getBooleanOr("Enabled", true);
+        lootWhitelist = input.getBooleanOr("LootWhitelist", false);
         hunting = input.getBooleanOr("Hunting", false);
         legacyCycleKills = Math.clamp(input.getIntOr("LegacyCycleKills", 0), 0, 256);
         legacyPendingReady = legacyCycleKills > 0 && input.getBooleanOr("LegacyPendingReady", false);
@@ -341,6 +354,7 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
         output.putInt("CycleDurationTicks", cycleDuration);
         output.putInt("StoredExperience", storedExperience);
         output.putBoolean("Enabled", enabled);
+        output.putBoolean("LootWhitelist", lootWhitelist);
         // Chunk serialization must not query neighbors while the world is unloading.
         output.putBoolean("Hunting", hunting && enabled);
         if (legacyCycleKills > 0) {

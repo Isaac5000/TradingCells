@@ -16,15 +16,16 @@ import me.shedaniel.rei.api.common.util.EntryStacks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
-public record EssenceReiCategory(boolean synthesis) implements DisplayCategory<EssenceReiDisplay> {
+public record EssenceReiCategory(boolean synthesis, boolean generator) implements DisplayCategory<EssenceReiDisplay> {
+    public EssenceReiCategory(boolean synthesis) { this(synthesis, false); }
     @Override public CategoryIdentifier<EssenceReiDisplay> getCategoryIdentifier() {
-        return synthesis ? EssenceReiDisplay.SYNTHESIS : EssenceReiDisplay.STABILIZATION;
+        return generator ? EssenceReiDisplay.GENERATION : synthesis ? EssenceReiDisplay.SYNTHESIS : EssenceReiDisplay.STABILIZATION;
     }
     @Override public Component getTitle() {
-        return Component.translatable("block.trading_cells." + (synthesis ? "essence_workbench" : "essence_stabilizer"));
+        return Component.translatable("block.trading_cells." + (generator ? "creature_generator" : synthesis ? "essence_workbench" : "essence_stabilizer"));
     }
     @Override public Renderer getIcon() {
-        return EntryStacks.of(synthesis ? MobFarmRegistrationAdapter.WORKBENCH_ITEM.get() : MobFarmRegistrationAdapter.STABILIZER_ITEM.get());
+        return EntryStacks.of(generator ? MobFarmRegistrationAdapter.CREATURE_GENERATOR_ITEM.get() : synthesis ? MobFarmRegistrationAdapter.WORKBENCH_ITEM.get() : MobFarmRegistrationAdapter.STABILIZER_ITEM.get());
     }
     @Override public List<Widget> setupDisplay(EssenceReiDisplay display, Rectangle bounds) {
         List<Widget> widgets = new ArrayList<>();

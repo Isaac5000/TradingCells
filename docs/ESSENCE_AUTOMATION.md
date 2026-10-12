@@ -98,12 +98,12 @@ campo de niveles (vacio=Todo), Guardar/Retirar y selector independiente.
 ## Infusor
 
 LockedRecipe guarda ID; sincroniza estado, resultado y plantilla completa.
-Se puede bloquear receta valida actual o seleccionada mediante el recetario,
+Se puede bloquear la receta valida actual,
 aunque falten ingredientes o XP. Cambiar receta exige desbloquear.
 Receta borrada sigue bloqueada/invalida: no acepta ingredientes ni sustituye
 otra. Desbloquear conserva entradas, resultados y XP.
 Plantilla fantasma en ranuras vacias y salida tras agotar la receta bloqueada.
-Transferencias del recetario no sustituyen el bloqueo.
+El libro propio y sus categorias se retiraron el 2026-10-11; REI sigue disponible.
 
 Entradas superiores/laterales y salidas fisicas usan reglas comunes.
 Cada posicion valida Ingredient, componentes y restricciones; cantidades aparte.
@@ -112,7 +112,7 @@ lotes manuales existentes no se reducen.
 Solo receta bloqueada se autocraftea, maximo una vez por tick.
 Preparar consumo, XP, resultado y restos antes de confirmar; salida completa
 obligatoria. Nunca fabricar dentro de una transaccion de insercion.
-Modo libre conserva fabricacion manual y recetario por lotes.
+Modo libre conserva fabricacion manual y transferencias desde REI.
 XP Mode no depende del candado. No se introduce redstone.
 
 Botella de vidrio + 11 XP es shapeless: cualquier casilla, sin otros ingredientes.
@@ -158,7 +158,7 @@ MobFarmLootPreview conserva probabilidades sin tirar loot ni avanzar azar del
 mundo. Tablas desconocidas muestran probabilidad desconocida, no cero inventado.
 MobFarmEquipmentLoot conserva perfiles de equipo, Looting, desgaste, armas
 excluyentes y recompensas ominosas dentro del sistema general.
-Sin cambios en FakePlayer, pendingLoot, Warrior's Touch o multiplicadores x32.
+Sin cambios en FakePlayer, pendingLoot, Warrior Touch o multiplicadores x32.
 
 Cinco nuevos marcos generales en tools/assets/upgrade_bases/frames y
 textures/item/upgrades/generic: copia de quarry con emblema central retirado.
@@ -208,3 +208,63 @@ mods posibles. Loot de condiciones/funciones no soportadas conserva ejecucion
 nativa y muestra probabilidad desconocida. Capturas graficas son evidencia
 local a 1280x720, no un benchmark de rendimiento ni aprobacion universal de drivers.
 No se ha publicado, hecho commit ni subido esta revision a GitHub.
+
+## Generador de criaturas
+
+La Mesa de generacion de criaturas (`creature_generator`) consume un nucleo
+Entity Essence clasificado y un huevo de `#trading_cells:arcane_infusion_eggs`.
+El tag existente incluye `#minecraft:eggs`, huevo de tortuga y huevo de sniffer;
+los datapacks pueden ampliarlo. No acepta bases ni requiere un huevo generador.
+Se fabrica al recoger la salida o
+al activar la fabricacion automatica; comparte inventario lateral y cuenta XP
+con Essence Workbench sin cambiar sus indices ni datos existentes.
+El coste XP es el de `EssenceTier.modelExperience()` (1000/4000/16000/64000).
+La lista server-side `creatureGenerator.blacklist` bloquea por defecto
+`minecraft:wither` y `minecraft:ender_dragon` antes de consumir entradas. Se
+retiraron las recetas activas del Infusor; sus JSON se conservan en
+`docs/archive/arcane_infusions/`, salvo Wither y Ender Dragon, eliminados.
+
+La salida usa el Spawn Egg registrado para el tipo. Cuando no existe, el unico
+`generic_spawn_egg` guarda `minecraft:entity_data` con el tipo registrado y sin
+NBT adicional de entidad. Guarda ademas solo `TradingCellsEssence.Tier` en
+`custom_data`: verde I, cian II, violeta III y dorado IV, usando la paleta de las
+esencias. Huevos genericos antiguos sin tier se ven como I. REI muestra el huevo
+del tier de cada receta; los huevos registrados conservan su aspecto original.
+La colocacion usa la ruta vanilla de SpawnEggItem, tambien para
+entidades externas. No se copian equipo, pasajeros ni estado arbitrario del
+nucleo. Tipos ausentes o esencias invalidas permanecen recuperables sin consumo.
+
+La lista negra se vuelve a consultar antes de confirmar, incluso si una vista
+previa ya estaba visible. No bloquea captura, clasificacion ni simulacion. XP,
+entradas, salida fisica y modo automatico se conservan al guardar/romper/recolocar.
+Las bases que quedaran guardadas de la version anterior se pueden retirar, pero
+no sirven para fabricar huevos. El nucleo entra por la izquierda y el huevo por
+la derecha; insercion automatica limitada a una unidad pendiente para cada receta.
+REI presenta las cuatro combinaciones de tier y su coste; el huevo generico es
+un simbolo de salida, no un catalogo cerrado de criaturas.
+
+Validacion 2026-10-04: cuatro GameTests nuevos correctos (tiers, blacklist,
+fallback externo y persistencia/rollback); `check` correcto. Clics de XP y
+fabricacion comprobados en OpenGL con REI y Vulkan sin REI a 1280x720, escala
+automatica, en mundos desechables. Evidencia local `artifacts/creature-generator-*`.
+El primer `releaseCheck` detecto el recuento creativo antiguo y un fallo separado
+de duplicacion de cofres en logistica. Ambos corregidos; cierre global 2026-10-05:
+`check releaseCheck` correcto, 155 GameTests. Sin modificar GitHub.
+
+Correccion de uso 2026-10-08: el usuario aclara que faltaba el huevo del tag.
+La implementacion anterior habia usado bases por error. Corregidos filtro del
+menu, automatizacion, consumo y REI; los costes siguen siendo 1000/4000/16000/64000
+XP segun el nucleo. La fixture `creature-generator` ahora empieza vacia, abre por
+interaccion, introduce nucleo/huevo desde el inventario y deposita XP por el menu.
+GameTests cubren huevos de gallina/tortuga/sniffer, rechazo de bases, consumo de
+una sola unidad de una pila, XP I-IV, blacklist, salida llena y rollback lateral.
+Modelo propio de pedestal incubador, cuatro PNG 16x16 y hitbox correspondiente;
+no usa texturas de la mesa de esencias. Fuentes y regeneracion en
+`tools/assets/creature_generator/README.md`.
+
+Cierre 2026-10-09: `check releaseCheck` correcto, 156 GameTests. Comprobados
+apertura, insercion manual, deposito/retirada de XP y recogida de huevo en OpenGL
+con REI y Vulkan sin REI; modelo colocado y receta REI inspeccionados.
+Evidencias locales: `artifacts/creature-generator-eggs-opengl`,
+`artifacts/creature-generator-eggs-vulkan` y `artifacts/creature-generator-eggs-final.log`.
+Sin modificaciones del Infusor Arcano ni operaciones en GitHub en esta correccion.

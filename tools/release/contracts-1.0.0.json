@@ -11,8 +11,8 @@
     "feature/skeletonfarm/adapters/input/SkeletonFarmBlockEntity.java",
     "feature/zombiefarm/adapters/input/ZombieFarmBlockEntity.java"
   ],
-  "recipe_catalog_count": 165,
-  "recipe_catalog_sha256": "EFF85F40FF86F7043CDAB7B6B6C04CB74C53AFE289DF11BAACB9E47068DB6A17",
+  "recipe_catalog_count": 82,
+  "recipe_catalog_sha256": "3608A7780EC4CEA22D86583C27F8ACCDD06E108794CF6BD1638801B7F5B54DEF",
   "payload_ids": {
     "ArcaneInfuserTransferPayload": "arcane_infuser_transfer",
     "InfuserAutomationPayload": "infuser_automation",
@@ -20,6 +20,8 @@
     "ExperienceStorageTransferPayload": "experience_storage_transfer",
     "ExtractTradingCellExperiencePayload": "extract_trading_cell_experience",
     "QuarryCatalogSyncPayload": "quarry_catalog_sync",
+    "QuarryFilterSyncPayload": "quarry_filter_sync",
+    "QuarryFilterTogglePayload": "quarry_filter_toggle",
     "RequestQuarryCatalogPayload": "request_quarry_catalog",
     "ResetTradesPayload": "reset_trades",
     "SelectAutotraderOfferPayload": "select_autotrader_offer",

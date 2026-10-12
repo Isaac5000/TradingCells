@@ -217,7 +217,10 @@ def validate_models_and_textures(
                 namespace, resource_path = split_identifier(value)
                 if namespace != MOD_ID:
                     continue
-                target = Path("assets") / namespace / "models" / f"{resource_path}.json"
+                if key == "model" and isinstance(data, dict) and data.get("loader") == "neoforge:obj":
+                    target = Path("assets") / namespace / resource_path
+                else:
+                    target = Path("assets") / namespace / "models" / f"{resource_path}.json"
                 if find_resource(roots, target) is None:
                     errors.append(f"{path}: unresolved model reference {value}")
 
@@ -350,47 +353,16 @@ def validate_entity_farm_recipes(
         "minecraft:lapis_block", "trading_cells:storm_shard", "minecraft:lapis_block",
     )
     if recipe != {
-        "type": "trading_cells:arcane_infusion", "category": "production",
+        "type": "trading_cells:arcane_infusion",
         "ingredients": [{"ingredient": item, "count": 1} for item in expected],
         "experience": 50_000, "result": {"type": "item", "item": "trading_cells:mob_farm"},
     }:
         errors.append(f"{path}: general entity-farm infusion must match its simulation recipe")
 
-    signatures: dict[tuple[str, ...], Path] = {}
-    for root in roots:
-        for path in sorted((root / "data/trading_cells/recipe").glob("*_spawn_egg_infusion.json")):
-            recipe = parsed_json.get(path)
-            if not isinstance(recipe, dict):
-                errors.append(f"{path}: spawn-egg recipe must be an object")
-                continue
-            entity = path.name.removesuffix("_spawn_egg_infusion.json")
-            if recipe.get("type") != "trading_cells:arcane_infusion" or recipe.get("category") != "generators":
-                errors.append(f"{path}: spawn egg must use the generators infusion category")
-            if recipe.get("result") != {"type": "item", "item": f"minecraft:{entity}_spawn_egg"}:
-                errors.append(f"{path}: spawn-egg output must match its entity")
-            xp = recipe.get("experience")
-            if type(xp) is not int or xp <= 0 or xp % 10:
-                errors.append(f"{path}: spawn-egg XP must be positive and a multiple of ten")
-            ingredients = recipe.get("ingredients")
-            if (not isinstance(ingredients, list) or len(ingredients) != 9
-                    or any(not isinstance(slot, dict) or set(slot) != {"ingredient", "count"}
-                           or slot.get("count") != 1 or not isinstance(slot.get("ingredient"), str)
-                           for slot in ingredients)):
-                errors.append(f"{path}: spawn egg requires nine single-item slots")
-                continue
-            ids = tuple(slot["ingredient"] for slot in ingredients)
-            if ids[4] != "#trading_cells:arcane_infusion_eggs":
-                errors.append(f"{path}: center slot must contain the infusion egg tag")
-            materials = {ids[index] for index in range(9) if index != 4}
-            if (not 1 <= len(materials) <= 2
-                    or any(not item.startswith("minecraft:") or item.endswith("_spawn_egg") for item in materials)
-                    or len({ids[index] for index in (0, 2, 6, 8)}) != 1
-                    or len({ids[index] for index in (1, 3, 5, 7)}) != 1):
-                errors.append(f"{path}: spawn-egg materials must form one or two symmetric rings")
-            signature = tuple(sorted(ids))
-            if signature in signatures:
-                errors.append(f"{path}: duplicate spawn-egg materials from {signatures[signature]}")
-            signatures[signature] = path
+    for path, recipe in parsed_json.items():
+        if (isinstance(recipe, dict) and recipe.get("type") == "trading_cells:arcane_infusion"
+                and recipe.get("result", {}).get("item", "").endswith("_spawn_egg")):
+            errors.append(f"{path}: spawn eggs belong to the creature generator, not active infusions")
 
 
 def validate_mob_farm_targets(

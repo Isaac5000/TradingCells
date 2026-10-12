@@ -42,7 +42,7 @@ public final class StormShardItemRenderSupport {
 
     private static float animationTicks() {
         // Inventory screens can pause level time; the energy layer must keep moving there too.
-        return (float) (System.nanoTime() / 50_000_000.0D);
+        return (System.nanoTime() % 5_000_000_000L) / 50_000_000.0F;
     }
 
     private static OverlayVertex[] buildShardMesh(SpriteContents sprite) {

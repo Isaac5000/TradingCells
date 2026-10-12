@@ -8,6 +8,10 @@ final class MobSimulationDomainVerification {
     private MobSimulationDomainVerification() { }
     static void verify() {
         classification();
+        int[] synthesisCosts = {1_000, 4_000, 16_000, 64_000};
+        for (EssenceTier tier : EssenceTier.values()) {
+            require(tier.modelExperience() == synthesisCosts[tier.id() - 1], "Models and spawn eggs share tier XP costs");
+        }
         syringeAnimation();
         int[] interactionDurations = {1200, 600, 300, 150, 75, 38};
         for (int tier = 0; tier < interactionDurations.length; tier++) {

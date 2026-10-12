@@ -28,10 +28,10 @@ final class InfusionExperienceDomainVerification {
                 "Arcane infusion must become ready at exactly 15,000 XP");
         require(infusion.evaluate(new ArcaneInfusionAttempt(true, true, 29_999, 30_000))
                         == ArcaneInfusionDecision.EXPERIENCE_REQUIRED,
-                "The Miner's Touch infusion must remain blocked with 29,999 XP");
+                "The Miner Touch infusion must remain blocked with 29,999 XP");
         require(infusion.evaluate(new ArcaneInfusionAttempt(true, true, 30_000, 30_000))
                         == ArcaneInfusionDecision.READY,
-                "The Miner's Touch infusion must become ready at exactly 30,000 XP");
+                "The Miner Touch infusion must become ready at exactly 30,000 XP");
         require(infusion.evaluate(new ArcaneInfusionAttempt(true, true, 4_999, 5_000))
                         == ArcaneInfusionDecision.EXPERIENCE_REQUIRED,
                 "The Nitwit infusion must remain blocked with 4,999 XP");

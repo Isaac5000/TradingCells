@@ -321,7 +321,7 @@ public final class LogisticsNetworkManager {
     public final class ResourceListing {
         private final long revision = topologyRevision;
         private final ArrayDeque<ListingEndpoint> pending = new ArrayDeque<>();
-        private final Map<Identifier, IdentityHashMap<Object, Boolean>> seen = new HashMap<>();
+        private final Map<Identifier, Set<Object>> seen = new HashMap<>();
         private final Map<ResourceKey, MutableAggregate> aggregates = new LinkedHashMap<>();
         private List<AggregatedResource> result;
 
@@ -345,7 +345,7 @@ public final class LogisticsNetworkManager {
                 terminalEndpointsRemaining--;
                 var job = pending.removeFirst();
                 aggregateTyped(cast(job.adapter()), List.of(job.endpoint()), aggregates,
-                        seen.computeIfAbsent(job.adapter().id(), ignored -> new IdentityHashMap<>()));
+                        seen.computeIfAbsent(job.adapter().id(), ignored -> new HashSet<>()));
             }
             if (pending.isEmpty() && result == null) {
                 result = aggregates.values().stream().map(MutableAggregate::snapshot)
@@ -456,26 +456,27 @@ public final class LogisticsNetworkManager {
             List<NetworkEndpoint> endpoints,
             Map<ResourceKey, MutableAggregate> aggregates
     ) {
-        aggregateTyped(adapter, endpoints, aggregates, new IdentityHashMap<>());
+        aggregateTyped(adapter, endpoints, aggregates, new HashSet<>());
     }
 
     private <H, R> void aggregateTyped(LogisticsResourceAdapter<H, R> adapter,
             List<NetworkEndpoint> endpoints, Map<ResourceKey, MutableAggregate> aggregates,
-            IdentityHashMap<Object, Boolean> seenHandlers) {
+            Set<Object> seenStorage) {
         for (NetworkEndpoint endpoint : endpoints) {
             H handler = findHandler(adapter, level, endpoint.targetPos(), endpoint.targetSide());
-            if (handler == null || seenHandlers.put(handler, Boolean.TRUE) != null) {
+            if (handler == null) {
                 continue;
             }
-            List<LogisticsResourceSnapshot<R>> contents;
+            List<com.cosmocraft.trading_cells.feature.logistics.adapters.api.LogisticsListingEntry<R>> contents;
             try {
-                contents = adapter.contents(handler);
+                contents = adapter.listingContents(handler, level, endpoint.targetPos(), endpoint.targetSide());
             } catch (RuntimeException ignored) {
                 continue;
             }
             PipeResourceProfile profile = endpoint.configuration().effectiveProfile(adapter.type());
-            for (LogisticsResourceSnapshot<R> resource : contents) {
-                if (!filter(adapter, resource, profile).allowed()) {
+            for (var entry : contents) {
+                var resource = entry.snapshot();
+                if (!filter(adapter, resource, profile).allowed() || !seenStorage.add(entry.storageKey())) {
                     continue;
                 }
                 ResourceKey key = new ResourceKey(

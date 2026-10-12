@@ -17,6 +17,12 @@ config="trading_cells.mixins.json"
 config="trading_cells.mobfarm.mixins.json"
 
 [[mixins]]
+config="trading_cells.combat.mixins.json"
+
+[[mixins]]
+config="trading_cells.registry.mixins.json"
+
+[[mixins]]
 config="trading_cells.rei_compat.mixins.json"
 requiredMods=["architectury", "roughlyenoughitems"]
 

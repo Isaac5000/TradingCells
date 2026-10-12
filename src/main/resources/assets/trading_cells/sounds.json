@@ -1,0 +1,10 @@
+{
+  "electric_arc_loop": {
+    "subtitle": "subtitles.trading_cells.electric_arc_loop",
+    "sounds": [{"name": "trading_cells:electricity", "attenuation_distance": 24}]
+  },
+  "electric_baton_hit": {
+    "subtitle": "subtitles.trading_cells.electric_baton_hit",
+    "sounds": [{"name": "trading_cells:electric_baton_hit", "attenuation_distance": 24}]
+  }
+}

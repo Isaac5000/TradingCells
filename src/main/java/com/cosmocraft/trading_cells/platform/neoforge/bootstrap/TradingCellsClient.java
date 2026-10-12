@@ -47,7 +47,6 @@ public class TradingCellsClient {
             modBus.addListener(ExperienceStorageClientRegistrationAdapter::onRegisterRenderers);
             modBus.addListener(ArcaneInfuserClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(ArcaneInfuserClientRegistrationAdapter::onRegisterRenderers);
-            modBus.addListener(ArcaneInfuserClientRegistrationAdapter::onRegisterRecipeBookSearchCategories);
             modBus.addListener(AutotraderClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(VillagerTradingCellClientRegistrationAdapter::onRegisterMenuScreens);
             modBus.addListener(NetheritePiglinBarteringCellClientRegistrationAdapter::onRegisterMenuScreens);
@@ -67,6 +66,9 @@ public class TradingCellsClient {
                     event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("trading_cells", "storm_shard_charge"),
                             com.cosmocraft.trading_cells.feature.combat.adapters.output.client.StormShardItemRenderSupport.Unbaked.MAP_CODEC));
             modBus.addListener(MobFarmClientRegistrationAdapter::onRegisterModelProperties);
+            modBus.addListener((net.neoforged.neoforge.client.event.RegisterItemModelsEvent event) ->
+                    event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("trading_cells", "storm_shard_animated"),
+                            com.cosmocraft.trading_cells.feature.combat.adapters.output.client.StormShardItemModel.Unbaked.CODEC));
         }
         // Rendering is handled by SpecialModelRenderers selected by JSON.
     }

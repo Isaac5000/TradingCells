@@ -21,7 +21,7 @@ public final class InteractionHarvestGameTests {
         return List.of(new GameTestCase("interaction_harvest_vanilla", 80, InteractionHarvestGameTests::vanilla),
                 new GameTestCase("interaction_harvest_isolation", 80, InteractionHarvestGameTests::isolation),
                 new GameTestCase("interaction_harvest_mooshrooms", 80, InteractionHarvestGameTests::mooshrooms),
-                new GameTestCase("interaction_harvest_farmers_touch", 80, InteractionHarvestGameTests::farmersTouch),
+                new GameTestCase("interaction_harvest_farmer_touch", 80, InteractionHarvestGameTests::farmerTouch),
                 new GameTestCase("interaction_harvest_creaking", 80, InteractionHarvestGameTests::creaking),
                 new GameTestCase("speed_upgrade_legacy_aliases", 80, InteractionHarvestGameTests::speedAliases));
     }
@@ -69,6 +69,14 @@ public final class InteractionHarvestGameTests {
         assertHarvest(h, "armadillo", Items.BRUSH, InteractionSource.TOOL, Items.ARMADILLO_SCUTE);
         assertHarvest(h, "bee", Items.GLASS_BOTTLE, InteractionSource.ITEM, Items.HONEY_BOTTLE);
         assertHarvest(h, "bee", Items.SHEARS, InteractionSource.TOOL, Items.HONEYCOMB);
+        assertHarvest(h, "ender_dragon", Items.GLASS_BOTTLE, InteractionSource.ITEM, Items.DRAGON_BREATH);
+        var dragon = EntityEssenceData.moduleFor(h.getLevel(), Identifier.withDefaultNamespace("ender_dragon"));
+        var bottles = new ItemStack(Items.GLASS_BOTTLE, 64);
+        var breath = InteractionHarvestDispatcher.harvest(h.getLevel(), dragon, bottles, InteractionSource.ITEM);
+        h.assertValueEqual(breath.products().stream().filter(s -> s.is(Items.DRAGON_BREATH)).mapToInt(ItemStack::getCount).sum(), 1,
+                "One bottle produces exactly one breath before farm commit");
+        h.assertValueEqual(bottles.getCount(), 64, "Harvest preparation never consumes real bottles");
+        h.assertTrue(breath.remainder().isEmpty(), "The transformed bottle is a product, not a reusable input");
         var module = EntityEssenceData.moduleFor(h.getLevel(), Identifier.withDefaultNamespace("cow"));
         var food = InteractionHarvestDispatcher.harvest(h.getLevel(), module, new ItemStack(Items.WHEAT), InteractionSource.ITEM);
         h.assertTrue(food.products().isEmpty(), "Feeding is not resource production");
@@ -111,15 +119,15 @@ public final class InteractionHarvestGameTests {
         }
         h.succeed();
     }
-    private static void farmersTouch(GameTestHelper h) {
+    private static void farmerTouch(GameTestHelper h) {
         var enchantment = h.getLevel().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
-                .getOrThrow(com.cosmocraft.trading_cells.platform.neoforge.machine.MachineToolEnchantments.FARMERS_TOUCH);
+                .getOrThrow(com.cosmocraft.trading_cells.platform.neoforge.machine.MachineToolEnchantments.FARMER_TOUCH);
         var types = List.of("minecraft:sheep", "minecraft:bee", "minecraft:mooshroom", "minecraft:armadillo",
                 "trading_cells_gametest:resource_creature", "minecraft:creaking");
         var tools = List.of(Items.SHEARS, Items.SHEARS, Items.SHEARS, Items.BRUSH, InteractionTestContent.tool, Items.IRON_AXE);
         for (int index = 0; index < types.size(); index++) {
             var tool = new ItemStack(tools.get(index));
-            h.assertTrue(tool.supportsEnchantment(enchantment), "Vanilla and tagged mod tools accept Farmer's Touch");
+            h.assertTrue(tool.supportsEnchantment(enchantment), "Vanilla and tagged mod tools accept Farmer Touch");
             tool.enchant(enchantment, 1);
             tool.setDamageValue(tool.getMaxDamage() - 1);
             tool.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Protected tool"));

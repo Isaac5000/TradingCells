@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "front": "trading_cells:block/storm/station_front",
+    "top": "trading_cells:block/storm/station_top",
+    "side": "trading_cells:block/storm/station_side",
+    "bottom": "trading_cells:block/storm/station_bottom"
+  }
+}

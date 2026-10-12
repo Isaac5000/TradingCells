@@ -29,6 +29,8 @@
     "trading_cells:mob_farm",
     "trading_cells:entity_interaction_farm",
     "trading_cells:essence_workbench",
-    "trading_cells:essence_stabilizer"
+    "trading_cells:essence_stabilizer",
+    "trading_cells:storm_station",
+    "trading_cells:creature_generator"
   ]
 }

@@ -216,11 +216,10 @@ class ItemSpriteTests(unittest.TestCase):
             self.assertEqual(image.size, (64, 64))
             self.assertEqual(set(image.getchannel("A").get_flattened_data()), {0, 255})
         model = json.loads((root / "items/storm_shard.json").read_text(encoding="utf-8"))["model"]
-        self.assertEqual(model["type"], "minecraft:select")
-        gui_model = model["cases"][0]["model"]
+        self.assertEqual(model["type"], "trading_cells:storm_shard_animated")
+        gui_model = model["model"]
         self.assertEqual(gui_model["type"], "minecraft:composite")
         self.assertEqual(gui_model["models"][1]["model"]["type"], "trading_cells:storm_shard_charge")
-        self.assertEqual(model["fallback"]["models"][1]["model"]["type"], "trading_cells:storm_shard_charge")
 
 
 class PipePaletteTests(unittest.TestCase):

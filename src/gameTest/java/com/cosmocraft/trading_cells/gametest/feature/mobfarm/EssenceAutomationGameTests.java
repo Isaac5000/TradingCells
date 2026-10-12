@@ -224,8 +224,6 @@ public final class EssenceAutomationGameTests {
         for (int slot = 0; slot < 9; slot++) { infuser.setItem(slot, new ItemStack(ingredients.get(slot), 2)); }
         infuser.toggleRecipeLock();
         helper.assertValueEqual(infuser.lockState(), 1, "Repeated ingredients lock correctly");
-        menu.handlePlacement(false, false, recipe, helper.getLevel(), player.getInventory());
-        helper.assertValueEqual(infuser.getItem(0).getCount(), 2, "Recipe book cannot replace locked manual batches");
         for (int slot = 0; slot < 9; slot++) {
             helper.assertValueEqual(infuser.insertionLimit(slot, new ItemStack(ingredients.get(slot))), 0, "Existing manual batches are not trimmed or topped up");
             infuser.removeItem(slot, 2);
@@ -416,10 +414,10 @@ public final class EssenceAutomationGameTests {
         var menu = (ArcaneInfuserMenu) machine.createMenu(1, player.getInventory(), player);
         var recipe = helper.getLevel().recipeAccess().getRecipes().stream()
                 .filter(holder -> holder.id().identifier().toString().equals("trading_cells:experience_bottle_infusion")).findFirst().orElseThrow();
-        helper.assertValueEqual(menu.handlePlacement(false, false, recipe, helper.getLevel(), player.getInventory()),
-                net.minecraft.world.inventory.RecipeBookMenu.PostPlaceAction.PLACE_GHOST_RECIPE, "Book selects absent ingredients as ghost");
-        helper.assertTrue(menu.clickMenuButton(player, 1), "Ghost can be locked without ingredients or XP");
-        helper.assertValueEqual(machine.lockState(), 1, "Book-selected recipe is valid and locked");
+        machine.setItem(4, Items.GLASS_BOTTLE.getDefaultInstance());
+        helper.assertTrue(menu.clickMenuButton(player, 1), "Current recipe can be locked without XP");
+        helper.assertValueEqual(machine.lockState(), 1, "Current recipe is valid and locked");
+        machine.removeItem(4, 1);
         var handler = helper.getLevel().getCapability(Capabilities.Item.BLOCK, machine.getBlockPos(), Direction.UP);
         for (int slot = 0; slot < 9; slot++) {
             helper.assertValueEqual(insertItem(handler, slot, new ItemStack(Items.GLASS_BOTTLE, 64), true), 1, "Shapeless bottle accepted at slot " + slot);

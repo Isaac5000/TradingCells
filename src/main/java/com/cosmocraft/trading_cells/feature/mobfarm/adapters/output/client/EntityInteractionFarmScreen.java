@@ -19,8 +19,8 @@ public final class EntityInteractionFarmScreen extends MachineContainerScreen<En
     }
     @Override protected void init() {
         super.init();
-        addRenderableWidget(SimulationScreenWidgets.checkButton(leftPos + 226, topPos + 7,
-                label("enabled"), menu::enabled, button -> command(0)));
+        addRenderableWidget(new com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineToggleButton(
+                leftPos + 169, topPos + 7, 75, menu::enabled, button -> command(0)));
     }
     private void command(int button) {
         if (minecraft.gameMode != null) { minecraft.gameMode.handleInventoryButtonClick(menu.containerId, button); }
@@ -40,8 +40,6 @@ public final class EntityInteractionFarmScreen extends MachineContainerScreen<En
     }
     @Override protected void extractLabels(GuiGraphicsExtractor graphics, int x, int y) {
         FittedTextRenderer.left(graphics, font, title, 10, 163, 8, 15, SimulationScreenWidgets.TEXT, true);
-        FittedTextRenderer.left(graphics, font, label("enabled"), 169, 222, 8, 15, SimulationScreenWidgets.MUTED, false);
         graphics.text(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, SimulationScreenWidgets.MUTED, false);
     }
-    private static Component label(String key) { return Component.translatable("gui.trading_cells.interaction." + key); }
 }

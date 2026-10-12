@@ -17,6 +17,7 @@ public final class EssenceWorkbenchMenu extends AbstractContainerMenu {
     private final Container container;
     private final Player owner;
     private final ContainerData data;
+    private final boolean creatureGenerator;
 
     public EssenceWorkbenchMenu(int id, Inventory inventory) {
         this(id, inventory, new SimpleContainer(4), new SimpleContainerData(5));
@@ -25,9 +26,16 @@ public final class EssenceWorkbenchMenu extends AbstractContainerMenu {
         this(id, inventory, container, new SimpleContainerData(5));
     }
     public EssenceWorkbenchMenu(int id, Inventory inventory, Container container, ContainerData data) {
-        super(MobFarmRegistrationAdapter.WORKBENCH_MENU.get(), id);
+        this(id, inventory, container, data, false);
+    }
+    public static EssenceWorkbenchMenu creatureGenerator(int id, Inventory inventory) {
+        return new EssenceWorkbenchMenu(id, inventory, new SimpleContainer(4), new SimpleContainerData(5), true);
+    }
+    public EssenceWorkbenchMenu(int id, Inventory inventory, Container container, ContainerData data, boolean creatureGenerator) {
+        super(creatureGenerator ? MobFarmRegistrationAdapter.CREATURE_GENERATOR_MENU.get() : MobFarmRegistrationAdapter.WORKBENCH_MENU.get(), id);
         this.container = container;
         this.data = data;
+        this.creatureGenerator = creatureGenerator;
         owner = inventory.player;
         checkContainerSize(container, 4);
         checkContainerDataCount(data, 5);
@@ -37,7 +45,8 @@ public final class EssenceWorkbenchMenu extends AbstractContainerMenu {
             addSlot(new Slot(container, index, xs[index], index == 2 ? 84 : 50) {
                 @Override public boolean mayPlace(ItemStack stack) {
                     return input == 0 ? stack.is(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get())
-                            : input == 1 && stack.getItem() instanceof CreatureModelBaseItem;
+                            : input == 1 && (creatureGenerator ? CreatureGeneratorEggs.isIngredient(stack)
+                                    : stack.getItem() instanceof CreatureModelBaseItem);
                 }
                 @Override public boolean isActive() { return input != 2 || hasItem(); }
             });
@@ -63,19 +72,26 @@ public final class EssenceWorkbenchMenu extends AbstractContainerMenu {
     }
 
     public int storedExperience() { return (data.get(0) & 0xFFFF) | ((data.get(1) & 0x7FFF) << 16); }
+    public boolean isCreatureGenerator() { return creatureGenerator; }
     public boolean fillStorage() { return data.get(2) != 0; }
     public boolean automatic() { return data.get(3) != 0; }
     public boolean highLevel() { return EntityEssenceData.isHighLevel(creature()); }
     public int experienceCost() { return creature().isEmpty() ? 0 : EntityEssenceData.tier(creature()).modelExperience(); }
     public ItemStack requiredMaterial() {
+        if (creatureGenerator) {
+            var eggs = net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(CreatureGeneratorEggs.INGREDIENTS).iterator();
+            return eggs.hasNext() ? eggs.next().value().getDefaultInstance() : ItemStack.EMPTY;
+        }
         return MobFarmRegistrationAdapter.MODEL_BASES.get(EntityEssenceData.tier(creature()).id() - 1).get().getDefaultInstance();
     }
     public ItemStack creature() { return container.getItem(0); }
     public boolean canSynthesize() {
         return creature().is(MobFarmRegistrationAdapter.ENTITY_ESSENCE.get())
                 && EntityEssenceData.entityTypeId(creature()) != null && container.getItem(3).isEmpty()
-                && container.getItem(1).getItem() instanceof CreatureModelBaseItem base
-                && base.tier() == EntityEssenceData.tier(creature()) && storedExperience() >= experienceCost();
+                && (creatureGenerator ? CreatureGeneratorEggs.isIngredient(container.getItem(1))
+                        : container.getItem(1).getItem() instanceof CreatureModelBaseItem base
+                                && base.tier() == EntityEssenceData.tier(creature()))
+                && storedExperience() >= experienceCost();
     }
     @Override public boolean stillValid(Player player) { return container.stillValid(player); }
     @Override public boolean clickMenuButton(Player player, int button) {
