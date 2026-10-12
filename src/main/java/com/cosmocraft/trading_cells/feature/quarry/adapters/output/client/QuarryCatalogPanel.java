@@ -4,6 +4,10 @@ import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMaterial
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.FittedTextRenderer;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineToggleButton;
+import com.cosmocraft.trading_cells.platform.neoforge.client.screen.ResourceFilterButton;
+import com.cosmocraft.trading_cells.platform.neoforge.network.QuarryFilterTogglePayload;
+import net.minecraft.client.Minecraft;
 import com.cosmocraft.trading_cells.platform.neoforge.network.QuarryCatalogSyncPayload;
 import com.cosmocraft.trading_cells.platform.neoforge.network.RequestQuarryCatalogPayload;
 import java.util.ArrayList;
@@ -22,7 +26,7 @@ final class QuarryCatalogPanel {
     static final int X = 123;
     static final int Y = 63;
     static final int WIDTH = 220;
-    private static final int HEADER_HEIGHT = 17;
+    private static final int HEADER_HEIGHT = 20;
     private static final int STATUS_HEIGHT = 12;
     private static final int ROW_HEIGHT = 17;
     private static final int VISIBLE_ROWS = 6;
@@ -93,6 +97,26 @@ final class QuarryCatalogPanel {
         return inside(mouseX, mouseY, left + X, top + Y, WIDTH, HEIGHT);
     }
 
+    boolean mouseClicked(double x, double y, int button, int left, int top, QuarryMenu menu) {
+        if (!open || !contains(x, y, left, top)) { return false; }
+        if (button != 0) { return true; }
+        if (inside(x, y, left + X + 3, top + Y + 1, 18, 18)) {
+            var gameMode = Minecraft.getInstance().gameMode;
+            if (gameMode != null) { gameMode.handleInventoryButtonClick(menu.containerId, QuarryMenu.TOGGLE_FILTER_BUTTON); }
+            return true;
+        }
+        refreshActiveEntries(menu);
+        int firstRowY = top + Y + HEADER_HEIGHT + STATUS_HEIGHT;
+        if (inside(x, y, left + X + PADDING, firstRowY, WIDTH - PADDING * 2 - 3, VISIBLE_ROWS * ROW_HEIGHT)) {
+            int index = scroll + (int) ((y - firstRowY) / ROW_HEIGHT);
+            if (index < activeEntries.size()) {
+                ClientPacketDistributor.sendToServer(new QuarryFilterTogglePayload(menu.containerId, menu.filterRevision(),
+                        activeEntries.get(index).materialId()));
+            }
+        }
+        return true;
+    }
+
     void draw(
             GuiGraphicsExtractor graphics,
             Font font,
@@ -110,6 +134,11 @@ final class QuarryCatalogPanel {
         graphics.fill(panelX, panelY, panelX + WIDTH, panelY + HEIGHT, 0xFF303436);
         graphics.fill(panelX + 1, panelY + 1, panelX + WIDTH - 1, panelY + HEIGHT - 1, 0xF044494C);
         graphics.fill(panelX + 2, panelY + 2, panelX + WIDTH - 2, panelY + HEADER_HEIGHT, 0xFF5B6164);
+        boolean filterHovered = inside(mouseX, mouseY, panelX + 3, panelY + 1, 18, 18);
+        ResourceFilterButton.draw(graphics, panelX + 3, panelY + 1, menu.whitelist(), filterHovered);
+        if (filterHovered) {
+            graphics.setTooltipForNextFrame(font, ResourceFilterButton.label(menu.whitelist()), mouseX, mouseY);
+        }
         FittedTextRenderer.centered(
                 graphics,
                 font,
@@ -194,13 +223,14 @@ final class QuarryCatalogPanel {
         boolean hovered = inside(mouseX, mouseY, rowX, rowY, rowWidth, ROW_HEIGHT - 1);
         graphics.fill(rowX, rowY, rowX + rowWidth, rowY + ROW_HEIGHT - 1,
                 hovered ? 0xFF5B6164 : 0xFF383D40);
-        graphics.fakeItem(entry.preview(), rowX + 1, rowY);
+        MachineToggleButton.drawCheck(graphics, rowX + 1, rowY + 2, menu.materialListed(entry.materialId()));
+        graphics.fakeItem(entry.preview(), rowX + 15, rowY);
         int rightStart = rowX + rowWidth - RIGHT_TEXT_WIDTH;
         FittedTextRenderer.left(
                 graphics,
                 font,
                 entry.preview().getHoverName(),
-                rowX + 20,
+                rowX + 34,
                 rightStart - 2,
                 rowY,
                 ROW_HEIGHT - 1,

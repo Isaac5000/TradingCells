@@ -21,7 +21,8 @@ aceptacion pendiente; no sustituye la matriz final de publicacion.
   cada recurso elige cercano, lejano, equitativo o aleatorio. Por defecto los
   items usan cercano; liquidos, gases y energia usan equitativo. La distancia
   cuenta tuberias; los empates exactos usan turnos circulares deterministas.
-- Cada recurso tiene activacion y hasta 16 reglas ordenadas. Modos de filtro:
+- Cada recurso tiene activacion y hasta 16 reglas ordenadas. La activacion usa
+  la casilla comun `Activado`/`Enabled`, igual que las maquinas. Modos de filtro:
   desactivado, whitelist o blacklist. El nivel instalado habilita las funciones
   de la tabla siguiente; las opciones superiores quedan inactivas, sin borrar
   los datos guardados de un perfil antiguo.
@@ -410,6 +411,16 @@ Rutas de mantenimiento bajo `feature/logistics/`:
   tres pasadas OpenGL y tres Vulkan a 1280x720, Jade presente y REI ausente.
   El panel fue identico pixel a pixel en las tres parejas; esto no certifica
   todas las pestañas, escalas, menus o la representacion de la red descubierta.
+
+## Duplicados de inventario
+
+Correccion 2026-10-05, independiente de los pendientes de escala: los listados
+de terminal deduplican slots fisicos de inventarios vanilla y maquinas portatiles,
+incluidos cofres dobles expuestos por `CombinedResourceHandler` de NeoForge.
+Los filtros por cara se aplican antes de deduplicar. Un GameTest conecta ambas
+mitades: muestra 64, no 128, y tras extraer uno muestra 63. Los adaptadores externos
+pueden declarar su identidad de almacenamiento mediante `listingContents`;
+no se inspeccionan sus campos privados ni se colapsan slots solo por contenido.
 
 ## Pendiente de aceptacion
 

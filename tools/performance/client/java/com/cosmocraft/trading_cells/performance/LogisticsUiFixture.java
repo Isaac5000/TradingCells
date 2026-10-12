@@ -28,6 +28,7 @@ final class LogisticsUiFixture {
     private LogisticsUiFixture() { }
 
     static void inspect(net.minecraft.client.Minecraft minecraft) {
+        if (StormUiFixture.active()) { StormUiFixture.inspect(minecraft); return; }
         if (MachineFixesUiFixture.active()) { MachineFixesUiFixture.inspect(minecraft); return; }
         if (InteractionFarmUiFixture.active()) { InteractionFarmUiFixture.inspect(minecraft); return; }
         if (EssenceAutomationUiFixture.active()) { EssenceAutomationUiFixture.inspect(minecraft); return; }
@@ -144,6 +145,7 @@ final class LogisticsUiFixture {
     }
 
     static boolean readyForCapture() {
+        if (StormUiFixture.active()) { return StormUiFixture.ready(); }
         if (MachineFixesUiFixture.active()) { return MachineFixesUiFixture.ready(); }
         if (InteractionFarmUiFixture.active()) { return InteractionFarmUiFixture.ready(); }
         if (EssenceAutomationUiFixture.active()) { return EssenceAutomationUiFixture.ready(); }
@@ -158,7 +160,7 @@ final class LogisticsUiFixture {
     }
 
     static boolean worldScene() {
-        if (MachineFixesUiFixture.active()) { return true; }
+        if (StormUiFixture.active() || MachineFixesUiFixture.active()) { return true; }
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
         return InteractionFarmUiFixture.active() || EssenceAutomationUiFixture.active() || ItemTextureUiFixture.active() || TooltipUiFixture.active() || fixture.equals("connections") || fixture.equals("caps") || fixture.equals("terminals")
                 || MobSimulationUiFixture.modelScene() || InfusionUiFixture.modelScene();
@@ -256,6 +258,7 @@ final class LogisticsUiFixture {
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
         if (fixture.isEmpty() || !PREPARED.add(player.getUUID())) { return; }
         if (MachineFixesUiFixture.active()) { MachineFixesUiFixture.prepare(player, pos); return; }
+        if (StormUiFixture.active()) { StormUiFixture.prepare(player, pos); return; }
         if (InteractionFarmUiFixture.active()) { InteractionFarmUiFixture.prepare(player, pos); return; }
         var level = player.level();
         if (EssenceAutomationUiFixture.active()) { EssenceAutomationUiFixture.prepare(player, pos); return; }

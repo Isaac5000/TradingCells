@@ -1,29 +1,7 @@
 {
   "model": {
-    "type": "minecraft:select",
-    "property": "minecraft:display_context",
-    "cases": [
-      {
-        "when": ["gui"],
-        "model": {
-          "type": "minecraft:composite",
-          "models": [
-            {
-              "type": "minecraft:model",
-              "model": "trading_cells:item/storm_shard"
-            },
-            {
-              "type": "minecraft:special",
-              "base": "trading_cells:item/storm_shard",
-              "model": {
-                "type": "trading_cells:storm_shard_charge"
-              }
-            }
-          ]
-        }
-      }
-    ],
-    "fallback": {
+    "type": "trading_cells:storm_shard_animated",
+    "model": {
       "type": "minecraft:composite",
       "models": [
         {

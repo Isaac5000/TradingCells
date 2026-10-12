@@ -51,7 +51,7 @@ Todas las rutas siguientes parten de `gui/container/`:
 | Granja de interacciones | `entity_interaction_farm/` |
 | Mesa de esencias | `essence_workbench/` |
 | Estabilizador de esencias | `essence_stabilizer/` |
-| Infusor | `arcane_infuser/` |
+| Sintetizador de materia | `arcane_infuser/` (ID conservado) |
 
 Se mantienen PNG independientes cuando dos maquinas comparten arte: ahora
 pueden localizarse y personalizarse por su ID. El atlas fuente se comparte en
@@ -61,7 +61,6 @@ pueden localizarse y personalizarse por su ID. El atlas fuente se comparte en
 
 | Ruta bajo `gui/sprites/` | Uso comprobado |
 | --- | --- |
-| `arcane_infuser/buttons/` | Boton normal/resaltado del recetario |
 | `autotrader/selector/`, `autotrader/slots/` | Selector, cuatro estados de fila y overlay de entrada no usada |
 | `villager_trading_cell/rows/` | Cuatro estados de ofertas del comercio manual |
 | `farmer/slots/empty_wheat_seeds.png` | Silueta de semillas del cultivo de aldeanos |
@@ -125,4 +124,5 @@ evidencia historica del traslado, no de estos fondos redimensionados.
 
 Cierre: `clean check releaseCheck` aprobado el 2026-10-02; 103 PNG GUI del JAR
 coinciden con las fuentes actuales. Matriz automatica desde 854x480 y pruebas
-de armadura con recetario abierto: `docs/FIXES_20261001.md`.
+de armadura con recetario abierto: `docs/FIXES_20261001.md` (historico;
+libro del sintetizador retirado el 2026-10-11).

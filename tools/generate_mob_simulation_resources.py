@@ -293,15 +293,15 @@ def resources():
     farm_inputs = ("minecraft:lapis_block", "minecraft:black_concrete", "minecraft:lapis_block",
                    "minecraft:black_concrete", "trading_cells:experience_storage", "minecraft:black_concrete",
                    "minecraft:lapis_block", "trading_cells:storm_shard", "minecraft:lapis_block")
-    add(f"{DATA}/recipe/mob_farm_infusion.json", {"type": "trading_cells:arcane_infusion", "category": "production",
+    add(f"{DATA}/recipe/mob_farm_infusion.json", {"type": "trading_cells:arcane_infusion",
         "ingredients": [{"ingredient": item, "count": 1} for item in farm_inputs], "experience": 50_000,
         "result": {"type": "item", "item": "trading_cells:mob_farm"}})
     interaction_inputs = ("lapis_block", "black_concrete", "lapis_block", "black_concrete", "dispenser",
                           "black_concrete", "lapis_block", "black_concrete", "lapis_block")
-    add(f"{DATA}/recipe/entity_interaction_farm_infusion.json", {"type": "trading_cells:arcane_infusion", "category": "production",
+    add(f"{DATA}/recipe/entity_interaction_farm_infusion.json", {"type": "trading_cells:arcane_infusion",
         "ingredients": [{"ingredient": "minecraft:" + item, "count": 1} for item in interaction_inputs],
         "experience": 50_000, "result": {"type": "item", "item": "trading_cells:entity_interaction_farm"}})
-    add(f"{DATA}/recipe/experience_bottle_infusion.json", {"type": "trading_cells:arcane_infusion", "category": "misc",
+    add(f"{DATA}/recipe/experience_bottle_infusion.json", {"type": "trading_cells:arcane_infusion",
         "shapeless": True,
         "ingredients": [{"ingredient": "minecraft:glass_bottle", "count": 1} if slot == 4 else {"empty": True}
                         for slot in range(9)], "experience": 11,

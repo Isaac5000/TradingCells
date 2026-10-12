@@ -19,6 +19,7 @@ def generated_assets() -> dict[Path, Image.Image]:
 def manually_maintained_sprites() -> dict[Path, tuple[int, int]]:
     sprites = ROOT / "sprites"
     return {
+        ROOT / "container/storm_station/background.png": (216, 180),
         **{sprites / "shared/slots" / f"{name}.png": (16, 16) for name in (
             "empty_villager_head", "empty_piglin_head", "empty_capturer", "empty_hoe", "empty_potion")},
         **{sprites / "shared/slots/equipment" / f"{name}.png": (16, 16) for name in (
@@ -29,8 +30,6 @@ def manually_maintained_sprites() -> dict[Path, tuple[int, int]]:
         sprites / "piglin_breeder/slots/empty_porkchop.png": (16, 16),
         **{sprites / "shared/trading/buttons" / f"{name}.png": (42, 28) for name in (
             "reset_trades", "reset_trades_hovered")},
-        **{sprites / "arcane_infuser/buttons" / f"{name}.png": (20, 18) for name in (
-            "recipe_book", "recipe_book_highlighted")},
     }
 
 

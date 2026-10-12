@@ -72,14 +72,19 @@ alternativa. Necesitan un handler explicito y pruebas de aislamiento.
 
 ## Resultados y persistencia
 
+Dragon: `DragonBreathHarvestHandler` transforma una botella de vidrio en un
+aliento por operacion ITEM. Excepcion renovable explicita, sin nube danina,
+ticks ni criatura en el mundo real. Comparte consumo atomico, capacidad y
+pendientes; el modelo guardado no cambia.
+
 - ITEM consume una unidad si la interaccion la consumio o transformo; el
   recipiente transformado se envia a las salidas.
 - TOOL conserva exactamente el objeto devuelto por la interaccion, incluidos
   componentes, encantamientos, rotura y desgaste real. No se suma desgaste.
-- Toque del Granjero cancela unicamente desgaste positivo por las APIs de
+- Toque de Granjero cancela unicamente desgaste positivo por las APIs de
   durabilidad dentro del entorno desechable. No modifica componentes ni concede
   inmunidad al uso ordinario fuera de la maquina. Se admite en herramientas de
-  `#trading_cells:enchantable/farmers_touch`, compuesto por durabilidad vanilla
+  `#trading_cells:enchantable/farmer_touch`, compuesto por durabilidad vanilla
   y `#c:tools`; ampliable por datapacks para herramientas externas.
 - Se prepara el inventario completo antes de cobrar; cada canal confirma entrada,
   herramienta y productos conjuntamente. Un fallo no bloquea el otro canal.
@@ -109,7 +114,7 @@ rojos/marrones y aplica desgaste real, sin convertir ni quitar setas a la entida
 Es una excepcion explicita a la interaccion vanilla destructiva de esquilado.
 `CreakingHarvestHandler` obtiene 2-3 `resin_clump` por operacion (cantidad del
 pulso vanilla del corazon), con un hacha o herramienta con `AXE_STRIP`. Aplica
-un punto de desgaste, protegido por Toque del Granjero. No necesita un corazon
+un punto de desgaste, protegido por Toque de Granjero. No necesita un corazon
 real, no dana la criatura ni programa tics; capacidad y pendientes conservan las
 mismas reglas atomicas del resto de handlers.
 No se implementa aun un formato de handlers por datapack.
@@ -198,7 +203,7 @@ indices y las nueve nuevas se anaden al final. Cierre visual y evidencia actual:
 
 Slot de capacidad `32` anadido sin desplazar las 27 salidas existentes. Cinco
 tiers con coste real por operacion, Mooshrooms renovables de ambos colores y
-Toque del Granjero para herramientas de interacciones comprobados. Brazo con
+Toque de Granjero para herramientas de interacciones comprobados. Brazo con
 textura estatica, cartel frontal eliminado y menu de 256x228 sin etiquetas
 bajo las entradas. Matriz OpenGL/Vulkan con/sin REI y menu a 854x480 aprobados.
 Suite completa: 139 GameTests, `check releaseCheck`. Evidencia y cierre de todos

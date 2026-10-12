@@ -29,10 +29,10 @@ public final class QuarryTooltipEventAdapter {
     ) {
         if (QuarryEnchantments.isStoredOnBook(stack)) {
             builder.accept(Component.translatable(
-                    "enchantment.trading_cells.miners_touch.description.1"
+                    "enchantment.trading_cells.miner_touch.description.1"
             ).withStyle(ChatFormatting.DARK_GREEN));
             builder.accept(Component.translatable(
-                    "enchantment.trading_cells.miners_touch.description.2"
+                    "enchantment.trading_cells.miner_touch.description.2"
             ).withStyle(ChatFormatting.DARK_GREEN));
         }
         if (QuarryEnchantments.isFortuneStoredOnBook(stack)) {

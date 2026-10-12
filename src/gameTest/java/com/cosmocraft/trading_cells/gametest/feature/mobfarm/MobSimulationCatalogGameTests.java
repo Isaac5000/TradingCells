@@ -24,7 +24,8 @@ public final class MobSimulationCatalogGameTests {
         var tab = CreativeTabRegistration.FARMS_TAB.get();
         helper.assertTrue(tab.getIconItem().is(MobFarmRegistrationAdapter.ITEM.get()), "General farm is the tab icon");
         var items = tab.getDisplayItems().stream().map(stack -> stack.getItem()).toList();
-        helper.assertValueEqual(items.size(), 10, "Two farms, two essence machines, syringe, empty vial and four bases");
+        helper.assertValueEqual(items.size(), 11, "Two farms, three essence machines, syringe, empty vial and four bases");
+        helper.assertTrue(items.contains(MobFarmRegistrationAdapter.CREATURE_GENERATOR_ITEM.get()), "Creature generator available in creative");
         helper.assertTrue(items.contains(MobFarmRegistrationAdapter.ITEM.get()), "General farm available in creative");
         helper.assertTrue(items.contains(MobFarmRegistrationAdapter.INTERACTION_ITEM.get()), "Interaction farm available in creative");
         helper.assertTrue(items.contains(MobFarmRegistrationAdapter.WORKBENCH_ITEM.get()), "Workbench available in creative");

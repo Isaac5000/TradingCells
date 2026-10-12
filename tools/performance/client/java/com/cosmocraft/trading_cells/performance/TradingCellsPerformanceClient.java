@@ -96,6 +96,7 @@ public final class TradingCellsPerformanceClient {
         }
         positionServerCamera(minecraft);
         cameraPose.apply(minecraft.player);
+        StormUiFixture.applyView(minecraft);
         openConfiguredBlock(minecraft);
     }
 
@@ -276,6 +277,7 @@ public final class TradingCellsPerformanceClient {
     }
 
     private void openConfiguredBlock(Minecraft minecraft) {
+        if (StormUiFixture.active() && StormUiFixture.prepared()) { return; }
         if (EssenceAutomationUiFixture.active() && EssenceAutomationUiFixture.prepared()) { return; }
         if (MachineFixesUiFixture.active() && MachineFixesUiFixture.prepared()) { return; }
         if (LogisticsUiFixture.worldScene() && LogisticsUiFixture.readyForCapture()) { return; }

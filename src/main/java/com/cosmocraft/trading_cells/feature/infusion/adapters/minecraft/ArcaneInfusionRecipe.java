@@ -18,6 +18,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.PlacementInfo;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeBookCategory;
+import net.minecraft.world.item.crafting.RecipeBookCategories;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.display.RecipeDisplay;
@@ -29,7 +30,6 @@ public record ArcaneInfusionRecipe(
         List<ArcaneInfusionIngredientSlot> ingredients,
         int experience,
         ArcaneInfusionResult result,
-        ArcaneInfusionRecipeCategory category,
         boolean shapeless
 ) implements Recipe<ArcaneInfusionInput> {
     private static final Codec<List<ArcaneInfusionIngredientSlot>> INGREDIENTS_CODEC =
@@ -40,10 +40,6 @@ public record ArcaneInfusionRecipe(
                     INGREDIENTS_CODEC.fieldOf("ingredients").forGetter(ArcaneInfusionRecipe::ingredients),
                     ExtraCodecs.POSITIVE_INT.fieldOf("experience").forGetter(ArcaneInfusionRecipe::experience),
                     ArcaneInfusionResult.CODEC.fieldOf("result").forGetter(ArcaneInfusionRecipe::result),
-                    ArcaneInfusionRecipeCategory.CODEC.optionalFieldOf(
-                            "category",
-                            ArcaneInfusionRecipeCategory.MISC
-                    ).forGetter(ArcaneInfusionRecipe::category),
                     Codec.BOOL.optionalFieldOf("shapeless", false).forGetter(ArcaneInfusionRecipe::shapeless)
             ).apply(instance, ArcaneInfusionRecipe::new)
     );
@@ -58,14 +54,13 @@ public record ArcaneInfusionRecipe(
             throw new IllegalArgumentException("Arcane infusion requires exactly nine ingredients");
         }
         ingredients = List.copyOf(ingredients);
-        category = category == null ? ArcaneInfusionRecipeCategory.MISC : category;
         if (shapeless && ingredients.stream().filter(slot -> slot.count() > 0).count() != 1) {
             throw new IllegalArgumentException("Shapeless infusion supports exactly one ingredient position");
         }
     }
     public ArcaneInfusionRecipe(List<ArcaneInfusionIngredientSlot> ingredients, int experience,
-            ArcaneInfusionResult result, ArcaneInfusionRecipeCategory category) {
-        this(ingredients, experience, result, category, false);
+            ArcaneInfusionResult result) {
+        this(ingredients, experience, result, false);
     }
 
     @Override
@@ -119,17 +114,13 @@ public record ArcaneInfusionRecipe(
         return ingredients.get(slot);
     }
 
-    public boolean matchesPlacementStack(int slot, ItemStack stack) {
-        return ingredients.get(slot).matches(stack) && result.matchesPlacementInput(slot, stack);
-    }
-
     public static boolean isPlainBook(ItemStack stack) {
         return stack.is(Items.BOOK) && stack.getComponentsPatch().isEmpty();
     }
 
     @Override
     public boolean isSpecial() {
-        return false;
+        return true;
     }
 
     @Override
@@ -183,7 +174,7 @@ public record ArcaneInfusionRecipe(
 
     @Override
     public RecipeBookCategory recipeBookCategory() {
-        return ArcaneInfuserRegistrationAdapter.recipeBookCategory(category);
+        return RecipeBookCategories.CRAFTING_MISC;
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, ArcaneInfusionRecipe recipe) {
@@ -192,7 +183,7 @@ public record ArcaneInfusionRecipe(
         }
         buffer.writeVarInt(recipe.experience());
         ArcaneInfusionResult.STREAM_CODEC.encode(buffer, recipe.result());
-        buffer.writeByte(recipe.category().ordinal());
+        buffer.writeByte(3); // Reserved former book category (misc), preserving the wire layout.
         buffer.writeBoolean(recipe.shapeless());
     }
 
@@ -201,13 +192,10 @@ public record ArcaneInfusionRecipe(
         for (int slot = 0; slot < ArcaneInfusionInput.SIZE; slot++) {
             ingredients.add(ArcaneInfusionIngredientSlot.STREAM_CODEC.decode(buffer));
         }
-        return new ArcaneInfusionRecipe(
-                ingredients,
-                buffer.readVarInt(),
-                ArcaneInfusionResult.STREAM_CODEC.decode(buffer),
-                ArcaneInfusionRecipeCategory.fromOrdinal(buffer.readUnsignedByte()),
-                buffer.readBoolean()
-        );
+        int experience = buffer.readVarInt();
+        ArcaneInfusionResult result = ArcaneInfusionResult.STREAM_CODEC.decode(buffer);
+        buffer.readUnsignedByte(); // Ignore categories sent by older data producers.
+        return new ArcaneInfusionRecipe(ingredients, experience, result, buffer.readBoolean());
     }
 
     private static DataResult<List<ArcaneInfusionIngredientSlot>> validateIngredients(

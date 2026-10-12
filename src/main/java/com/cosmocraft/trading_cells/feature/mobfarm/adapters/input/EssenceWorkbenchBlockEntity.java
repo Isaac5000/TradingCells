@@ -20,7 +20,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
-public final class EssenceWorkbenchBlockEntity extends SimulationInventoryBlockEntity implements MenuProvider, MachineInsertionLimit {
+public class EssenceWorkbenchBlockEntity extends SimulationInventoryBlockEntity implements MenuProvider, MachineInsertionLimit {
     private final MachineExperienceAccount experience = new MachineExperienceAccount(this::markChangedAndSync);
     private final ResourceHandler<FluidResource> fluid = experience.handler(this::recipeCost);
     private boolean migrationPending = true;
@@ -28,7 +28,7 @@ public final class EssenceWorkbenchBlockEntity extends SimulationInventoryBlockE
     private ItemStack checkedCore = ItemStack.EMPTY;
     private boolean coreValid;
     private static final int[] LEFT_SLOTS = {0, 2, 3}, RIGHT_SLOTS = {1, 2, 3}, OUTPUT_SLOTS = {2, 3};
-    private final ContainerData data = new ContainerData() {
+    protected final ContainerData data = new ContainerData() {
         public int get(int index) {
             return switch (index) {
                 case 0 -> experience.amount() & 0xFFFF;
@@ -44,8 +44,11 @@ public final class EssenceWorkbenchBlockEntity extends SimulationInventoryBlockE
     };
 
     public EssenceWorkbenchBlockEntity(BlockPos pos, BlockState state) {
+        this(MobFarmRegistrationAdapter.WORKBENCH_BLOCK_ENTITY.get(), pos, state);
+    }
+    protected EssenceWorkbenchBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state) {
         // Keep old indices: slot 2 is withdrawal-only recovery for old metals.
-        super(MobFarmRegistrationAdapter.WORKBENCH_BLOCK_ENTITY.get(), pos, state, 4, 2);
+        super(type, pos, state, 4, 2);
     }
     @Override protected void slotChanged(int slot) { if (slot == 0) { migrationPending = true; } }
     @Override public void processTick() {
@@ -82,9 +85,12 @@ public final class EssenceWorkbenchBlockEntity extends SimulationInventoryBlockE
                 : slot == 1 && stack.getItem() instanceof CreatureModelBaseItem;
     }
     public int recipeCost() {
-        if (!acceptsInput(0, items.get(0)) || !(items.get(1).getItem() instanceof CreatureModelBaseItem base)
-                || base.tier() != EntityEssenceData.tier(items.get(0))) { return 0; }
-        return base.tier().modelExperience();
+        if (!acceptsInput(0, items.get(0)) || !allowsCore(items.get(0))
+                || !matchesMaterial(items.get(0), items.get(1))) { return 0; }
+        return EntityEssenceData.tier(items.get(0)).modelExperience();
+    }
+    protected boolean matchesMaterial(ItemStack core, ItemStack material) {
+        return material.getItem() instanceof CreatureModelBaseItem base && base.tier() == EntityEssenceData.tier(core);
     }
     public boolean synthesize(ServerPlayer player) {
         return stillValid(player) && craft();
@@ -96,8 +102,10 @@ public final class EssenceWorkbenchBlockEntity extends SimulationInventoryBlockE
         var type = EntityEssenceData.entityTypeId(items.get(0));
         if (cost <= 0 || experience.amount() < cost || type == null
                 || !net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.containsKey(type)) { return ItemStack.EMPTY; }
-        return EntityEssenceData.moduleOf(items.get(0));
+        return createResult(items.get(0));
     }
+    protected boolean allowsCore(ItemStack core) { return true; }
+    protected ItemStack createResult(ItemStack core) { return EntityEssenceData.moduleOf(core); }
     private boolean validateCore() {
         ItemStack core = items.get(0);
         if (core.isEmpty() || !(level instanceof ServerLevel server)) { return false; }
@@ -117,7 +125,7 @@ public final class EssenceWorkbenchBlockEntity extends SimulationInventoryBlockE
         if (!items.get(3).isEmpty() || !validateCore() || recipeCost() <= 0) { return false; }
         int cost = recipeCost();
         if (cost <= 0 || experience.amount() < cost) { return false; }
-        ItemStack module = EntityEssenceData.moduleOf(items.get(0));
+        ItemStack module = createResult(items.get(0));
         if (module.isEmpty()) { return false; }
         items.get(0).shrink(1);
         items.get(1).shrink(1);

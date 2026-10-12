@@ -100,8 +100,12 @@ legacy profiles. Ordinary native drops, including custom tables, remain dynamic.
 
 The simulation menu combines table references, supplement IDs and bounded observed
 loot. Observed IDs survive weapon wear, weapon replacement and save/reload, but
-are reset for a different creature module. Disabled filters apply after native
-and supplemental rolls and do not suppress earned XP. Probability previews use
+are reset for a different creature module. The default empty blacklist allows all
+items. Selected IDs are excluded in blacklist mode and allowed in whitelist mode;
+an empty whitelist collects nothing. Both modes apply after native and supplemental
+rolls and do not suppress earned XP or tool wear. Already-paid pending loot is
+preserved. The legacy `DisabledLoot` fields retain selected IDs and the new
+`LootWhitelist` flag defaults to false. Probability previews use
 the same supplement profiles, without random sampling, and retain unknown values
 when a native table cannot be analysed safely.
 

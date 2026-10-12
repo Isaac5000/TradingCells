@@ -18,7 +18,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineContainerScreen;
 
-public final class EssenceWorkbenchScreen extends MachineContainerScreen<EssenceWorkbenchMenu> {
+public class EssenceWorkbenchScreen extends MachineContainerScreen<EssenceWorkbenchMenu> {
     private Button mode, deposit, withdraw;
     private EditBox levels;
     public EssenceWorkbenchScreen(EssenceWorkbenchMenu menu, Inventory inventory, Component title) {
@@ -75,7 +75,7 @@ public final class EssenceWorkbenchScreen extends MachineContainerScreen<Essence
         }
         SimulationScreenWidgets.arrow(graphics, leftPos + 86, topPos + 50, 0);
         MachineSlotGhosts.item(graphics, menu.getSlot(0), leftPos, topPos, MobFarmRegistrationAdapter.ENTITY_ESSENCE.get().getDefaultInstance());
-        MachineSlotGhosts.item(graphics, menu.getSlot(1), leftPos, topPos, MobFarmRegistrationAdapter.MODEL_BASES.get(0).get().getDefaultInstance());
+        MachineSlotGhosts.item(graphics, menu.getSlot(1), leftPos, topPos, menu.requiredMaterial());
         summary(graphics, 160, "gui.trading_cells.storage_summary", menu.storedExperience(),
                 MinecraftExperience.levelForTotalPoints(menu.storedExperience()));
         if (minecraft.player != null) {

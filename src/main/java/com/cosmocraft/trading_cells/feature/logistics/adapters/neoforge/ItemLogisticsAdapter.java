@@ -39,6 +39,49 @@ public final class ItemLogisticsAdapter extends AbstractResourceHandlerAdapter<I
     }
 
     @Override
+    public java.util.List<com.cosmocraft.trading_cells.feature.logistics.adapters.api.LogisticsListingEntry<ItemResource>>
+            listingContents(ResourceHandler<ItemResource> handler, ServerLevel level, BlockPos pos, Direction side) {
+        var entries = new java.util.ArrayList<com.cosmocraft.trading_cells.feature.logistics.adapters.api.LogisticsListingEntry<ItemResource>>();
+        var entity = level.getBlockEntity(pos);
+        var state = level.getBlockState(pos);
+        for (int index = 0; index < handler.size(); index++) {
+            ItemResource resource = handler.getResource(index);
+            long amount = handler.getAmountAsLong(index);
+            if (resource.isEmpty() || amount <= 0) { continue; }
+            Object inventory = handler;
+            int slot = index;
+            if (handler instanceof com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineItemHandler machine) {
+                inventory = entity;
+                slot = machine.containerSlot(index);
+            } else if (handler instanceof net.neoforged.neoforge.transfer.item.WorldlyContainerWrapper
+                    && entity instanceof net.minecraft.world.WorldlyContainer container) {
+                inventory = entity;
+                slot = container.getSlotsForFace(side)[index];
+            } else if ((handler instanceof net.neoforged.neoforge.transfer.item.VanillaContainerWrapper
+                    || handler instanceof net.neoforged.neoforge.transfer.CombinedResourceHandler<?>
+                    && state.getBlock() instanceof net.minecraft.world.level.block.ChestBlock)
+                    && entity instanceof net.minecraft.world.Container container) {
+                inventory = entity;
+                if (state.getBlock() instanceof net.minecraft.world.level.block.ChestBlock
+                        && handler.size() == 2 * container.getContainerSize()) {
+                    var type = state.getValue(net.minecraft.world.level.block.ChestBlock.TYPE);
+                    boolean first = type == net.minecraft.world.level.block.state.properties.ChestType.RIGHT;
+                    boolean firstSlot = index < container.getContainerSize();
+                    if (first != firstSlot) {
+                        var other = pos.relative(net.minecraft.world.level.block.ChestBlock.getConnectedDirection(state));
+                        if (level.getChunkSource().getChunkNow(other.getX() >> 4, other.getZ() >> 4) != null) { inventory = level.getBlockEntity(other); }
+                    }
+                    slot = index % container.getContainerSize();
+                }
+            }
+            entries.add(new com.cosmocraft.trading_cells.feature.logistics.adapters.api.LogisticsListingEntry<>(
+                    new com.cosmocraft.trading_cells.feature.logistics.adapters.api.LogisticsListingEntry.StorageKey(
+                            inventory == null ? handler : inventory, slot), snapshot(resource, amount)));
+        }
+        return entries;
+    }
+
+    @Override
     public ResourceHandler<ItemResource> findCarried(ServerPlayer player, InteractionHand hand) {
         ResourceHandler<ItemResource> inventory = PlayerInventoryWrapper.of(player);
         int slot = hand == InteractionHand.MAIN_HAND

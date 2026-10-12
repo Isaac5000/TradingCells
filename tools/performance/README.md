@@ -68,7 +68,7 @@ una camara mas lejana cierra el menu por la validacion nativa de distancia.
 del mod con informacion normal/avanzada, nombres traducidos y tooltips de REI
 si esta instalado. Verifica eliminacion del titulo del tab, pie unico del mod,
 conservacion de nombres/descripciones personalizados e imagenes, y aislamiento
-de items vanilla. Comprueba ademas el nombre de Toque del Granjero, explicacion
+de items vanilla. Comprueba ademas el nombre de Toque de Granjero, explicacion
 plegada/desplegada y colores del aviso compartido con generadores: Shift cian,
 resto gris claro. Captura un tooltip real sobre la granja en la barra rapida.
 Requiere `--open-block` para preparar la fixture, aunque no abre ese bloque.

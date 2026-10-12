@@ -58,6 +58,8 @@ public final class TradingCellsGameTests {
         List<GameTestCase> tests = new ArrayList<>();
         tests.addAll(com.cosmocraft.trading_cells.gametest.shared.TooltipGameTests.tests());
         tests.addAll(SilkTouchTwoGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.combat.StormGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.breeders.BreederGameTests.tests());
         tests.addAll(FarmerGameTests.tests());
         tests.addAll(PortableMachineGameTests.tests());
         tests.addAll(MachineCapabilityGameTests.tests());
@@ -69,6 +71,7 @@ public final class TradingCellsGameTests {
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.InteractionHarvestGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.InteractionFarmGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.EssenceAutomationGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.CreatureGeneratorGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationLootGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationCatalogGameTests.tests());
         tests.addAll(ExperienceGameTests.tests());

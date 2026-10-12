@@ -46,6 +46,8 @@ public final class PortableMachineItemHandler implements ResourceHandler<ItemRes
         return slots[Objects.checkIndex(index, slots.length)];
     }
 
+    public int containerSlot(int index) { return slot(index); }
+
     @Override
     public int size() { refreshSlots(); return slots.length; }
 

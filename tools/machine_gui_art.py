@@ -72,6 +72,9 @@ def generated_assets():
             x0, x1 = (0, 362, 724, 1086, 1448)[col:col + 2]
             y0, y1 = (0, 350, 701, 1062)[row:row + 2]
             panel = atlas.crop((x0 + 2, y0 + 2, x1 - 2, y1 - 2)).convert("RGBA").resize((256, 256), Image.Resampling.NEAREST)
+            if name == "infusion":
+                with Image.open(ROOT / "tools/assets/matter_synthesizer/panel.png") as generated:
+                    panel = generated.convert("RGBA")
             for owner, (theme, size) in SCREENS.items():
                 if theme == name:
                     for outset in FRAME_OUTSETS:

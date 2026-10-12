@@ -42,6 +42,10 @@ public final class CreativeTabRegistration {
                         output.accept(LogisticsRegistrationAdapter.TERMINAL_ITEM.get());
                         output.accept(LogisticsRegistrationAdapter.CRAFTING_TERMINAL_ITEM.get());
                         output.accept(CombatRegistrationAdapter.STORM_SHARD_ITEM.get());
+                        output.accept(CombatRegistrationAdapter.CAPACITOR.get());
+                        output.accept(CombatRegistrationAdapter.STATION_ITEM.get());
+                        output.accept(CombatRegistrationAdapter.BATON.get());
+                        output.accept(CombatRegistrationAdapter.WELDER.get());
                         output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_COPPER_UPGRADE_ITEM.get());
                         output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_IRON_UPGRADE_ITEM.get());
                         output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_GOLD_UPGRADE_ITEM.get());
@@ -53,12 +57,12 @@ public final class CreativeTabRegistration {
                         output.accept(QuarryRegistrationAdapter.QUARRY_DIAMOND_UPGRADE_ITEM.get());
                         output.accept(QuarryRegistrationAdapter.QUARRY_NETHERITE_UPGRADE_ITEM.get());
                         parameters.holders().lookup(Registries.ENCHANTMENT)
-                                .flatMap(enchantments -> enchantments.get(FarmerEnchantments.FARMERS_TOUCH))
+                                .flatMap(enchantments -> enchantments.get(FarmerEnchantments.FARMER_TOUCH))
                                 .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
                                         new EnchantmentInstance(enchantment, 1)
                                 )));
                         parameters.holders().lookup(Registries.ENCHANTMENT)
-                                .flatMap(enchantments -> enchantments.get(QuarryEnchantments.MINERS_TOUCH))
+                                .flatMap(enchantments -> enchantments.get(QuarryEnchantments.MINER_TOUCH))
                                 .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
                                         new EnchantmentInstance(enchantment, 1)
                                 )));
@@ -68,7 +72,7 @@ public final class CreativeTabRegistration {
                                         new EnchantmentInstance(enchantment, 2)
                                 )));
                         parameters.holders().lookup(Registries.ENCHANTMENT)
-                                .flatMap(enchantments -> enchantments.get(CombatEnchantments.WARRIORS_TOUCH))
+                                .flatMap(enchantments -> enchantments.get(CombatEnchantments.WARRIOR_TOUCH))
                                 .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
                                         new EnchantmentInstance(enchantment, 1)
                                 )));
@@ -124,6 +128,7 @@ public final class CreativeTabRegistration {
                         output.accept(MobFarmRegistrationAdapter.ITEM.get());
                         output.accept(MobFarmRegistrationAdapter.INTERACTION_ITEM.get());
                         output.accept(MobFarmRegistrationAdapter.WORKBENCH_ITEM.get());
+                        output.accept(MobFarmRegistrationAdapter.CREATURE_GENERATOR_ITEM.get());
                         output.accept(MobFarmRegistrationAdapter.STABILIZER_ITEM.get());
                         output.accept(MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get());
                         output.accept(MobFarmRegistrationAdapter.EMPTY_VIAL.get());

@@ -21,9 +21,9 @@ import net.minecraft.world.item.enchantment.Enchantments;
 /** Public combat boundary used by every mob-farm family and global combat event. */
 public final class CombatEnchantments {
     private static final double SMITE_DAMAGE_PER_LEVEL = 2.5D;
-    public static final ResourceKey<Enchantment> WARRIORS_TOUCH = ResourceKey.create(
+    public static final ResourceKey<Enchantment> WARRIOR_TOUCH = ResourceKey.create(
             Registries.ENCHANTMENT,
-            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "warriors_touch")
+            Identifier.fromNamespaceAndPath(TradingCells.MOD_ID, "warrior_touch")
     );
     public static final ResourceKey<Enchantment> DECAPITATION = ResourceKey.create(
             Registries.ENCHANTMENT,
@@ -34,7 +34,7 @@ public final class CombatEnchantments {
     }
 
     public static boolean protectsWeapon(ItemStack stack, HolderLookup.Provider registries) {
-        return level(stack, registries, WARRIORS_TOUCH) > 0;
+        return level(stack, registries, WARRIOR_TOUCH) > 0;
     }
 
     public static int decapitationLevel(ItemStack stack, HolderLookup.Provider registries) {
@@ -81,8 +81,8 @@ public final class CombatEnchantments {
         return level(stack, registries, Enchantments.SWEEPING_EDGE);
     }
 
-    public static boolean isWarriorsTouchStoredOnBook(ItemStack stack) {
-        return StoredEnchantmentLookup.contains(stack, WARRIORS_TOUCH);
+    public static boolean isWarriorTouchStoredOnBook(ItemStack stack) {
+        return StoredEnchantmentLookup.contains(stack, WARRIOR_TOUCH);
     }
 
     public static boolean isDecapitationStoredOnBook(ItemStack stack) {

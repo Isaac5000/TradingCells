@@ -24,6 +24,15 @@ Cambiar una opcion no altera IDs ni el formato NBT. Para comparar rendimiento o
 reproducir un fallo se debe conservar exactamente el mismo archivo de
 configuracion entre ejecuciones.
 
+## Mesa de generacion de criaturas
+
+`creatureGenerator.blacklist` es una lista de IDs de entidad. Predeterminado:
+`["minecraft:wither", "minecraft:ender_dragon"]`. Admite IDs de mods y lista vacia.
+NeoForge valida la sintaxis; el servidor compara Identifier normalizados (sin
+espacios exteriores y en minusculas) antes de gastar ingredientes o XP. Tambien
+rechaza entidades que ya no esten registradas. Cambiarla no altera esencias,
+captura, tiers, modelos ni simulacion. El cliente no decide la autorizacion.
+
 ## Soportes visuales de cultivos
 
 Los datapacks pueden clasificar plantas mediante los tags de items

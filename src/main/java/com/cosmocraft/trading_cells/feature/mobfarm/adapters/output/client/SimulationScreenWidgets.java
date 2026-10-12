@@ -30,14 +30,7 @@ final class SimulationScreenWidgets {
         VillagerTradeScreenCommon.drawEssenceArrow(graphics, x, y, color);
     }
     static void check(GuiGraphicsExtractor graphics, int x, int y, boolean checked) {
-        graphics.fill(x, y, x + 11, y + 11, 0xFF899296);
-        graphics.fill(x + 1, y + 1, x + 10, y + 10, 0xFF1C2427);
-        if (checked) {
-            graphics.fill(x + 2, y + 5, x + 4, y + 7, ACCENT);
-            graphics.fill(x + 4, y + 7, x + 6, y + 9, ACCENT);
-            graphics.fill(x + 6, y + 5, x + 8, y + 7, ACCENT);
-            graphics.fill(x + 8, y + 3, x + 10, y + 5, ACCENT);
-        }
+        com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineToggleButton.drawCheck(graphics, x, y, checked);
     }
     static Button checkButton(int x, int y, Component message, BooleanSupplier checked, Button.OnPress press) {
         Button button = new Button(x, y, 18, 18, message, press, supplier -> supplier.get()) {

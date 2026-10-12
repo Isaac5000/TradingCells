@@ -8,16 +8,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 
 public final class FarmerEnchantments {
-    public static final ResourceKey<Enchantment> FARMERS_TOUCH = MachineToolEnchantments.FARMERS_TOUCH;
+    public static final ResourceKey<Enchantment> FARMER_TOUCH = MachineToolEnchantments.FARMER_TOUCH;
 
     private FarmerEnchantments() {
     }
 
     public static boolean protectsHoe(ItemStack stack, HolderLookup.Provider registries) {
-        return MachineToolEnchantments.farmersTouch(stack, registries);
+        return MachineToolEnchantments.farmerTouch(stack, registries);
     }
 
     public static boolean isStoredOnBook(ItemStack stack) {
-        return StoredEnchantmentLookup.contains(stack, FARMERS_TOUCH);
+        return StoredEnchantmentLookup.contains(stack, FARMER_TOUCH);
     }
 }

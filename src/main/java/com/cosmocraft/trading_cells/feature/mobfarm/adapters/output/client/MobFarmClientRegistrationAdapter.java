@@ -17,6 +17,7 @@ public final class MobFarmClientRegistrationAdapter {
         event.register(Identifier.fromNamespaceAndPath("trading_cells", "syringe_extraction"), SyringeExtractionProperty.CODEC);
     }
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
+        event.register(MobFarmRegistrationAdapter.CREATURE_GENERATOR_MENU.get(), CreatureGeneratorScreen::new);
         event.register(MobFarmRegistrationAdapter.INTERACTION_MENU.get(), EntityInteractionFarmScreen::new);
         event.register(MobFarmRegistrationAdapter.MENU.get(), MobFarmScreen::new);
         event.register(MobFarmRegistrationAdapter.WORKBENCH_MENU.get(), EssenceWorkbenchScreen::new);

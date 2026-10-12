@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","category":"misc","pattern":["LBL","BCB","BSB"],"key":{"B":"minecraft:black_concrete","L":"minecraft:lapis_block","C":"trading_cells:experience_storage","S":"trading_cells:storm_shard"},"result":{"id":"trading_cells:creature_generator","count":1},"show_notification":false}

@@ -17,7 +17,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.inventory.RecipeBookMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -41,8 +40,6 @@ public final class ArcaneInfuserGameTests {
         return List.of(
             new GameTestCase("manual_infuser_contract", 20,
                     ArcaneInfuserGameTests::manualInfuserContract),
-            new GameTestCase("arcane_infuser_recipe_book_placement", 20,
-                    ArcaneInfuserGameTests::recipeBookPlacement),
             new GameTestCase("arcane_infuser_exact_component_placement", 20,
                     ArcaneInfuserGameTests::exactComponentPlacement),
             new GameTestCase("arcane_infuser_container_remainders", 20,
@@ -91,69 +88,6 @@ public final class ArcaneInfuserGameTests {
         helper.succeed();
     }
 
-    private static void recipeBookPlacement(GameTestHelper helper) {
-        helper.setBlock(GameTestFixtures.TEST_POS, ArcaneInfuserRegistrationAdapter.BLOCK.get());
-        ArcaneInfuserBlockEntity infuser = helper.getBlockEntity(
-                GameTestFixtures.TEST_POS,
-                ArcaneInfuserBlockEntity.class
-        );
-        var player = helper.makeMockServerPlayer(GameType.SURVIVAL);
-        ArcaneInfuserMenu menu = (ArcaneInfuserMenu) infuser.createMenu(
-                1,
-                player.getInventory(),
-                player
-        );
-        RecipeHolder<?> recipe = recipe(helper, "trading_cells_gametest:sparse_arcane_infusion");
-
-        player.getInventory().setItem(0, new ItemStack(Items.DIAMOND, 3));
-        RecipeBookMenu.PostPlaceAction action = menu.handlePlacement(
-                false,
-                false,
-                recipe,
-                helper.getLevel(),
-                player.getInventory()
-        );
-        helper.assertValueEqual(action, RecipeBookMenu.PostPlaceAction.NOTHING,
-                "Single recipe-book placement action");
-        helper.assertValueEqual(infuser.getItem(ArcaneInfuserBlockEntity.CENTER_SLOT).getCount(), 1,
-                "A normal click must place one batch");
-        helper.assertValueEqual(count(player.getInventory(), Items.DIAMOND), 2,
-                "Single placement remaining diamonds");
-        assertOnlyCenterOccupied(helper, infuser);
-
-        action = menu.handlePlacement(
-                true,
-                false,
-                recipe,
-                helper.getLevel(),
-                player.getInventory()
-        );
-        helper.assertValueEqual(action, RecipeBookMenu.PostPlaceAction.NOTHING,
-                "Maximum recipe-book placement action");
-        helper.assertValueEqual(infuser.getItem(ArcaneInfuserBlockEntity.CENTER_SLOT).getCount(), 3,
-                "Shift must place the maximum complete batches");
-        helper.assertValueEqual(count(player.getInventory(), Items.DIAMOND), 0,
-                "Maximum placement remaining diamonds");
-
-        infuser.setItem(ArcaneInfuserBlockEntity.CENTER_SLOT, ItemStack.EMPTY);
-        infuser.setItem(ArcaneInfuserBlockEntity.TOP_LEFT_SLOT, new ItemStack(Items.COBBLESTONE));
-        clearInventory(player.getInventory());
-        action = menu.handlePlacement(
-                false,
-                false,
-                recipe,
-                helper.getLevel(),
-                player.getInventory()
-        );
-        helper.assertValueEqual(action, RecipeBookMenu.PostPlaceAction.PLACE_GHOST_RECIPE,
-                "Missing ingredients must request a ghost recipe");
-        helper.assertTrue(infuser.getItem(ArcaneInfuserBlockEntity.TOP_LEFT_SLOT).isEmpty(),
-                "A failed placement must return the old input grid");
-        helper.assertValueEqual(count(player.getInventory(), Items.COBBLESTONE), 1,
-                "A failed placement must preserve returned inputs");
-        helper.succeed();
-    }
-
     private static void exactComponentPlacement(GameTestHelper helper) {
         ArcaneInfusionRecipe recipe = (ArcaneInfusionRecipe) recipe(
                 helper,
@@ -169,12 +103,12 @@ public final class ArcaneInfuserGameTests {
                 1
         ));
 
-        helper.assertTrue(recipe.matchesPlacementStack(4, silkTouch),
+        helper.assertTrue(recipe.ingredient(4).matches(silkTouch) && recipe.matchesInputRestrictions(4, silkTouch),
                 "The required Silk Touch I book must match placement");
-        helper.assertTrue(!recipe.matchesPlacementStack(4, fortune),
+        helper.assertTrue(!recipe.ingredient(4).matches(fortune) || !recipe.matchesInputRestrictions(4, fortune),
                 "An enchanted book with different components must not match placement");
-        helper.assertTrue(!recipe.isSpecial(),
-                "Arcane recipes must be visible in the recipe book");
+        helper.assertTrue(recipe.isSpecial(),
+                "Synthesis recipes stay outside the vanilla recipe book");
         helper.assertTrue(!recipe.showNotification(),
                 "Pre-unlocked Arcane recipes must not display unlock notifications");
         helper.succeed();
@@ -244,19 +178,6 @@ public final class ArcaneInfuserGameTests {
                 .orElseThrow(() -> new IllegalStateException("Missing test item " + identifier));
     }
 
-    private static int count(net.minecraft.world.entity.player.Inventory inventory, net.minecraft.world.item.Item item) {
-        return inventory.getNonEquipmentItems().stream()
-                .filter(stack -> stack.is(item))
-                .mapToInt(ItemStack::getCount)
-                .sum();
-    }
-
-    private static void clearInventory(net.minecraft.world.entity.player.Inventory inventory) {
-        for (int slot = 0; slot < inventory.getNonEquipmentItems().size(); slot++) {
-            inventory.setItem(slot, ItemStack.EMPTY);
-        }
-    }
-
     private static void setInputs(
             ArcaneInfuserBlockEntity infuser,
             net.minecraft.world.item.Item... items
@@ -283,15 +204,5 @@ public final class ArcaneInfuserGameTests {
         }
     }
 
-    private static void assertOnlyCenterOccupied(
-            GameTestHelper helper,
-            ArcaneInfuserBlockEntity infuser
-    ) {
-        for (int slot = 0; slot < ArcaneInfuserBlockEntity.INPUT_SLOT_COUNT; slot++) {
-            if (slot != ArcaneInfuserBlockEntity.CENTER_SLOT) {
-                helper.assertTrue(infuser.getItem(slot).isEmpty(),
-                        "Sparse recipe slot " + slot + " must remain empty");
-            }
-        }
-    }
+
 }

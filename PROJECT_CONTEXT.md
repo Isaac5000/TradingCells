@@ -8,6 +8,102 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 
 ## Estado actual
 
+- Ampliacion 2026-10-12 cerrada: porra/soldador descargan con la animacion de
+  carga invertida (30 ticks), sin duplicacion y con otra pulsacion de R inmediata.
+  Recetas usan cobre en vez de pararrayos; soldador lleva fragmento de tormenta
+  en vez de redstone_block. Huevo generico conserva tier y usa cuatro colores,
+  tambien en REI; huevos registrados sin cambios. `check releaseCheck`: 166
+  GameTests; OpenGL+REI/derecha y Vulkan sin REI/izquierda comprobados.
+  Evidencia `artifacts/storm-unload-*`; contrato `docs/FIXES_20261012.md`.
+  Sin GitHub, subagentes ni cambios de texturas de las armas.
+
+- Revision 2026-10-12 cerrada: ambas canteras con pausa persistente y seleccion
+  blacklist/whitelist por material. Exclusiones completan ciclo/desgaste sin
+  salida, sin cambiar sorteos ni probabilidades, incluso con almacenamiento
+  lleno. Granjas de entidades comparten modos; filtros antiguos siguen siendo
+  blacklist. Casilla Activado/Enabled comun tambien en interacciones y tuberias.
+  `check releaseCheck`: 165 GameTests; OpenGL+REI/es y Vulkan sin REI/en,
+  controles, sincronizacion, snapshots portatiles y slots nativos comprobados.
+  Evidencia `artifacts/quarry-filters-final-check.log`, `artifacts/quarry-filters-*`.
+  Electricidad: dano antes de conversion, sin fuego/dano de rayo adicional;
+  porra con audio de 0,3 s. Encantamientos farmer/miner/warrior_touch con alias
+  de IDs antiguos y migracion de LockedRecipe. Jade compacta solo vistas de
+  capturadores, sin tocar datos reales; prueba real 796 bytes en ambos clientes.
+  Aviso de idioma: claves activas iguales; ingles antiguo dentro de artifacts
+  contaminaba indice IDE. Exclusion Gradle configurada; requiere reimportar IDE.
+  Contrato y limites: `docs/FIXES_20261012.md`. Sin GitHub ni subagentes.
+
+- Revision 2026-10-11 cerrada: porra base 1 sin carga/16 cargada; expulsar
+  condensador no inicia recarga, otra pulsacion de R la inicia sin demora.
+  Repeticion de teclado ignorada y pulsaciones entre ticks reconocidas.
+  Criadero de aldeanos crea datos nuevos sin profesion/ofertas/NBT paternos,
+  incluso con capturadores duplicados y BabyTemplate antiguo pendiente.
+  Sintetizador sin libro ni categorias; REI, XP, bloqueo y fantasmas conservados.
+  Ambos efectos electricos usan `electricity.ogg` aportado por el usuario, mono.
+  `check releaseCheck`: 158 GameTests, registro
+  `artifacts/revision-machines-final-check.log`. GUI y recarga OpenGL+REI/derecha
+  y Vulkan sin REI/izquierda: `artifacts/revision-machines-{opengl,vulkan}`.
+  Fabricacion/75.000 XP/fantasmas: `artifacts/revision-synthesizer-ghost`.
+  Contratos: `docs/BREEDERS.md`, `docs/ELECTRIC_EQUIPMENT.md`,
+  `docs/ARCANE_INFUSER.md`. Sin GitHub ni subagentes; no repetir este hito.
+
+- Ajuste posterior 2026-10-11: soldador con agarre de una mano autorizado;
+  la otra interviene solo al recargar, sin trasladar hombros. Condensador visible
+  en primera persona, asas sin caras coplanares e icono centrado (+3 px).
+  Texturas originales conservadas. `check releaseCheck`: 158 GameTests;
+  OpenGL+REI/derecha y Vulkan sin REI/izquierda, incluyendo vistas extremas.
+  Evidencia: `artifacts/storm-single-grip-check.log` y `artifacts/storm-single-grip-*`.
+
+- Correccion de armas 2026-10-11 cerrada: modelos OBJ cerrados sin las tapas
+  incompletas y recarga vertical con la mano opuesta.
+  R configurable: pulsar recarga; mantener 0,6 s expulsa. Bateria agotada sale
+  al pulsar incluso sin recambio; inventario lleno la arroja delante, sin duplicar.
+  Solo `voltaic_capacitor`, 256 cargas, receta con bloque de cobre central;
+  ID avanzado retirado como item activo, alias conserva partidas y componentes.
+  Haz unido al modelo real y sonidos propios de arco/porra. Pruebas: 158
+  GameTests, `check releaseCheck`, OpenGL+REI/derecha y Vulkan sin REI/izquierda.
+  Registro `artifacts/storm-reload-verified.log`; capturas en
+  `artifacts/storm-reload-verified-opengl` y `artifacts/storm-reload-verified-vulkan`.
+  Fixture prueba pulsacion, mantener y volver a pulsar R, ademas de Controles.
+  Contrato: `docs/ELECTRIC_EQUIPMENT.md`. Sin GitHub ni subagentes.
+
+- Revision de sintetizador/equipo electrico 2026-10-10 cerrada: plataforma 3x3
+  con ingredientes centrados, UV proporcionadas en sintetizador/mesa de huevos;
+  condensadores intercambiados visualmente, receta avanzada conserva carga y
+  componentes; cobre sustituye pararrayos en ambas recetas. Nombre de estacion
+  corregido. Armas 3D industriales segun referencias, recarga fisica lateral
+  con bateria cargada, porra tipo espada y soldador con cuatro pulsos/s incluso
+  tras conversion. Dragon + botella produce aliento en interacciones.
+  NeoForge actualizado a estable 26.2.0.90, Minecraft 26.2 sin cambios.
+  `check releaseCheck`, 158 GameTests y OpenGL+REI/Vulkan sin REI correctos.
+  Registro final `artifacts/storm-neoforge90-final.log`; visuales
+  `artifacts/storm-industrial-final-opengl` y `artifacts/storm-industrial-vulkan`.
+  Contratos: `docs/ELECTRIC_EQUIPMENT.md`, `docs/ARCANE_INFUSER.md`,
+  `docs/ENTITY_INTERACTION_FARM.md`. Sin GitHub ni subagentes. No repetir el hito.
+
+- Mesa de generacion de criaturas 2026-10-04 implementada: nucleo/huevo del tag,
+  XP compartida, blacklist de servidor y huevo externo generico. 86 recetas de
+  huevos archivadas fuera de recursos; Wither/Dragon eliminadas. Cuatro GameTests
+  nuevos y `check` correctos; GUI OpenGL+REI/Vulkan sin REI comprobada. Contrato:
+  `docs/ESSENCE_AUTOMATION.md`. Cierre 2026-10-08: `check releaseCheck` correcto,
+  155 GameTests. No repetir implementacion de esta mesa.
+  Correccion posterior 2026-10-08: el ingrediente pedido era un huevo de
+  `arcane_infusion_eggs`, no una base. Filtros, REI y consumo actualizados;
+  costes segun tier del nucleo, mesa con modelo y cuatro texturas 16x16 propias.
+  Cierre 2026-10-09: `check releaseCheck`, 156 GameTests y flujo completo en
+  OpenGL+REI/Vulkan sin REI correctos. Fallo de ingrediente resuelto.
+
+- Revision electrica 2026-10-10 cerrada: fulgurita retirada; baterias
+  128/256, estacion de fragmentos (16 cargas) con bateria en una sola ranura;
+  porra +10 de dano cargada, soldador continuo con consumo inicial inmediato.
+  Modelos/materiales propios y rayo ramificado. Contrato: `docs/ELECTRIC_EQUIPMENT.md`.
+  Sintetizador de materia sustituye aspecto/nombre del infusor manteniendo
+  `arcane_infuser`, recetas y persistencia. Camara, emisores y pantalla superior.
+  `check releaseCheck`, 156 GameTests y OpenGL+REI/Vulkan sin REI pasan.
+  Armas en ambas perspectivas y manos, haz continuo y menus verificados.
+  JAR sin fulgurita ni modelos del infusor retirados. No repetir este hito.
+  Cofres dobles y capa animada del fragmento resueltos anteriormente. Sin GitHub.
+
 - Correcciones 2026-10-04: IDs de capacidad generales con alias; jeringa con
   agarre/recarga por ambas manos, extraccion 2/4/6/8 s y avance fijo de 6 ticks;
   azada obligatoria, siluetas de cobre, Jade cian y llave nueva 32x32.
@@ -24,7 +120,7 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
   `docs/FIXES_20261001.md` y `docs/FARMER_CROP_DATAPACKS.md`.
 
 - Version de desarrollo no publicada: `1.0.0` para Minecraft `26.2.0` y
-  NeoForge `26.2.0.88`.
+  NeoForge `26.2.0.90`.
 - Java 25 y Gradle Wrapper 9.8.0; `gradlew` esta registrado como ejecutable.
 - La referencia reproducible anterior se documento el `2026-08-31` en
   `docs/releases/1.0.0-validation.md`: dos JAR identicos con 26 GameTests. Es

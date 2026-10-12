@@ -38,6 +38,7 @@ final class MachineFixesUiFixture {
     private static boolean delegated;
     private static boolean checkingRei;
     private static int recipeIndex;
+    private static net.minecraft.resources.Identifier selectedMaterial;
     private static final List<String> REI_CATEGORIES = List.of("farming", "piglin_farming", "quarry", "piglin_quarry",
             "villager_breeding", "piglin_breeding", "villager_incubation", "piglin_incubation", "iron_farm",
             "conversion", "piglin_bartering", "netherite_piglin_bartering", "essence_stabilization");
@@ -135,6 +136,13 @@ final class MachineFixesUiFixture {
         player.closeContainer();
         player.level().setBlockAndUpdate(origin, machines.get(machine).defaultBlockState());
         var entity = player.level().getBlockEntity(origin);
+        if (entity instanceof com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryBlockEntity quarry) {
+            quarry.setItem(1, net.minecraft.world.item.Items.DIAMOND_PICKAXE.getDefaultInstance());
+        }
+        if (entity instanceof com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.MobFarmBlockEntity farm) {
+            farm.setItem(2, com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EntityEssenceData.moduleFor(
+                    player.level(), net.minecraft.resources.Identifier.withDefaultNamespace("cow")));
+        }
         if (entity instanceof com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserBlockEntity infuser) {
             infuser.setItem(0, net.minecraft.world.item.Items.GLASS_BOTTLE.getDefaultInstance());
             player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, net.minecraft.world.item.Items.IRON_HELMET.getDefaultInstance());
@@ -169,20 +177,30 @@ final class MachineFixesUiFixture {
                 || screen.getMenu().containerId != expectedMenu) { return; }
         if (stage == 0) {
             if (index == 0) { verifyGuiResourceLocations(); }
-            if (screen instanceof com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfuserScreen) {
-                screen.children().stream().filter(com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfusionRecipeBookComponent.class::isInstance)
-                        .map(com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfusionRecipeBookComponent.class::cast)
-                        .filter(net.minecraft.client.gui.screens.recipebook.RecipeBookComponent::isVisible).findFirst().ifPresent(book -> {
-                            book.toggleVisibility();
-                            screen.resize(screen.width, screen.height);
-                        });
-            }
             nextAction = System.nanoTime() + 700_000_000L;
             stage = 1;
             return;
         }
         var menu = screen.getMenu();
         String name = BuiltInRegistries.BLOCK.getKey(machines.get(index)).getPath();
+        if (stage >= 10 && stage <= 15) {
+            if (menu instanceof com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu quarry) {
+                inspectQuarryFilter(minecraft, screen, quarry, name);
+            } else if (menu instanceof com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.MobFarmMenu farm) {
+                if (stage == 10) {
+                    requireGui(!farm.enabled() && farm.whitelist(), "Entity farm controls synchronize");
+                    capture(minecraft, name + "-whitelist");
+                    click(screen, screen.getLeftPos() + 102, screen.getTopPos() + 36);
+                    stage = 11;
+                } else {
+                    requireGui(!farm.whitelist(), "Entity farm switches back to blacklist");
+                    capture(minecraft, name + "-blacklist");
+                    stage = 6;
+                }
+            }
+            nextAction = System.nanoTime() + 700_000_000L;
+            return;
+        }
         if (stage == 1) {
             int outer = MachineGuiSkin.frameOutset(screen.getLeftPos(), screen.getTopPos(),
                     screen.getImageWidth(), screen.getImageHeight(), screen.width, screen.height);
@@ -218,6 +236,16 @@ final class MachineFixesUiFixture {
                 }
             }
             capture(minecraft, name + "-empty");
+            if (menu instanceof com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu) {
+                click(screen, screen.getLeftPos() + 103, screen.getTopPos() + 15);
+                click(screen, screen.getLeftPos() + 140, screen.getTopPos() + 55);
+                stage = 10; nextAction = System.nanoTime() + 700_000_000L; return;
+            }
+            if (menu instanceof com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.MobFarmMenu) {
+                click(screen, screen.getLeftPos() + 325, screen.getTopPos() + 16);
+                click(screen, screen.getLeftPos() + 102, screen.getTopPos() + 36);
+                stage = 10; nextAction = System.nanoTime() + 700_000_000L; return;
+            }
             if (index < 4) {
                 server(minecraft, player -> ((Container) player.level().getBlockEntity(origin)).setItem(30,
                         MobFarmRegistrationAdapter.UPGRADES.getFirst().get().getDefaultInstance()));
@@ -229,27 +257,22 @@ final class MachineFixesUiFixture {
                 stage = 2; nextAction = System.nanoTime() + 700_000_000L; return;
             }
             if (screen instanceof com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfuserScreen) {
-                var button = screen.children().stream().filter(net.minecraft.client.gui.components.ImageButton.class::isInstance)
-                        .map(net.minecraft.client.gui.components.ImageButton.class::cast).findFirst().orElseThrow();
-                click(screen, button.getX() + 8, button.getY() + 8);
+                requireGui(screen.children().stream().noneMatch(net.minecraft.client.gui.screens.recipebook.RecipeBookComponent.class::isInstance),
+                        "Synthesizer no longer has a recipe book");
                 stage = 3; nextAction = System.nanoTime() + 700_000_000L; return;
             }
         } else {
             if (stage >= 3 && stage <= 5) {
-                var book = screen.children().stream().filter(com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfusionRecipeBookComponent.class::isInstance)
-                        .map(com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfusionRecipeBookComponent.class::cast).findFirst().orElseThrow();
                 var helmet = menu.getSlot(menu.slots.size() - 5);
-                requireGui(book.isVisible(), "Infuser recipe book must remain open during equipment interaction");
                 if (stage == 3) {
-                    capture(minecraft, name + "-book-equipment");
+                    capture(minecraft, name + "-equipment");
                     click(screen, screen.getLeftPos() + helmet.x + 8, screen.getTopPos() + helmet.y + 8);
                 } else if (stage == 4) {
-                    requireGui(menu.getCarried().is(net.minecraft.world.item.Items.IRON_HELMET), "Recipe book must not cover or intercept the armor slot");
+                    requireGui(menu.getCarried().is(net.minecraft.world.item.Items.IRON_HELMET), "Armor slot remains accessible");
                     click(screen, screen.getLeftPos() + helmet.x + 8, screen.getTopPos() + helmet.y + 8);
                 } else {
-                    requireGui(helmet.getItem().is(net.minecraft.world.item.Items.IRON_HELMET) && menu.getCarried().isEmpty(), "Equipment must be restored with book open");
-                    book.toggleVisibility(); screen.resize(screen.width, screen.height);
-                    System.out.println("Infuser recipe book leaves armor visible and usable at native scale");
+                    requireGui(helmet.getItem().is(net.minecraft.world.item.Items.IRON_HELMET) && menu.getCarried().isEmpty(), "Equipment is restored");
+                    System.out.println("Synthesizer leaves armor visible and usable at native scale");
                 }
                 stage++; nextAction = System.nanoTime() + 700_000_000L; return;
             }
@@ -271,6 +294,33 @@ final class MachineFixesUiFixture {
     private static void click(AbstractContainerScreen<?> screen, int x, int y) {
         var event = new MouseButtonEvent(x, y, new MouseButtonInfo(0, 0));
         screen.mouseClicked(event, false); screen.mouseReleased(event);
+    }
+
+    private static void inspectQuarryFilter(Minecraft minecraft, AbstractContainerScreen<?> screen,
+            com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu quarry, String name) {
+        if (stage == 10) {
+            requireGui(!quarry.enabled() && !quarry.whitelist(), "Quarry pause and default blacklist synchronize");
+            var entries = quarry.catalogEntries().stream().filter(entry -> entry.blockedReason() == 0).toList();
+            requireGui(!entries.isEmpty(), "Quarry catalogue has selectable materials");
+            selectedMaterial = entries.getFirst().materialId();
+            click(screen, screen.getLeftPos() + 133, screen.getTopPos() + 101);
+        } else if (stage == 11) {
+            requireGui(quarry.materialListed(selectedMaterial), "Quarry row selection synchronizes");
+            capture(minecraft, name + "-blacklist");
+            click(screen, screen.getLeftPos() + 135, screen.getTopPos() + 73);
+        } else if (stage == 12) {
+            requireGui(quarry.whitelist() && quarry.materialListed(selectedMaterial), "Changing mode retains selected material");
+            capture(minecraft, name + "-whitelist");
+            click(screen, screen.getLeftPos() + 120, screen.getTopPos() + 40);
+            click(screen, screen.getLeftPos() + 103, screen.getTopPos() + 15);
+        } else {
+            requireGui(quarry.enabled(), "Quarry reactivates from common control");
+            server(minecraft, player -> ((Container) player.level().getBlockEntity(origin)).setItem(30,
+                    MobFarmRegistrationAdapter.UPGRADES.getFirst().get().getDefaultInstance()));
+            stage = 2;
+            return;
+        }
+        stage++;
     }
 
     private static void inspectRei(Minecraft minecraft) {

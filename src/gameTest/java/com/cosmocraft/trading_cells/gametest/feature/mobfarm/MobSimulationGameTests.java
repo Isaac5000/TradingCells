@@ -52,7 +52,8 @@ public final class MobSimulationGameTests {
                 new GameTestCase("mob_simulation_save_without_chunk_loads", 40, MobSimulationGameTests::saveWithoutChunkLoads),
                 new GameTestCase("mob_simulation_pending_loot_reload", 40, MobSimulationGameTests::pending),
                 new GameTestCase("mob_simulation_ten_xp_per_entity", 40, MobSimulationGameTests::experienceCap),
-                new GameTestCase("mob_simulation_filters_and_automation", 40, MobSimulationGameTests::automation));
+                new GameTestCase("mob_simulation_filters_and_automation", 40, MobSimulationGameTests::automation),
+                new GameTestCase("mob_simulation_whitelist_persistence", 40, MobSimulationGameTests::whitelist));
     }
 
     private static void blockItemNames(GameTestHelper helper) {
@@ -595,6 +596,31 @@ public final class MobSimulationGameTests {
         int progress = farm.cycleTicks();
         farm.processTick();
         helper.assertValueEqual(farm.cycleTicks(), progress, "On/off pauses simulation");
+        helper.succeed();
+    }
+
+    private static void whitelist(GameTestHelper helper) {
+        var farm = farm(helper);
+        var diamond = Identifier.withDefaultNamespace("diamond");
+        farm.toggleLoot(diamond);
+        helper.assertFalse(farm.lootEnabled(diamond), "Legacy blacklist excludes its selected IDs");
+        farm.toggleFilterMode();
+        helper.assertTrue(farm.lootWhitelist() && farm.lootEnabled(diamond), "Whitelist retains selection and reverses acceptance");
+        helper.assertFalse(farm.lootEnabled(Identifier.withDefaultNamespace("coal")), "Unlisted items excluded");
+        var state = farm.saveWithFullMetadata(helper.getLevel().registryAccess());
+        farm.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), state));
+        helper.assertTrue(farm.lootWhitelist() && farm.lootEnabled(diamond), "Whitelist persists alongside legacy filter IDs");
+        finishCycle(helper, farm);
+        helper.assertTrue(farm.getItem(5).is(Items.DIAMOND), "Whitelist allows native table loot");
+        farm.removeItem(5, 64);
+        farm.toggleLoot(diamond);
+        int wear = farm.getItem(1).getDamageValue();
+        finishCycle(helper, farm);
+        helper.assertTrue(farm.getItem(5).isEmpty(), "Empty whitelist produces no items");
+        helper.assertValueEqual(farm.getItem(1).getDamageValue(), wear + 1, "Filtering preserves cycle cost");
+        state.remove("LootWhitelist");
+        farm.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), state));
+        helper.assertTrue(!farm.lootWhitelist() && !farm.lootEnabled(diamond), "Old DisabledLoot keeps blacklist meaning");
         helper.succeed();
     }
 

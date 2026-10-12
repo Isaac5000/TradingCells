@@ -169,7 +169,7 @@ public record ArcaneInfusionResult(
 
     public boolean usesHappyVillagerParticles() {
         return type == Kind.NITWIT_VILLAGER || enchantment.flatMap(Holder::unwrapKey)
-                .map(key -> "farmers_touch".equals(key.identifier().getPath()))
+                .map(key -> "farmer_touch".equals(key.identifier().getPath()))
                 .orElse(false);
     }
 

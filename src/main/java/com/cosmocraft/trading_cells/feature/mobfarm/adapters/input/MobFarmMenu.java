@@ -46,7 +46,7 @@ public final class MobFarmMenu extends AbstractContainerMenu {
     public record LootEntry(ItemStack stack, boolean enabled, int probability, int minimum, int maximum) { }
 
     public MobFarmMenu(int id, Inventory inventory) {
-        this(id, inventory, new SimpleContainer(MobFarmBlockEntity.CONTAINER_SIZE), new SimpleContainerData(7));
+        this(id, inventory, new SimpleContainer(MobFarmBlockEntity.CONTAINER_SIZE), new SimpleContainerData(8));
     }
 
     public MobFarmMenu(int id, Inventory inventory, Container container, ContainerData data) {
@@ -55,7 +55,7 @@ public final class MobFarmMenu extends AbstractContainerMenu {
         this.data = data;
         owner = inventory.player;
         checkContainerSize(container, MobFarmBlockEntity.CONTAINER_SIZE);
-        checkContainerDataCount(data, 7);
+        checkContainerDataCount(data, 8);
         for (int index = 0; index < 5; index++) {
             final int input = index;
             addSlot(new Slot(container, index, PLAYER_X + index * 36, 28) {
@@ -88,6 +88,7 @@ public final class MobFarmMenu extends AbstractContainerMenu {
     public int simulatedKills() { return data.get(3); }
     public boolean enabled() { return data.get(4) != 0; }
     public boolean pendingOutput() { return data.get(6) != 0; }
+    public boolean whitelist() { return data.get(7) != 0; }
     public ItemStack creature() { return container.getItem(2); }
     public List<LootEntry> lootEntries() { return loot; }
     public int lootRevision() { return snapshotRevision; }
@@ -152,6 +153,7 @@ public final class MobFarmMenu extends AbstractContainerMenu {
                 || !(container instanceof MobFarmBlockEntity farm) || !stillValid(player)) { return false; }
         if (button == 0) { farm.toggleEnabled(); return true; }
         if (button == 1) { farm.extractExperience(server); return true; }
+        if (button == 2) { farm.toggleFilterMode(); broadcastChanges(); return true; }
         return false;
     }
 

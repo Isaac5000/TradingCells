@@ -1,6 +1,5 @@
 {
   "type": "trading_cells:arcane_infusion",
-  "category": "production",
   "ingredients": [
     {
       "ingredient": "minecraft:lapis_block",

@@ -5,6 +5,11 @@ import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryKind;
 import com.cosmocraft.trading_cells.platform.neoforge.menu.PlayerEquipmentSlots;
 import com.cosmocraft.trading_cells.platform.neoforge.network.QuarryCatalogSyncPayload;
 import java.util.List;
+import java.util.Set;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+import com.cosmocraft.trading_cells.platform.neoforge.network.QuarryFilterSyncPayload;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -20,6 +25,8 @@ import org.jspecify.annotations.NonNull;
 
 public final class QuarryMenu extends AbstractContainerMenu {
     public static final int TOGGLE_DEEP_MINING_BUTTON = 0;
+    public static final int TOGGLE_ENABLED_BUTTON = 1;
+    public static final int TOGGLE_FILTER_BUTTON = 2;
 
     private static final int MACHINE_SLOT_COUNT = QuarryBlockEntity.CONTAINER_SIZE;
     private static final int PLAYER_INVENTORY_START = MACHINE_SLOT_COUNT;
@@ -29,6 +36,9 @@ public final class QuarryMenu extends AbstractContainerMenu {
     private final QuarryKind kind;
     private final Container container;
     private final ContainerData data;
+    private final Player owner;
+    private Set<Identifier> listedMaterials = Set.of();
+    private int filterRevision = -1;
     private List<QuarryCatalogSyncPayload.Entry> catalogEntries = List.of();
     private boolean catalogDeepMining;
     private int catalogNetworkRevision = -1;
@@ -47,7 +57,7 @@ public final class QuarryMenu extends AbstractContainerMenu {
                 containerId,
                 inventory,
                 new SimpleContainer(MACHINE_SLOT_COUNT),
-                new SimpleContainerData(8)
+                new SimpleContainerData(10)
         );
     }
 
@@ -62,10 +72,11 @@ public final class QuarryMenu extends AbstractContainerMenu {
                 ? QuarryRegistrationAdapter.QUARRY_MENU.get()
                 : QuarryRegistrationAdapter.PIGLIN_QUARRY_MENU.get(), containerId);
         checkContainerSize(container, MACHINE_SLOT_COUNT);
-        checkContainerDataCount(data, 8);
+        checkContainerDataCount(data, 10);
         this.kind = kind;
         this.container = container;
         this.data = data;
+        owner = inventory.player;
 
         addSlot(new WorkerSlot(container, QuarryBlockEntity.WORKER_SLOT, workerSlotX(), workerSlotY()));
         addSlot(new PickaxeSlot(container, QuarryBlockEntity.PICKAXE_SLOT, pickaxeSlotX(), pickaxeSlotY()));
@@ -135,6 +146,35 @@ public final class QuarryMenu extends AbstractContainerMenu {
 
     public int catalogRevision() {
         return data.get(7);
+    }
+
+    public boolean enabled() { return data.get(8) != 0; }
+    public boolean whitelist() { return data.get(9) != 0; }
+    public boolean materialListed(Identifier material) { return listedMaterials.contains(material); }
+    public int filterRevision() { return filterRevision; }
+
+    @Override public void broadcastChanges() {
+        super.broadcastChanges();
+        if (!(container instanceof QuarryBlockEntity quarry) || !(owner instanceof ServerPlayer player)
+                || filterRevision == quarry.filterRevision()) { return; }
+        filterRevision = quarry.filterRevision();
+        listedMaterials = quarry.listedMaterials();
+        if (player.connection != null) {
+            PacketDistributor.sendToPlayer(player, new QuarryFilterSyncPayload(containerId, filterRevision,
+                    listedMaterials.stream().sorted().toList()));
+        }
+    }
+
+    public void applyFilterSnapshot(int revision, List<Identifier> materials) {
+        if (owner instanceof ServerPlayer) { return; }
+        filterRevision = revision;
+        listedMaterials = Set.copyOf(materials);
+    }
+
+    public void toggleMaterial(Player player, int revision, Identifier material) {
+        if (player != owner || !stillValid(player) || !(container instanceof QuarryBlockEntity quarry)
+                || revision != filterRevision || revision != quarry.filterRevision()) { return; }
+        if (quarry.toggleMaterial(material)) { broadcastChanges(); }
     }
 
     public List<QuarryCatalogSyncPayload.Entry> catalogEntries() {
@@ -297,12 +337,16 @@ public final class QuarryMenu extends AbstractContainerMenu {
 
     @Override
     public boolean clickMenuButton(@NonNull Player player, int buttonId) {
-        if (buttonId != TOGGLE_DEEP_MINING_BUTTON
-                || !(container instanceof QuarryBlockEntity quarry)
-                || !quarry.toggleDeepMining(player)) {
+        if (player != owner || !(container instanceof QuarryBlockEntity quarry) || !stillValid(player)) {
             return false;
         }
-        container.setChanged();
+        switch (buttonId) {
+            case TOGGLE_DEEP_MINING_BUTTON -> { if (!quarry.toggleDeepMining(player)) { return false; } }
+            case TOGGLE_ENABLED_BUTTON -> quarry.toggleEnabled();
+            case TOGGLE_FILTER_BUTTON -> quarry.toggleFilterMode();
+            default -> { return false; }
+        }
+        broadcastChanges();
         return true;
     }
 

@@ -36,8 +36,9 @@ final class EssenceAutomationUiFixture {
     private EssenceAutomationUiFixture() { }
     static boolean active() {
         String fixture = System.getProperty("trading_cells.performance.client.uiFixture", "");
-        return fixture.equals("essence-automation") || fixture.equals("syringe");
+        return fixture.equals("essence-automation") || fixture.equals("syringe") || generator();
     }
+    private static boolean generator() { return System.getProperty("trading_cells.performance.client.uiFixture", "").equals("creature-generator"); }
     static boolean ready() { return rendered; }
     static boolean prepared() { return prepared; }
 
@@ -62,11 +63,17 @@ final class EssenceAutomationUiFixture {
             return;
         }
         var cow = EntityTypes.COW.create(level, EntitySpawnReason.LOAD);
-        level.setBlockAndUpdate(pos, MobFarmRegistrationAdapter.ESSENCE_WORKBENCH.get().defaultBlockState());
+        level.setBlockAndUpdate(pos, (generator() ? MobFarmRegistrationAdapter.CREATURE_GENERATOR : MobFarmRegistrationAdapter.ESSENCE_WORKBENCH).get().defaultBlockState());
         var bench = (EssenceWorkbenchBlockEntity) level.getBlockEntity(pos);
-        bench.setItem(0, EntityEssenceData.essenceOf(cow));
-        bench.setItem(1, MobFarmRegistrationAdapter.MODEL_BASES.getFirst().get().getDefaultInstance());
-        bench.experience().setRaw(1_000);
+        if (generator()) {
+            player.getInventory().setItem(9, EntityEssenceData.essenceOf(cow));
+            player.getInventory().setItem(10, Items.EGG.getDefaultInstance());
+            player.giveExperiencePoints(1_000);
+        } else {
+            bench.setItem(0, EntityEssenceData.essenceOf(cow));
+            bench.setItem(1, MobFarmRegistrationAdapter.MODEL_BASES.getFirst().get().getDefaultInstance());
+            bench.experience().setRaw(1_000);
+        }
         level.setBlockAndUpdate(pos.east(), MobFarmRegistrationAdapter.STABILIZER.get().defaultBlockState());
         var stabilizer = (EssenceStabilizerBlockEntity) level.getBlockEntity(pos.east());
         stabilizer.setItem(0, EntityEssenceData.rawEssenceOf(cow));
@@ -75,7 +82,8 @@ final class EssenceAutomationUiFixture {
         level.setBlockAndUpdate(pos.east(2), ArcaneInfuserRegistrationAdapter.BLOCK.get().defaultBlockState());
         var infuser = (ArcaneInfuserBlockEntity) level.getBlockEntity(pos.east(2));
         player.inventoryMenu.broadcastChanges();
-        player.openMenu(bench);
+        if (generator()) { phase = -4; }
+        else { player.openMenu(bench); }
         prepared = true;
     }
 
@@ -85,6 +93,46 @@ final class EssenceAutomationUiFixture {
         if (started == 0) { started = System.nanoTime(); }
         if (System.nanoTime() - started > 45_000_000_000L) { throw new IllegalStateException("Essence UI phase timed out: " + phase); }
         var screen = minecraft.gui.screen();
+        if (generator() && phase == -4) {
+            if (!minecraft.level.getBlockState(origin).is(MobFarmRegistrationAdapter.CREATURE_GENERATOR.get())) { return; }
+            phase = -3;
+            nextAction = System.nanoTime() + 1_000_000_000L;
+            return;
+        }
+        if (generator() && phase == -3) {
+            if (!minecraft.level.getBlockState(origin).is(MobFarmRegistrationAdapter.CREATURE_GENERATOR.get())) { return; }
+            minecraft.player.getInventory().setSelectedSlot(0);
+            capture(minecraft, "00-generator-block");
+            var hit = new net.minecraft.world.phys.BlockHitResult(
+                    net.minecraft.world.phys.Vec3.atCenterOf(origin).add(0, 0.25, -0.5),
+                    net.minecraft.core.Direction.NORTH, origin, false);
+            minecraft.gameMode.useItemOn(minecraft.player, InteractionHand.MAIN_HAND, hit);
+            phase = -2;
+            nextAction = System.nanoTime() + 500_000_000L;
+            return;
+        }
+        if (generator() && phase < 0) {
+            if (!(screen instanceof EssenceWorkbenchScreen bench)) { return; }
+            var menu = bench.getMenu();
+            if (phase == -2) {
+                if (menu.getSlot(4).getItem().isEmpty() || menu.getSlot(5).getItem().isEmpty()) { return; }
+                for (int slot : new int[] {4, 5}) {
+                    minecraft.gameMode.handleContainerInput(menu.containerId, slot, 0,
+                            net.minecraft.world.inventory.ContainerInput.QUICK_MOVE, minecraft.player);
+                }
+            } else {
+                if (menu.creature().isEmpty() || menu.getSlot(1).getItem().isEmpty()) { return; }
+                click(screen, bench.getLeftPos() + 198, bench.getTopPos() + 107);
+            }
+            phase++;
+            nextAction = System.nanoTime() + 500_000_000L;
+            return;
+        }
+        if (generator() && phase == 6) {
+            capture(minecraft, "03-generator-recipes");
+            rendered = true;
+            return;
+        }
         if (phase <= 5) {
             if (!(screen instanceof EssenceWorkbenchScreen bench)) { return; }
             var menu = bench.getMenu();
@@ -100,8 +148,18 @@ final class EssenceAutomationUiFixture {
                     click(screen, x + 126, y + 58);
                 }
                 case 5 -> {
-                    if (!menu.getCarried().is(MobFarmRegistrationAdapter.ENTITY_MODULE.get()) || menu.storedExperience() != 0) { return; }
+                    if (!menu.getCarried().is(generator() ? Items.COW_SPAWN_EGG : MobFarmRegistrationAdapter.ENTITY_MODULE.get()) || menu.storedExperience() != 0) { return; }
                     capture(minecraft, "02-synthesis");
+                    if (generator()) {
+                        if (net.neoforged.fml.ModList.get().isLoaded("roughlyenoughitems")) {
+                            var category = com.cosmocraft.trading_cells.platform.neoforge.integration.rei.EssenceReiDisplay.GENERATION;
+                            if (me.shedaniel.rei.api.client.registry.display.DisplayRegistry.getInstance().get(category).size() != 4
+                                    || !me.shedaniel.rei.api.client.view.ViewSearchBuilder.builder().addCategory(category).filterCategory(category).open()) {
+                                throw new IllegalStateException("Missing creature generation recipes");
+                            }
+                        } else { rendered = true; }
+                        break;
+                    }
                     server(minecraft, player -> player.openMenu((EssenceStabilizerBlockEntity) player.level().getBlockEntity(origin.east())));
                 }
                 default -> { }
@@ -129,20 +187,18 @@ final class EssenceAutomationUiFixture {
             }
             server(minecraft, player -> {
                 player.openMenu((ArcaneInfuserBlockEntity) player.level().getBlockEntity(origin.east(2)));
-                var recipe = player.level().recipeAccess().getRecipes().stream()
-                        .filter(holder -> holder.id().identifier().getPath().equals("experience_bottle_infusion")).findFirst().orElseThrow();
-                ((com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserMenu) player.containerMenu)
-                        .handlePlacement(false, false, recipe, player.level(), player.getInventory());
+                ((ArcaneInfuserBlockEntity) player.level().getBlockEntity(origin.east(2)))
+                        .setItem(4, net.minecraft.world.item.Items.GLASS_BOTTLE.getDefaultInstance());
             });
         } else if (phase <= 10) {
             if (!(screen instanceof ArcaneInfuserScreen infuser)) { return; }
             var menu = infuser.getMenu();
-            // Slot coordinates remain correct even if the recipe book moves the screen.
             int x = infuser.getGuiLeft(), y = infuser.getGuiTop();
             switch (phase) {
                 case 7 -> { if (menu.automationDisplay() == null) { return; } click(screen, x + 98, y + 84); }
                 case 8 -> {
                     if (menu.lockState() != 1 || !menu.lockedRecipeName().endsWith("experience_bottle_infusion")) { return; }
+                    server(minecraft, player -> ((ArcaneInfuserBlockEntity) player.level().getBlockEntity(origin.east(2))).removeItem(4, 1));
                     click(screen, x + 78, y + 84);
                 }
                 case 9 -> {

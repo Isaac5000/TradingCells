@@ -9,6 +9,7 @@ public final class TradingCellPayloadRegistration {
 
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("2");
+        registrar.playToServer(StormReloadPayload.TYPE, StormReloadPayload.STREAM_CODEC, StormReloadPayload::handle);
         registrar.playToClient(InfuserAutomationPayload.PAYLOAD_TYPE, InfuserAutomationPayload.STREAM_CODEC, InfuserAutomationPayload::handle);
         registrar.playToServer(
                 ResetTradesPayload.PAYLOAD_TYPE,
@@ -59,6 +60,8 @@ public final class TradingCellPayloadRegistration {
         registrar.playToClient(TradingCellMenuSyncPayload.PAYLOAD_TYPE, TradingCellMenuSyncPayload.STREAM_CODEC);
         registrar.playToClient(AutotraderMenuSyncPayload.PAYLOAD_TYPE, AutotraderMenuSyncPayload.STREAM_CODEC);
         registrar.playToClient(QuarryCatalogSyncPayload.PAYLOAD_TYPE, QuarryCatalogSyncPayload.STREAM_CODEC);
+        registrar.playToClient(QuarryFilterSyncPayload.PAYLOAD_TYPE, QuarryFilterSyncPayload.STREAM_CODEC, QuarryFilterSyncPayload::handle);
+        registrar.playToServer(QuarryFilterTogglePayload.PAYLOAD_TYPE, QuarryFilterTogglePayload.STREAM_CODEC, QuarryFilterTogglePayload::handle);
         registrar.playToClient(NetworkTerminalSyncPayload.PAYLOAD_TYPE, NetworkTerminalSyncPayload.STREAM_CODEC);
         registrar.playToClient(NetworkCraftingSyncPayload.PAYLOAD_TYPE, NetworkCraftingSyncPayload.STREAM_CODEC);
         registrar.playToClient(PipeMenuSyncPayload.PAYLOAD_TYPE, PipeMenuSyncPayload.STREAM_CODEC);

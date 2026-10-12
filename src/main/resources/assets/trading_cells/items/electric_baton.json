@@ -1,0 +1,96 @@
+{
+  "model": {
+    "type": "minecraft:range_dispatch",
+    "property": "trading_cells:storm_weapon",
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "trading_cells:item/storm/electric_baton"
+    },
+    "entries": [
+      {
+        "threshold": 1,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_loaded"
+        }
+      },
+      {
+        "threshold": 10.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_0"
+        }
+      },
+      {
+        "threshold": 10.1,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_1"
+        }
+      },
+      {
+        "threshold": 10.2,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_2"
+        }
+      },
+      {
+        "threshold": 10.3,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_3"
+        }
+      },
+      {
+        "threshold": 10.4,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_4"
+        }
+      },
+      {
+        "threshold": 10.5,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_5"
+        }
+      },
+      {
+        "threshold": 10.6,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_6"
+        }
+      },
+      {
+        "threshold": 10.7,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_7"
+        }
+      },
+      {
+        "threshold": 10.8,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_8"
+        }
+      },
+      {
+        "threshold": 10.9,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_9"
+        }
+      },
+      {
+        "threshold": 11.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "trading_cells:item/storm/electric_baton_reload_10"
+        }
+      }
+    ]
+  }
+}

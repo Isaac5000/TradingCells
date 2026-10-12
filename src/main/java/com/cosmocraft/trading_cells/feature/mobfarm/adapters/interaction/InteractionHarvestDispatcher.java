@@ -20,7 +20,7 @@ import net.minecraft.world.phys.Vec3;
 public final class InteractionHarvestDispatcher {
     private static final Map<MinecraftServer, DisposableInteractionLevel> LEVELS = new IdentityHashMap<>();
     private static final List<InteractionHarvestHandler> HANDLERS = new ArrayList<>(List.of(
-            new BeeHarvestHandler(), new MooshroomHarvestHandler(), new CreakingHarvestHandler()));
+            new BeeHarvestHandler(), new MooshroomHarvestHandler(), new CreakingHarvestHandler(), new DragonBreathHarvestHandler()));
     private InteractionHarvestDispatcher() { }
 
     public static void registerHandler(InteractionHarvestHandler handler) { HANDLERS.add(java.util.Objects.requireNonNull(handler)); }

@@ -42,6 +42,16 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 
 public final class MobFarmRegistrationAdapter {
+    public static final DeferredBlock<com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureGeneratorBlock> CREATURE_GENERATOR = Registration.BLOCKS.register("creature_generator",
+            () -> new com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureGeneratorBlock(MachineBlockProperties.villager("creature_generator")));
+    public static final DeferredItem<BlockItem> CREATURE_GENERATOR_ITEM = Registration.ITEMS.register("creature_generator",
+            () -> new BlockItem(CREATURE_GENERATOR.get(), properties("creature_generator").useBlockDescriptionPrefix()));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureGeneratorBlockEntity>> CREATURE_GENERATOR_BLOCK_ENTITY =
+            Registration.BLOCK_ENTITY_TYPES.register("creature_generator", () -> new BlockEntityType<>(com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureGeneratorBlockEntity::new, CREATURE_GENERATOR.get()));
+    public static final DeferredHolder<MenuType<?>, MenuType<EssenceWorkbenchMenu>> CREATURE_GENERATOR_MENU = Registration.MENU_TYPES.register("creature_generator",
+            () -> new MenuType<>(EssenceWorkbenchMenu::creatureGenerator, FeatureFlags.VANILLA_SET));
+    public static final DeferredItem<net.minecraft.world.item.SpawnEggItem> GENERIC_SPAWN_EGG = Registration.ITEMS.register("generic_spawn_egg",
+            () -> new net.minecraft.world.item.SpawnEggItem(properties("generic_spawn_egg")));
     public static final DeferredBlock<EntityInteractionFarmBlock> INTERACTION_BLOCK = Registration.BLOCKS.register("entity_interaction_farm",
             () -> new EntityInteractionFarmBlock(MachineBlockProperties.villager("entity_interaction_farm")));
     public static final DeferredItem<BlockItem> INTERACTION_ITEM = Registration.ITEMS.register("entity_interaction_farm",
@@ -132,6 +142,8 @@ public final class MobFarmRegistrationAdapter {
                 (net.neoforged.neoforge.event.OnDatapackSyncEvent event) -> event.sendRecipes(STABILIZATION_TYPE.get()));
     }
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(Capabilities.Item.BLOCK, CREATURE_GENERATOR_BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
+        event.registerBlockEntity(Capabilities.Fluid.BLOCK, CREATURE_GENERATOR_BLOCK_ENTITY.get(), (bench, side) -> bench.fluidHandler());
         event.registerBlockEntity(Capabilities.Item.BLOCK, INTERACTION_BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
         event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), PortableMachineItemHandler::new);
         event.registerBlockEntity(Capabilities.Item.BLOCK, WORKBENCH_BLOCK_ENTITY.get(), PortableMachineItemHandler::new);

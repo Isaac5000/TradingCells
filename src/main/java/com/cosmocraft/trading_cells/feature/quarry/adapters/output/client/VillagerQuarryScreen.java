@@ -66,6 +66,7 @@ public final class VillagerQuarryScreen extends MachineContainerScreen<QuarryMen
 
     private final QuarryCatalogPanel catalog = new QuarryCatalogPanel();
     private Button catalogButton;
+    private boolean catalogClick;
 
     public VillagerQuarryScreen(QuarryMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, VillagerQuarryMenuLayout.WIDTH, VillagerQuarryMenuLayout.HEIGHT);
@@ -77,6 +78,12 @@ public final class VillagerQuarryScreen extends MachineContainerScreen<QuarryMen
     @Override
     protected void init() {
         super.init();
+        addRenderableWidget(new com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineToggleButton(
+                leftPos + 10, topPos + 7, 103, menu::enabled, button -> {
+                    if (minecraft.gameMode != null) {
+                        minecraft.gameMode.handleInventoryButtonClick(menu.containerId, QuarryMenu.TOGGLE_ENABLED_BUTTON);
+                    }
+                }));
         catalogButton = addRenderableWidget(Button.builder(Component.literal("?"), button -> catalog.toggle(menu))
                 .bounds(leftPos + CATALOG_BUTTON_X, topPos + CATALOG_BUTTON_Y,
                         CATALOG_BUTTON_SIZE, CATALOG_BUTTON_SIZE)
@@ -126,6 +133,8 @@ public final class VillagerQuarryScreen extends MachineContainerScreen<QuarryMen
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        catalogClick = catalog.mouseClicked(event.x(), event.y(), event.button(), leftPos, topPos, menu);
+        if (catalogClick) { return true; }
         boolean overCatalogButton = catalogButton != null && catalogButton.isMouseOver(event.x(), event.y());
         if (catalog.isOpen() && !overCatalogButton) {
             catalog.close();
@@ -141,6 +150,11 @@ public final class VillagerQuarryScreen extends MachineContainerScreen<QuarryMen
     private void drawBackground(GuiGraphicsExtractor graphics) {
         com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineGuiSkin.QUARRY.draw(
                 graphics, leftPos, topPos, imageWidth, imageHeight);
+    }
+
+    @Override public boolean mouseReleased(MouseButtonEvent event) {
+        if (catalogClick) { catalogClick = false; return true; }
+        return super.mouseReleased(event);
     }
 
     private void drawInventorySlots(GuiGraphicsExtractor graphics) {
@@ -230,8 +244,6 @@ public final class VillagerQuarryScreen extends MachineContainerScreen<QuarryMen
     }
 
     private void drawLabels(GuiGraphicsExtractor graphics) {
-        FittedTextRenderer.centered(graphics, font, Component.translatable("gui.trading_cells.inputs"),
-                9, 115, 8, 18, TEXT_DARK, false);
         FittedTextRenderer.centered(graphics, font, title, 126, 340, 7, 12, TEXT_DARK, false);
         FittedTextRenderer.centered(graphics, font, playerInventoryTitle,
                 INVENTORY_HEADER_X, INVENTORY_HEADER_X + INVENTORY_HEADER_WIDTH,

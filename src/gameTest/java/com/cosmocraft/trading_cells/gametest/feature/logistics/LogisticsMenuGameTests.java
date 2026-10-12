@@ -24,7 +24,42 @@ public final class LogisticsMenuGameTests {
                 new GameTestCase("logistics_terminal_pending_route", 160, LogisticsMenuGameTests::pendingRoute),
                 new GameTestCase("logistics_terminal_matching_inventory_deposit", 160, LogisticsMenuGameTests::matchingDeposit),
                 new GameTestCase("logistics_copy_partial_invalid_fields", 20, LogisticsMenuGameTests::clipboard),
+                new GameTestCase("logistics_terminal_shared_chest_count", 160, LogisticsMenuGameTests::sharedChest),
                 new GameTestCase("logistics_horizontal_farm_extraction", 100, LogisticsMenuGameTests::horizontalFarm));
+    }
+
+    private static void sharedChest(GameTestHelper helper) {
+        var chest = net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.ChestBlock.FACING, Direction.WEST);
+        helper.setBlock(SOURCE, chest.setValue(net.minecraft.world.level.block.ChestBlock.TYPE,
+                net.minecraft.world.level.block.state.properties.ChestType.RIGHT));
+        helper.setBlock(SOURCE.south(), chest.setValue(net.minecraft.world.level.block.ChestBlock.TYPE,
+                net.minecraft.world.level.block.state.properties.ChestType.LEFT));
+        // Neighbour updates during placement can reset the first half.
+        helper.setBlock(SOURCE, chest.setValue(net.minecraft.world.level.block.ChestBlock.TYPE,
+                net.minecraft.world.level.block.state.properties.ChestType.RIGHT));
+        var storage = helper.getBlockEntity(SOURCE, net.minecraft.world.level.block.entity.ChestBlockEntity.class);
+        storage.setItem(0, new ItemStack(Items.DIAMOND, 64));
+        var origin = pipe(helper, ORIGIN, PipeKind.ITEM);
+        var second = pipe(helper, ORIGIN.south(), PipeKind.ITEM);
+        origin.setMode(Direction.WEST, PipeSideMode.INSERT);
+        second.setMode(Direction.WEST, PipeSideMode.INSERT);
+        helper.startSequence().thenWaitUntil(() -> helper.assertTrue(
+                network(helper).topologyReady(origin.getBlockPos(), LogisticsResourceType.ITEM), "Shared chest route ready"))
+                .thenExecute(() -> {
+                    var listed = network(helper).resourcesFrom(origin.getBlockPos(), LogisticsResourceType.ITEM);
+                    helper.assertValueEqual(listed.size(), 1, "One logical resource");
+                    helper.assertValueEqual(listed.getFirst().amount(), 64L, "Two chest connections count storage only once");
+                    var incremental = network(helper).beginListing(origin.getBlockPos(), LogisticsResourceType.ITEM);
+                    helper.assertTrue(incremental.advance(), "Small listing finishes within budget");
+                    helper.assertValueEqual(incremental.result().getFirst().amount(), 64L, "Incremental terminal count agrees");
+                    var target = new net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler(1);
+                    var resource = listed.getFirst();
+                    helper.assertValueEqual(network(helper).transferFromNetwork(origin.getBlockPos(), resource.adapterId(),
+                            resource.resourceId(), resource.componentFingerprint(), target, 1), 1L, "Withdraw one");
+                    helper.assertValueEqual(network(helper).resourcesFrom(origin.getBlockPos(), LogisticsResourceType.ITEM)
+                            .getFirst().amount(), 63L, "Display decreases by one, not two");
+                }).thenSucceed();
     }
 
     private static void matchingDeposit(GameTestHelper helper) {
