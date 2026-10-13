@@ -28,7 +28,15 @@ public class StormWeaponItem extends ProjectileWeaponItem {
         super(properties.component(DataComponents.TOOLTIP_DISPLAY,
                 TooltipDisplay.DEFAULT.withHidden(DataComponents.CHARGED_PROJECTILES, true)));
     }
-    @Override public Predicate<ItemStack> getAllSupportedProjectiles() { return stack -> StormChargeData.charge(stack) > 0; }
+    /** Required abstract bridge in NeoForge 26.2; gameplay uses the stack-sensitive overload. */
+    @Deprecated
+    @Override public Predicate<ItemStack> getAllSupportedProjectiles() { return getAllSupportedProjectiles(ItemStack.EMPTY); }
+    @Override public Predicate<ItemStack> getAllSupportedProjectiles(ItemStack weapon) {
+        return stack -> StormChargeData.charge(stack) > 0;
+    }
+    @Override public Predicate<ItemStack> getSupportedHeldProjectiles(ItemStack weapon) {
+        return getAllSupportedProjectiles(weapon);
+    }
     @Override public int getDefaultProjectileRange() { return 8; }
     @Override public ItemStack getDefaultCreativeAmmo(@Nullable Player player, ItemStack weapon) { return ItemStack.EMPTY; }
     @Override protected void shootProjectile(LivingEntity shooter, Projectile projectile, int index, float power,

@@ -62,9 +62,7 @@ public final class DisposableInteractionLevel extends ServerLevel {
 
     private DisposableInteractionLevel(ServerLevel source, Path root, LevelStorageSource.LevelStorageAccess storage) {
         super(source.getServer(), Runnable::run, storage,
-                new PrimaryLevelData(new LevelSettings("interaction", GameType.SURVIVAL,
-                        LevelSettings.DifficultySettings.DEFAULT, false, WorldDataConfiguration.DEFAULT),
-                        PrimaryLevelData.SpecialWorldProperty.FLAT, Lifecycle.stable()),
+                createLevelData(),
                 ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("trading_cells", "interaction_sandbox")),
                 new LevelStem(source.registryAccess().lookupOrThrow(Registries.DIMENSION_TYPE).getOrThrow(
                         ResourceKey.create(Registries.DIMENSION_TYPE, Identifier.withDefaultNamespace("overworld"))),
@@ -76,6 +74,14 @@ public final class DisposableInteractionLevel extends ServerLevel {
         localFeatures = source.enabledFeatures();
         localRules = source.getGameRules().copy(enabledFeatures());
         noSave = true;
+    }
+
+    // NeoForge 26.2 exposes no PrimaryLevelData constructor without this deprecated enum.
+    @SuppressWarnings("deprecation")
+    private static PrimaryLevelData createLevelData() {
+        return new PrimaryLevelData(new LevelSettings("interaction", GameType.SURVIVAL,
+                LevelSettings.DifficultySettings.DEFAULT, false, WorldDataConfiguration.DEFAULT),
+                PrimaryLevelData.SpecialWorldProperty.FLAT, Lifecycle.stable());
     }
 
     public static DisposableInteractionLevel create(ServerLevel source) throws IOException {
