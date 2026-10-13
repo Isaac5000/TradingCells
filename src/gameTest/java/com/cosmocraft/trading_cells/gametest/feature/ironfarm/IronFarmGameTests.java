@@ -2,10 +2,10 @@ package com.cosmocraft.trading_cells.gametest.feature.ironfarm;
 
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestFixtures;
+import com.cosmocraft.trading_cells.gametest.shared.BlockEntityStateFixtures;
 import java.util.List;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.input.IronFarmBlockEntity;
 import com.cosmocraft.trading_cells.feature.ironfarm.adapters.output.IronFarmRegistrationAdapter;
-import java.util.Set;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -27,7 +27,7 @@ public final class IronFarmGameTests {
         IronFarmBlockEntity ironFarm = helper.getBlockEntity(GameTestFixtures.TEST_POS, IronFarmBlockEntity.class);
         ironFarm.setItem(IronFarmBlockEntity.FIRST_VILLAGER_SLOT, GameTestFixtures.adultVillagerCapture(helper));
         ironFarm.dataAccess().set(1, 0);
-        prepareIronFarmOutputs(ironFarm, 63, 0);
+        prepareIronFarmOutputs(helper, ironFarm, 63, 0);
         ironFarm.dataAccess().set(0, ironFarm.dataAccess().get(3) - 1);
 
         ironFarm.processTick();
@@ -44,7 +44,7 @@ public final class IronFarmGameTests {
                 "Iron Farm must pause once no active output has capacity"
         );
 
-        prepareIronFarmOutputs(ironFarm, 64, 63);
+        prepareIronFarmOutputs(helper, ironFarm, 64, 63);
         ironFarm.dataAccess().set(1, 1);
         ironFarm.processTick();
         helper.assertValueEqual(
@@ -55,22 +55,16 @@ public final class IronFarmGameTests {
         helper.succeed();
     }
 
-    private static void prepareIronFarmOutputs(IronFarmBlockEntity ironFarm, int ironCount, int poppyCount) {
-        try {
-            var itemsField = IronFarmBlockEntity.class.getDeclaredField("items");
-            itemsField.setAccessible(true);
-            List<ItemStack> items = (List<ItemStack>) itemsField.get(ironFarm);
-            items.set(IronFarmBlockEntity.FIRST_OUTPUT_SLOT, new ItemStack(Items.IRON_INGOT, ironCount));
-            int firstBlockedSlot = IronFarmBlockEntity.FIRST_OUTPUT_SLOT + 1;
-            if (poppyCount > 0) {
-                items.set(firstBlockedSlot, new ItemStack(Items.POPPY, poppyCount));
-                firstBlockedSlot++;
-            }
-            for (int slot = firstBlockedSlot; slot < IronFarmBlockEntity.CONTAINER_SIZE; slot++) {
-                items.set(slot, new ItemStack(Items.COBBLESTONE, 64));
-            }
-        } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("Could not prepare Iron Farm outputs", exception);
+    private static void prepareIronFarmOutputs(GameTestHelper helper, IronFarmBlockEntity ironFarm,
+            int ironCount, int poppyCount) {
+        BlockEntityStateFixtures.fillIndexedSlots(helper, ironFarm, "Slot",
+                IronFarmBlockEntity.FIRST_OUTPUT_SLOT, 1, new ItemStack(Items.IRON_INGOT, ironCount));
+        int firstBlockedSlot = IronFarmBlockEntity.FIRST_OUTPUT_SLOT + 1;
+        if (poppyCount > 0) {
+            BlockEntityStateFixtures.fillIndexedSlots(helper, ironFarm, "Slot",
+                    firstBlockedSlot++, 1, new ItemStack(Items.POPPY, poppyCount));
         }
+        BlockEntityStateFixtures.fillIndexedSlots(helper, ironFarm, "Slot", firstBlockedSlot,
+                IronFarmBlockEntity.CONTAINER_SIZE - firstBlockedSlot, new ItemStack(Items.COBBLESTONE, 64));
     }
 }

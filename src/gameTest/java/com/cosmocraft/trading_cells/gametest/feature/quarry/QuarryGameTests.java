@@ -5,7 +5,6 @@ import com.cosmocraft.trading_cells.gametest.shared.GameTestFixtures;
 import java.util.List;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryBlockEntity;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
-import java.util.Set;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -114,7 +113,7 @@ public final class QuarryGameTests {
         QuarryBlockEntity quarry = helper.getBlockEntity(GameTestFixtures.TEST_POS, QuarryBlockEntity.class);
         quarry.setItem(QuarryBlockEntity.WORKER_SLOT, GameTestFixtures.adultVillagerCapture(helper));
         quarry.setItem(QuarryBlockEntity.PICKAXE_SLOT, new ItemStack(Items.WOODEN_PICKAXE));
-        prepareQuarryPartialOutput(quarry);
+        prepareQuarryPartialOutput(helper, quarry);
         quarry.dataAccess().set(0, quarry.dataAccess().get(1) - 1);
 
         quarry.processTick();
@@ -133,23 +132,17 @@ public final class QuarryGameTests {
         helper.succeed();
     }
 
-    private static void prepareQuarryPartialOutput(QuarryBlockEntity quarry) {
-        try {
-            var itemsField = QuarryBlockEntity.class.getDeclaredField("items");
-            itemsField.setAccessible(true);
-            List<ItemStack> items = (List<ItemStack>) itemsField.get(quarry);
-            items.set(QuarryBlockEntity.FIRST_OUTPUT_SLOT, new ItemStack(Items.REDSTONE, 63));
-            for (int slot = QuarryBlockEntity.FIRST_OUTPUT_SLOT + 1;
-                 slot < QuarryBlockEntity.FIRST_OUTPUT_SLOT + QuarryBlockEntity.OUTPUT_SLOT_COUNT;
-                 slot++) {
-                items.set(slot, new ItemStack(Items.COBBLESTONE, 64));
-            }
-
-            var pendingField = QuarryBlockEntity.class.getDeclaredField("pendingResult");
-            pendingField.setAccessible(true);
-            pendingField.set(quarry, List.of(new ItemStack(Items.REDSTONE, 8)));
-        } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("Could not prepare Quarry outputs", exception);
-        }
+    private static void prepareQuarryPartialOutput(GameTestHelper helper, QuarryBlockEntity quarry) {
+        BlockEntityStateFixtures.fillIndexedSlots(helper, quarry, "Slot",
+                QuarryBlockEntity.FIRST_OUTPUT_SLOT, 1, new ItemStack(Items.REDSTONE, 63));
+        BlockEntityStateFixtures.fillIndexedSlots(helper, quarry, "Slot",
+                QuarryBlockEntity.FIRST_OUTPUT_SLOT + 1, QuarryBlockEntity.OUTPUT_SLOT_COUNT - 1,
+                new ItemStack(Items.COBBLESTONE, 64));
+        CompoundTag state = quarry.saveWithFullMetadata(helper.getLevel().registryAccess());
+        state.putInt("PendingResultCount", 1);
+        state.put("PendingResult0", ItemStack.CODEC.encodeStart(
+                helper.getLevel().registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE),
+                new ItemStack(Items.REDSTONE, 8)).getOrThrow());
+        reload(helper, quarry, state);
     }
 }

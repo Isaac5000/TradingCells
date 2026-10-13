@@ -8,6 +8,16 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 
 ## Estado actual
 
+- Revision 2026-10-13: cinco avisos de compilacion tratados. Armas usan las
+  APIs de proyectiles con ItemStack; queda el puente abstracto obligatorio
+  marcado Deprecated. Constructor de PrimaryLevelData aislado con supresion
+  local documentada: NeoForge 26.2 aun exige SpecialWorldProperty, sin sustituto.
+  Fixtures de cantera/hierro sin casts ni reflexion; trial spawner usa reglas
+  normales restauradas en finally, sin API marcada para eliminacion.
+  Compilacion dirigida sin esos avisos; `check releaseCheck` y 166 GameTests
+  correctos. Evidencia: `artifacts/compiler-warnings-directed.log` y
+  `artifacts/compiler-warnings-check.log`. Sin cambios en GitHub.
+
 - Ampliacion 2026-10-12 cerrada: porra/soldador descargan con la animacion de
   carga invertida (30 ticks), sin duplicacion y con otra pulsacion de R inmediata.
   Recetas usan cobre en vez de pararrayos; soldador lleva fragmento de tormenta

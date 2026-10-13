@@ -16,6 +16,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.network.chat.Component;
@@ -26,6 +27,7 @@ import net.minecraft.world.entity.animal.parrot.Parrot;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -55,6 +57,8 @@ import net.minecraft.world.level.block.entity.vault.VaultBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.gamerules.GameRuleMap;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
@@ -288,12 +292,31 @@ public final class SilkTouchTwoGameTests {
     }
 
     private static void assertRepeatableTrialSpawner(GameTestHelper helper) {
+        var difficulty = new TestEnvironmentDefinition.SetDifficulty(Difficulty.NORMAL);
+        var rules = GameRuleMap.of();
+        rules.set(GameRules.SPAWN_MOBS, true);
+        rules.set(GameRules.SPAWNER_BLOCKS_WORK, true);
+        var environment = new TestEnvironmentDefinition.SetGameRules(rules);
+        var previousDifficulty = difficulty.setup(helper.getLevel());
+        try {
+            var previousRules = environment.setup(helper.getLevel());
+            try {
+                assertRepeatableTrialSpawnerWithSpawning(helper);
+            } finally {
+                environment.teardown(helper.getLevel(), previousRules);
+            }
+        } finally {
+            difficulty.teardown(helper.getLevel(), previousDifficulty);
+        }
+    }
+
+    private static void assertRepeatableTrialSpawnerWithSpawning(GameTestHelper helper) {
         BlockPos absolutePos = helper.absolutePos(GameTestFixtures.TEST_POS);
         helper.setBlock(GameTestFixtures.TEST_POS, Blocks.TRIAL_SPAWNER);
         TrialSpawnerBlockEntity blockEntity = helper.getBlockEntity(GameTestFixtures.TEST_POS, TrialSpawnerBlockEntity.class);
         TrialSpawner trialSpawner = blockEntity.getTrialSpawner();
         trialSpawner.overrideEntityToSpawn(EntityTypes.ZOMBIE, helper.getLevel());
-        trialSpawner.overridePeacefulAndMobSpawnRule();
+        helper.assertTrue(trialSpawner.canSpawnInLevel(helper.getLevel()), "Trial fixture must allow normal spawning");
         helper.assertTrue(trialSpawner.getPlayerDetector() == PlayerDetector.INCLUDING_CREATIVE_PLAYERS,
                 "Trial spawners must detect creative players by distance");
         TrialSpawnerExtension extension = (TrialSpawnerExtension) (Object) trialSpawner;
