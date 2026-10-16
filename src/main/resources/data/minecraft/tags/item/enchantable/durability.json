@@ -2,6 +2,8 @@
   "replace": false,
   "values": [
     "trading_cells:villager_capturer",
-    "trading_cells:piglin_capturer"
+    "trading_cells:piglin_capturer",
+    "trading_cells:electric_baton",
+    "trading_cells:electric_arc_welder"
   ]
 }

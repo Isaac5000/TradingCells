@@ -78,7 +78,15 @@ final class StormUiFixture {
                 }
             }
             case 1 -> { capture(mc, "01-station"); mc.player.closeContainer(); }
-            case 2 -> capture(mc, "02-welder-first-person");
+            case 2 -> {
+                var attack = new net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered(
+                        0, mc.options.keyAttack, InteractionHand.MAIN_HAND);
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(attack);
+                if (!attack.isCanceled() || attack.shouldSwingHand()) {
+                    throw new IllegalStateException("Welder left click must cancel attack and swing");
+                }
+                capture(mc, "02-welder-first-person");
+            }
             case 3 -> tapReload();
             case 4 -> capture(mc, "03-welder-reload-first");
             case 5 -> {
@@ -166,11 +174,13 @@ final class StormUiFixture {
             case 40 -> captureUnload(mc, "21-baton-unload-third");
             case 41 -> mc.gui.setScreen(new EggSheet());
             case 42 -> { capture(mc, "22-tier-eggs"); mc.gui.setScreen(null); }
-            case 43 -> {
+            case 43 -> mc.gui.setScreen(new ChargeSheet());
+            case 44 -> { capture(mc, "23-weapon-charge-bars"); mc.gui.setScreen(null); }
+            case 45 -> {
                 mc.options.setCameraType(CameraType.FIRST_PERSON);
                 server(mc, player -> player.openMenu((StormStationBlockEntity) player.level().getBlockEntity(synthesizer.west(2))));
             }
-            case 44 -> { if (mc.gui.screen() == null) { return; } ready = true; }
+            case 46 -> { if (mc.gui.screen() == null) { return; } ready = true; }
             default -> { return; }
         }
         phase++; next = System.nanoTime() + 800_000_000L;
@@ -260,6 +270,39 @@ final class StormUiFixture {
             for (int i = 0; i < items.size(); i++) {
                 g.pose().pushMatrix(); g.pose().translate(width / 2F - 120 + i % 3 * 85, height / 2F - 75 + i / 3 * 85);
                 g.pose().scale(4, 4); g.fill(0, 0, 16, 16, 0xFFAAAAAA); g.item(items.get(i), 0, 0); g.pose().popMatrix();
+            }
+        }
+        @Override public boolean isPauseScreen() { return false; }
+    }
+
+    private static final class ChargeSheet extends Screen {
+        private final java.util.List<ItemStack> items = new java.util.ArrayList<>();
+        ChargeSheet() {
+            super(Component.literal("Weapon charge bars"));
+            for (var item : java.util.List.of(CombatRegistrationAdapter.BATON.get(), CombatRegistrationAdapter.WELDER.get(), CombatRegistrationAdapter.CAPACITOR.get())) {
+                for (int charge : new int[] {256, 128, 16, 0}) {
+                    var stack = item.getDefaultInstance();
+                    if (item instanceof VoltaicCapacitorItem) {
+                        StormChargeData.setCharge(stack, charge);
+                    } else {
+                        var cell = CombatRegistrationAdapter.CAPACITOR.get().getDefaultInstance();
+                        StormChargeData.setCharge(cell, charge);
+                        StormWeaponItem.setBattery(stack, cell);
+                    }
+                    items.add(stack);
+                }
+            }
+        }
+        @Override public void extractRenderState(GuiGraphicsExtractor g, int x, int y, float partial) {
+            g.fill(0, 0, width, height, 0xFF282C30);
+            for (int i = 0; i < items.size(); i++) {
+                g.pose().pushMatrix();
+                g.pose().translate(width / 2F - 145 + i % 4 * 75, height / 2F - 110 + i / 4 * 75);
+                g.pose().scale(4, 4);
+                g.fill(0, 0, 16, 16, 0xFFAAAAAA);
+                g.item(items.get(i), 0, 0);
+                g.itemDecorations(Minecraft.getInstance().font, items.get(i), 0, 0);
+                g.pose().popMatrix();
             }
         }
         @Override public boolean isPauseScreen() { return false; }

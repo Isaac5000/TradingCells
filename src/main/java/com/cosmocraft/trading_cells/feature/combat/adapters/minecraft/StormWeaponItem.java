@@ -2,6 +2,11 @@ package com.cosmocraft.trading_cells.feature.combat.adapters.minecraft;
 
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.function.Consumer;
+import com.cosmocraft.trading_cells.feature.combat.domain.model.StormChargeRules;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -25,7 +30,7 @@ public class StormWeaponItem extends ProjectileWeaponItem {
     private static final String START = "TradingCellsStormReloadStart";
     private static final String OWNER = "TradingCellsStormReloadOwner";
     public StormWeaponItem(Properties properties) {
-        super(properties.component(DataComponents.TOOLTIP_DISPLAY,
+        super(properties.durability(StormChargeRules.CAPACITY).enchantable(14).component(DataComponents.TOOLTIP_DISPLAY,
                 TooltipDisplay.DEFAULT.withHidden(DataComponents.CHARGED_PROJECTILES, true)));
     }
     /** Required abstract bridge in NeoForge 26.2; gameplay uses the stack-sensitive overload. */
@@ -49,12 +54,49 @@ public class StormWeaponItem extends ProjectileWeaponItem {
     public static void setBattery(ItemStack weapon, ItemStack battery) {
         weapon.set(DataComponents.CHARGED_PROJECTILES, battery.isEmpty() ? ChargedProjectiles.EMPTY
                 : ChargedProjectiles.ofNonEmpty(List.of(battery.copyWithCount(1))));
+        weapon.set(DataComponents.DAMAGE, 0);
     }
-    public static boolean consumeCharge(ItemStack weapon) {
+    @Override public boolean isBarVisible(ItemStack stack) { return !battery(stack).isEmpty(); }
+    @Override public int getBarWidth(ItemStack stack) {
+        var cell = battery(stack);
+        int capacity = StormChargeData.capacity(cell);
+        return capacity == 0 ? 0 : Math.round(13F * StormChargeData.charge(cell) / capacity);
+    }
+    @Override public int getBarColor(ItemStack stack) {
+        var cell = battery(stack);
+        int capacity = StormChargeData.capacity(cell);
+        float remaining = capacity == 0 ? 0 : (float) StormChargeData.charge(cell) / capacity;
+        return net.minecraft.util.Mth.hsvToRgb(remaining / 3F, 1, 1);
+    }
+    @Override public int getMaxDamage(ItemStack stack) {
+        int capacity = StormChargeData.capacity(battery(stack));
+        return capacity == 0 ? StormChargeRules.CAPACITY : capacity;
+    }
+    @Override public int getDamage(ItemStack stack) {
+        var cell = battery(stack);
+        return StormChargeData.capacity(cell) - StormChargeData.charge(cell);
+    }
+    @Override public boolean isDamaged(ItemStack stack) { return getDamage(stack) > 0; }
+    // Vanilla Mending repairs this view; the installed capacitor remains the only source of charge.
+    @Override public void setDamage(ItemStack stack, int damage) {
+        var cell = battery(stack);
+        if (cell.isEmpty()) { return; }
+        int capacity = StormChargeData.capacity(cell);
+        StormChargeData.setCharge(cell, capacity - Math.clamp(damage, 0, capacity));
+        setBattery(stack, cell);
+    }
+    @Override public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity,
+            Consumer<Item> onBroken) {
+        // Electrical operations pay once below. Vanilla sword wear must not charge twice or destroy the weapon.
+        return 0;
+    }
+    public static boolean consumeCharge(ItemStack weapon, ServerLevel level) {
         ItemStack battery = battery(weapon);
         int charge = StormChargeData.charge(battery);
         if (charge == 0) { return false; }
-        StormChargeData.setCharge(battery, charge - 1);
+        int spent = weapon.has(DataComponents.UNBREAKABLE) ? 0 : Math.max(0,
+                EnchantmentHelper.processDurabilityChange(level, weapon, 1));
+        StormChargeData.setCharge(battery, charge - spent);
         setBattery(weapon, battery);
         return true;
     }

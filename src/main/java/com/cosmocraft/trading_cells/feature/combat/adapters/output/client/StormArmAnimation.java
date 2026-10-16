@@ -54,8 +54,10 @@ public final class StormArmAnimation {
         int side = use.arm() == HumanoidArm.RIGHT ? 1 : -1;
         var holding = model.getArm(use.arm());
         float lift = use.loading() ? lift(use.progress()) : 0;
-        holding.xRot = Mth.lerp(lift, -Mth.HALF_PI + model.head.xRot * 0.85F, -1.35F);
-        holding.yRot = Mth.lerp(lift, model.head.yRot * 0.7F - side * 0.3F, -side * 0.35F);
+        float restingPitch = use.welder() ? -1.32F : -Mth.HALF_PI;
+        float inwardYaw = use.welder() ? 0.5F : 0.3F;
+        holding.xRot = Mth.lerp(lift, restingPitch + model.head.xRot * 0.85F, -1.35F);
+        holding.yRot = Mth.lerp(lift, model.head.yRot * 0.7F - side * inwardYaw, -side * 0.35F);
         holding.zRot = 0;
         if (!use.loading()) { return; }
         var opposite = model.getArm(use.arm().getOpposite());
@@ -63,7 +65,7 @@ public final class StormArmAnimation {
         float transfer = lift * (1 - smooth((use.progress()-0.78F)/0.2F));
         var target = use.welder() ? new Vector3f(4.3F - 7*approach, 9.5F, 9.2F) : new Vector3f(5.5F - 7*approach, 3.5F, 8);
         float scale = use.welder() ? 0.6F : 0.75F;
-        target.sub(8,8,8).mul(scale).add(0, use.welder() ? 3 : 3.5F, use.welder() ? -2 : 0);
+        target.sub(8,8,8).mul(scale).add(0, use.welder() ? 1.5F : 3.5F, use.welder() ? -2 : 0);
         if (use.welder()) { target.rotateX(75 * lift * Mth.DEG_TO_RAD); }
         target.add(side, 2, -10).rotateY(Mth.PI).rotateX(-Mth.HALF_PI);
         boolean slim = state instanceof AvatarRenderState avatar && avatar.skin.model() == net.minecraft.world.entity.player.PlayerModelType.SLIM;

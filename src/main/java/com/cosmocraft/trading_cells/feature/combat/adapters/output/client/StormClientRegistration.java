@@ -19,6 +19,13 @@ import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 @EventBusSubscriber(modid = "trading_cells", value = Dist.CLIENT)
 public final class StormClientRegistration {
     private StormClientRegistration() { }
+    @SubscribeEvent public static void attack(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
+        var player = net.minecraft.client.Minecraft.getInstance().player;
+        if (event.isAttack() && player != null && player.getMainHandItem().is(CombatRegistrationAdapter.WELDER.get())) {
+            event.setSwingHand(false);
+            event.setCanceled(true);
+        }
+    }
     @SubscribeEvent public static void extensions(RegisterClientExtensionsEvent event) {
         event.registerItem(new IClientItemExtensions() {
             @Override public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(
