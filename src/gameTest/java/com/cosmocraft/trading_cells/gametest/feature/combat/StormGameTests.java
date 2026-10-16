@@ -28,6 +28,7 @@ public final class StormGameTests {
                 new GameTestCase("storm_inventory_baton_no_sky_lightning", 40, StormGameTests::baton),
                 new GameTestCase("storm_welder_charge_per_second", 40, StormGameTests::welder),
                 new GameTestCase("storm_reload_eject_and_recipe", 120, StormGameTests::reloadAndUpgrade),
+                new GameTestCase("storm_reload_tap_swap_hold_eject", 40, StormGameTests::reloadTapAndHold),
                 new GameTestCase("storm_reverse_unload_and_recipes", 40, StormGameTests::reverseUnload),
                 new GameTestCase("storm_weapon_charge_durability_enchantments", 40, StormGameTests::chargeDurability),
                 new GameTestCase("storm_welder_blocks_melee_and_mining", 40, StormGameTests::noMeleeOrMining),
@@ -287,6 +288,81 @@ public final class StormGameTests {
         helper.assertFalse(player.isUsingItem(), "Empty battery cannot start a beam");
         helper.succeed();
     }
+    private static void finishStormAnimation(GameTestHelper h, net.minecraft.world.entity.player.Player player, ItemStack weapon) {
+        var data = weapon.get(DataComponents.CUSTOM_DATA).copyTag();
+        data.putLong("TradingCellsStormReloadStart", h.getLevel().getGameTime() - StormWeaponItem.RELOAD_TICKS);
+        weapon.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(data));
+        weapon.getItem().inventoryTick(weapon, h.getLevel(), player, player.getMainHandItem() == weapon
+                ? net.minecraft.world.entity.EquipmentSlot.MAINHAND : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
+    }
+    private static void reloadTapAndHold(GameTestHelper h) {
+        for (var item : List.of(CombatRegistrationAdapter.BATON.get(), CombatRegistrationAdapter.WELDER.get())) {
+            for (var hand : InteractionHand.values()) {
+                for (int charge : new int[] {0, 1, 128, 256}) {
+                    var player = h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+                    var weapon = item.getDefaultInstance();
+                    player.setItemInHand(hand, weapon);
+                    var spare = battery(200);
+                    player.getInventory().setItem(10, spare);
+                    var previous = battery(charge);
+                    previous.set(DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Old battery"));
+                    StormWeaponItem.setBattery(weapon, previous);
+                    StormWeaponItem.requestReload(player, hand, false);
+                    h.assertTrue(StormWeaponItem.unloading(weapon) && StormWeaponItem.battery(weapon).isEmpty(),
+                            "Tap first unloads installed battery");
+                    h.assertTrue(spare.getCount() == 1, "Unloading does not consume replacement");
+                    StormWeaponItem.requestReload(player, hand, false);
+                    h.assertTrue(StormWeaponItem.unloading(weapon), "Duplicate request cannot skip unloading");
+                    finishStormAnimation(h, player, weapon);
+                    h.assertTrue(StormWeaponItem.reloading(weapon) && StormWeaponItem.battery(weapon).isEmpty(),
+                            "Unloading automatically starts separate reload animation");
+                    h.assertTrue(spare.getCount() == 1, "Reload animation does not consume replacement early");
+                    finishStormAnimation(h, player, weapon);
+                    h.assertValueEqual(StormChargeData.charge(StormWeaponItem.battery(weapon)), 200,
+                            "Uses selected spare, not old battery returned to an earlier slot");
+                    h.assertTrue(spare.isEmpty(), "Replacement consumed exactly once");
+                    h.assertValueEqual(player.getInventory().getNonEquipmentItems().stream()
+                            .filter(s -> ItemStack.isSameItemSameComponents(s, previous)).mapToInt(ItemStack::getCount).sum(), 1,
+                            "Old battery returned once with charge and components");
+                    StormWeaponItem.requestReload(player, hand, true);
+                    finishStormAnimation(h, player, weapon);
+                    h.assertTrue(StormWeaponItem.battery(weapon).isEmpty() && !StormWeaponItem.animating(weapon),
+                            "Hold only ejects, even with charged replacements available");
+                }
+                var player = h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+                var weapon = item.getDefaultInstance();
+                player.setItemInHand(hand, weapon);
+                StormWeaponItem.setBattery(weapon, battery(128));
+                StormWeaponItem.requestReload(player, hand, false);
+                finishStormAnimation(h, player, weapon);
+                h.assertTrue(StormWeaponItem.battery(weapon).isEmpty() && !StormWeaponItem.animating(weapon),
+                        "Without a spare, tap only ejects and never reloads the returned battery");
+                for (int slot = 0; slot < 36; slot++) { player.getInventory().setItem(slot, ItemStack.EMPTY); }
+                player.setItemInHand(hand, weapon);
+                var spare = battery(200);
+                player.getInventory().setItem(10, spare);
+                // A battery inserted during the animation must not be replaced at commit, even if empty.
+                for (int charge : new int[] {0, 128}) {
+                    StormWeaponItem.setBattery(weapon, ItemStack.EMPTY);
+                    StormWeaponItem.requestReload(player, hand, false);
+                    h.assertTrue(StormWeaponItem.reloading(weapon), "Unloaded weapon accepts a fresh reload press");
+                    StormWeaponItem.setBattery(weapon, battery(charge));
+                    finishStormAnimation(h, player, weapon);
+                    h.assertFalse(StormWeaponItem.animating(weapon), "Conflicting reload is cancelled at commit");
+                    h.assertValueEqual(StormChargeData.charge(StormWeaponItem.battery(weapon)), charge,
+                            "Commit preserves newly installed battery");
+                    h.assertTrue(player.getInventory().getItem(10) == spare && spare.getCount() == 1,
+                            "Conflicting reload does not consume spare");
+                }
+                StormWeaponItem.requestReload(player, hand, false);
+                player.getInventory().setItem(10, ItemStack.EMPTY);
+                finishStormAnimation(h, player, weapon);
+                h.assertFalse(StormWeaponItem.animating(weapon), "Missing selected spare cancels queued reload");
+                h.assertTrue(StormWeaponItem.battery(weapon).isEmpty(), "Missing spare cannot reload returned battery instead");
+            }
+        }
+        h.succeed();
+    }
     private static void reloadAndUpgrade(GameTestHelper h) {
         var player = h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         var item = CombatRegistrationAdapter.WELDER.get();
@@ -308,9 +384,10 @@ public final class StormGameTests {
         h.assertTrue(player.getOffhandItem().isEmpty(), "Loaded battery removed exactly once");
         h.assertValueEqual(StormChargeData.charge(player.getInventory().getItem(10)), 30, "Spare remains untouched");
         StormWeaponItem.requestReload(player, InteractionHand.MAIN_HAND, false);
-        h.runAfterDelay(31, () -> {
-        item.inventoryTick(weapon, h.getLevel(), player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
-        h.assertValueEqual(StormChargeData.charge(StormWeaponItem.battery(weapon)), 30, "Partially used battery can be replaced");
+        finishStormAnimation(h, player, weapon);
+        h.assertTrue(StormWeaponItem.reloading(weapon), "Swap starts loading after unloading");
+        finishStormAnimation(h, player, weapon);
+        h.assertValueEqual(StormChargeData.charge(StormWeaponItem.battery(weapon)), 30, "Tap replaces partially used battery");
         h.assertTrue(player.getInventory().getNonEquipmentItems().stream().anyMatch(s -> StormChargeData.charge(s) == 60), "Previous battery returned");
         var ops = h.getLevel().registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
         var restored = ItemStack.CODEC.parse(ops, ItemStack.CODEC.encodeStart(ops, weapon).getOrThrow()).getOrThrow();
@@ -352,11 +429,10 @@ public final class StormGameTests {
         StormWeaponItem.setBattery(weapon, battery(0));
         StormWeaponItem.requestReload(player, InteractionHand.MAIN_HAND, false);
         h.assertTrue(StormWeaponItem.battery(weapon).isEmpty() && !StormWeaponItem.reloading(weapon),
-                "Empty-battery press only ejects even with a charged spare available");
-        StormWeaponItem.requestReload(player, InteractionHand.MAIN_HAND, false);
-        h.assertTrue(StormWeaponItem.reloading(weapon), "Second press starts reload without cooldown");
+                "Empty-battery tap starts with unloading");
+        finishStormAnimation(h, player, weapon);
+        h.assertTrue(StormWeaponItem.reloading(weapon), "Tap automatically loads spare after empty-battery ejection");
         h.succeed();
-        });
         });
     }
     private static void damage(GameTestHelper h) {

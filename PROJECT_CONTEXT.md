@@ -8,14 +8,38 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 
 ## Estado actual
 
+- Soldador 2026-10-16: brazo recto hacia delante, sin giro lateral fijo;
+  sigue la mirada, conserva agarre alto, hombros fijos y recarga. Primera
+  persona intacta. OpenGL+REI/derecha comprobado: `artifacts/storm-straight-arm-opengl`.
+  Vulkan/izquierda sin REI no completo inicio ni genero capturas/summary.csv;
+  pendiente visual, registro `artifacts/storm-straight-arm-vulkan.log`.
+  `checkGraphicsBackendIndependence check releaseCheck`: 169 GameTests correctos,
+  `artifacts/storm-straight-arm-check.log`.
+
+- Creativo 2026-10-16: mejoras al final de Objetos, orden tuberias/barter/
+  cantera/velocidad/capacidad; cada familia de cobre a netherita. Catalogo
+  validado en GameTest; `check releaseCheck`, 169 pruebas correctas.
+  Evidencia: `artifacts/creative-upgrade-order-check.log`.
+
+- Recarga 2026-10-16 revisada: pulsacion corta de R expulsa y encadena carga;
+  mantener 12 ticks solo expulsa, sin recargar al soltar. Recambio elegido
+  antes de devolver la bateria usada; sin recambio solo descarga. Validacion
+  de ranura y arma vacia antes de consumir; estados transitorios se cancelan
+  al cambiar de arma/soltar/desconectar. Sustituye el bloqueo previo con carga.
+  `verifyDomainRules check releaseCheck` correctos; 169 GameTests.
+  Evidencia: `artifacts/storm-reload-swap-tests.log` y
+  `artifacts/storm-reload-swap-check.log`. Sin repetir matriz visual.
+
 - Revision 2026-10-16 cerrada: soldador sin minado, melee ni gesto de golpe;
   ambas armas muestran carga como durabilidad, con Irrompible y Reparacion
   vanilla (2 cargas/XP, sin crear baterias ni destruir el arma vacia).
   Condensador y armas comparten barras verde/amarillo/rojo. Soldador agarrado
-  alto en el mango, mas centrado hacia el pecho y ligeramente bajo la cabeza,
-  simetrico por mano; hombros fijos y primera persona intacta.
+  alto en el mango; postura anterior del brazo restaurada por peticion posterior
+  (sin acercarlo al pecho ni bajarlo). Hombros fijos y primera persona intacta.
   `check releaseCheck`: 168 GameTests. OpenGL+REI/derecha y Vulkan sin
   REI/izquierda comprobados: `artifacts/storm-chest-charge-*`.
+  Restauracion posterior del brazo: `check releaseCheck`, 168 GameTests,
+  `artifacts/storm-arm-restore-check.log`; sin repetir la matriz visual.
   Contrato: `docs/ELECTRIC_EQUIPMENT.md`. Sin cambios en GitHub ni PNG.
 
 - Revision 2026-10-13: cinco avisos de compilacion tratados. Armas usan las

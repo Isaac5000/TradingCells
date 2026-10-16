@@ -36,26 +36,32 @@ canceladas no dejan cambios. Sin redstone, FE ni consumidores externos nuevos.
 
 ## Armas
 
-- Ambas cargan una bateria fisica durante 30 ticks tras pulsar R una vez.
-  Tecla configurable en Controles, categoria Trading Cells: equipo. Soltar
-  la tecla no cancela. Mantenerla 12 ticks (0,6 s) cancela y expulsa la bateria,
-  tenga o no carga. La pulsacion inicial expulsa una bateria agotada aunque
-  no haya recambio; esa pulsacion solo expulsa. Una nueva pulsacion puede iniciar
-  inmediatamente otra recarga, sin enfriamiento. Mantener R nunca la reinicia.
-  Vuelve al inventario o cae delante del jugador si no cabe.
+- Pulsacion corta de R (al soltar antes de 12 ticks): si hay bateria, la
+  expulsa y encadena descarga de 30 ticks con carga de 30 ticks; si no hay,
+  inicia directamente la carga. Sin recambio cargado, solo expulsa.
+  Tecla configurable en Controles, categoria Trading Cells: equipo.
+  Mantenerla 12 ticks (0,6 s) solo cancela y expulsa, tenga o no carga;
+  soltar despues no recarga. Otra pulsacion corta puede cargar inmediatamente.
+  La bateria vuelve al inventario o cae delante del jugador si no cabe.
+  El recambio se elige antes de devolver la bateria usada para no seleccionarla
+  por accidente. Su ranura se revalida al iniciar y completar la carga.
   Seleccion de municion de
   Minecraft: manos primero, despues inventario; solo condensadores con carga.
   `minecraft:charged_projectiles` guarda la bateria completa. Hasta terminar
-  no se retira nada. Cancelar, perder la fuente o cambiar de objeto no consume.
+  no se retira el recambio. Cancelar, perder la fuente o cambiar de objeto no consume.
   Soltar el arma o desconectarse cancela la operacion pendiente.
-  Al sustituir, la anterior vuelve al inventario o cae una vez si no cabe.
+  Al completar la recarga se comprueba que el arma siga sin bateria; si ha
+  recibido otra durante la animacion, se cancela sin consumir el recambio.
   Una bateria descargada permanece dentro del arma.
 - Descarga visual: 30 ticks con el mismo recorrido de carga reproducido al
   reves, incluidos mano opuesta y condensador, en ambas perspectivas y brazos.
   La bateria real se devuelve una sola vez al expulsar; terminar o cancelar la
-  animacion no transfiere objetos. Otra pulsacion de R inicia la carga sin espera.
+  animacion no devuelve objetos de nuevo. La descarga solicitada por pulsacion
+  corta encadena la carga; mantener R nunca la encadena.
   `TradingCellsStormUnloading` es estado visual transitorio y comparte inicio y
-  propietario de la recarga. Dejar de sostener el arma, soltar o desconectarse lo
+  propietario de la recarga. `TradingCellsStormReloadAfterUnload` y
+  `TradingCellsStormReloadSourceSlot` guardan la continuacion transitoria.
+  Dejar de sostener el arma, soltar o desconectarse lo
   limpia con las reglas existentes de recarga.
 - Recetas de armas: porra usa lingote de cobre en vez de pararrayos; soldador
   usa dos lingotes de cobre y fragmento de tormenta central en vez del bloque
@@ -101,9 +107,10 @@ canceladas no dejan cambios. Sin redstone, FE ni consumidores externos nuevos.
   cerca del cuerpo del arma, en
   tercera persona, en ambos brazos y todos los estados. Postura del brazo y
   primera persona intactas; trayectoria de la mano de recarga sigue el nuevo encaje.
-  Revision 2026-10-16: giro del brazo hacia el pecho, simetrico por mano, y ligera
-  bajada del arma respecto a la cabeza. Conserva ese agarre alto y los hombros
-  fijos; la primera persona no cambia. El condensador tambien usa la barra
+  Revision 2026-10-16: retirado por peticion del usuario el giro hacia el pecho
+  y la bajada del brazo; ajuste posterior deja el brazo recto hacia delante,
+  sin inclinacion lateral fija, siguiendo la mirada. Conserva ese agarre alto
+  y los hombros fijos; recarga y primera persona no cambian. El condensador tambien usa la barra
   vanilla de verde a rojo, igual que su carga visible dentro de las armas.
   El giro de la mano cargada acerca el alojamiento al alcance de la otra mano.
   En primera persona el condensador descansa sobre la palma, sin quedar oculto

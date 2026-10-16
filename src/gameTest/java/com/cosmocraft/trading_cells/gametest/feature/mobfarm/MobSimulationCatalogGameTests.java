@@ -31,6 +31,16 @@ public final class MobSimulationCatalogGameTests {
         helper.assertTrue(items.contains(MobFarmRegistrationAdapter.WORKBENCH_ITEM.get()), "Workbench available in creative");
         helper.assertTrue(items.contains(MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get()), "Extractor available in creative");
         var utilities = CreativeTabRegistration.ITEMS_TAB.get().getDisplayItems().stream().map(stack -> stack.getItem()).toList();
+        var expectedUpgrades = new java.util.ArrayList<String>();
+        for (String family : List.of("%s_pipe_upgrade", "piglin_barter_%s_upgrade", "quarry_%s_upgrade",
+                "speed_%s_upgrade", "capacity_%s_upgrade")) {
+            for (String material : List.of("copper", "iron", "gold", "diamond", "netherite")) {
+                expectedUpgrades.add("trading_cells:" + family.formatted(material));
+            }
+        }
+        var finalItems = utilities.subList(utilities.size() - expectedUpgrades.size(), utilities.size()).stream()
+                .map(item -> BuiltInRegistries.ITEM.getKey(item).toString()).toList();
+        helper.assertValueEqual(finalItems, expectedUpgrades, "Items tab ends with pipe, barter, quarry, speed and capacity upgrades in tier order");
         for (int tier = 0; tier < 5; tier++) {
             var speed = MobFarmRegistrationAdapter.UPGRADES.get(tier).get();
             helper.assertTrue(utilities.contains(speed) && !items.contains(speed), "Speed upgrades only in Items tab");
