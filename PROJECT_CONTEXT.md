@@ -8,6 +8,16 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 
 ## Estado actual
 
+- Revision 2026-10-16 cerrada: soldador sin minado, melee ni gesto de golpe;
+  ambas armas muestran carga como durabilidad, con Irrompible y Reparacion
+  vanilla (2 cargas/XP, sin crear baterias ni destruir el arma vacia).
+  Condensador y armas comparten barras verde/amarillo/rojo. Soldador agarrado
+  alto en el mango, mas centrado hacia el pecho y ligeramente bajo la cabeza,
+  simetrico por mano; hombros fijos y primera persona intacta.
+  `check releaseCheck`: 168 GameTests. OpenGL+REI/derecha y Vulkan sin
+  REI/izquierda comprobados: `artifacts/storm-chest-charge-*`.
+  Contrato: `docs/ELECTRIC_EQUIPMENT.md`. Sin cambios en GitHub ni PNG.
+
 - Revision 2026-10-13: cinco avisos de compilacion tratados. Armas usan las
   APIs de proyectiles con ItemStack; queda el puente abstracto obligatorio
   marcado Deprecated. Constructor de PrimaryLevelData aislado con supresion

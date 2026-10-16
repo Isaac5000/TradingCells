@@ -17,7 +17,7 @@ public final class ElectricBatonItem extends StormWeaponItem {
     }
     @Override public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
         if (attacker.level() instanceof ServerLevel level && attacker instanceof Player player
-                && consumeCharge(stack)) {
+                && consumeCharge(stack, level)) {
             StormLightningEvents.strike(level, target, attacker);
             StormLightningEvents.arc(level, attacker.getEyePosition(), target.getBoundingBox().getCenter());
             level.playSound(null, target.blockPosition(), com.cosmocraft.trading_cells.feature.combat.adapters.output.CombatRegistrationAdapter.BATON_HIT.get(),

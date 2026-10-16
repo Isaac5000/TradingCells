@@ -1,6 +1,6 @@
 # Equipo electrico
 
-## Contrato actual, 2026-10-12
+## Contrato actual, 2026-10-16
 
 - Fulgurita retirada por peticion expresa: bloque, objeto, generacion natural,
   descarga, loot y recursos. Un mundo que la contenga pierde ese contenido al
@@ -9,7 +9,8 @@
   `electric_baton`, `electric_arc_welder`. Solo existe un condensador, de 256
   cargas. `advanced_voltaic_capacitor` queda como alias de lectura, sin objeto,
   receta ni entrada creativa separados; conserva componentes y carga guardados.
-- No hay descarga pasiva, FE ni XP.
+- No hay descarga pasiva ni FE. La estacion no usa XP; Reparacion en un arma
+  permite recargar el condensador instalado con orbes de XP.
   `TradingCellsStormCharge` conserva carga previa, nombre y otros componentes.
 - Receta: redstone_block arriba, diamond/copper_block/diamond en medio y
   copper_ingot abajo. Apariencia azul de la antigua version de 256 cargas.
@@ -62,9 +63,23 @@ canceladas no dejan cambios. Sin redstone, FE ni consumidores externos nuevos.
 - Soldador cargado: clic derecho dispara. Porra: clic izquierdo golpea como
   espada. Recarga de ambos exclusivamente con su tecla; no necesita mantener
   clic derecho. Disparar no gasta baterias de reserva.
+- Soldador: clic izquierdo no inicia minado, rompe bloques ni ataca entidades,
+  tanto en supervivencia como en creativo. Se cancela tambien el gesto de golpe
+  del cliente; clic derecho y R conservan sus funciones.
+- Ambas armas muestran una barra de durabilidad vanilla proporcional a la bateria instalada,
+  con colores de verde (llena) a amarillo y rojo (agotada),
+  incluso llena o vacia; sin bateria no hay barra. La carga es la fuente unica:
+  no existe desgaste paralelo del arma ni se destruye al agotarse.
+- Irrompible aplica el efecto vanilla de ahorro de durabilidad a cada cargo
+  electrico. Una operacion ahorrada sigue funcionando, pero una bateria vacia
+  nunca habilita un disparo/golpe electrico. Reparacion usa la seleccion normal
+  de equipo y los orbes de XP vanilla: dos cargas por XP, sin superar capacidad;
+  XP restante llega al jugador. Sin bateria no gasta XP ni crea un condensador.
+  Carga y componentes se conservan al expulsar, guardar y recargar.
 - Porra: dano base 1 sin carga y 16 con carga (+15 electricos), antes de
   modificadores vanilla como criticos, armadura o encantamientos. Consume una
-  carga por golpe acertado; conserva velocidad y desgaste de espada de hierro.
+  carga por golpe acertado antes de Irrompible; conserva velocidad de espada de
+  hierro, sin su segundo cargo de desgaste vanilla.
 - Soldador: alcance 8 bloques, choque con bloques y primera entidad viva en
   trayectoria. Pulsar consume inmediatamente una carga, aunque se suelte antes
   del primer tick. Cada 20 ticks consume otra; agotarse interrumpe el uso.
@@ -82,6 +97,14 @@ canceladas no dejan cambios. Sin redstone, FE ni consumidores externos nuevos.
   posterior del usuario. La otra conserva su postura normal salvo al recargar.
   Arma vertical y mano opuesta siguiendo la bateria lateral durante la recarga;
   admite zurdos. Los hombros no se trasladan ni se estiran los brazos.
+  Ajuste 2026-10-15: encaje 1,5 unidades de modelo mas arriba en el mango,
+  cerca del cuerpo del arma, en
+  tercera persona, en ambos brazos y todos los estados. Postura del brazo y
+  primera persona intactas; trayectoria de la mano de recarga sigue el nuevo encaje.
+  Revision 2026-10-16: giro del brazo hacia el pecho, simetrico por mano, y ligera
+  bajada del arma respecto a la cabeza. Conserva ese agarre alto y los hombros
+  fijos; la primera persona no cambia. El condensador tambien usa la barra
+  vanilla de verde a rojo, igual que su carga visible dentro de las armas.
   El giro de la mano cargada acerca el alojamiento al alcance de la otra mano.
   En primera persona el condensador descansa sobre la palma, sin quedar oculto
   dentro de su volumen. Se respeta la anchura de los modelos de piel slim.
@@ -104,6 +127,18 @@ quedan fuera de este contrato. Explosion de creeper cargado deja un fragmento;
 el loot de muerte y Botin no cambian.
 
 ## Recursos y validacion
+
+Revision 2026-10-16: `check releaseCheck` correctos, 168 GameTests, registro
+`artifacts/storm-chest-charge-final-check.log`. Pruebas de carga/barra, colores
+iguales en arma y condensador, Irrompible, Reparacion con orbes reales en ambas
+manos, XP sobrante, bateria vacia/ausente, persistencia y expulsion. Minado y
+ataques bloqueados en supervivencia/creativo; desgaste vanilla sin doble cobro.
+OpenGL+REI/derecha y Vulkan sin REI/izquierda verificados en
+`artifacts/storm-chest-charge-opengl` y `artifacts/storm-chest-charge-vulkan`:
+agarre alto, postura hacia el pecho, recarga/descarga, vistas extremas, barra
+verde/amarilla/roja/vacia de los tres objetos y gesto de ataque cancelado.
+Las recetas retiradas del mundo plantilla siguen produciendo avisos de carga
+preexistentes; no se han modificado ese mundo fuente, las texturas ni GitHub.
 
 Revision posterior 2026-10-11: dano base 1/total cargado 16, pulsaciones separadas
 para expulsar/recargar y audio del usuario integrados. `check releaseCheck`

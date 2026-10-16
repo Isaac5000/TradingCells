@@ -29,6 +29,8 @@ public final class StormGameTests {
                 new GameTestCase("storm_welder_charge_per_second", 40, StormGameTests::welder),
                 new GameTestCase("storm_reload_eject_and_recipe", 120, StormGameTests::reloadAndUpgrade),
                 new GameTestCase("storm_reverse_unload_and_recipes", 40, StormGameTests::reverseUnload),
+                new GameTestCase("storm_weapon_charge_durability_enchantments", 40, StormGameTests::chargeDurability),
+                new GameTestCase("storm_welder_blocks_melee_and_mining", 40, StormGameTests::noMeleeOrMining),
                 new GameTestCase("storm_welder_damage_conversion", 40, StormGameTests::damage),
                 new GameTestCase("storm_lethal_hits_raw_loot", 40, StormGameTests::lethalHits),
                 new GameTestCase("storm_surviving_transformations", 40, StormGameTests::survivingTransformations),
@@ -38,6 +40,107 @@ public final class StormGameTests {
         var stack = new ItemStack(CombatRegistrationAdapter.CAPACITOR.get());
         StormChargeData.setCharge(stack, charge);
         return stack;
+    }
+
+    private static void chargeDurability(GameTestHelper h) {
+        var level = h.getLevel();
+        var enchantments = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        var mending = enchantments.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.MENDING);
+        var unbreaking = enchantments.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.UNBREAKING);
+        for (var item : List.of(CombatRegistrationAdapter.BATON.get(), CombatRegistrationAdapter.WELDER.get())) {
+            var weapon = item.getDefaultInstance();
+            h.assertFalse(weapon.isBarVisible() || weapon.isDamaged(), "Unloaded weapon has no charge or repair demand");
+            for (int charge : new int[] {0, 16, 128, 256}) {
+                var capacitor = battery(charge);
+                StormWeaponItem.setBattery(weapon, capacitor);
+                h.assertValueEqual(capacitor.getBarColor(), weapon.getBarColor(), "Capacitor and weapon share vanilla charge colors");
+                h.assertValueEqual(capacitor.getBarWidth(), weapon.getBarWidth(), "Capacitor and weapon share charge bar width");
+            }
+            StormWeaponItem.setBattery(weapon, ItemStack.EMPTY);
+            h.assertTrue(weapon.supportsEnchantment(mending) && weapon.supportsEnchantment(unbreaking),
+                    "Both battery enchantments support the weapon");
+            var cell = battery(128);
+            cell.set(DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Named capacitor"));
+            StormWeaponItem.setBattery(weapon, cell);
+            h.assertTrue(weapon.isBarVisible(), "Installed battery shows a bar");
+            h.assertValueEqual(weapon.getBarWidth(), 7, "Half charge occupies half the bar");
+            h.assertValueEqual(weapon.getBarColor(), 0xFFFF00, "Half-charge bar is vanilla yellow");
+            h.assertValueEqual(weapon.getDamageValue(), 128, "Durability view follows missing charge");
+            var player = h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+            player.setItemInHand(InteractionHand.MAIN_HAND, weapon);
+            weapon.enchant(mending, 1);
+            player.takeXpDelay = 0;
+            new net.minecraft.world.entity.ExperienceOrb(level, player.position(), net.minecraft.world.phys.Vec3.ZERO, 5).playerTouch(player);
+            h.assertValueEqual(StormChargeData.charge(StormWeaponItem.battery(weapon)), 138, "Vanilla Mending adds two charges per XP");
+            h.assertValueEqual(player.totalExperience, 0, "Used repair XP is not awarded twice");
+            h.assertValueEqual(StormWeaponItem.battery(weapon).getHoverName().getString(), "Named capacitor", "Mending preserves battery components");
+            StormWeaponItem.setBattery(weapon, battery(254));
+            player.takeXpDelay = 0;
+            new net.minecraft.world.entity.ExperienceOrb(level, player.position(), net.minecraft.world.phys.Vec3.ZERO, 5).playerTouch(player);
+            h.assertValueEqual(StormChargeData.charge(StormWeaponItem.battery(weapon)), 256, "Mending cannot overcharge");
+            h.assertValueEqual(weapon.getBarColor(), 0x00FF00, "Full-charge bar is vanilla green");
+            h.assertValueEqual(player.totalExperience, 4, "Unused XP reaches the player");
+            StormWeaponItem.setBattery(weapon, ItemStack.EMPTY);
+            player.takeXpDelay = 0;
+            new net.minecraft.world.entity.ExperienceOrb(level, player.position(), net.minecraft.world.phys.Vec3.ZERO, 3).playerTouch(player);
+            h.assertValueEqual(player.totalExperience, 7, "Unloaded weapon consumes no repair XP");
+            h.assertTrue(StormWeaponItem.battery(weapon).isEmpty(), "Repair never creates a capacitor");
+            StormWeaponItem.setBattery(weapon, battery(1));
+            h.assertTrue(StormWeaponItem.consumeCharge(weapon, level), "Last charge pays once");
+            h.assertFalse(StormWeaponItem.consumeCharge(weapon, level), "Empty battery cannot power an operation");
+            h.assertValueEqual(weapon.getBarColor(), 0xFF0000, "Empty-charge bar is vanilla red");
+            weapon.hurtAndBreak(10, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+            h.assertFalse(weapon.isEmpty(), "Empty battery and vanilla sword wear never break weapon");
+            player.takeXpDelay = 0;
+            new net.minecraft.world.entity.ExperienceOrb(level, player.position(), net.minecraft.world.phys.Vec3.ZERO, 1).playerTouch(player);
+            h.assertValueEqual(StormChargeData.charge(StormWeaponItem.battery(weapon)), 2, "Completely empty installed battery can be mended");
+            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            player.setItemInHand(InteractionHand.OFF_HAND, weapon);
+            player.takeXpDelay = 0;
+            new net.minecraft.world.entity.ExperienceOrb(level, player.position(), net.minecraft.world.phys.Vec3.ZERO, 2).playerTouch(player);
+            h.assertValueEqual(StormChargeData.charge(StormWeaponItem.battery(weapon)), 6, "Offhand Mending also repairs the installed capacitor");
+            player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+            player.setItemInHand(InteractionHand.MAIN_HAND, weapon);
+            StormWeaponItem.setBattery(weapon, battery(256));
+            weapon.enchant(unbreaking, 3);
+            for (int i = 0; i < 128; i++) { h.assertTrue(StormWeaponItem.consumeCharge(weapon, level), "Unbreaking never cancels the operation"); }
+            int remaining = StormChargeData.charge(StormWeaponItem.battery(weapon));
+            h.assertTrue(remaining > 128 && remaining < 256, "Unbreaking III probabilistically saves charge");
+            var encoded = ItemStack.CODEC.encodeStart(level.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), weapon).getOrThrow();
+            var restored = ItemStack.CODEC.parse(level.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), encoded).getOrThrow();
+            h.assertValueEqual(restored.getDamageValue(), 256 - remaining, "Charge durability survives serialization");
+            StormWeaponItem.ejectBattery(player, weapon);
+            h.assertTrue(player.getInventory().getNonEquipmentItems().stream().anyMatch(s -> StormChargeData.charge(s) == remaining),
+                    "Ejected capacitor retains its actual charge");
+        }
+        h.succeed();
+    }
+
+    private static void noMeleeOrMining(GameTestHelper h) {
+        var weapon = CombatRegistrationAdapter.WELDER.get().getDefaultInstance();
+        var target = h.spawn(EntityTypes.COW, POS);
+        float health = target.getHealth();
+        for (var mode : List.of(net.minecraft.world.level.GameType.SURVIVAL, net.minecraft.world.level.GameType.CREATIVE)) {
+            var player = new net.neoforged.neoforge.common.util.FakePlayer(h.getLevel(),
+                    new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "welder-test"));
+            player.setGameMode(mode);
+            player.setItemInHand(InteractionHand.MAIN_HAND, weapon);
+            for (int charge : List.of(0, 10)) {
+                StormWeaponItem.setBattery(weapon, battery(charge));
+                player.attack(target);
+                h.assertValueEqual(target.getHealth(), health, "Welder cannot inflict melee damage");
+                h.setBlock(POS, net.minecraft.world.level.block.Blocks.STONE);
+                h.assertFalse(player.gameMode.destroyBlock(h.absolutePos(POS)), "Welder cannot break blocks in either game mode");
+                h.assertBlockPresent(net.minecraft.world.level.block.Blocks.STONE, POS);
+                var event = new net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickBlock(
+                        player, h.absolutePos(POS), Direction.UP,
+                        net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickBlock.Action.START);
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event);
+                h.assertTrue(event.isCanceled(), "Left-click mining never starts");
+                h.assertValueEqual(StormChargeData.charge(StormWeaponItem.battery(weapon)), charge, "Blocked actions use no charge");
+            }
+        }
+        h.succeed();
     }
 
     private static void reverseUnload(GameTestHelper h) {

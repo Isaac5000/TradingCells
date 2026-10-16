@@ -162,7 +162,7 @@ def geometry():
     welder_display = dict(DISPLAY)
     welder_display["gui"] = {"rotation": [25, 135, 0], "translation": [2, -1, 0], "scale": [0.48] * 3}
     for hand, sign in (("right", 1), ("left", -1)):
-        welder_display[f"thirdperson_{hand}hand"] = {"rotation": [0, 0, 0], "translation": [0, 3, -2], "scale": [0.6] * 3}
+        welder_display[f"thirdperson_{hand}hand"] = {"rotation": [0, 0, 0], "translation": [0, 1.5, -2], "scale": [0.6] * 3}
         welder_display[f"firstperson_{hand}hand"] = {"rotation": [0, 0, 0], "translation": [0, -1, 1], "scale": [0.5] * 3}
     for name, builder, display in (("electric_arc_welder", welder, welder_display), ("electric_baton", baton, baton_display)):
         weapon_model(name, builder(), display)

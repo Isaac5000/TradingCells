@@ -20,10 +20,16 @@ public final class ElectricArcWelderItem extends StormWeaponItem {
     private static final double REACH = 8;
     public ElectricArcWelderItem(Properties properties) { super(properties); }
 
+    @Override public boolean canDestroyBlock(ItemStack stack, net.minecraft.world.level.block.state.BlockState state,
+            Level level, net.minecraft.core.BlockPos pos, LivingEntity user) { return false; }
+    @Override public boolean onLeftClickEntity(ItemStack stack, Player player, net.minecraft.world.entity.Entity entity) {
+        return true;
+    }
+
     @Override public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack weapon = player.getItemInHand(hand);
         if (reloading(weapon) || StormChargeData.charge(battery(weapon)) == 0) { return InteractionResult.FAIL; }
-        if (!level.isClientSide() && !consumeCharge(weapon)) { return InteractionResult.FAIL; }
+        if (level instanceof ServerLevel server && !consumeCharge(weapon, server)) { return InteractionResult.FAIL; }
         player.startUsingItem(hand);
         return InteractionResult.CONSUME;
     }
@@ -33,7 +39,7 @@ public final class ElectricArcWelderItem extends StormWeaponItem {
         if (reloading(stack) || !(world instanceof ServerLevel level) || !(user instanceof Player player)) { return; }
         int elapsed = getUseDuration(stack, user) - remaining;
         // Each charge prepays exactly one second, including the first partial second.
-        if (elapsed > 0 && elapsed % CHARGE_TICKS == 0 && !consumeCharge(stack)) { user.stopUsingItem(); return; }
+        if (elapsed > 0 && elapsed % CHARGE_TICKS == 0 && !consumeCharge(stack, level)) { user.stopUsingItem(); return; }
         if (elapsed % DAMAGE_TICKS != 0) { return; }
         var hit = trace(level, user, 1);
         if (hit.target() != null) {

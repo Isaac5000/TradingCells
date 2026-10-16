@@ -9,5 +9,7 @@ public final class VoltaicCapacitorItem extends Item {
     public int capacity() { return capacity; }
     @Override public boolean isBarVisible(ItemStack stack) { return true; }
     @Override public int getBarWidth(ItemStack stack) { return Math.round(13F * StormChargeData.charge(stack) / capacity); }
-    @Override public int getBarColor(ItemStack stack) { return 0x35CFF2; }
+    @Override public int getBarColor(ItemStack stack) {
+        return net.minecraft.util.Mth.hsvToRgb((float) StormChargeData.charge(stack) / capacity / 3F, 1, 1);
+    }
 }
