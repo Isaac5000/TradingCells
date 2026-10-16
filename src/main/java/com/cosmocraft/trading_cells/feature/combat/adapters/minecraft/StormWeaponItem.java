@@ -27,6 +27,8 @@ public class StormWeaponItem extends ProjectileWeaponItem {
     public static final int RELOAD_TICKS = 30;
     private static final String RELOADING = "TradingCellsStormReloading";
     private static final String UNLOADING = "TradingCellsStormUnloading";
+    private static final String RELOAD_AFTER_UNLOAD = "TradingCellsStormReloadAfterUnload";
+    private static final String SOURCE_SLOT = "TradingCellsStormReloadSourceSlot";
     private static final String START = "TradingCellsStormReloadStart";
     private static final String OWNER = "TradingCellsStormReloadOwner";
     public StormWeaponItem(Properties properties) {
@@ -115,6 +117,8 @@ public class StormWeaponItem extends ProjectileWeaponItem {
         var data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         data.remove(RELOADING);
         data.remove(UNLOADING);
+        data.remove(RELOAD_AFTER_UNLOAD);
+        data.remove(SOURCE_SLOT);
         data.remove(START);
         data.remove(OWNER);
         if (data.isEmpty()) { stack.remove(DataComponents.CUSTOM_DATA); }
@@ -134,17 +138,38 @@ public class StormWeaponItem extends ProjectileWeaponItem {
             ejectBattery(player, weapon);
             return;
         }
-        if (reloading(weapon)) { return; }
+        if (reloading(weapon) || weapon.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)
+                .copyTag().getBooleanOr(RELOAD_AFTER_UNLOAD, false)) { return; }
         player.stopUsingItem();
-        ItemStack loaded = battery(weapon);
-        if (!loaded.isEmpty() && StormChargeData.charge(loaded) == 0) {
+        // Select the replacement before returning the old battery to inventory.
+        ItemStack source = player.getProjectile(weapon);
+        int sourceSlot = source == player.getMainHandItem() ? -1 : source == player.getOffhandItem() ? -2
+                : player.getInventory().getNonEquipmentItems().indexOf(source);
+        boolean hasSource = StormChargeData.charge(source) > 0;
+        if (!battery(weapon).isEmpty()) {
             ejectBattery(player, weapon);
+            if (hasSource) {
+                var data = weapon.get(DataComponents.CUSTOM_DATA).copyTag();
+                data.putBoolean(RELOAD_AFTER_UNLOAD, true);
+                data.putInt(SOURCE_SLOT, sourceSlot);
+                weapon.set(DataComponents.CUSTOM_DATA, CustomData.of(data));
+            }
             return;
         }
-        if (StormChargeData.charge(player.getProjectile(weapon)) <= 0) { return; }
+        if (hasSource) { beginReload(player, weapon, sourceSlot); }
+    }
+    private static ItemStack reloadSource(Player player, int slot) {
+        if (slot == -1) { return player.getMainHandItem(); }
+        if (slot == -2) { return player.getOffhandItem(); }
+        var inventory = player.getInventory().getNonEquipmentItems();
+        return slot >= 0 && slot < inventory.size() ? inventory.get(slot) : ItemStack.EMPTY;
+    }
+    private static void beginReload(Player player, ItemStack weapon, int sourceSlot) {
         cancelReload(weapon);
+        if (!battery(weapon).isEmpty() || StormChargeData.charge(reloadSource(player, sourceSlot)) <= 0) { return; }
         var data = weapon.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         data.putBoolean(RELOADING, true);
+        data.putInt(SOURCE_SLOT, sourceSlot);
         data.putLong(START, player.level().getGameTime());
         data.putString(OWNER, player.getStringUUID());
         weapon.set(DataComponents.CUSTOM_DATA, CustomData.of(data));
@@ -180,15 +205,21 @@ public class StormWeaponItem extends ProjectileWeaponItem {
             return;
         }
         if (reloadProgress(weapon, level, 0) < 1) { return; }
-        if (unloading(weapon)) { cancelReload(weapon); return; }
+        if (unloading(weapon)) {
+            boolean reload = data.getBooleanOr(RELOAD_AFTER_UNLOAD, false);
+            int sourceSlot = data.getIntOr(SOURCE_SLOT, -3);
+            cancelReload(weapon);
+            if (reload) { beginReload(player, weapon, sourceSlot); }
+            return;
+        }
         cancelReload(weapon);
         // Revalidate at commit. Key release does not cancel this timed server operation.
-        ItemStack source = player.getProjectile(weapon);
+        if (!battery(weapon).isEmpty()) { return; }
+        ItemStack source = data.contains(SOURCE_SLOT) ? reloadSource(player, data.getIntOr(SOURCE_SLOT, -3))
+                : player.getProjectile(weapon);
         if (StormChargeData.charge(source) <= 0) { return; }
-        ItemStack previous = battery(weapon);
         setBattery(weapon, source.copyWithCount(1));
         source.shrink(1);
-        if (!previous.isEmpty() && !player.getInventory().add(previous)) { player.drop(previous, false); }
         player.getInventory().setChanged();
         level.playSound(null, player.blockPosition(), net.minecraft.sounds.SoundEvents.IRON_DOOR_CLOSE,
                 net.minecraft.sounds.SoundSource.PLAYERS, 0.5F, 1.5F);

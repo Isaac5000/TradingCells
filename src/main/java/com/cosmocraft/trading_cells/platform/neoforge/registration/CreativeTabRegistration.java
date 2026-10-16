@@ -36,7 +36,6 @@ public final class CreativeTabRegistration {
                         output.accept(ExperienceStorageRegistrationAdapter.ITEM.get());
                         output.accept(ArcaneInfuserRegistrationAdapter.ITEM.get());
                         LogisticsRegistrationAdapter.pipeItems().forEach(item -> output.accept(item.get()));
-                        LogisticsRegistrationAdapter.upgradeItems().forEach(item -> output.accept(item.get()));
                         output.accept(LogisticsRegistrationAdapter.WRENCH_ITEM.get());
                         output.accept(LogisticsRegistrationAdapter.TARGET_SELECTOR_ITEM.get());
                         output.accept(LogisticsRegistrationAdapter.TERMINAL_ITEM.get());
@@ -46,16 +45,6 @@ public final class CreativeTabRegistration {
                         output.accept(CombatRegistrationAdapter.STATION_ITEM.get());
                         output.accept(CombatRegistrationAdapter.BATON.get());
                         output.accept(CombatRegistrationAdapter.WELDER.get());
-                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_COPPER_UPGRADE_ITEM.get());
-                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_IRON_UPGRADE_ITEM.get());
-                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_GOLD_UPGRADE_ITEM.get());
-                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_DIAMOND_UPGRADE_ITEM.get());
-                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_NETHERITE_UPGRADE_ITEM.get());
-                        output.accept(QuarryRegistrationAdapter.QUARRY_COPPER_UPGRADE_ITEM.get());
-                        output.accept(QuarryRegistrationAdapter.QUARRY_IRON_UPGRADE_ITEM.get());
-                        output.accept(QuarryRegistrationAdapter.QUARRY_GOLD_UPGRADE_ITEM.get());
-                        output.accept(QuarryRegistrationAdapter.QUARRY_DIAMOND_UPGRADE_ITEM.get());
-                        output.accept(QuarryRegistrationAdapter.QUARRY_NETHERITE_UPGRADE_ITEM.get());
                         parameters.holders().lookup(Registries.ENCHANTMENT)
                                 .flatMap(enchantments -> enchantments.get(FarmerEnchantments.FARMER_TOUCH))
                                 .ifPresent(enchantment -> output.accept(EnchantmentHelper.createBook(
@@ -85,6 +74,17 @@ public final class CreativeTabRegistration {
                         output.accept(CaptureRegistrationAdapter.PIGLIN_CAPTURER_ITEM.get());
                         output.accept(CaptureRegistrationAdapter.UNBREAKABLE_VILLAGER_CAPTURER_ITEM.get());
                         output.accept(CaptureRegistrationAdapter.UNBREAKABLE_PIGLIN_CAPTURER_ITEM.get());
+                        LogisticsRegistrationAdapter.upgradeItems().forEach(item -> output.accept(item.get()));
+                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_COPPER_UPGRADE_ITEM.get());
+                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_IRON_UPGRADE_ITEM.get());
+                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_GOLD_UPGRADE_ITEM.get());
+                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_DIAMOND_UPGRADE_ITEM.get());
+                        output.accept(TraderRegistrationAdapter.PIGLIN_BARTER_NETHERITE_UPGRADE_ITEM.get());
+                        output.accept(QuarryRegistrationAdapter.QUARRY_COPPER_UPGRADE_ITEM.get());
+                        output.accept(QuarryRegistrationAdapter.QUARRY_IRON_UPGRADE_ITEM.get());
+                        output.accept(QuarryRegistrationAdapter.QUARRY_GOLD_UPGRADE_ITEM.get());
+                        output.accept(QuarryRegistrationAdapter.QUARRY_DIAMOND_UPGRADE_ITEM.get());
+                        output.accept(QuarryRegistrationAdapter.QUARRY_NETHERITE_UPGRADE_ITEM.get());
                         MobFarmRegistrationAdapter.UPGRADES.forEach(item -> output.accept(item.get()));
                     })
                     .build());

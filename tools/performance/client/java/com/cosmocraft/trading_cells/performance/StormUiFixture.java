@@ -249,6 +249,12 @@ final class StormUiFixture {
     }
     private static void capture(Minecraft mc, String name) {
         var model = mc.getEntityRenderDispatcher().getPlayerRenderer(mc.player).getModel();
+        if (name.equals("05-welder-active-third")) {
+            var holding = model.getArm(mc.player.getMainArm());
+            if (Math.abs(holding.yRot - model.head.yRot * 0.7F) > 0.001F || Math.abs(holding.zRot) > 0.001F) {
+                throw new IllegalStateException("Welder arm must point straight ahead without sideways tilt");
+            }
+        }
         if (mc.options.getCameraType() != CameraType.FIRST_PERSON && mc.player.getMainHandItem().getItem() instanceof StormWeaponItem) {
             for (var arm : java.util.List.of(model.leftArm, model.rightArm)) {
                 var original = arm.getInitialPose();

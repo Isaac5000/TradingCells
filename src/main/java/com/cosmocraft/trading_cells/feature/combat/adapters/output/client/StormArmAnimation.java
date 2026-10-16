@@ -54,10 +54,9 @@ public final class StormArmAnimation {
         int side = use.arm() == HumanoidArm.RIGHT ? 1 : -1;
         var holding = model.getArm(use.arm());
         float lift = use.loading() ? lift(use.progress()) : 0;
-        float restingPitch = use.welder() ? -1.32F : -Mth.HALF_PI;
-        float inwardYaw = use.welder() ? 0.5F : 0.3F;
-        holding.xRot = Mth.lerp(lift, restingPitch + model.head.xRot * 0.85F, -1.35F);
-        holding.yRot = Mth.lerp(lift, model.head.yRot * 0.7F - side * inwardYaw, -side * 0.35F);
+        holding.xRot = Mth.lerp(lift, -Mth.HALF_PI + model.head.xRot * 0.85F, -1.35F);
+        float aimYaw = model.head.yRot * 0.7F - (use.welder() ? 0 : side * 0.3F);
+        holding.yRot = Mth.lerp(lift, aimYaw, -side * 0.35F);
         holding.zRot = 0;
         if (!use.loading()) { return; }
         var opposite = model.getArm(use.arm().getOpposite());

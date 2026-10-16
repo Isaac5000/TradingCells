@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.feature.combat.adapters.output.client;
 
 import com.cosmocraft.trading_cells.feature.combat.adapters.minecraft.StormWeaponItem;
+import com.cosmocraft.trading_cells.feature.combat.domain.model.StormReloadGesture;
 import com.cosmocraft.trading_cells.platform.neoforge.network.StormReloadPayload;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
@@ -19,18 +20,26 @@ import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = "trading_cells", value = Dist.CLIENT)
 public final class StormReloadKey {
+    private static final StormReloadGesture GESTURE = new StormReloadGesture();
     private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("trading_cells", "equipment"));
     public static final KeyMapping RELOAD = new KeyMapping("key.trading_cells.storm_reload", KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, CATEGORY) {
         @Override public void setDown(boolean down) {
-            if (down && !isDown()) { pendingPress = true; }
+            boolean edge = down != isDown();
             super.setDown(down);
-            // A release/repress can happen between client ticks. It is still a new press.
-            if (!down) { held = 0; pressed = ItemStack.EMPTY; }
+            if (!edge) { return; }
+            var client = Minecraft.getInstance();
+            if (client.player == null || client.gui.screen() != null) { reset(); return; }
+            if (down) {
+                hand = client.player.getMainHandItem().getItem() instanceof StormWeaponItem
+                        ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+                pressed = client.player.getItemInHand(hand);
+            }
+            // Handle release edges here as a complete tap can happen between client ticks.
+            dispatch(GESTURE.setDown(down));
+            if (!down) { pressed = ItemStack.EMPTY; }
         }
     };
-    private static boolean pendingPress;
-    private static int held;
     private static InteractionHand hand = InteractionHand.MAIN_HAND;
     private static ItemStack pressed = ItemStack.EMPTY;
     private StormReloadKey() { }
@@ -42,17 +51,17 @@ public final class StormReloadKey {
         var client = Minecraft.getInstance();
         // Only physical press edges count: keyboard autorepeat must not reload on release.
         while (RELOAD.consumeClick()) { }
-        boolean press = pendingPress;
-        pendingPress = false;
-        if (client.player == null || client.gui.screen() != null) { held = 0; pressed = ItemStack.EMPTY; return; }
-        if (press) {
-            hand = client.player.getMainHandItem().getItem() instanceof StormWeaponItem ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
-            pressed = client.player.getItemInHand(hand);
-            if (pressed.getItem() instanceof StormWeaponItem) { send(hand, false); }
+        if (client.player == null || client.gui.screen() != null
+                || !ItemStack.isSameItem(pressed, client.player.getItemInHand(hand))) { reset(); return; }
+        dispatch(GESTURE.tick());
+    }
+    private static void reset() { GESTURE.reset(); pressed = ItemStack.EMPTY; }
+    private static void dispatch(StormReloadGesture.Action action) {
+        var player = Minecraft.getInstance().player;
+        if (action != StormReloadGesture.Action.NONE && player != null && pressed.getItem() instanceof StormWeaponItem
+                && ItemStack.isSameItem(pressed, player.getItemInHand(hand))) {
+            send(hand, action == StormReloadGesture.Action.EJECT);
         }
-        if (!RELOAD.isDown()) { held = 0; pressed = ItemStack.EMPTY; return; }
-        if (++held == 12 && pressed.getItem() instanceof StormWeaponItem
-                && ItemStack.isSameItem(pressed, client.player.getItemInHand(hand))) { send(hand, true); }
     }
     public static void send(InteractionHand hand, boolean eject) {
         ClientPacketDistributor.sendToServer(new StormReloadPayload(hand, eject));
