@@ -169,10 +169,10 @@ public final class LogisticsRegistrationAdapter {
                 .strength(1.5F, 6.0F)
                 .sound(SoundType.COPPER)
                 .noOcclusion()
-                .pushReaction(PushReaction.BLOCK)
+                .pushReaction(PushReaction.IMMOVEABLE)
                 .isRedstoneConductor((state, getter, pos) -> false)
                 .isSuffocating((state, getter, pos) -> false)
-                .isViewBlocking((state, getter, pos) -> false);
+                .isViewBlocking((state, getter, pos, bounds) -> false);
     }
 
     private static Item.Properties itemProperties(String id) {

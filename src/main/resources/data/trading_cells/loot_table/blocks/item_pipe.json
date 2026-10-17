@@ -9,11 +9,9 @@
           "name": "trading_cells:item_pipe"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "trading_cells:blocks/item_pipe"

@@ -121,7 +121,7 @@ public final class EssenceExtractorItem extends Item {
                 setLoaded(stack, false);
                 stack.hurtAndBreak(1, player, player.getUsedItemHand());
             }
-            if (!player.getInventory().add(essence)) { player.drop(essence, false); }
+            if (!player.getInventory().add(essence)) { player.drop(essence, false, net.minecraft.util.Prediction.SERVER_ONLY); }
             player.getInventory().setChanged();
             return stack;
         }

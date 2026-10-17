@@ -63,6 +63,6 @@ public final class MachineBlockProperties {
                 .noOcclusion()
                 .isRedstoneConductor((state, getter, pos) -> false)
                 .isSuffocating((state, getter, pos) -> false)
-                .isViewBlocking((state, getter, pos) -> false);
+                .isViewBlocking((state, getter, pos, bounds) -> false);
     }
 }

@@ -6,12 +6,12 @@ import net.minecraft.world.entity.monster.creaking.Creaking;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.common.ItemAbilities;
+import net.minecraft.tags.ItemTags;
 
 /** Renewable resin without a real heart, delayed ticks or damage to the stored creature. */
 public final class CreakingHarvestHandler implements InteractionHarvestHandler {
     @Override public boolean supports(LivingEntity entity, ItemStack input) {
-        return entity instanceof Creaking && input.canPerformAction(ItemAbilities.AXE_STRIP);
+        return entity instanceof Creaking && input.is(ItemTags.AXES);
     }
 
     @Override public void interact(DisposableInteractionLevel level, LivingEntity entity, Player actor) {

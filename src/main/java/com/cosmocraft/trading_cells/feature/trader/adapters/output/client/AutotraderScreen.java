@@ -34,7 +34,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import org.lwjgl.glfw.GLFW;
 
 public final class AutotraderScreen extends MachineContainerScreen<AutotraderMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
     private static final int OFFSCREEN_MOUSE_COORDINATE = -10_000;
@@ -282,7 +281,7 @@ public final class AutotraderScreen extends MachineContainerScreen<AutotraderMen
         if (!dropdownOpen) {
             return super.keyPressed(event);
         }
-        if (key == GLFW.GLFW_KEY_ESCAPE) {
+        if (key == InputConstants.KEY_ESCAPE) {
             closeDropdown();
             return true;
         }
@@ -290,19 +289,19 @@ public final class AutotraderScreen extends MachineContainerScreen<AutotraderMen
         if (count == 0) {
             return super.keyPressed(event);
         }
-        if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+        if (key == InputConstants.KEY_RETURN || key == InputConstants.KEY_NUMPADENTER) {
             selectOffer(focusedOffer);
             return true;
         }
         int target = switch (key) {
-            case GLFW.GLFW_KEY_UP -> focusedOffer - 1;
-            case GLFW.GLFW_KEY_DOWN -> focusedOffer + 1;
-            case GLFW.GLFW_KEY_PAGE_UP ->
+            case InputConstants.KEY_UP -> focusedOffer - 1;
+            case InputConstants.KEY_DOWN -> focusedOffer + 1;
+            case InputConstants.KEY_PAGEUP ->
                     focusedOffer - VillagerTradeScreenLayout.DROPDOWN_VISIBLE_ROWS;
-            case GLFW.GLFW_KEY_PAGE_DOWN ->
+            case InputConstants.KEY_PAGEDOWN ->
                     focusedOffer + VillagerTradeScreenLayout.DROPDOWN_VISIBLE_ROWS;
-            case GLFW.GLFW_KEY_HOME -> 0;
-            case GLFW.GLFW_KEY_END -> count - 1;
+            case InputConstants.KEY_HOME -> 0;
+            case InputConstants.KEY_END -> count - 1;
             default -> Integer.MIN_VALUE;
         };
         if (target == Integer.MIN_VALUE) {
@@ -796,8 +795,8 @@ public final class AutotraderScreen extends MachineContainerScreen<AutotraderMen
 
     private boolean isShiftPressed() {
         return minecraft != null
-                && (InputConstants.isKeyDown(minecraft.getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
-                || InputConstants.isKeyDown(minecraft.getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT));
+                && (InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+                || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT));
     }
 
     private void resetTrades() {

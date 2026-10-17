@@ -8,12 +8,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -67,10 +66,10 @@ public final class MinecraftBreederFood {
             VANILLA_VILLAGER_OPTIONS.forEach(option -> knownItems.add(option.item()));
             List<Option> additional = SafeDynamicCatalog.discover(
                     "villager breeding foods",
-                    () -> Villager.FOOD_POINTS.entrySet(),
+                    () -> BuiltInRegistries.ITEM,
                     entry -> dynamicVillagerOption(entry, knownItems),
                     Comparator.comparing(option -> BuiltInRegistries.ITEM.getKey(option.item()).toString()),
-                    entry -> String.valueOf(BuiltInRegistries.ITEM.getKey(entry.getKey()))
+                    item -> String.valueOf(BuiltInRegistries.ITEM.getKey(item))
             );
             ArrayList<Option> combined = new ArrayList<>(VANILLA_VILLAGER_OPTIONS);
             combined.addAll(additional);
@@ -85,18 +84,17 @@ public final class MinecraftBreederFood {
     }
 
     private static Optional<Option> dynamicVillagerOption(
-            Map.Entry<Item, Integer> entry,
+            Item item,
             Set<Item> knownItems
     ) {
-        Item item = entry.getKey();
-        Integer foodPoints = entry.getValue();
-        if (item == null || foodPoints == null || foodPoints <= 0 || knownItems.contains(item)) {
+        var villagerFood = item.components().get(DataComponents.VILLAGER_FOOD);
+        if (villagerFood == null || knownItems.contains(item)) {
             return Optional.empty();
         }
         if (BuiltInRegistries.ITEM.getKey(item) == null) {
             throw new IllegalArgumentException("Villager breeding food has no registered item identifier");
         }
-        BreederFood food = foodPoints >= BREAD_EQUIVALENT_FOOD_POINTS
+        BreederFood food = villagerFood.nutrition() >= BREAD_EQUIVALENT_FOOD_POINTS
                 ? BreederFood.BREAD
                 : BreederFood.VEGETABLE;
         return Optional.of(new Option(item, food));

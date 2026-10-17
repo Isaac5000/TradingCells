@@ -2,7 +2,6 @@ package com.cosmocraft.trading_cells.feature.experience.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.experience.adapters.output.ExperienceStorageRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -14,16 +13,11 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public final class ExperienceStorageBlock extends AbstractPortableMachineBlock<ExperienceStorageBlockEntity> {
-    public static final MapCodec<ExperienceStorageBlock> CODEC = simpleCodec(ExperienceStorageBlock::new);
 
     public ExperienceStorageBlock(Properties properties) {
         super(properties);
     }
 
-    @Override
-    protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
 
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {

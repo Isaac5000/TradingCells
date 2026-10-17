@@ -248,7 +248,8 @@ final class StormUiFixture {
         @Override public boolean isPauseScreen() { return false; }
     }
     private static void capture(Minecraft mc, String name) {
-        var model = mc.getEntityRenderDispatcher().getPlayerRenderer(mc.player).getModel();
+        var model = ((net.minecraft.client.renderer.entity.player.AvatarRenderer<?>)
+                mc.getEntityRenderDispatcher().getRenderer(mc.player)).getModel();
         if (name.equals("05-welder-active-third")) {
             var holding = model.getArm(mc.player.getMainArm());
             if (Math.abs(holding.yRot - model.head.yRot * 0.7F) > 0.001F || Math.abs(holding.zRot) > 0.001F) {

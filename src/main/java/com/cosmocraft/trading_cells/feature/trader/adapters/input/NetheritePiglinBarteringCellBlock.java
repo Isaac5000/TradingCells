@@ -4,7 +4,6 @@ import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobSta
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -20,17 +19,11 @@ import org.jspecify.annotations.NonNull;
 
 public final class NetheritePiglinBarteringCellBlock
         extends AbstractPortableMachineBlock<NetheritePiglinBarteringCellBlockEntity> {
-    public static final MapCodec<NetheritePiglinBarteringCellBlock> CODEC =
-            simpleCodec(NetheritePiglinBarteringCellBlock::new);
 
     public NetheritePiglinBarteringCellBlock(Properties properties) {
         super(properties);
     }
 
-    @Override
-    protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
 
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {

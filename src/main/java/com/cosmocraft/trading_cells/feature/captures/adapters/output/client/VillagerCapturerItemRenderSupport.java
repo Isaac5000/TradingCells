@@ -219,9 +219,9 @@ public final class VillagerCapturerItemRenderSupport {
     private static void applyTransform(PoseStack poseStack, Transform t) {
         poseStack.scale(t.scale(), t.scale(), t.scale());
         poseStack.translate(t.x(), t.y(), t.z());
-        if (t.rotX() != 0.0F) poseStack.mulPose(Axis.XP.rotationDegrees(t.rotX()));
-        if (t.rotY() != 0.0F) poseStack.mulPose(Axis.YP.rotationDegrees(t.rotY()));
-        if (t.rotZ() != 0.0F) poseStack.mulPose(Axis.ZP.rotationDegrees(t.rotZ()));
+        if (t.rotX() != 0.0F) poseStack.rotate(Axis.XP.rotationDegrees(t.rotX()));
+        if (t.rotY() != 0.0F) poseStack.rotate(Axis.YP.rotationDegrees(t.rotY()));
+        if (t.rotZ() != 0.0F) poseStack.rotate(Axis.ZP.rotationDegrees(t.rotZ()));
     }
 
     private static boolean renderVillagerEntity(Villager villager, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, float partialTick, SpecialProfile profile, int packedLight) {

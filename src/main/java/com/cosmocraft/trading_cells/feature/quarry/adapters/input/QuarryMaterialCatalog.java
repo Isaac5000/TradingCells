@@ -390,18 +390,18 @@ public final class QuarryMaterialCatalog {
 
     private static Optional<QuarryMaterialDefinition> automaticDefinition(Block block, Identifier id) {
         QuarryKind kind = explicitKind(block).orElseGet(() ->
-                block.defaultBlockState().is(Tags.Blocks.ORES_IN_GROUND_NETHERRACK)
+                block.defaultBlockState().is(Tags.BlockItems.ORES_IN_GROUND_NETHERRACK.block())
                         ? QuarryKind.PIGLIN
                         : QuarryKind.VILLAGER
         );
         boolean rock = block.defaultBlockState().is(ROCK_TAGS.get(kind));
-        boolean ore = block.defaultBlockState().is(Tags.Blocks.ORES);
+        boolean ore = block.defaultBlockState().is(Tags.BlockItems.ORES.block());
         if (!rock && !ore && explicitTier(block, kind).isEmpty()) {
             return Optional.empty();
         }
         QuarryUpgradeTier tier = explicitTier(block, kind).orElseGet(() -> automaticTier(block));
         double minimumSpeed = minimumPickaxeSpeed(block);
-        int maximumAmount = rock ? 4 : block.defaultBlockState().is(Tags.Blocks.ORE_RATES_DENSE) ? 3 : 1;
+        int maximumAmount = rock ? 4 : block.defaultBlockState().is(Tags.BlockItems.ORE_RATES_DENSE.block()) ? 3 : 1;
         Identifier deepVariant = kind == QuarryKind.VILLAGER ? findDeepVariant(id) : null;
         return Optional.of(new QuarryMaterialDefinition(
                 id,
@@ -445,23 +445,23 @@ public final class QuarryMaterialCatalog {
     }
 
     private static QuarryUpgradeTier automaticTier(Block block) {
-        if (block.defaultBlockState().is(Tags.Blocks.ORES_NETHERITE_SCRAP)) {
+        if (block.defaultBlockState().is(Tags.BlockItems.ORES_NETHERITE_SCRAP.block())) {
             return QuarryUpgradeTier.NETHERITE;
         }
-        if (block.defaultBlockState().is(Tags.Blocks.ORES_EMERALD)) {
+        if (block.defaultBlockState().is(Tags.BlockItems.ORES_EMERALD.block())) {
             return QuarryUpgradeTier.NETHERITE;
         }
-        if (block.defaultBlockState().is(Tags.Blocks.ORES_DIAMOND)
+        if (block.defaultBlockState().is(Tags.BlockItems.ORES_DIAMOND.block())
                 || block.defaultBlockState().is(BlockTags.NEEDS_DIAMOND_TOOL)) {
             return QuarryUpgradeTier.DIAMOND;
         }
-        if (block.defaultBlockState().is(Tags.Blocks.ORES_GOLD)
-                || block.defaultBlockState().is(Tags.Blocks.ORES_LAPIS)
-                || block.defaultBlockState().is(Tags.Blocks.ORES_REDSTONE)
+        if (block.defaultBlockState().is(Tags.BlockItems.ORES_GOLD.block())
+                || block.defaultBlockState().is(Tags.BlockItems.ORES_LAPIS.block())
+                || block.defaultBlockState().is(Tags.BlockItems.ORES_REDSTONE.block())
                 || block.defaultBlockState().is(BlockTags.NEEDS_IRON_TOOL)) {
             return QuarryUpgradeTier.GOLD;
         }
-        if (block.defaultBlockState().is(Tags.Blocks.ORES_IRON)) {
+        if (block.defaultBlockState().is(Tags.BlockItems.ORES_IRON.block())) {
             return QuarryUpgradeTier.IRON;
         }
         return QuarryUpgradeTier.COPPER;

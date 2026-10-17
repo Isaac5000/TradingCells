@@ -9,11 +9,9 @@
           "name": "trading_cells:network_crafting_terminal"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "trading_cells:blocks/network_crafting_terminal"

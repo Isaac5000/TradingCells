@@ -159,8 +159,8 @@ public abstract class BreederBlock<T extends BreederBlockEntity> extends BaseEnt
 
     @Override
     public void playerDestroy(
-            @NonNull Level level,
-            @NonNull Player player,
+            net.minecraft.server.level.@NonNull ServerLevel level,
+            net.minecraft.server.level.@NonNull ServerPlayer player,
             @NonNull BlockPos pos,
             @NonNull BlockState state,
             @Nullable BlockEntity blockEntity, // NOSONAR - Minecraft's Block API explicitly permits no block entity.

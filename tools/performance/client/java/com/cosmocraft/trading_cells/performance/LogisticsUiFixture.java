@@ -391,9 +391,9 @@ final class LogisticsUiFixture {
         player.openMenu(new SimpleMenuProvider((id, inventory, owner) -> new PipeConfigurationMenu(id, inventory, pipe, face, hand),
                 Component.translatable("gui.trading_cells.pipe.title")), buffer -> {
             buffer.writeBlockPos(pipe.getBlockPos());
-            buffer.writeEnum(face);
-            buffer.writeEnum(hand);
-            buffer.writeEnum(pipe.kind());
+            buffer.writeVarInt(face.ordinal());
+            buffer.writeVarInt(hand.ordinal());
+            buffer.writeVarInt(pipe.kind().ordinal());
             buffer.writeNbt(pipe.face(face).save());
             buffer.writeVarLong(pipe.revision());
         });

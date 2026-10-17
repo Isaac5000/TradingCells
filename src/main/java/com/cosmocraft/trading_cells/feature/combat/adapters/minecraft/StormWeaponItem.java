@@ -50,7 +50,7 @@ public class StormWeaponItem extends ProjectileWeaponItem {
             float uncertainty, float angle, @Nullable LivingEntity target) { throw new UnsupportedOperationException("Batteries are not projectiles"); }
 
     public static ItemStack battery(ItemStack weapon) {
-        var loaded = weapon.getOrDefault(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY).itemCopies();
+        var loaded = weapon.getOrDefault(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY).itemCopies().toList();
         return loaded.size() == 1 && StormChargeData.capacity(loaded.getFirst()) > 0 ? loaded.getFirst() : ItemStack.EMPTY;
     }
     public static void setBattery(ItemStack weapon, ItemStack battery) {
@@ -88,7 +88,7 @@ public class StormWeaponItem extends ProjectileWeaponItem {
         setBattery(stack, cell);
     }
     @Override public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity,
-            Consumer<Item> onBroken) {
+            Consumer<ItemStack> onBroken) {
         // Electrical operations pay once below. Vanilla sword wear must not charge twice or destroy the weapon.
         return 0;
     }
@@ -187,7 +187,7 @@ public class StormWeaponItem extends ProjectileWeaponItem {
             data.putString(OWNER, player.getStringUUID());
             weapon.set(DataComponents.CUSTOM_DATA, CustomData.of(data));
         }
-        if (!previous.isEmpty() && !player.getInventory().add(previous)) { player.drop(previous, false); }
+        if (!previous.isEmpty() && !player.getInventory().add(previous)) { player.drop(previous, false, net.minecraft.util.Prediction.SERVER_ONLY); }
         player.getInventory().setChanged();
     }
     @Override public InteractionResult use(Level level, Player player, InteractionHand hand) { return InteractionResult.PASS; }

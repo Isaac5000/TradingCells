@@ -55,9 +55,13 @@ public final class StormFirstPersonHands {
         var pose = event.getPoseStack();
         pose.pushPose();
         pose.translate(wrist.x, wrist.y, wrist.z);
-        pose.mulPose(new Quaternionf().rotationTo(new Vector3f(0,1,0), direction));
+        pose.rotate(new Quaternionf().rotationTo(new Vector3f(0,1,0), direction));
         pose.scale(0.65F, 0.65F, 0.65F);
-        var renderer = client.getEntityRenderDispatcher().getPlayerRenderer(player);
+        if (!(client.getEntityRenderDispatcher().getRenderer(player)
+                instanceof net.minecraft.client.renderer.entity.player.AvatarRenderer<?> renderer)) {
+            pose.popPose();
+            return;
+        }
         var initial = renderer.getModel().getArm(arm).getInitialPose();
         // AvatarRenderer adds its own wrist roll after resetting the arm pose.
         // The cell rests on the palm surface instead of inside the opaque hand.
@@ -67,9 +71,9 @@ public final class StormFirstPersonHands {
         pose.translate(-tip.x/16, -tip.y/16, -tip.z/16);
         var skin = player.getSkin().body().texturePath();
         if (arm == HumanoidArm.RIGHT) {
-            renderer.renderRightHand(pose, event.getSubmitNodeCollector(), event.getPackedLight(), skin, player.isModelPartShown(PlayerModelPart.RIGHT_SLEEVE), player);
+            renderer.renderRightHand(pose, event.getSubmitNodeCollector(), event.getPackedLight(), skin, player.isModelPartShown(PlayerModelPart.RIGHT_SLEEVE));
         } else {
-            renderer.renderLeftHand(pose, event.getSubmitNodeCollector(), event.getPackedLight(), skin, player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE), player);
+            renderer.renderLeftHand(pose, event.getSubmitNodeCollector(), event.getPackedLight(), skin, player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE));
         }
         pose.popPose();
     }

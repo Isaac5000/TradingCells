@@ -16,14 +16,13 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = "trading_cells", value = Dist.CLIENT)
 public final class StormReloadKey {
     private static final StormReloadGesture GESTURE = new StormReloadGesture();
     private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("trading_cells", "equipment"));
     public static final KeyMapping RELOAD = new KeyMapping("key.trading_cells.storm_reload", KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, CATEGORY) {
+            InputConstants.Type.KEYBOARD, InputConstants.KEY_R, CATEGORY) {
         @Override public void setDown(boolean down) {
             boolean edge = down != isDown();
             super.setDown(down);

@@ -1,10 +1,8 @@
 {
   "type": "neoforge:add_table",
-  "conditions": [
-    {
-      "condition": "neoforge:loot_table_id",
-      "loot_table_id": "minecraft:entities/warden"
-    }
-  ],
+  "condition": {
+    "loot_table_id": "minecraft:entities/warden",
+    "type": "neoforge:loot_table_id"
+  },
   "table": "trading_cells:injections/warden_echo_shard"
 }

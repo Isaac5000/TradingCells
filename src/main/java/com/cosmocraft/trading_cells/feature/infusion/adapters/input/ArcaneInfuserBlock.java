@@ -2,7 +2,6 @@ package com.cosmocraft.trading_cells.feature.infusion.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -16,7 +15,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 
 public final class ArcaneInfuserBlock extends AbstractPortableMachineBlock<ArcaneInfuserBlockEntity> {
-    public static final MapCodec<ArcaneInfuserBlock> CODEC = simpleCodec(ArcaneInfuserBlock::new);
     private static final VoxelShape[] SHAPES = chamberShapes();
 
     private static VoxelShape[] chamberShapes() {
@@ -50,10 +48,6 @@ public final class ArcaneInfuserBlock extends AbstractPortableMachineBlock<Arcan
         super(properties);
     }
 
-    @Override
-    protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
 
     @Override
     public @NonNull BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {

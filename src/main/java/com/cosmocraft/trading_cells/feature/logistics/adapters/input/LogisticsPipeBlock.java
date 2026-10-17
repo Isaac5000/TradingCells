@@ -1,7 +1,6 @@
 package com.cosmocraft.trading_cells.feature.logistics.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeKind;
-import com.mojang.serialization.MapCodec;
 import java.util.EnumMap;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
@@ -39,12 +38,10 @@ public final class LogisticsPipeBlock extends BaseEntityBlock implements SimpleW
     private static final VoxelShape[] CONNECTION_SHAPES = createConnectionShapes();
 
     private final PipeKind kind;
-    private final MapCodec<LogisticsPipeBlock> codec;
 
     public LogisticsPipeBlock(Properties properties, PipeKind kind) {
         super(properties);
         this.kind = kind;
-        this.codec = simpleCodec(value -> new LogisticsPipeBlock(value, kind));
         BlockState state = stateDefinition.any().setValue(WATERLOGGED, false);
         for (EnumProperty<PipeConnection> property : CONNECTIONS.values()) {
             state = state.setValue(property, PipeConnection.NONE);
@@ -60,10 +57,6 @@ public final class LogisticsPipeBlock extends BaseEntityBlock implements SimpleW
         return CONNECTIONS.get(direction);
     }
 
-    @Override
-    protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
-        return codec;
-    }
 
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {

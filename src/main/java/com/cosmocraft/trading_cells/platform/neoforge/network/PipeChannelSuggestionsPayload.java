@@ -12,11 +12,11 @@ public record PipeChannelSuggestionsPayload(int containerId, LogisticsResourceTy
         implements CustomPacketPayload {
     public static final Type<PipeChannelSuggestionsPayload> PAYLOAD_TYPE = new Type<>(Identifier.fromNamespaceAndPath("trading_cells", "pipe_channel_suggestions"));
     public static final StreamCodec<RegistryFriendlyByteBuf, PipeChannelSuggestionsPayload> STREAM_CODEC = StreamCodec.of((buffer, payload) -> {
-        buffer.writeContainerId(payload.containerId()); buffer.writeEnum(payload.resource()); buffer.writeUtf(payload.prefix(), 256);
+        buffer.writeContainerId(payload.containerId()); buffer.writeVarInt(payload.resource().ordinal()); buffer.writeUtf(payload.prefix(), 256);
         buffer.writeVarInt(payload.channels().size()); for (String channel : payload.channels()) { buffer.writeUtf(channel, 256); }
         buffer.writeBoolean(payload.complete());
     }, buffer -> {
-        int id = buffer.readContainerId(); var type = buffer.readEnum(LogisticsResourceType.class); String prefix = buffer.readUtf(256);
+        int id = buffer.readContainerId(); var type = buffer.readById(index -> LogisticsResourceType.values()[index]); String prefix = buffer.readUtf(256);
         int count = buffer.readVarInt(); if (count < 0 || count > 16) { throw new IllegalArgumentException("Too many channel results"); }
         var channels = new ArrayList<String>(count); for (int index = 0; index < count; index++) { channels.add(buffer.readUtf(256)); }
         return new PipeChannelSuggestionsPayload(id, type, prefix, channels, buffer.readBoolean());

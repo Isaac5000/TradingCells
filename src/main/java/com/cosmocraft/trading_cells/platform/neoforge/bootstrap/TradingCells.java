@@ -28,7 +28,7 @@ public class TradingCells {
         DecapitationLootAdapter.register();
 
         // 2. Register the configuration
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        modContainer.registerConfig(ModConfig.Type.LOCAL, Config.SPEC, "trading_cells-common.toml");
         FeatureSettingsProvider.configure(new NeoForgeFeatureSettingsAdapter());
     }
 

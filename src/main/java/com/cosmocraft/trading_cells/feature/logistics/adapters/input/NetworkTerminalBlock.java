@@ -1,6 +1,5 @@
 package com.cosmocraft.trading_cells.feature.logistics.adapters.input;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,12 +23,10 @@ public final class NetworkTerminalBlock extends BaseEntityBlock {
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     private final boolean crafting;
-    private final MapCodec<NetworkTerminalBlock> codec;
 
     public NetworkTerminalBlock(Properties properties, boolean crafting) {
         super(properties);
         this.crafting = crafting;
-        codec = simpleCodec(value -> new NetworkTerminalBlock(value, crafting));
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
@@ -37,10 +34,6 @@ public final class NetworkTerminalBlock extends BaseEntityBlock {
         return crafting;
     }
 
-    @Override
-    protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
-        return codec;
-    }
 
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
