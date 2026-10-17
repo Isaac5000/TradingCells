@@ -52,11 +52,11 @@ final class SimulationWorkerRenderer implements RenderLayerParent<VillagerRender
             float scale = preview.scale() * state.scale;
             poseStack.translate(x, y, z);
             poseStack.scale(scale, scale, scale);
-            poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - state.bodyRot));
+            poseStack.rotate(Axis.YP.rotationDegrees(180.0F - state.bodyRot));
             poseStack.scale(-1.0F, -1.0F, 1.0F);
             poseStack.translate(0.0F, -1.501F, 0.0F);
             collector.submitModel(model, state, poseStack, model.renderType(TEXTURE),
-                    light, OverlayTexture.NO_OVERLAY, -1, null, state.outlineColor, null);
+                    light, OverlayTexture.NO_OVERLAY, -1, null, state.outlineColor);
             model.setupAnim(state);
             poseStack.pushPose();
             if (secondary != null && !secondary.isEmpty()) { poseStack.translate(-0.22F, 0, 0); }
@@ -65,9 +65,9 @@ final class SimulationWorkerRenderer implements RenderLayerParent<VillagerRender
             if (secondary != null && !secondary.isEmpty()) {
                 poseStack.pushPose();
                 model.translateToArms(state, poseStack);
-                poseStack.mulPose(Axis.XP.rotation(0.75F));
+                poseStack.rotate(Axis.XP.rotation(0.75F));
                 poseStack.translate(0.25F, 0.13F, -0.34F);
-                poseStack.mulPose(Axis.XP.rotation((float) Math.PI));
+                poseStack.rotate(Axis.XP.rotation((float) Math.PI));
                 poseStack.scale(0.8F, 0.8F, 0.8F);
                 secondary.submit(poseStack, collector, light, OverlayTexture.NO_OVERLAY, state.outlineColor);
                 poseStack.popPose();

@@ -32,10 +32,10 @@ public final class VillagerTradeScreenCommon {
     }
 
     public static Component professionDisplayName(@Nullable VillagerData data) {
-        if (data == null || data.profession() == VillagerProfession.NONE) {
+        if (data == null || data.profession().is(VillagerProfession.NONE)) {
             return Component.translatable("tooltip.trading_cells.unemployed");
         }
-        if (data.profession() == VillagerProfession.NITWIT) {
+        if (data.profession().is(VillagerProfession.NITWIT)) {
             return Component.translatable("entity.minecraft.villager.nitwit");
         }
         return data.profession().value().name();

@@ -185,7 +185,7 @@ public final class LogisticsPipeBlockEntity extends BlockEntity implements Logis
         pending.clear();
         changed(true);
         for (ItemStack upgrade : returned) {
-            if (!player.getInventory().add(upgrade)) { player.drop(upgrade, false); }
+            if (!player.getInventory().add(upgrade)) { player.drop(upgrade, false, net.minecraft.util.Prediction.SERVER_ONLY); }
         }
     }
 

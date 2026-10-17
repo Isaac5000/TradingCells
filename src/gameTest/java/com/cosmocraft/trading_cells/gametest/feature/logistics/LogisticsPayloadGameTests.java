@@ -43,7 +43,7 @@ public final class LogisticsPayloadGameTests {
         helper.assertValueEqual(roundTrip(helper, com.cosmocraft.trading_cells.platform.neoforge.network.PipeMenuSyncPayload.STREAM_CODEC, state), state, "Menu revision and physical generation roundtrip");
         var buffer = buffer(helper);
         try {
-            buffer.writeContainerId(2); buffer.writeEnum(LogisticsResourceType.ITEM); buffer.writeUtf(""); buffer.writeVarInt(Integer.MAX_VALUE);
+            buffer.writeContainerId(2); buffer.writeVarInt(LogisticsResourceType.ITEM.ordinal()); buffer.writeUtf(""); buffer.writeVarInt(Integer.MAX_VALUE);
             boolean rejected = false;
             try { com.cosmocraft.trading_cells.platform.neoforge.network.PipeChannelSuggestionsPayload.STREAM_CODEC.decode(buffer); }
             catch (IllegalArgumentException expected) { rejected = true; }

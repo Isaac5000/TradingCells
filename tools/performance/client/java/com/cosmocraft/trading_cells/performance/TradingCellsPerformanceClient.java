@@ -269,7 +269,7 @@ public final class TradingCellsPerformanceClient {
     }
 
     private void enforceWindowSize(Minecraft minecraft) {
-        if (!minecraft.getWindow().isFullscreen()
+        if (!minecraft.getWindow().isWindowFullscreen()
                 && (minecraft.getWindow().getWidth() != expectedWidth
                 || minecraft.getWindow().getHeight() != expectedHeight)) {
             minecraft.getWindow().setWindowed(expectedWidth, expectedHeight);

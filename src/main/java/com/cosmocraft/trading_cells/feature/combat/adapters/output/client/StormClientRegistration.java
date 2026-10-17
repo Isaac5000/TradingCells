@@ -34,9 +34,10 @@ public final class StormClientRegistration {
                 return null;
             }
             @Override public boolean applyForgeHandTransform(com.mojang.blaze3d.vertex.PoseStack pose,
-                    net.minecraft.client.player.LocalPlayer player, net.minecraft.world.entity.HumanoidArm arm,
+                    net.minecraft.client.renderer.state.level.PlayerRenderState state, net.minecraft.world.entity.HumanoidArm arm,
                     net.minecraft.world.item.ItemStack stack, float partial, float equip, float swing) {
-                return StormArmAnimation.firstPerson(pose, player, arm, stack, partial);
+                var player = net.minecraft.client.Minecraft.getInstance().player;
+                return player != null && StormArmAnimation.firstPerson(pose, player, arm, stack, partial);
             }
         }, CombatRegistrationAdapter.WELDER.get(), CombatRegistrationAdapter.BATON.get());
     }

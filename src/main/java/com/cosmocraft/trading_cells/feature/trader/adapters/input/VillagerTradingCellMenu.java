@@ -525,18 +525,18 @@ public final class VillagerTradingCellMenu extends AbstractContainerMenu {
         ItemStack second = tradeContainer.removeItemNoUpdate(PAYMENT_B_SLOT);
         if (!player.isAlive() || player instanceof ServerPlayer serverPlayer && serverPlayer.hasDisconnected()) {
             if (!first.isEmpty()) {
-                player.drop(first, false);
+                player.drop(first, false, net.minecraft.util.Prediction.SERVER_ONLY);
             }
             if (!second.isEmpty()) {
-                player.drop(second, false);
+                player.drop(second, false, net.minecraft.util.Prediction.SERVER_ONLY);
             }
             return;
         }
         if (!first.isEmpty()) {
-            player.getInventory().placeItemBackInInventory(first);
+            player.getInventory().placeItemBackInInventory(first, net.minecraft.util.Prediction.SERVER_ONLY);
         }
         if (!second.isEmpty()) {
-            player.getInventory().placeItemBackInInventory(second);
+            player.getInventory().placeItemBackInInventory(second, net.minecraft.util.Prediction.SERVER_ONLY);
         }
     }
 

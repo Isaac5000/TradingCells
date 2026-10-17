@@ -70,7 +70,7 @@ public final class PreservedSpawnerItemRenderSupport {
             poseStack.pushPose();
             try {
                 poseStack.translate(0.5D, 0.16D, 0.5D);
-                poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+                poseStack.rotate(Axis.YP.rotationDegrees(180.0F));
                 poseStack.scale(scale, scale, scale);
                 submitStaticHierarchy(entities, poseStack, collector, packedLight);
             } finally {

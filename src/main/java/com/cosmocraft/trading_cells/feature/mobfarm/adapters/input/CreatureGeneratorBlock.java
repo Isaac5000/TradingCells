@@ -2,7 +2,6 @@ package com.cosmocraft.trading_cells.feature.mobfarm.adapters.input;
 
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -22,7 +21,6 @@ public final class CreatureGeneratorBlock extends AbstractPortableMachineBlock<C
     @Override protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPE;
     }
-    @Override protected MapCodec<? extends BaseEntityBlock> codec() { return simpleCodec(CreatureGeneratorBlock::new); }
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new CreatureGeneratorBlockEntity(pos, state); }
     @Override protected BlockEntityType<CreatureGeneratorBlockEntity> machineType() { return MobFarmRegistrationAdapter.CREATURE_GENERATOR_BLOCK_ENTITY.get(); }
 }

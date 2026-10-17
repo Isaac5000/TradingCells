@@ -61,7 +61,7 @@ final class MobFarmLootModifierReloadListener extends SimpleJsonResourceReloadLi
             element.getAsJsonArray().forEach(value -> findTargets(value, table, indexed));
         } else if (element.isJsonObject()) {
             JsonObject object = element.getAsJsonObject();
-            if ("neoforge:loot_table_id".equals(string(object, "condition"))) {
+            if ("neoforge:loot_table_id".equals(string(object, "type"))) {
                 Identifier target = Identifier.tryParse(string(object, "loot_table_id"));
                 if (target != null) {
                     indexed.computeIfAbsent(target, ignored -> new LinkedHashSet<>()).add(table);

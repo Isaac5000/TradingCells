@@ -77,14 +77,14 @@ public final class MobFarmLootPreview {
         var result = new LinkedHashMap<Identifier, Summary>();
         for (JsonElement value : array(json, "pools")) {
             JsonObject pool = value.getAsJsonObject();
-            double chance = conditions(array(pool, "conditions"));
+            double chance = condition(pool.get("condition"));
             if (chance == 0) { continue; }
             List<Map<Identifier, Summary>> entries = new ArrayList<>();
             List<Double> weights = new ArrayList<>();
             double weight = 0;
             for (JsonElement raw : array(pool, "entries")) {
                 JsonObject entry = raw.getAsJsonObject();
-                double condition = conditions(array(entry, "conditions"));
+                double condition = condition(entry.get("condition"));
                 if (condition == 0) { continue; }
                 if (condition != 1) { throw new IllegalArgumentException("Conditional weighted entry"); }
                 double entryWeight = entry.has("weight") ? entry.get("weight").getAsDouble() : 1;
@@ -107,11 +107,11 @@ public final class MobFarmLootPreview {
                 }
                 Summary summary = new Summary(minimum == Integer.MAX_VALUE ? 0 : minimum, maximum, Math.clamp(zero, 0, 1))
                         .repeat(rolls[0], rolls[1]).chance(chance);
-                var transformed = functions(Map.of(id, summary), array(pool, "functions"));
+                var transformed = functions(Map.of(id, summary), pool.get("modifier"));
                 transformed.forEach((item, drop) -> result.merge(item, drop, Summary::plus));
             }
         }
-        return functions(result, array(json, "functions"));
+        return functions(result, json.get("modifier"));
     }
 
     private Map<Identifier, Summary> entry(JsonObject entry, int depth) {
@@ -120,12 +120,17 @@ public final class MobFarmLootPreview {
         switch (type) {
             case "minecraft:empty" -> result = Map.of();
             case "minecraft:item" -> result = Map.of(Identifier.parse(entry.get("name").getAsString()), new Summary(1, 1, 0));
-            case "minecraft:loot_table" -> result = table(ResourceKey.create(Registries.LOOT_TABLE,
-                    Identifier.parse(entry.get("value").getAsString())), depth + 1);
+            case "minecraft:loot_table" -> {
+                result = new LinkedHashMap<>();
+                for (JsonElement reference : values(entry.get("value"))) {
+                    table(ResourceKey.create(Registries.LOOT_TABLE, Identifier.parse(reference.getAsString())), depth + 1)
+                            .forEach((id, summary) -> result.merge(id, summary, Summary::plus));
+                }
+            }
             case "minecraft:alternatives" -> {
                 result = Map.of();
                 for (JsonElement child : array(entry, "children")) {
-                    double condition = conditions(array(child.getAsJsonObject(), "conditions"));
+                    double condition = condition(child.getAsJsonObject().get("condition"));
                     if (condition == 0) { continue; }
                     if (condition != 1) { throw new IllegalArgumentException("Random alternative"); }
                     result = entry(child.getAsJsonObject(), depth + 1);
@@ -134,17 +139,17 @@ public final class MobFarmLootPreview {
             }
             default -> throw new IllegalArgumentException("Unknown loot entry");
         }
-        return functions(result, array(entry, "functions"));
+        return functions(result, entry.get("modifier"));
     }
 
-    private Map<Identifier, Summary> functions(Map<Identifier, Summary> source, JsonArray functions) {
+    private Map<Identifier, Summary> functions(Map<Identifier, Summary> source, JsonElement functions) {
         var result = new LinkedHashMap<>(source);
-        for (JsonElement value : functions) {
+        for (JsonElement value : values(functions)) {
             JsonObject function = value.getAsJsonObject();
-            double chance = conditions(array(function, "conditions"));
+            double chance = condition(function.get("condition"));
             if (chance == 0) { continue; }
             if (chance != 1) { throw new IllegalArgumentException("Conditional loot function"); }
-            switch (function.get("function").getAsString()) {
+            switch (function.get("type").getAsString()) {
                 case "minecraft:set_count" -> {
                     int[] range = range(function.get("count"), true);
                     boolean add = function.has("add") && function.get("add").getAsBoolean();
@@ -183,12 +188,20 @@ public final class MobFarmLootPreview {
 
     private double conditions(JsonArray conditions) {
         double result = 1;
-        for (JsonElement condition : conditions) { result *= condition(condition.getAsJsonObject()); }
+        for (JsonElement condition : conditions) { result *= condition(condition); }
         return result;
     }
 
-    private double condition(JsonObject value) {
-        return switch (value.get("condition").getAsString()) {
+    private double condition(JsonElement element) {
+        if (element == null || element.isJsonNull()) { return 1; }
+        if (++visits > 512) { throw new IllegalArgumentException("Preview complexity limit"); }
+        if (element.isJsonPrimitive()) {
+            var predicate = level.registryAccess().lookupOrThrow(Registries.PREDICATE)
+                    .getOrThrow(ResourceKey.create(Registries.PREDICATE, Identifier.parse(element.getAsString()))).value();
+            return condition(LootItemCondition.DIRECT_CODEC.encodeStart(ops, predicate).getOrThrow());
+        }
+        JsonObject value = element.getAsJsonObject();
+        return switch (value.get("type").getAsString()) {
             case "minecraft:random_chance" -> value.get("chance").getAsDouble();
             case "minecraft:killed_by_player" -> 1;
             case "minecraft:random_chance_with_enchanted_bonus" -> {
@@ -202,10 +215,10 @@ public final class MobFarmLootPreview {
             case "minecraft:all_of" -> conditions(array(value, "terms"));
             case "minecraft:any_of" -> {
                 double none = 1;
-                for (JsonElement term : array(value, "terms")) { none *= 1 - condition(term.getAsJsonObject()); }
+                for (JsonElement term : values(value.get("terms"))) { none *= 1 - condition(term); }
                 yield 1 - none;
             }
-            case "minecraft:inverted" -> 1 - condition(value.getAsJsonObject("term"));
+            case "minecraft:inverted" -> 1 - condition(value.get("term"));
             default -> throw new IllegalArgumentException("Context-dependent condition");
         };
     }
@@ -230,6 +243,13 @@ public final class MobFarmLootPreview {
     }
 
     private static JsonArray array(JsonObject object, String key) { return object.has(key) ? object.getAsJsonArray(key) : new JsonArray(); }
+
+    private static JsonArray values(JsonElement value) {
+        if (value != null && value.isJsonArray()) { return value.getAsJsonArray(); }
+        JsonArray result = new JsonArray();
+        if (value != null && !value.isJsonNull()) { result.add(value); }
+        return result;
+    }
 
     private record Summary(int minimum, int maximum, double zero) {
         static final Summary EMPTY = new Summary(0, 0, 1);

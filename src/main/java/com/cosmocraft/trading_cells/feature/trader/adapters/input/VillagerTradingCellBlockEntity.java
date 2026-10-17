@@ -842,7 +842,7 @@ public class VillagerTradingCellBlockEntity extends BlockEntity implements Machi
 
         heldStack.shrink(1);
         if (!player.getInventory().add(targetStack)) {
-            player.drop(targetStack, false);
+            player.drop(targetStack, false, net.minecraft.util.Prediction.SERVER_ONLY);
         }
     }
 

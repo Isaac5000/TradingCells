@@ -109,8 +109,8 @@ public final class StormArmAnimation {
             pose.translate(-side * 0.15 * lift(p), 0.22 * lift(p), -0.12 * lift(p));
             if (welder) {
                 pose.translate(0, -0.203125, 0.171875);
-                pose.mulPose(Axis.XP.rotationDegrees(75 * lift(p)));
-                pose.mulPose(Axis.ZP.rotationDegrees(35 * lift(p)));
+                pose.rotate(Axis.XP.rotationDegrees(75 * lift(p)));
+                pose.rotate(Axis.ZP.rotationDegrees(35 * lift(p)));
                 pose.translate(0, 0.203125, -0.171875);
             }
         }
@@ -120,7 +120,7 @@ public final class StormArmAnimation {
             HumanoidArm arm, ItemStack stack) {
         Use use = state.getRenderData(USE);
         if (use != null && use.arm() == arm && use.loading() && use.welder()) {
-            pose.mulPose(Axis.XP.rotationDegrees(75 * lift(use.progress())));
+            pose.rotate(Axis.XP.rotationDegrees(75 * lift(use.progress())));
         }
     }
 }

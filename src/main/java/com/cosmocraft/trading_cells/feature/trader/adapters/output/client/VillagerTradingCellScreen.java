@@ -35,7 +35,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import org.lwjgl.glfw.GLFW;
 
 public final class VillagerTradingCellScreen extends MachineContainerScreen<VillagerTradingCellMenu> { // NOSONAR - Minecraft fixes the screen inheritance hierarchy.
     private static final Identifier RESET_NORMAL =
@@ -226,7 +225,7 @@ public final class VillagerTradingCellScreen extends MachineContainerScreen<Vill
     @Override
     public boolean keyPressed(KeyEvent event) {
         int key = event.key();
-        if (key == GLFW.GLFW_KEY_C && menu.canResetTrades()) {
+        if (key == InputConstants.KEY_C && menu.canResetTrades()) {
             resetTrades();
             return true;
         }
@@ -235,12 +234,12 @@ public final class VillagerTradingCellScreen extends MachineContainerScreen<Vill
             return super.keyPressed(event);
         }
         int target = switch (key) {
-            case GLFW.GLFW_KEY_UP -> selectedOffer - 1;
-            case GLFW.GLFW_KEY_DOWN -> selectedOffer + 1;
-            case GLFW.GLFW_KEY_PAGE_UP -> selectedOffer - VillagerTradeScreenLayout.MANUAL_VISIBLE_ROWS;
-            case GLFW.GLFW_KEY_PAGE_DOWN -> selectedOffer + VillagerTradeScreenLayout.MANUAL_VISIBLE_ROWS;
-            case GLFW.GLFW_KEY_HOME -> 0;
-            case GLFW.GLFW_KEY_END -> offerCount - 1;
+            case InputConstants.KEY_UP -> selectedOffer - 1;
+            case InputConstants.KEY_DOWN -> selectedOffer + 1;
+            case InputConstants.KEY_PAGEUP -> selectedOffer - VillagerTradeScreenLayout.MANUAL_VISIBLE_ROWS;
+            case InputConstants.KEY_PAGEDOWN -> selectedOffer + VillagerTradeScreenLayout.MANUAL_VISIBLE_ROWS;
+            case InputConstants.KEY_HOME -> 0;
+            case InputConstants.KEY_END -> offerCount - 1;
             default -> Integer.MIN_VALUE;
         };
         if (target == Integer.MIN_VALUE) {
@@ -476,8 +475,8 @@ public final class VillagerTradingCellScreen extends MachineContainerScreen<Vill
 
     private boolean isShiftPressed() {
         return minecraft != null
-                && (InputConstants.isKeyDown(minecraft.getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
-                || InputConstants.isKeyDown(minecraft.getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT));
+                && (InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+                || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT));
     }
 
     private void resetTrades() {

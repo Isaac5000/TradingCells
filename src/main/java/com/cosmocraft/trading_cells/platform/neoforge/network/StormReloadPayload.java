@@ -11,8 +11,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public record StormReloadPayload(InteractionHand hand, boolean eject) implements CustomPacketPayload {
     public static final Type<StormReloadPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath("trading_cells", "storm_reload"));
     public static final StreamCodec<RegistryFriendlyByteBuf, StormReloadPayload> STREAM_CODEC = StreamCodec.of(
-            (buffer, value) -> { buffer.writeEnum(value.hand()); buffer.writeBoolean(value.eject()); },
-            buffer -> new StormReloadPayload(buffer.readEnum(InteractionHand.class), buffer.readBoolean()));
+            (buffer, value) -> { buffer.writeVarInt(value.hand().ordinal()); buffer.writeBoolean(value.eject()); },
+            buffer -> new StormReloadPayload(buffer.readById(index -> InteractionHand.values()[index]), buffer.readBoolean()));
     public static void handle(StormReloadPayload payload, IPayloadContext context) {
         StormWeaponItem.requestReload(context.player(), payload.hand(), payload.eject());
     }

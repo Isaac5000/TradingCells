@@ -32,8 +32,8 @@ public final class PipeConfigurationMenu extends AbstractContainerMenu {
     private com.cosmocraft.trading_cells.platform.neoforge.network.PipeChannelSuggestionsPayload channelSuggestions;
 
     public PipeConfigurationMenu(int id, Inventory inventory, RegistryFriendlyByteBuf data) {
-        this(id, inventory, null, data.readBlockPos(), data.readEnum(Direction.class),
-                data.readEnum(InteractionHand.class), data.readEnum(PipeKind.class),
+        this(id, inventory, null, data.readBlockPos(), data.readById(index -> Direction.values()[index]),
+                data.readById(index -> InteractionHand.values()[index]), data.readById(index -> PipeKind.values()[index]),
                 PipeFaceConfiguration.load(data.readNbt()), data.readVarLong());
     }
 

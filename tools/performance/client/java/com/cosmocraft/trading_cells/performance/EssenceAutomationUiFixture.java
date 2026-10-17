@@ -193,7 +193,7 @@ final class EssenceAutomationUiFixture {
         } else if (phase <= 10) {
             if (!(screen instanceof ArcaneInfuserScreen infuser)) { return; }
             var menu = infuser.getMenu();
-            int x = infuser.getGuiLeft(), y = infuser.getGuiTop();
+            int x = infuser.getLeftPos(), y = infuser.getTopPos();
             switch (phase) {
                 case 7 -> { if (menu.automationDisplay() == null) { return; } click(screen, x + 98, y + 84); }
                 case 8 -> {

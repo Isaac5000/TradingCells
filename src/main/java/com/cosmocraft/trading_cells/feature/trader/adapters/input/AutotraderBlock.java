@@ -5,7 +5,6 @@ import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobSta
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.AbstractPortableMachineBlock;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.PortableMachineBlockEntity;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -22,16 +21,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.NonNull;
 
 public final class AutotraderBlock extends AbstractPortableMachineBlock<AutotraderBlockEntity> {
-    public static final MapCodec<AutotraderBlock> CODEC = simpleCodec(AutotraderBlock::new);
 
     public AutotraderBlock(Properties properties) {
         super(properties);
     }
 
-    @Override
-    protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
 
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {

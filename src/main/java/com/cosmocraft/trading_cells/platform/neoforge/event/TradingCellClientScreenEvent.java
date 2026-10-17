@@ -8,7 +8,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ScreenEvent;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 /** Shared keyboard/cleanup hooks for the two custom villager trading screens. */
 @EventBusSubscriber(modid = TradingCells.MOD_ID, value = Dist.CLIENT)
@@ -25,7 +25,7 @@ public final class TradingCellClientScreenEvent {
 
     @SubscribeEvent
     public static void onKeyPressed(ScreenEvent.KeyPressed.Pre event) {
-        if (event.getKeyCode() == GLFW.GLFW_KEY_C
+        if (event.getKey() == InputConstants.KEY_C
                 && event.getScreen() instanceof AutotraderScreen screen
                 && screen.resetTradesFromShortcut()) {
             event.setCanceled(true);

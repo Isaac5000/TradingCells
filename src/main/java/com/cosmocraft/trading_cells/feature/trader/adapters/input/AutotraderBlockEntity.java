@@ -452,7 +452,7 @@ public final class AutotraderBlockEntity extends PortableMachineBlockEntity impl
         if (target != stack) {
             stack.shrink(1);
             if (!player.getInventory().add(target)) {
-                player.drop(target, false);
+                player.drop(target, false, net.minecraft.util.Prediction.SERVER_ONLY);
             }
         }
 

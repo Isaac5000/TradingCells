@@ -4,6 +4,8 @@ import com.cosmocraft.trading_cells.feature.silktouch.adapters.output.SilkTouchT
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import java.util.Optional;
+import net.minecraft.core.Holder;
 import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -19,19 +21,19 @@ public final class SilkTouchTwoLootModifier extends LootModifier {
             codecStart(instance).apply(instance, SilkTouchTwoLootModifier::new)
     );
 
-    public SilkTouchTwoLootModifier(LootItemCondition[] conditions, int priority) {
-        super(conditions, priority);
+    public SilkTouchTwoLootModifier(Optional<Holder<LootItemCondition>> condition, int priority) {
+        super(condition, priority);
     }
 
     @Override
     protected ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-        BlockState state = context.getOptionalParameter(LootContextParams.BLOCK_STATE);
-        ItemInstance tool = context.getOptionalParameter(LootContextParams.TOOL);
+        BlockState state = context.getOptional(LootContextParams.BLOCK_STATE);
+        ItemInstance tool = context.getOptional(LootContextParams.TOOL);
         if (state == null || tool == null) {
             return generatedLoot;
         }
 
-        BlockEntity blockEntity = context.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
+        BlockEntity blockEntity = context.getOptional(LootContextParams.BLOCK_ENTITY);
         ItemStack drop = SilkTouchTwoDropAdapter.createDrop(
                 state,
                 tool,

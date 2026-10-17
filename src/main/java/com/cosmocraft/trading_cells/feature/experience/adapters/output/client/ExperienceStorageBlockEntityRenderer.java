@@ -31,7 +31,7 @@ public final class ExperienceStorageBlockEntityRenderer implements BlockEntityRe
         ExperienceStorageBlockEntityRenderer.State> {
     private static final Identifier ORB_TEXTURE =
             Identifier.withDefaultNamespace("textures/entity/experience/experience_orb.png");
-    private static final RenderType ORB_RENDER_TYPE = RenderTypes.entityTranslucentCullItemTarget(ORB_TEXTURE);
+    private static final RenderType ORB_RENDER_TYPE = RenderTypes.entityTranslucentCull(ORB_TEXTURE);
     private static final int FULL_BRIGHT = 15_728_880;
     private static final float ORB_SCALE = 0.46F;
     private static final int HOVER_XP_OFFSET = -5;
@@ -144,7 +144,7 @@ public final class ExperienceStorageBlockEntityRenderer implements BlockEntityRe
 
         poseStack.pushPose();
         poseStack.translate(0.5F, 0.42F + bob, 0.5F);
-        poseStack.mulPose(camera.orientation);
+        poseStack.rotate(camera.orientation);
         poseStack.scale(ORB_SCALE, ORB_SCALE, ORB_SCALE);
         submitNodeCollector.submitCustomGeometry(poseStack, ORB_RENDER_TYPE, (pose, buffer) -> {
             vertex(buffer, pose, -0.5F, -0.25F, red, blue, u0, v1);

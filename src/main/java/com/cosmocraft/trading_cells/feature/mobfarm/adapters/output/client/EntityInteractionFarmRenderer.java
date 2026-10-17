@@ -68,8 +68,8 @@ public final class EntityInteractionFarmRenderer implements BlockEntityRenderer<
         poses.pushPose();
         poses.translate(0.5 + state.side.getStepX() * offset + front.getStepX() * 0.296875, 0.185,
                 0.5 + state.side.getStepZ() * offset + front.getStepZ() * 0.296875);
-        poses.mulPose(Axis.YP.rotationDegrees(-front.toYRot()));
-        poses.mulPose(Axis.XP.rotationDegrees(90));
+        poses.rotate(Axis.YP.rotationDegrees(-front.toYRot()));
+        poses.rotate(Axis.XP.rotationDegrees(90));
         poses.scale(0.18F, 0.18F, 0.18F);
         item.submit(poses, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         poses.popPose();

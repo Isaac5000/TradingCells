@@ -118,7 +118,7 @@ public final class PiglinBarteringCellBlockEntityRenderer implements BlockEntity
         if (!state.outputItem.isEmpty()) {
             poseStack.pushPose();
             poseStack.translate(0.5D + stepX * OUTPUT_ITEM_FRONT_OFFSET, OUTPUT_ITEM_BASE_Y, 0.5D + stepZ * OUTPUT_ITEM_FRONT_OFFSET);
-            poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - state.facing.toYRot()));
+            poseStack.rotate(Axis.YP.rotationDegrees(180.0F - state.facing.toYRot()));
             poseStack.scale(OUTPUT_ITEM_SCALE, OUTPUT_ITEM_SCALE, OUTPUT_ITEM_SCALE);
             state.outputItem.submit(poseStack, submitNodeCollector, state.lightCoords, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, EntityRenderState.NO_OUTLINE);
             poseStack.popPose();

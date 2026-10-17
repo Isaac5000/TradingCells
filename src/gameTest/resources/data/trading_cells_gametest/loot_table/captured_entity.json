@@ -3,8 +3,15 @@
   "pools": [
     {
       "rolls": 1,
-      "conditions": [{"condition": "minecraft:killed_by_player"}],
-      "entries": [{"type": "minecraft:item", "name": "minecraft:diamond"}]
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:diamond"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:killed_by_player"
+      }
     }
   ]
 }

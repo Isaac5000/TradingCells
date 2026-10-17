@@ -53,7 +53,7 @@ public final class ArcaneInfuserBlockEntityRenderer implements BlockEntityRender
     public void submit(State state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
         pose.pushPose();
         pose.translate(0.5, 0.335, 0.5);
-        pose.mulPose(Axis.YP.rotationDegrees(180 - state.facing.toYRot()));
+        pose.rotate(Axis.YP.rotationDegrees(180 - state.facing.toYRot()));
         for (int slot = 0; slot < state.items.length; slot++) {
             if (state.items[slot].isEmpty()) { continue; }
             pose.pushPose();

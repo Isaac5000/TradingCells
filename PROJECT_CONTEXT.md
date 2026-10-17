@@ -11,10 +11,13 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 - Soldador 2026-10-16: brazo recto hacia delante, sin giro lateral fijo;
   sigue la mirada, conserva agarre alto, hombros fijos y recarga. Primera
   persona intacta. OpenGL+REI/derecha comprobado: `artifacts/storm-straight-arm-opengl`.
-  Vulkan/izquierda sin REI no completo inicio ni genero capturas/summary.csv;
-  pendiente visual, registro `artifacts/storm-straight-arm-vulkan.log`.
+  Vulkan/izquierda sin REI comprobado el 2026-10-17, incluidos giros extremos,
+  recarga y descarga: `artifacts/storm-straight-arm-vulkan-retry-20261017`.
+  Reintento correcto sin cambios de codigo; primer inicio tuvo timeout grafico.
   `checkGraphicsBackendIndependence check releaseCheck`: 169 GameTests correctos,
   `artifacts/storm-straight-arm-check.log`.
+  Cierre 2026-10-17: `check releaseCheck` repetido, 169 GameTests correctos;
+  `artifacts/storm-straight-arm-final-20261017.log`.
 
 - Creativo 2026-10-16: mejoras al final de Objetos, orden tuberias/barter/
   cantera/velocidad/capacidad; cada familia de cobre a netherita. Catalogo

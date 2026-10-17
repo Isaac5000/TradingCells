@@ -4,7 +4,6 @@ import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobSta
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.trader.adapters.output.TraderRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.machine.MachineCageBlockShapes;
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.component.TypedEntityData;
@@ -36,7 +35,6 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public class PiglinBarteringCellBlock extends BaseEntityBlock {
-    public static final MapCodec<PiglinBarteringCellBlock> CODEC = simpleCodec(PiglinBarteringCellBlock::new);
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public PiglinBarteringCellBlock(Properties properties) {
@@ -44,10 +42,6 @@ public class PiglinBarteringCellBlock extends BaseEntityBlock {
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
-    @Override
-    protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
 
     @Override
     public @NonNull BlockState getStateForPlacement(@NonNull BlockPlaceContext context) {
@@ -201,8 +195,8 @@ public class PiglinBarteringCellBlock extends BaseEntityBlock {
 
     @Override
     public void playerDestroy(
-            @NonNull Level level,
-            @NonNull Player player,
+            net.minecraft.server.level.@NonNull ServerLevel level,
+            net.minecraft.server.level.@NonNull ServerPlayer player,
             @NonNull BlockPos pos,
             @NonNull BlockState state,
             @Nullable BlockEntity blockEntity, // NOSONAR - Minecraft's Block API explicitly permits no block entity.
