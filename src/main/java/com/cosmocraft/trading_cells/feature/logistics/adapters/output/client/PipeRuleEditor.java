@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.feature.logistics.adapters.output.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.cosmocraft.trading_cells.feature.logistics.adapters.input.PipeConfigurationClipboard;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.input.PipeTargetSelectorItem;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.neoforge.LogisticsComponentData;
@@ -111,7 +113,7 @@ final class PipeRuleEditor {
 
     boolean click(double x, double y, int button, ItemStack carried) {
         if (inside(x, y, 12, 24, 18, 18)) {
-            if (button == 1) { identifier.setValue(""); return true; }
+            if (button == InputConstants.MOUSE_BUTTON_RIGHT) { identifier.setValue(""); return true; }
             if (carried.isEmpty()) { return true; }
             String id = BuiltInRegistries.ITEM.getKey(carried.getItem()).toString();
             if ((type == LogisticsResourceType.FLUID || type == LogisticsResourceType.GAS) && carried.getItem() instanceof BucketItem bucket) {
@@ -125,7 +127,7 @@ final class PipeRuleEditor {
         }
         if (inside(x, y, 204, 126, 18, 18)) {
             if (advanced) {
-                if (button == 1) { target = null; }
+                if (button == InputConstants.MOUSE_BUTTON_RIGHT) { target = null; }
                 else { var recorded = PipeTargetSelectorItem.target(carried); if (recorded != null) { target = recorded; } }
             }
             return true;

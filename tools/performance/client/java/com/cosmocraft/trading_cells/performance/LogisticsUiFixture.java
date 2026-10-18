@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.performance;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.cosmocraft.trading_cells.feature.logistics.adapters.input.*;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.output.LogisticsRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.*;
@@ -122,7 +124,7 @@ final class LogisticsUiFixture {
             case 10 -> {
                 if (!menu.getCarried().is(Items.STICK)) { return; }
                 var event = new net.minecraft.client.input.MouseButtonEvent(left + 20, top + 132,
-                        new net.minecraft.client.input.MouseButtonInfo(0, 1));
+                        new net.minecraft.client.input.MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, InputConstants.MOD_SHIFT));
                 screen.mouseClicked(event, false);
                 screen.mouseReleased(event);
                 screen.mouseClicked(event, true);
@@ -249,7 +251,7 @@ final class LogisticsUiFixture {
     }
 
     private static void click(net.minecraft.client.gui.screens.Screen screen, int x, int y) {
-        var event = new net.minecraft.client.input.MouseButtonEvent(x, y, new net.minecraft.client.input.MouseButtonInfo(0, 0));
+        var event = new net.minecraft.client.input.MouseButtonEvent(x, y, new net.minecraft.client.input.MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
         screen.mouseClicked(event, false);
         screen.mouseReleased(event);
     }

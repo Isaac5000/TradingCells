@@ -60,7 +60,7 @@ base {
     archivesName = mod_id
 }
 
-// Mojang ships Java 25 to end users in 26.2, so mods should target Java 25.
+// Mojang ships Java 25 to end users in 26.3, so mods should target Java 25.
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 // Optional mods used only by selected development runs.
@@ -260,7 +260,7 @@ neoForge {
             // without exposing their classes to dedicated-server runs.
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-            // REI 26.2 still uses @OnlyIn. NeoForge reports every usage in the
+            // REI 26.3 beta still uses @OnlyIn. NeoForge reports every usage in the
             // development log, but this avoids an upstream warning blocking runClient.
             systemProperty 'neoforge.warnings.onlyin.hide', 'true'
             systemProperty 'neoforge.warnings.logofile.hide', 'true'
@@ -276,8 +276,7 @@ neoForge {
             client()
             sourceSet = sourceSets.developmentClient
             gameDirectory = project.file('run/vulkan')
-            // NeoForge 26.2.0.88 still creates its early window with an
-            // OpenGL context, which cannot be handed to Minecraft's Vulkan backend.
+            // Keep the isolated Vulkan development profile's early-window setting.
             taskBefore prepareVulkanFmlConfig.get()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'neoforge.warnings.onlyin.hide', 'true'

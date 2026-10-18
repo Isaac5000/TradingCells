@@ -3,7 +3,6 @@ package com.cosmocraft.trading_cells.platform.neoforge.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 
@@ -12,7 +11,6 @@ public final class ItemDetailsTooltip {
     private ItemDetailsTooltip() { }
 
     public static boolean keyDown() {
-        var window = Minecraft.getInstance().getWindow();
         return InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
                 || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
     }

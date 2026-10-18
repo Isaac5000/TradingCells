@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotGhosts;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter;
 import com.cosmocraft.trading_cells.platform.neoforge.client.screen.MachineSlotSprites;
@@ -138,7 +140,7 @@ public final class MobFarmScreen extends MachineContainerScreen<MobFarmMenu> {
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         filterClick = false;
         int index = rowAt(event.x(), event.y());
-        if (index >= 0 && event.button() == 0) {
+        if (index >= 0 && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             var entry = menu.lootEntries().get(index);
             ClientPacketDistributor.sendToServer(new MobSimulationFilterPayload(menu.containerId, menu.lootRevision(),
                     BuiltInRegistries.ITEM.getKey(entry.stack().getItem())));

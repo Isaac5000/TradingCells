@@ -4,6 +4,10 @@ Trading Cells crea su configuracion comun mediante NeoForge. Todos los tiempos
 se expresan en ticks; Minecraft ejecuta 20 ticks por segundo cuando el servidor
 mantiene su ritmo normal.
 
+En NeoForge 26.3 se registra como `LOCAL`, conservando el archivo
+`config/trading_cells-common.toml` de las versiones anteriores. No cambia
+el alcance ni la autoridad del servidor sobre las mecanicas.
+
 | Clave | Predeterminado | Rango | Efecto |
 | --- | ---: | ---: | --- |
 | `timers.breederTicks` | `6000` | `1-72000` | Duracion compartida de ambos criaderos. |

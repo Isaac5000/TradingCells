@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.performance;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.cosmocraft.trading_cells.feature.logistics.adapters.output.LogisticsRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.output.client.PipeConfigurationScreen;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeUpgradeTier;
@@ -36,8 +38,8 @@ final class PipeInteractionUiFixture {
                 require(menu.getCarried().getCount() == 64, "Upgrade stack pickup");
             }
             case 2 -> {
-                var down = new MouseButtonEvent(left + 24, top + 57, new MouseButtonInfo(0, 0));
-                var moved = new MouseButtonEvent(left + 25, top + 58, new MouseButtonInfo(0, 0));
+                var down = new MouseButtonEvent(left + 24, top + 57, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
+                var moved = new MouseButtonEvent(left + 25, top + 58, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
                 screen.mouseClicked(down, false);
                 screen.mouseDragged(moved, 1, 1);
                 screen.mouseReleased(moved);
@@ -59,7 +61,7 @@ final class PipeInteractionUiFixture {
             }
             case 6 -> {
                 if (menu.latest().upgradeTier() != PipeUpgradeTier.BARE || !modeActive(screen)) { return; }
-                click(screen, 44, 132, 1);
+                click(screen, 44, 132, InputConstants.MOD_SHIFT);
             }
             case 7 -> {
                 if (menu.latest().upgradeTier() != PipeUpgradeTier.INFINITE || !modeActive(screen)) { return; }
@@ -71,7 +73,7 @@ final class PipeInteractionUiFixture {
                 }
                 field(screen, 28).setValue("777");
                 field(screen, 148).setValue("metales");
-                screen.keyPressed(new KeyEvent(256, 0, 0));
+                screen.keyPressed(new KeyEvent(InputConstants.KEY_ESCAPE, 27, 0));
                 require(Minecraft.getInstance().gui.screen() != screen, "Escape must still close a focused field");
                 System.out.println("Pipe upgrade drag, full/empty no-op, shift click and inventory conservation verified");
             }
@@ -86,9 +88,9 @@ final class PipeInteractionUiFixture {
                 for (var child : screen.children()) {
                     if (child instanceof EditBox field) { checkTyping(screen, field); }
                 }
-                field(screen, 28).setValue("minecraft:iron_ingot");
+                field(screen, 24).setValue("minecraft:iron_ingot");
                 field(screen, 58).setValue("{\"minecraft:custom_data\":{name:\"e1qf\"}}");
-                field(screen, 88).setValue("hierro");
+                field(screen, 92).setValue("hierro");
                 click(screen, 310, 193, 0);
                 screen.onClose();
             }
@@ -109,15 +111,18 @@ final class PipeInteractionUiFixture {
         click(screen, field.getX() - screen.getLeftPos() + 4, field.getY() - screen.getTopPos() + 4, 0);
         field.setValue("");
         for (char character : "e1qf".toCharArray()) {
-            screen.keyPressed(new KeyEvent(Character.toUpperCase(character), 0, 0));
+            int key = character == '1' ? InputConstants.KEY_1 : InputConstants.KEY_A + character - 'a';
+            screen.keyPressed(new KeyEvent(key, character, 0));
             require(Minecraft.getInstance().gui.screen() == screen, "Text key closed screen: " + character);
             screen.charTyped(new CharacterEvent(character));
         }
         require(field.getValue().equals("e1qf"), "Text input must reach its focused field");
-        screen.keyPressed(new KeyEvent(65, 0, 2));
-        screen.keyPressed(new KeyEvent(259, 0, 0));
+        screen.keyPressed(new KeyEvent(InputConstants.KEY_A, 'a', InputConstants.MOD_CONTROL));
+        screen.keyPressed(new KeyEvent(InputConstants.KEY_BACKSPACE, '\b', 0));
         require(field.getValue().isEmpty(), "Ctrl+A and Backspace must still edit text");
         field.setValue(before);
+        screen.keyPressed(new KeyEvent(InputConstants.KEY_TAB, '\t', 0));
+        require(screen.getFocused() != field, "Tab must move focus to the next control");
     }
 
     private static EditBox field(PipeConfigurationScreen screen, int y) {
@@ -132,7 +137,7 @@ final class PipeInteractionUiFixture {
     }
 
     private static void click(net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen, int x, int y, int modifiers) {
-        var event = new MouseButtonEvent(screen.getLeftPos() + x, screen.getTopPos() + y, new MouseButtonInfo(0, modifiers));
+        var event = new MouseButtonEvent(screen.getLeftPos() + x, screen.getTopPos() + y, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, modifiers));
         screen.mouseClicked(event, false);
         screen.mouseReleased(event);
     }

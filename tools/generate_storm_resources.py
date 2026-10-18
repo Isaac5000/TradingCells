@@ -200,7 +200,7 @@ def data():
     write(tag, mining)
     write(DATA / "loot_table/blocks/storm_station.json", {"type": "minecraft:block", "pools": [{"rolls": 1,
         "entries": [{"type": "minecraft:item", "name": "trading_cells:storm_station"}],
-        "conditions": [{"condition": "minecraft:survives_explosion"}]}]})
+        "condition": {"type": "minecraft:survives_explosion"}}]})
     for name, values in {
         "voltaic_capacitor": ("Condensador voltaico", "Voltaic Capacitor"),
         "electric_baton": ("Porra eléctrica", "Electric Baton"), "electric_arc_welder": ("Soldador de arco eléctrico", "Electric Arc Welder"),

@@ -62,7 +62,7 @@ def resources():
         put(f"{DATA}/loot_table/blocks/{name}.json", {
             "type": "minecraft:block", "pools": [{"rolls": 1,
                 "entries": [{"type": "minecraft:item", "name": f"trading_cells:{name}"}],
-                "conditions": [{"condition": "minecraft:survives_explosion"}]}],
+                "condition": {"type": "minecraft:survives_explosion"}}],
             "random_sequence": f"trading_cells:blocks/{name}",
         })
 
