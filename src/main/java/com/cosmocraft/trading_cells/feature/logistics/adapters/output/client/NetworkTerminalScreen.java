@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.feature.logistics.adapters.output.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.cosmocraft.trading_cells.feature.logistics.adapters.input.NetworkTerminalMenu;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.LogisticsResourceType;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.NetworkAmountFormat;
@@ -112,7 +114,7 @@ public final class NetworkTerminalScreen extends MachineContainerScreen<NetworkT
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (!event.isEscape() && event.key() != 258 && getFocused() instanceof EditBox field && field.isFocused()) {
+        if (!event.isEscape() && event.key() != InputConstants.KEY_TAB && getFocused() instanceof EditBox field && field.isFocused()) {
             field.keyPressed(event);
             return true;
         }
@@ -195,7 +197,7 @@ public final class NetworkTerminalScreen extends MachineContainerScreen<NetworkT
                 inside(event.x(), event.y(), leftPos + candidate.x, topPos + candidate.y, 16, 16)).findFirst().orElse(null);
         boolean repeatedSlot = playerSlot != null && playerSlot == lastPlayerClick && playerSlot == lastQuickMoveSlot;
         lastPlayerClick = playerSlot;
-        if (!recipes && menu.selectedType() == LogisticsResourceType.ITEM && event.button() == 0
+        if (!recipes && menu.selectedType() == LogisticsResourceType.ITEM && event.button() == InputConstants.MOUSE_BUTTON_LEFT
                 && event.hasShiftDown() && doubleClick && repeatedSlot) {
             ItemStack matching = playerSlot.hasItem() ? playerSlot.getItem() : lastQuickMoveItem;
             if (!matching.isEmpty()) {
@@ -207,15 +209,15 @@ public final class NetworkTerminalScreen extends MachineContainerScreen<NetworkT
                 return true;
             }
         }
-        if (event.button() == 0 && inside(event.x(), event.y(), leftPos + 332, topPos + GRID_Y, 8, GRID_HEIGHT)) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && inside(event.x(), event.y(), leftPos + 332, topPos + GRID_Y, 8, GRID_HEIGHT)) {
             draggingScroll = true;
             dragScrollbar(event.y());
             return true;
         }
-        if (overGrid(event.x(), event.y()) && (event.button() == 0 || event.button() == 1)) {
+        if (overGrid(event.x(), event.y()) && (event.button() == InputConstants.MOUSE_BUTTON_LEFT || event.button() == InputConstants.MOUSE_BUTTON_RIGHT)) {
             virtualClick = true;
             if (!recipes && menu.selectedType() == LogisticsResourceType.ITEM && !menu.getCarried().isEmpty()) {
-                if (doubleClick && event.button() == 0 && !event.hasShiftDown()) {
+                if (doubleClick && event.button() == InputConstants.MOUSE_BUTTON_LEFT && !event.hasShiftDown()) {
                     var matching = menu.entries().stream().filter(entry ->
                             ItemStack.isSameItemSameComponents(entry.icon(), menu.getCarried())).findFirst().orElse(null);
                     if (matching != null) {
@@ -224,7 +226,7 @@ public final class NetworkTerminalScreen extends MachineContainerScreen<NetworkT
                     return true;
                 }
                 sendAction(NetworkTerminalActionPayload.Action.CURSOR_DEPOSIT, 0,
-                        event.button() == 1 ? 1 : menu.getCarried().getCount(), null);
+                        event.button() == InputConstants.MOUSE_BUTTON_RIGHT ? 1 : menu.getCarried().getCount(), null);
                 return true;
             }
             int row = (int) Math.floor((event.y() - topPos - GRID_Y + scroll) / CELL);
@@ -237,7 +239,7 @@ public final class NetworkTerminalScreen extends MachineContainerScreen<NetworkT
                 } else if (menu.selectedType() == LogisticsResourceType.ITEM) {
                     long count = Math.min(entry.amount(), entry.icon().isEmpty() ? 64 : entry.icon().getMaxStackSize());
                     sendAction(NetworkTerminalActionPayload.Action.CURSOR_WITHDRAW, event.hasShiftDown() ? 1 : 0,
-                            event.button() == 1 ? (count + 1) / 2 : count, entry);
+                            event.button() == InputConstants.MOUSE_BUTTON_RIGHT ? (count + 1) / 2 : count, entry);
                 } else {
                     selectedContainerEntry = entry;
                     sendAction(NetworkTerminalActionPayload.Action.CONTAINER_WITHDRAW, 0, Long.MAX_VALUE, entry);
@@ -249,7 +251,7 @@ public final class NetworkTerminalScreen extends MachineContainerScreen<NetworkT
             for (int index = 0; index < 9; index++) {
                 if (inside(event.x(), event.y(), leftPos + 23 + index % 3 * 18, topPos + 52 + index / 3 * 18, 18, 18)) {
                     virtualClick = true;
-                    sendAction(NetworkTerminalActionPayload.Action.GHOST, index, event.button() == 1 ? 0 : 1, null);
+                    sendAction(NetworkTerminalActionPayload.Action.GHOST, index, event.button() == InputConstants.MOUSE_BUTTON_RIGHT ? 0 : 1, null);
                     return true;
                 }
             }
@@ -296,11 +298,11 @@ public final class NetworkTerminalScreen extends MachineContainerScreen<NetworkT
         }
         if (!pressedNetwork && !recipes && menu.selectedType() == LogisticsResourceType.ITEM
                 && overGrid(event.x(), event.y()) && !menu.getCarried().isEmpty()
-                && (event.button() == 0 || event.button() == 1)) {
+                && (event.button() == InputConstants.MOUSE_BUTTON_LEFT || event.button() == InputConstants.MOUSE_BUTTON_RIGHT)) {
             isQuickCrafting = false;
             quickCraftSlots.clear();
             sendAction(NetworkTerminalActionPayload.Action.CURSOR_DEPOSIT, 0,
-                    event.button() == 1 ? 1 : menu.getCarried().getCount(), null);
+                    event.button() == InputConstants.MOUSE_BUTTON_RIGHT ? 1 : menu.getCarried().getCount(), null);
             return true;
         }
         return super.mouseReleased(event);

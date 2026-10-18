@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.performance;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.cosmocraft.trading_cells.feature.captures.adapters.api.CapturedMobStackAdapter;
 import com.cosmocraft.trading_cells.feature.captures.domain.model.CapturedMobKind;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EntityEssenceData;
@@ -116,7 +118,7 @@ final class InteractionFarmUiFixture {
         phase++; nextAction = System.nanoTime() + 1_000_000_000L;
     }
     private static void click(net.minecraft.client.gui.screens.Screen screen, int x, int y) {
-        var event = new MouseButtonEvent(x, y, new MouseButtonInfo(0, 0));
+        var event = new MouseButtonEvent(x, y, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
         screen.mouseClicked(event, false); screen.mouseReleased(event);
     }
 }

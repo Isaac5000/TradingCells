@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.feature.quarry.adapters.output.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMaterialCatalog;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.input.QuarryMenu;
 import com.cosmocraft.trading_cells.feature.quarry.domain.model.QuarryUpgradeTier;
@@ -99,7 +101,7 @@ final class QuarryCatalogPanel {
 
     boolean mouseClicked(double x, double y, int button, int left, int top, QuarryMenu menu) {
         if (!open || !contains(x, y, left, top)) { return false; }
-        if (button != 0) { return true; }
+        if (button != InputConstants.MOUSE_BUTTON_LEFT) { return true; }
         if (inside(x, y, left + X + 3, top + Y + 1, 18, 18)) {
             var gameMode = Minecraft.getInstance().gameMode;
             if (gameMode != null) { gameMode.handleInventoryButtonClick(menu.containerId, QuarryMenu.TOGGLE_FILTER_BUTTON); }

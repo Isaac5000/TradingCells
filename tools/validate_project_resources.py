@@ -146,7 +146,7 @@ def validate_data_directories(roots: list[Path], errors: list[str]) -> None:
             old_path = namespace / old_name
             if old_path.is_dir() and any(path.is_file() for path in old_path.rglob("*")):
                 errors.append(
-                    f"{old_path}: obsolete data directory; use {current_name}/ for Minecraft 26.2"
+                    f"{old_path}: obsolete data directory; use {current_name}/ for Minecraft 26.3"
                 )
 
 

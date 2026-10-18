@@ -154,7 +154,7 @@ def resources():
             model_item(name, f"block/{name}")
         add(f"{DATA}/loot_table/blocks/{name}.json", {"type": "minecraft:block", "pools": [{"rolls": 1,
             "entries": [{"type": "minecraft:item", "name": f"trading_cells:{name}"}],
-            "conditions": [{"condition": "minecraft:survives_explosion"}]}]})
+            "condition": {"type": "minecraft:survives_explosion"}}]})
 
     pedestal = outlined_union([([1, 0, 1], [15, 1.5, 15]), ([3, 1.5, 3], [13, 3.5, 13])], "base")
     module_model = block_model(pedestal)

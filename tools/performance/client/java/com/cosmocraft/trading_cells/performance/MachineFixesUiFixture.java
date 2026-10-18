@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.performance;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.cosmocraft.trading_cells.feature.farmer.adapters.output.FarmerRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.quarry.adapters.output.QuarryRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.EssenceWorkbenchMenu;
@@ -252,7 +254,7 @@ final class MachineFixesUiFixture {
                 stage = 2; nextAction = System.nanoTime() + 700_000_000L; return;
             }
             if (menu instanceof EssenceWorkbenchMenu) {
-                var event = new MouseButtonEvent(screen.getLeftPos() + 191, screen.getTopPos() + 133, new MouseButtonInfo(0, 0));
+                var event = new MouseButtonEvent(screen.getLeftPos() + 191, screen.getTopPos() + 133, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
                 screen.mouseClicked(event, false); screen.mouseReleased(event);
                 stage = 2; nextAction = System.nanoTime() + 700_000_000L; return;
             }
@@ -292,7 +294,7 @@ final class MachineFixesUiFixture {
     }
 
     private static void click(AbstractContainerScreen<?> screen, int x, int y) {
-        var event = new MouseButtonEvent(x, y, new MouseButtonInfo(0, 0));
+        var event = new MouseButtonEvent(x, y, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
         screen.mouseClicked(event, false); screen.mouseReleased(event);
     }
 
