@@ -100,11 +100,10 @@ final class MobFarmLootTableReloadListener extends SimpleJsonResourceReloadListe
                 Identifier id = Identifier.tryParse(string(object, "name"));
                 if (id != null && (type.equals("minecraft:item") || type.equals("item"))) {
                     items.add(new LootReference(id, false));
-                } else if (id != null && (type.equals("minecraft:tag") || type.equals("tag"))) {
-                    items.add(new LootReference(id, true));
+                } else if (type.equals("minecraft:tag") || type.equals("tag")) {
+                    collectItemReferences(object.get("items"), items);
                 } else if (type.equals("minecraft:loot_table") || type.equals("loot_table")) {
-                    Identifier table = Identifier.tryParse(string(object, "value"));
-                    if (table != null) { tables.add(table); }
+                    collectTableReferences(object.get("value"), tables);
                 }
                 object.entrySet().forEach(entry -> pending.addLast(entry.getValue()));
             }
@@ -115,6 +114,28 @@ final class MobFarmLootTableReloadListener extends SimpleJsonResourceReloadListe
     private static String string(JsonObject object, String key) {
         JsonElement value = object.get(key);
         return value == null || !value.isJsonPrimitive() ? "" : value.getAsString();
+    }
+
+    private static void collectItemReferences(JsonElement value, LinkedHashSet<LootReference> items) {
+        if (value == null) { return; }
+        if (value.isJsonArray()) {
+            value.getAsJsonArray().forEach(entry -> collectItemReferences(entry, items));
+        } else if (value.isJsonPrimitive()) {
+            String name = value.getAsString();
+            boolean tag = name.startsWith("#");
+            Identifier id = Identifier.tryParse(tag ? name.substring(1) : name);
+            if (id != null) { items.add(new LootReference(id, tag)); }
+        }
+    }
+
+    private static void collectTableReferences(JsonElement value, LinkedHashSet<Identifier> tables) {
+        if (value == null) { return; }
+        if (value.isJsonArray()) {
+            value.getAsJsonArray().forEach(entry -> collectTableReferences(entry, tables));
+        } else if (value.isJsonPrimitive()) {
+            Identifier id = Identifier.tryParse(value.getAsString());
+            if (id != null) { tables.add(id); }
+        }
     }
 
     record LootReference(Identifier id, boolean tag) {

@@ -1,5 +1,6 @@
 package com.cosmocraft.trading_cells.feature.logistics.adapters.output.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.input.*;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.output.LogisticsRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.*;
@@ -219,7 +220,7 @@ public final class PipeConfigurationScreen extends MachineContainerScreen<PipeCo
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (!event.isEscape() && event.key() != 258 && getFocused() instanceof EditBox field && field.isFocused()) {
+        if (!event.isEscape() && event.key() != InputConstants.KEY_TAB && getFocused() instanceof EditBox field && field.isFocused()) {
             field.keyPressed(event);
             return true;
         }

@@ -89,6 +89,7 @@ public final class TradingCellsGameTests {
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsShapeGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsRuleGameTests.tests());
         tests.addAll(BlockEntityGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.trader.VillagerTradingGameTests.tests());
         return List.copyOf(tests);
     }
 

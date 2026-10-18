@@ -74,6 +74,11 @@ public final class MobFarmLootPreview {
         if (depth > 16 || ++visits > 512) { throw new IllegalArgumentException("Preview complexity limit"); }
         var table = level.getServer().reloadableRegistries().getLootTable(key);
         JsonObject json = LootTable.DIRECT_CODEC.encodeStart(ops, table).getOrThrow().getAsJsonObject();
+        return table(json, depth);
+    }
+
+    private Map<Identifier, Summary> table(JsonObject json, int depth) {
+        if (depth > 16 || ++visits > 512) { throw new IllegalArgumentException("Preview complexity limit"); }
         var result = new LinkedHashMap<Identifier, Summary>();
         for (JsonElement value : array(json, "pools")) {
             JsonObject pool = value.getAsJsonObject();
@@ -121,11 +126,13 @@ public final class MobFarmLootPreview {
             case "minecraft:empty" -> result = Map.of();
             case "minecraft:item" -> result = Map.of(Identifier.parse(entry.get("name").getAsString()), new Summary(1, 1, 0));
             case "minecraft:loot_table" -> {
-                result = new LinkedHashMap<>();
+                var combined = new LinkedHashMap<Identifier, Summary>();
                 for (JsonElement reference : values(entry.get("value"))) {
-                    table(ResourceKey.create(Registries.LOOT_TABLE, Identifier.parse(reference.getAsString())), depth + 1)
-                            .forEach((id, summary) -> result.merge(id, summary, Summary::plus));
+                    var nested = reference.isJsonObject() ? table(reference.getAsJsonObject(), depth + 1)
+                            : table(ResourceKey.create(Registries.LOOT_TABLE, Identifier.parse(reference.getAsString())), depth + 1);
+                    nested.forEach((id, summary) -> combined.merge(id, summary, Summary::plus));
                 }
+                result = combined;
             }
             case "minecraft:alternatives" -> {
                 result = Map.of();

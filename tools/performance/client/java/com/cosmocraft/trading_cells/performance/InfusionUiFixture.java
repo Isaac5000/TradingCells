@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.performance;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserBlockEntity;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.minecraft.ArcaneInfusionRecipe;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
@@ -104,7 +106,7 @@ final class InfusionUiFixture {
         var output = menu.getSlot(ArcaneInfuserBlockEntity.OUTPUT_SLOT);
         if (phase == 0 && outputRendered) {
             var click = new MouseButtonEvent(screen.getLeftPos() + output.x + 8, screen.getTopPos() + output.y + 8,
-                    new MouseButtonInfo(0, 1));
+                    new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 1));
             screen.mouseClicked(click, false);
             screen.mouseReleased(click);
             phase = 1;

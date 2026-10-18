@@ -1,5 +1,7 @@
 package com.cosmocraft.trading_cells.performance;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import com.cosmocraft.trading_cells.feature.infusion.adapters.input.ArcaneInfuserBlockEntity;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.ArcaneInfuserRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.infusion.adapters.output.client.ArcaneInfuserScreen;
@@ -402,7 +404,7 @@ final class EssenceAutomationUiFixture {
         } catch (ReflectiveOperationException exception) { throw new IllegalStateException("Cannot inspect REI view", exception); }
     }
     private static void click(Screen screen, int x, int y) {
-        var event = new MouseButtonEvent(x, y, new MouseButtonInfo(0, 0));
+        var event = new MouseButtonEvent(x, y, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
         screen.mouseClicked(event, false); screen.mouseReleased(event);
     }
     private static void assertExtractionModel(Minecraft minecraft) {

@@ -1,13 +1,13 @@
 # Trading Cells
 
-Trading Cells es un mod para Minecraft 26.2 con NeoForge que automatiza el trabajo de aldeanos y piglins mediante máquinas portátiles. Conserva los datos de las criaturas, sus ofertas, inventarios y progresos cuando una máquina se rompe y vuelve a colocarse.
+Trading Cells es un mod para Minecraft 26.3 con NeoForge que automatiza el trabajo de aldeanos y piglins mediante máquinas portátiles. Conserva los datos de las criaturas, sus ofertas, inventarios y progresos cuando una máquina se rompe y vuelve a colocarse.
 
 ## Requisitos
 
-- Minecraft `26.2.0`
-- NeoForge `26.2.0.90` o posterior compatible con Minecraft 26.2
+- Minecraft `26.3.0`
+- NeoForge `26.3.0.88` o posterior compatible con Minecraft 26.3
 - Java `25`
-- Roughly Enough Items `26.2.820` o posterior es opcional
+- Roughly Enough Items `26.3.824` (beta) o posterior compatible es opcional
 
 La versión de desarrollo actual es `1.0.0` y todavía no se ha publicado.
 
@@ -153,11 +153,11 @@ El inventario de criaturas implementadas, candidatas y excluidas esta en
 
 ### Vulkan y OpenGL
 
-Trading Cells utiliza exclusivamente las capas gráficas neutrales de Blaze3D que proporciona Minecraft 26.2. No llama directamente a OpenGL ni a Vulkan y no fuerza un backend concreto, por lo que funciona con los backends oficiales `OPENGL` y `VULKAN`.
+Trading Cells utiliza exclusivamente las capas gráficas neutrales de Blaze3D que proporciona Minecraft 26.3. No llama directamente a OpenGL ni a Vulkan y no fuerza un backend concreto, por lo que funciona con los backends oficiales `OPENGL` y `VULKAN`.
 
-Vulkan sigue siendo experimental en Minecraft 26.2. Si no puede iniciarse, Minecraft puede volver a OpenGL; el backend efectivo debe comprobarse en la línea `Using graphics backend` del registro o en `system_specs` desde la pantalla F3. Esta compatibilidad no supone soporte para el antiguo VulkanMod de terceros.
+Vulkan sigue siendo experimental en Minecraft 26.3. Si no puede iniciarse, Minecraft puede volver a OpenGL; el backend efectivo debe comprobarse en la línea `Using graphics backend` del registro o en `system_specs` desde la pantalla F3. Esta compatibilidad no supone soporte para el antiguo VulkanMod de terceros.
 
-NeoForge `26.2.0.88` mantiene abierta una [incidencia en su pantalla de carga temprana](https://github.com/neoforged/NeoForge/issues/3230): esa ventana nace con contexto OpenGL y no puede entregarse después a Vulkan. `runClientVulkan` desactiva automáticamente solo esa pantalla en `run/vulkan/config/fml.toml`. En una instalación normal con esa revisión, Vulkan requiere establecer `earlyWindowControl = false` en `config/fml.toml` hasta que NeoForge integre la corrección; OpenGL no necesita este ajuste.
+El perfil de desarrollo `runClientVulkan` conserva `earlyWindowControl = false` en `run/vulkan/config/fml.toml`, ajuste introducido durante la migración anterior. Es una configuración local del entorno de pruebas y no se incluye en el JAR.
 
 ## Configuración
 
