@@ -14,7 +14,8 @@ Trabajo secuencial, sin subagentes. Este documento es el punto de reanudacion.
 
 H1-H6 pueden retirarse de planes futuros: no volver a implementarlos.
 No recuperar las granjas retiradas por el usuario ni los cinco PNG genericos
-antiguos. Conservar los cambios de dependencias a NeoForge 26.2.0.88.
+antiguos. Conservar las dependencias actuales de `gradle.properties`; no restaurar
+versiones antiguas desde las evidencias historicas de este documento.
 Nombres de mejoras: resueltos por el usuario el 2026-09-25. No rehacer ni
 sobrescribir sus cambios de nombres/traducciones.
 

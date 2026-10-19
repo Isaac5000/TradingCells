@@ -56,7 +56,7 @@ La estructura de capas y las dependencias permitidas estan en `ARCHITECTURE.md`.
 | Jade opcional | `platform/neoforge/integration/jade/` |
 | Catalogos dinamicos | `platform/neoforge/catalog/` |
 | Catalogo de granjas | `platform/neoforge/mobfarm/`, `docs/MOB_FARM_DATAPACKS.md` |
-| Inventario futuro de criaturas | `docs/MOB_FARM_ROADMAP.md` |
+| Alcance actual de granjas | `docs/MOB_FARM_ROADMAP.md` |
 | Fluido XP | `platform/neoforge/fluid/` |
 | Reglas puras temporizadas | `shared/machines/domain/model/` |
 | Reglas puras de granjas | `shared/mobfarm/domain/model/` |

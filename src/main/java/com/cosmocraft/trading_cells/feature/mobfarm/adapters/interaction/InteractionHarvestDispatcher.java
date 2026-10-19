@@ -46,7 +46,7 @@ public final class InteractionHarvestDispatcher {
         } catch (RuntimeException | LinkageError failure) {
             return InteractionHarvestResult.rejected(InteractionHarvestResult.Status.ERROR);
         } finally {
-            level.reset(source);
+            level.finishAttempt();
         }
     }
     private static InteractionHarvestResult execute(DisposableInteractionLevel level, ItemStack module,

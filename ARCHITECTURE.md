@@ -26,19 +26,18 @@ las traducciones puras de API permanecen en adaptadores.
 | --- | --- |
 | `trader` | Trader, Autotrader, ofertas de aldeanos y trueque de piglins. |
 | `captures` | Capturadores, datos de entidades capturadas y representacion cliente. |
-| `combat` | Decapitacion, Toque del Guerrero, Fragmentos de la Tormenta y eventos globales de combate. |
+| `combat` | Decapitacion, Toque de Guerrero, Fragmentos de la Tormenta y equipo electrico. |
 | `breeders` | Alimentos, coste, tiempo y produccion de criaderos. |
 | `incubators` | Crecimiento de entidades capturadas. |
 | `farmer` | Cultivos para aldeanos y piglins, fortuna, mejora de velocidad y desgaste de azadas. |
 | `quarry` | Canteras para aldeanos y piglins, catalogos de materiales, herramientas y minado profundo. |
 | `converter` | Estados de infeccion, curacion y descuento. |
 | `ironfarm` | Produccion, multiplicadores y animacion temporal. |
-| `mobfarm` | Granja general de entidades, modulos, catalogo dinamico, filtros y experiencia acumulada. |
+| `mobfarm` | Granjas de entidades e interacciones, esencias, modelos, mesas, catalogo dinamico y filtros. |
 | `experience` | Calculo y transferencia segura de niveles para el deposito de experiencia. |
-| `experiencenetwork` | Grafo de tuberias, conexiones terminales y transferencia atomica de XP. |
-| `infusion` | Recetas de infusion, consumo atomico manual y deposito de XP. |
-| `machinecontrol` | Configurador, copia de ajustes y seleccion del modo de redstone. |
-| `machinecontroller` | Escaneo de maquinas cargadas y presentacion incremental de diagnosticos. |
+| `logistics` | Tuberias, terminales y transferencias atomicas de objetos, fluidos/XP, gases y energia. |
+| `infusion` | Sintetizador de materia, recetas, consumo atomico, bloqueo, autocraft y XP. |
+| `machinecontrol` | Reglas internas de configuracion y control de redstone; sin objeto Configurador. |
 | `silktouch` | Botin especial de Toque de Seda II y restauracion segura de datos de bloques. |
 
 ## Infraestructura de maquinas
@@ -48,10 +47,10 @@ features: `MachineDiagnosticSource`, `MachineConfigurationPort` y la base portab
 Los valores puros de diagnostico y redstone viven en `shared/machines`; no conocen
 Minecraft ni dependen de una feature lateral.
 
-`machinecontrol` posee el Configurador y solo invoca el puerto de configuracion.
-`machinecontroller` consume el puerto de diagnostico sin conocer clases concretas.
-`experiencenetwork` descubre capacidades de fluido de NeoForge en extremos
-cargados, pero no importa implementaciones de las maquinas conectadas. Registro,
+El Configurador, `machinecontroller` y `experiencenetwork` estan retirados.
+`machinecontrol` conserva reglas internas y la infraestructura comun publica
+los puertos de diagnostico y configuracion. `logistics` descubre capacidades
+de NeoForge en extremos cargados sin depender de las features de las maquinas. Registro,
 payloads e integraciones opcionales siguen componiendose desde `platform/neoforge`.
 El contrato funcional completo esta en `docs/MACHINE_INFRASTRUCTURE.md`.
 
@@ -125,12 +124,13 @@ presenta una entidad inmovil dentro del modelo vanilla del generador.
 temporizados.
 
 `MobFarmCycleRules` y `VanillaSwordTier` viven en
-`shared/mobfarm/domain/model`. Son reglas puras compartidas por las familias de
-granjas para duracion, bajas simuladas, progreso y filtros; no conocen entidades,
+`shared/mobfarm/domain/model`. Son reglas puras para duracion, bajas simuladas,
+progreso y filtros; no conocen entidades,
 inventarios, botin ni NeoForge. `MobFarmWeaponSnapshot` centraliza en la plataforma
-la lectura inmutable de tier y encantamientos. Las granjas de esqueletos,
-zombis, saqueadores y creepers conservan sus Block Entities, pantallas y reglas
-de botin propias y componen este nucleo, sin heredar de una Block Entity comun.
+la lectura inmutable de tier y encantamientos. No existen Block Entities ni
+pantallas independientes para cada familia. La granja general usa el modelo
+de criatura; la granja de interacciones tiene ejecucion aislada propia, sin
+heredar la logica de matanza.
 
 `combat` es una feature compartida con frontera publica deliberada. Otras
 features solo acceden a sus reglas de dominio o a `adapters/api`; el registro,
@@ -166,19 +166,17 @@ Un descriptor controla descubrimiento, icono, orden y filtros. La tabla de
 botin cargada de la entidad sigue siendo la unica fuente de resultados. Un
 archivo invalido se descarta de forma aislada y un fallo global restaura el
 catalogo vanilla. El servidor sincroniza IDs concretos mediante el payload
-versionado `mob_farm_catalog_sync`; una familia nueva sigue requiriendo codigo y
-un bloque propio.
+versionado `mob_farm_catalog_sync`. Las familias son agrupaciones de datos;
+no requieren reinstalar los bloques antiguos ni crear un bloque por especie.
 
-Las cuatro familias publicadas son `skeleton`, `zombie`, `raider` y `creeper`.
-Las variantes ominosa y cargada son objetivos sinteticos propiedad de sus
-features; el catalogo publico amplia entidades registradas reales mediante tags
-o descriptores. `combat` publica el Fragmento de la Tormenta mediante una
-fachada `adapters/api`, evitando que la Granja de Creepers dependa de su registro
-interno.
+El modelo conserva la entidad y su estado saneado, incluida la variante de
+creeper cargado. El catalogo amplia metadatos mediante tags y descriptores,
+sin sustituir las tablas de botin. `combat` publica el Fragmento de la Tormenta
+mediante una fachada `adapters/api`, sin exponer su registro interno a otras features.
 
 ## Renderizado neutral
 
-El cliente se apoya en las abstracciones de Blaze3D y Minecraft 26.2:
+El cliente se apoya en las abstracciones de Blaze3D y Minecraft 26.3:
 `SubmitNodeCollector`, estados de renderizado, `GuiGraphicsExtractor`,
 `RenderType`, `VertexConsumer`, modelos vanilla y `RenderPipelines`. Blaze3D
 elige internamente entre los backends oficiales Vulkan y OpenGL.
@@ -186,8 +184,9 @@ elige internamente entre los backends oficiales Vulkan y OpenGL.
 El codigo del mod no puede importar ni referenciar implementaciones concretas
 de `org.lwjgl.opengl`, `org.lwjgl.vulkan`, `com.mojang.blaze3d.opengl` o
 `com.mojang.blaze3d.vulkan`, ni las clases `GlStateManager`, `GlDevice` o
-`VulkanDevice`. GLFW sigue permitido exclusivamente para entrada de teclado y
-raton. No se mantienen ramas de renderizado distintas por backend.
+`VulkanDevice`. La entrada usa las APIs de Minecraft adaptadas a SDL3; no
+reintroducir dependencias GLFW para teclado o raton. No se mantienen ramas
+de renderizado distintas por backend.
 
 Los perfiles cliente usan el source set vacio `developmentClient`, cuyo
 classpath reutiliza la salida de `main` y agrega las dependencias cliente

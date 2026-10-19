@@ -44,7 +44,12 @@ public final class ItemLogisticsAdapter extends AbstractResourceHandlerAdapter<I
         var entries = new java.util.ArrayList<com.cosmocraft.trading_cells.feature.logistics.adapters.api.LogisticsListingEntry<ItemResource>>();
         var entity = level.getBlockEntity(pos);
         var state = level.getBlockState(pos);
-        for (int index = 0; index < handler.size(); index++) {
+        int size = handler.size();
+        int[] faceSlots = null;
+        ItemResource previousResource = null;
+        LogisticsResourceSnapshot<ItemResource> previousSnapshot = null;
+        int metadataMisses = 0;
+        for (int index = 0; index < size; index++) {
             ItemResource resource = handler.getResource(index);
             long amount = handler.getAmountAsLong(index);
             if (resource.isEmpty() || amount <= 0) { continue; }
@@ -56,14 +61,15 @@ public final class ItemLogisticsAdapter extends AbstractResourceHandlerAdapter<I
             } else if (handler instanceof net.neoforged.neoforge.transfer.item.WorldlyContainerWrapper
                     && entity instanceof net.minecraft.world.WorldlyContainer container) {
                 inventory = entity;
-                slot = container.getSlotsForFace(side)[index];
+                if (faceSlots == null) { faceSlots = container.getSlotsForFace(side); }
+                slot = faceSlots[index];
             } else if ((handler instanceof net.neoforged.neoforge.transfer.item.VanillaContainerWrapper
                     || handler instanceof net.neoforged.neoforge.transfer.CombinedResourceHandler<?>
                     && state.getBlock() instanceof net.minecraft.world.level.block.ChestBlock)
                     && entity instanceof net.minecraft.world.Container container) {
                 inventory = entity;
                 if (state.getBlock() instanceof net.minecraft.world.level.block.ChestBlock
-                        && handler.size() == 2 * container.getContainerSize()) {
+                        && size == 2 * container.getContainerSize()) {
                     var type = state.getValue(net.minecraft.world.level.block.ChestBlock.TYPE);
                     boolean first = type == net.minecraft.world.level.block.state.properties.ChestType.RIGHT;
                     boolean firstSlot = index < container.getContainerSize();
@@ -74,9 +80,20 @@ public final class ItemLogisticsAdapter extends AbstractResourceHandlerAdapter<I
                     slot = index % container.getContainerSize();
                 }
             }
+            // Only reuse immutable metadata within this read, never quantities or live handlers across ticks.
+            boolean sameMetadata = metadataMisses < 8 && previousSnapshot != null && resource.equals(previousResource);
+            var currentSnapshot = sameMetadata
+                    ? new LogisticsResourceSnapshot<>(resource, previousSnapshot.resourceId(),
+                            previousSnapshot.componentFingerprint(), previousSnapshot.displayName(),
+                            previousSnapshot.icon(), amount)
+                    : snapshot(resource, amount);
+            // Stop comparing large component trees when this inventory has no useful repetition.
+            if (!sameMetadata && metadataMisses < 8) { metadataMisses++; }
+            previousResource = resource;
+            previousSnapshot = currentSnapshot;
             entries.add(new com.cosmocraft.trading_cells.feature.logistics.adapters.api.LogisticsListingEntry<>(
                     new com.cosmocraft.trading_cells.feature.logistics.adapters.api.LogisticsListingEntry.StorageKey(
-                            inventory == null ? handler : inventory, slot), snapshot(resource, amount)));
+                            inventory == null ? handler : inventory, slot), currentSnapshot));
         }
         return entries;
     }

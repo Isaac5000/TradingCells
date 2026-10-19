@@ -32,14 +32,11 @@ Contratos, compatibilidad y pruebas: [Granja de interacciones](docs/ENTITY_INTER
 - **Cultivo de Aldeanos**: procesa cultivos, árboles, flores, plantas acuáticas, bloques de coral vivo, musgos y chorus del End con 27 salidas; el nivel de la azada y una mejora de velocidad independiente determinan el ciclo. Fortuna conserva su efecto sobre la cosecha.
 - **Convertidor de Aldeanos**: zombifica y cura sin perder ofertas, y conserva los descuentos de curación.
 - **Granja de Hierro**: produce hierro con multiplicadores base `x1`, `x2` y `x3` según los aldeanos instalados.
-- **Granja de Esqueletos**: permite elegir entre esqueletos normales, Wither, de hielo, de pantano y del desierto, filtrar sus recompensas y mejorar la caza con una espada.
-- **Granja de Zombis**: permite cazar zombis, aldeanos zombis, momificados, ahogados, piglins zombificados y zoglins con filtros de botín independientes.
-- **Granja de Saqueadores**: reúne saqueadores, invocadores, vindicadores, ilusionistas, devastadores, brujas y vexes, con botín filtrable y objetivos externos ampliables.
-- **Granja de Creepers**: procesa Creepers normales y cargados, incluida la obtención renovable de Fragmentos de la Tormenta.
-- **Granjas configurables de criaturas**: añade Artrópodos, Slimes, Guardianes,
-  Piglins, Blazes, Ghasts, Endermen, Shulkers, Breezes, Phantoms, Animales,
-  Peces, Acuáticas, Monturas, Anfibios, Abejas y Creakings. Cada bloque acepta
-  por tag criaturas equivalentes de otros mods.
+- **Granja de Entidades**: el modelo de criatura selecciona la entidad simulada;
+  usa su botín real, una espada y mejoras de velocidad y capacidad. Los bloques
+  antiguos separados por familia están retirados.
+- **Granja de interacciones**: obtiene recursos mediante un objeto y una
+  herramienta en canales independientes, sin matar a la criatura guardada.
 - **Cantera de Aldeanos**: extrae materiales del Overworld con 27 salidas y una mejora de velocidad independiente. El pico conserva su nivel, Fortuna, Toque de Seda y desgaste.
 
 ## Máquinas de piglins
@@ -68,7 +65,7 @@ Existen variantes irrompibles para aldeanos y piglins. Se fabrican colocando el 
 
 El **Almacén de Experiencia** permite guardar o retirar una cantidad concreta de niveles. Si el campo de cantidad queda vacío, el botón correspondiente transfiere todo lo posible. Su capacidad usa el rango positivo completo de `int`, hasta `2.147.483.647` puntos, con operaciones saturadas para impedir desbordamientos.
 
-El depósito expone experiencia líquida mediante la API de transferencia de NeoForge, con una equivalencia de un punto de XP por unidad de fluido. También se puede extraer experiencia líquida del Trocador, del Autotrocador de Aldeanos y de las 21 familias de granjas; el Infusor es un destino y el Almacén es bidireccional.
+El depósito expone experiencia líquida mediante la API de transferencia de NeoForge, con una equivalencia de un punto de XP por unidad de fluido. También se puede extraer experiencia líquida del Trocador, del Autotrocador de Aldeanos y de la Granja de Entidades. La Granja de interacciones no genera XP. Las mesas con almacenamiento interno conservan sus reglas de entrada y extracción.
 
 La experiencia usa las **Tuberías de Fluidos** o **Universales**. La nueva red logística incorpora también tuberías de ítems, gases y energía, sin controlador central ni carga de chunks. Su implementación y validación siguen en desarrollo: [Logística](docs/LOGISTICS.md).
 
@@ -80,14 +77,14 @@ Las máquinas con control de redstone conservan exactamente el progreso al pausa
 
 ## Sintetizador de materia
 
-El **Sintetizador de materia** (antes Infusor Arcano, ID conservado `arcane_infuser`) usa nueve entradas, una salida y hasta `2.147.483.647` XP. Tiene cámara central, emisores y pantalla superior. En modo libre fabrica al retirar la salida; al bloquear una receta permite fabricación automática y abastecimiento por tolvas/tuberías. Su libro conserva buscador, categorías, filtro de fabricables y colocación de lotes. [Contrato completo](docs/ARCANE_INFUSER.md).
+El **Sintetizador de materia** (antes Infusor Arcano, ID conservado `arcane_infuser`) usa nueve entradas, una salida y hasta `2.147.483.647` XP. Tiene cámara central, emisores y pantalla superior. En modo libre fabrica al retirar la salida; al bloquear una receta permite fabricación automática y abastecimiento por tolvas/tuberías. No tiene libro de recetas propio; REI ofrece consulta y transferencia opcionales. [Contrato completo](docs/ARCANE_INFUSER.md).
 
-- **Toque del Granjero** (`15.000` XP): libro central, flor de chorus, tótem, estrella del Nether, bloque de netherita y patata, remolacha, trigo y zanahoria en las esquinas.
-- **Toque del Minero** (`30.000` XP): libro central, fragmento de eco, tótem, estrella del Nether, bloque de netherita y dos piedras del End más dos catalizadores de sculk en las esquinas.
+- **Toque de Granjero** (`15.000` XP): libro central, flor de chorus, tótem, estrella del Nether, bloque de netherita y patata, remolacha, trigo y zanahoria en las esquinas.
+- **Toque de Minero** (`30.000` XP): libro central, fragmento de eco, tótem, estrella del Nether, bloque de netherita y dos piedras del End más dos catalizadores de sculk en las esquinas.
 - **Toque de Seda II** (`75.000` XP): libro con Toque de Seda I en el centro, cuatro fragmentos de eco, un fragmento de amatista, dos huevos de tortuga y una estrella del Nether. Permite recoger bloques especiales que normalmente desaparecen.
 - **Nitwit** (`5.000` XP): transforma un aldeano capturado sin empleo, conservando todos sus demás datos y el tipo de capturador.
 - **Maquinaria**: granja de entidades, interacciones y otras recetas activas. Las antiguas granjas por familia están retiradas.
-- **Toque del Guerrero** (`45.000` XP): crea un libro que evita el desgaste de espadas dentro de todas las granjas de criaturas del mod.
+- **Toque de Guerrero** (`45.000` XP): crea un libro que evita el desgaste de espadas dentro de la Granja de Entidades.
 - **Decapitación** (`25.000` XP): usa un Fragmento de la Tormenta en cada esquina para crear un libro aplicable a espadas y hachas.
 - **Huevos generadores**: se fabrican en la Mesa de generacion de criaturas,
   no en el sintetizador. Núcleo y huevo de `#trading_cells:arcane_infusion_eggs`, con `1.000/4.000/16.000/64.000`
@@ -100,22 +97,22 @@ El depósito mantiene entrada y salida de experiencia líquida y transferencias 
 
 ## Equipo eléctrico
 
-Condensadores de **128/256 cargas**, recargables en la Estación de tormentas sin cambiar de ranura. Cada fragmento de tormenta aporta **16 cargas**, consumiéndose entero aunque sobre energía. La fulgurita se ha retirado por completo.
+Un único condensador de **256 cargas**, recargable en la Estación de tormentas sin cambiar de ranura. Cada fragmento de tormenta aporta **16 cargas**, consumiéndose entero aunque sobre energía. La fulgurita se ha retirado por completo.
 
-El soldador mantiene un haz ramificado: gasta una carga al pulsar y otra cada segundo. La porra añade **10 puntos de daño** con carga. Ambos usan baterías del inventario, sin exigir mano secundaria ni generar rayos del cielo. [Contrato y compatibilidad](docs/ELECTRIC_EQUIPMENT.md).
+El soldador mantiene un haz ramificado: gasta una carga al pulsar y otra cada segundo, sujeto a Irrompibilidad. La porra añade **10 puntos de daño** con carga. Ambos usan un condensador instalado mediante recarga con R; no exigen mano secundaria ni generan rayos del cielo. Reparación recupera carga con XP. [Contrato y compatibilidad](docs/ELECTRIC_EQUIPMENT.md).
 
 El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Botín puede añadir entre cero y su nivel al fragmento y garantiza entre uno y su nivel de catalizadores de sculk adicionales. Las ciudades antiguas mantienen su obtención habitual de fragmentos de eco.
 
 ## Encantamientos
 
-- **Toque del Granjero** evita el desgaste de azadas dentro de ambos Cultivos.
-- **Toque del Minero** evita el desgaste de picos dentro de ambas Canteras.
+- **Toque de Granjero** evita el desgaste de azadas dentro de ambos Cultivos y de herramientas en la Granja de interacciones.
+- **Toque de Minero** evita el desgaste de picos dentro de ambas Canteras.
 - **Toque de Seda II** sigue siendo `minecraft:silk_touch`, por lo que otros mods lo reconocen como Toque de Seda, y permite recoger los bloques especiales documentados en [`docs/SILK_TOUCH_II.md`](docs/SILK_TOUCH_II.md).
 - Los Generadores recogidos muestran una entidad fija en el inventario y pueden convertirse, sin duplicar objetos, en su huevo generador. Las variantes modificadas conservan equipo, efectos, pasajeros y montura.
 - Los Generadores de desafio recogidos conservan prueba, criaturas, participantes y variante ominosa; se rearman tras completar la prueba y exigen salir y volver al radio.
 - Un comparador instala control por redstone persistente en Generadores normales y de desafio. La senal pausa los normales y bloquea pruebas nuevas sin interrumpir una ya activa; REI documenta ambas variantes.
 - Las Arcas son reutilizables con nuevas llaves y no conservan UUID permanentes; la Tarta mantiene sus porciones y los bloques sospechosos conservan contenido, pero reinician el cepillado.
-- **Toque del Guerrero** evita el desgaste de espadas dentro de todas las granjas de criaturas del mod.
+- **Toque de Guerrero** evita el desgaste de espadas dentro de la Granja de Entidades.
 - **Decapitación I-VI** permite obtener cabezas existentes y aumenta su probabilidad sin depender de Botín. En esqueletos Wither, ambos niveles se suman en una única tirada.
 - Decapitación puede combinarse normalmente o subir exactamente un nivel en la mesa de herrería usando el libro o arma encantada y un Fragmento de la Tormenta, hasta nivel VI.
 - Decapitación detecta cabezas externas con identificadores convencionales y el tag `#minecraft:skulls` sin inventar resultados inexistentes.
@@ -128,7 +125,7 @@ El Warden suelta un fragmento de eco garantizado cuando lo mata un jugador. Bot�
 
 ## Compatibilidad
 
-REI muestra los procesos de criaderos, incubadoras, cultivos, conversión, granjas de hierro, las 21 familias de criaturas, canteras, trueques e infusión arcana, además de las recetas normales. Su integración es opcional y solo se carga en cliente.
+REI muestra los procesos y recetas compatibles de criaderos, incubadoras, cultivos, conversión, hierro, esencias, granjas de entidades e interacciones, canteras, trueques y síntesis de materia, además de las recetas normales. Su integración es opcional y solo se carga en cliente.
 
 Jade tambien es opcional. Cuando esta instalado muestra XP, nivel y progreso de
 las maquinas compatibles, ademas del requisito de Toque de Seda II y la entidad
@@ -139,16 +136,12 @@ Las listas de profesiones, POI, aspectos de bioma, cultivos, alimentos y niveles
 
 Los datapacks y mods pueden añadir plantas al Cultivo de Aldeanos mediante el tag de ítems `#trading_cells:villager_farmer_plants`. Si no existe un perfil equilibrado propio, el cultivo conserva la tabla de botín del bloque como fuente de sus resultados.
 
-Las granjas de criaturas amplian sus selectores con los tags de sus 21
-familias. Los objetos enumerables de sus tablas cargadas reciben filtros
-individuales; una tabla externa invalida no elimina las variantes fijas.
-
-La 1.0.0 incluye además un formato público de datapacks para añadir objetivos a
-las 21 familias registradas sin sustituir su botín real. Permite elegir
-entidad, generador, orden y filtros mediante IDs o tags. El esquema, sus reglas
-de fallback y packs de ejemplo están en
+La Granja de Entidades reconstruye la criatura del modelo y consulta su botín.
+Las familias del catálogo son agrupaciones de datos, no bloques independientes.
+Los datapacks pueden ampliar ese catálogo sin sustituir el botín real. El esquema,
+sus reglas de fallback y packs de ejemplo están en
 [`docs/MOB_FARM_DATAPACKS.md`](docs/MOB_FARM_DATAPACKS.md).
-El inventario de criaturas implementadas, candidatas y excluidas esta en
+El alcance actual y los límites de las granjas están en
 [`docs/MOB_FARM_ROADMAP.md`](docs/MOB_FARM_ROADMAP.md).
 
 ### Vulkan y OpenGL

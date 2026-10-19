@@ -1,5 +1,27 @@
 # Medicion de rendimiento
 
+## Plan de salidas de interacciones
+
+`runGameTestServer` con `JAVA_TOOL_OPTIONS=-Dtrading_cells.benchmarkOutputPlan=true`
+activa la comparacion del algoritmo anterior y actual en
+`interaction_output_plan_equivalence`. Emite `OUTPUT_PLAN` para inventario vacio,
+lleno incompatible, espacio parcial insuficiente y pilas compatibles con espacio
+(variantes 0-3). Usa 12 calentamientos, 31 rondas alternas y 4.096 llamadas por
+ronda. Sin umbrales temporales en CI; no mide ciclos completos ni FPS/MSPT.
+Retirar la variable tras medir. Evidencias en `docs/AUDIT_20261018.md`.
+
+## Limpieza de interacciones
+
+Medicion opcional dentro de `interaction_attempt_cleanup`: ejecutar
+`runGameTestServer` con `JAVA_TOOL_OPTIONS=-Dtrading_cells.benchmarkInteractionCleanup=true`.
+Compara dos resets anteriores con preparacion y limpieza separadas; 12 rondas
+de calentamiento y 31 rondas alternas de 4.096 intentos. Imprime medianas como
+`INTERACTION_CLEANUP`. No mide entidades, produccion completa ni FPS/MSPT.
+La prueba funcional siempre se ejecuta; el cronometraje solo con esta propiedad.
+Retirar la variable tras medir. Evidencia: `docs/AUDIT_20261018.md`.
+
+## Fixtures visuales
+
 `--ui-fixture interaction-farm` prepara dos granjas independientes, comprueba
 pausa/reanudacion manual mediante el menu real, ausencia del control de redstone
 y captura la cuadricula 9x3, trabajador con
@@ -110,6 +132,15 @@ La ultima prueba conserva un umbral estructural del 10 %. Actualmente lo incumpl
 y documenta una optimizacion descartada; no hay una cache equivalente en produccion.
 
 ## Servidor
+
+La prueba `logistics_listing_metadata_equivalence` verifica listados de 27, 216
+y 4096 ranuras con variantes de componentes, cantidades distintas y huecos.
+Para medir ademas la ruta anterior frente a la actual, ejecutar
+`runGameTestServer` con la propiedad JVM `-Dtrading_cells.benchmarkListings=true`
+(puede pasarse mediante `JAVA_TOOL_OPTIONS`, conservando su valor anterior).
+Imprime `LISTING_PROBE`: doce calentamientos y 31 rondas alternadas por caso.
+No activar para verificaciones ordinarias: los tiempos no son aserciones de CI
+ni estimaciones de FPS. Referencia y resultados: `docs/AUDIT_20261018.md`.
 
 ```text
 python tools/performance/run_server_benchmark.py --scenario idle-machines --runs 3 --warmup-seconds 15 --measure-seconds 30

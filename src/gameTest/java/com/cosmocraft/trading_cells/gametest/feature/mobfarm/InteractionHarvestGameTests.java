@@ -20,10 +20,108 @@ public final class InteractionHarvestGameTests {
     public static List<GameTestCase> tests() {
         return List.of(new GameTestCase("interaction_harvest_vanilla", 80, InteractionHarvestGameTests::vanilla),
                 new GameTestCase("interaction_harvest_isolation", 80, InteractionHarvestGameTests::isolation),
+                new GameTestCase("interaction_storage_cleanup_failures", 80, InteractionHarvestGameTests::storageCleanup),
+                new GameTestCase("interaction_attempt_cleanup", 80, InteractionHarvestGameTests::attemptCleanup),
                 new GameTestCase("interaction_harvest_mooshrooms", 80, InteractionHarvestGameTests::mooshrooms),
                 new GameTestCase("interaction_harvest_farmer_touch", 80, InteractionHarvestGameTests::farmerTouch),
                 new GameTestCase("interaction_harvest_creaking", 80, InteractionHarvestGameTests::creaking),
                 new GameTestCase("speed_upgrade_legacy_aliases", 80, InteractionHarvestGameTests::speedAliases));
+    }
+    private static void attemptCleanup(GameTestHelper h) {
+        var source = h.getLevel();
+        var rule = net.minecraft.world.level.gamerules.GameRules.MOB_DROPS;
+        boolean original = source.getGameRules().get(rule);
+        try (var level = DisposableInteractionLevel.create(source)) {
+            for (int attempt = 0; attempt < 2; attempt++) {
+                level.reset(source);
+                var rules = level.getGameRules();
+                h.assertTrue(rules != source.getGameRules(), "Attempt owns independent game rules");
+                h.assertValueEqual(rules.get(rule), original, "Attempt observes current source rules");
+                rules.set(rule, !original, null);
+                var chunk = level.getChunk(0, 0, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, true);
+                level.placeTemporaryBlock(DisposableInteractionLevel.ORIGIN, Blocks.HONEY_BLOCK.defaultBlockState());
+                var drop = new net.minecraft.world.entity.item.ItemEntity(level, 0, 64, 0, new ItemStack(Items.HONEYCOMB));
+                try {
+                    level.addFreshEntity(drop);
+                    if (attempt == 1) { throw new UnsupportedOperationException("Injected interaction failure"); }
+                } catch (UnsupportedOperationException expected) {
+                    h.assertValueEqual(attempt, 1, "Only injected failure is expected");
+                } finally {
+                    level.finishAttempt();
+                }
+                h.assertTrue(drop.isRemoved(), "Captured drop never enters an entity manager");
+                h.assertTrue(level.capturedDrops().isEmpty(), "Cleanup releases drops");
+                h.assertTrue(level.getBlockState(DisposableInteractionLevel.ORIGIN).isAir(), "Cleanup releases blocks");
+                h.assertValueEqual(source.getGameRules().get(rule), original, "Source rules remain unchanged");
+                level.reset(source);
+                h.assertTrue(level.getGameRules() != rules, "Mutated rules never survive into another attempt");
+                h.assertValueEqual(level.getGameRules().get(rule), original, "Next attempt restores source value");
+                h.assertTrue(level.getChunk(0, 0, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, true) != chunk,
+                        "Temporary chunks are not retained between attempts");
+            }
+            if (Boolean.getBoolean("trading_cells.benchmarkInteractionCleanup")) { benchmarkCleanup(level, source); }
+            level.finishAttempt();
+        } catch (java.io.IOException failure) { throw new java.io.UncheckedIOException(failure); }
+        h.succeed();
+    }
+    private static void benchmarkCleanup(DisposableInteractionLevel level, net.minecraft.server.level.ServerLevel source) {
+        Runnable baseline = () -> { level.reset(source); level.reset(source); };
+        Runnable candidate = () -> { level.reset(source); level.finishAttempt(); };
+        for (int warmup = 0; warmup < 12; warmup++) { measureCleanup(baseline); measureCleanup(candidate); }
+        long[] before = new long[31], after = new long[31];
+        for (int round = 0; round < before.length; round++) {
+            if ((round & 1) == 0) {
+                before[round] = measureCleanup(baseline); after[round] = measureCleanup(candidate);
+            } else {
+                after[round] = measureCleanup(candidate); before[round] = measureCleanup(baseline);
+            }
+        }
+        java.util.Arrays.sort(before); java.util.Arrays.sort(after);
+        System.out.printf(java.util.Locale.ROOT, "INTERACTION_CLEANUP attempts=4096 baseline_ms=%.3f candidate_ms=%.3f improvement=%.2f%%%n",
+                before[15] / 1_000_000.0, after[15] / 1_000_000.0, 100.0 * (before[15] - after[15]) / before[15]);
+    }
+    private static long measureCleanup(Runnable action) {
+        long start = System.nanoTime();
+        for (int attempt = 0; attempt < 4096; attempt++) { action.run(); }
+        return System.nanoTime() - start;
+    }
+    private static void storageCleanup(GameTestHelper h) {
+        try {
+            var cleanup = DisposableInteractionLevel.class.getDeclaredMethod("closeAndDelete",
+                    java.io.Closeable.class, java.nio.file.Path.class);
+            cleanup.setAccessible(true);
+            var root = java.nio.file.Files.createTempDirectory("trading-cells-cleanup-test-");
+            java.nio.file.Files.createFile(root.resolve("owned.tmp"));
+            var closeFailure = new java.io.IOException("Injected close failure");
+            java.io.Closeable failingStorage = () -> { throw closeFailure; };
+            try {
+                cleanup.invoke(null, failingStorage, root);
+                throw new AssertionError("Expected close failure");
+            } catch (java.lang.reflect.InvocationTargetException expected) {
+                h.assertTrue(expected.getCause() == closeFailure, "Original close failure is preserved");
+            }
+            h.assertFalse(java.nio.file.Files.exists(root), "Close failure still deletes all owned files");
+            try {
+                cleanup.invoke(null, failingStorage, root);
+                throw new AssertionError("Expected close and missing-directory failure");
+            } catch (java.lang.reflect.InvocationTargetException expected) {
+                h.assertTrue(expected.getCause() == closeFailure, "Cleanup never replaces the primary failure");
+                h.assertTrue(closeFailure.getSuppressed().length == 1
+                        && closeFailure.getSuppressed()[0] instanceof java.nio.file.NoSuchFileException,
+                        "Deletion failure is retained as suppressed diagnostic");
+            }
+            var field = DisposableInteractionLevel.class.getDeclaredField("temporaryRoot");
+            field.setAccessible(true);
+            java.nio.file.Path actualRoot;
+            try (var disposable = DisposableInteractionLevel.create(h.getLevel())) {
+                actualRoot = (java.nio.file.Path) field.get(disposable);
+                h.assertTrue(java.nio.file.Files.isDirectory(actualRoot), "Sandbox owns temporary storage");
+            }
+            h.assertFalse(java.nio.file.Files.exists(actualRoot), "Normal sandbox shutdown deletes temporary storage");
+        } catch (ReflectiveOperationException | java.io.IOException failure) {
+            throw new AssertionError("Temporary storage cleanup", failure);
+        }
+        h.succeed();
     }
     private static void speedAliases(GameTestHelper h) {
         for (String material : List.of("copper", "iron", "gold", "diamond", "netherite")) {
