@@ -9,7 +9,7 @@ import org.jspecify.annotations.Nullable;
 public final class InteractionOutputPlan {
     private InteractionOutputPlan() { }
     public static @Nullable List<ItemStack> insert(List<ItemStack> existing, List<ItemStack> products) {
-        List<ItemStack> next = new ArrayList<>(existing.stream().map(ItemStack::copy).toList());
+        List<ItemStack> next = new ArrayList<>(existing);
         for (ItemStack product : products) {
             if (product.isEmpty()) { continue; }
             int remaining = product.getCount();
@@ -24,6 +24,10 @@ public final class InteractionOutputPlan {
                 }
             }
             if (remaining != 0) { return null; }
+        }
+        // Insertions replace stacks, never mutate them. Copy untouched slots only on success.
+        for (int slot = 0; slot < next.size(); slot++) {
+            if (next.get(slot) == existing.get(slot)) { next.set(slot, next.get(slot).copy()); }
         }
         return next;
     }

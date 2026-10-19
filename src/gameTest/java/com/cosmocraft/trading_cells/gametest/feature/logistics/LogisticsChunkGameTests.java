@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.gametest.feature.logistics;
 
 import com.cosmocraft.trading_cells.feature.logistics.adapters.input.LogisticsPipeBlockEntity;
+import com.cosmocraft.trading_cells.feature.logistics.adapters.input.LogisticsNetworkManager;
 import com.cosmocraft.trading_cells.feature.logistics.adapters.output.LogisticsRegistrationAdapter;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeKind;
 import com.cosmocraft.trading_cells.feature.logistics.domain.model.PipeSideMode;
@@ -11,6 +12,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 
@@ -21,7 +23,52 @@ public final class LogisticsChunkGameTests {
     public static List<GameTestCase> tests() {
         return List.of(new GameTestCase("logistics_real_chunk_unload_reload", 1200,
                 LogisticsChunkGameTests::reload),
+                new GameTestCase("logistics_unrelated_chunks_keep_topology", 80, LogisticsChunkGameTests::unrelatedChunks),
                 new GameTestCase("logistics_partial_chunk_split_reconnect", 1800, LogisticsChunkGameTests::split));
+    }
+
+    private static void unrelatedChunks(GameTestHelper helper) {
+        var manager = LogisticsNetworkManager.get(helper.getLevel());
+        // Detached registrations exercise the index without loading distant test chunks.
+        BlockPos first = new BlockPos(-160_000, 64, 160_000);
+        BlockPos second = first.east();
+        var state = LogisticsRegistrationAdapter.pipeBlock(PipeKind.ITEM).get().defaultBlockState();
+        var pipe = new LogisticsPipeBlockEntity(first, state);
+        manager.register(pipe);
+        manager.register(new LogisticsPipeBlockEntity(second, state));
+        try {
+            manager.register(new LogisticsPipeBlockEntity(first, state));
+            manager.configurationChanged(pipe);
+            long revision = manager.topologyRevision();
+            for (int index = 0; index < 4096; index++) {
+                manager.chunkTopologyChanged(new ChunkPos(-20_000 - index, 20_000));
+            }
+            helper.assertValueEqual(manager.topologyRevision(), revision,
+                    "4096 unrelated chunk events do not restart network scans");
+            for (int x = -1; x <= 1; x++) {
+                for (int z = -1; z <= 1; z++) {
+                    manager.chunkTopologyChanged(new ChunkPos(-10_000 + x, 10_000 + z));
+                }
+            }
+            helper.assertValueEqual(manager.topologyRevision(), revision + 9,
+                    "Current and neighbouring chunks invalidate, including diagonal terminal bridges");
+            manager.unregister(first);
+            revision = manager.topologyRevision();
+            manager.chunkTopologyChanged(new ChunkPos(-10_000, 10_000));
+            helper.assertValueEqual(manager.topologyRevision(), revision + 1,
+                    "Removing one pipe preserves the other pipe in that chunk");
+            manager.unregister(second);
+            revision = manager.topologyRevision();
+            manager.chunkTopologyChanged(new ChunkPos(-10_000, 10_000));
+            helper.assertValueEqual(manager.topologyRevision(), revision,
+                    "Replacing and configuring a pipe do not leak chunk reference counts");
+            helper.assertTrue(helper.getLevel().getChunkSource().getChunkNow(-10_000, 10_000) == null,
+                    "Topology index does not load chunks");
+        } finally {
+            manager.unregister(first);
+            manager.unregister(second);
+        }
+        helper.succeed();
     }
 
     private static void reload(GameTestHelper helper) {

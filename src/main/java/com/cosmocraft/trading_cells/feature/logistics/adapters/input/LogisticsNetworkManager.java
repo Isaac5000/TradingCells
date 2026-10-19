@@ -29,6 +29,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
@@ -45,6 +46,7 @@ public final class LogisticsNetworkManager {
     private final ServerLevel level;
     private final java.util.Random routingRandom = new java.util.Random();
     private final Map<Long, LogisticsPipeBlockEntity> pipes = new LinkedHashMap<>();
+    private final Map<Long, Integer> pipeCountsByChunk = new HashMap<>();
     private final Map<RouteKey, RouteScan> routes = new HashMap<>();
     private final Map<RoundRobinKey, RoutingCursor> roundRobinCursors = new HashMap<>();
     private final Map<String, Integer> resourceCursors = new HashMap<>();
@@ -74,13 +76,15 @@ public final class LogisticsNetworkManager {
     }
 
     public void register(LogisticsPipeBlockEntity pipe) {
-        pipes.put(pipe.getBlockPos().asLong(), pipe);
+        trackPipe(pipe);
         rebuildExtractions(pipe.getBlockPos());
         invalidateTopology();
     }
 
     public void unregister(BlockPos pos) {
         if (pipes.remove(pos.asLong()) != null) {
+            pipeCountsByChunk.computeIfPresent(ChunkPos.pack(pos.getX() >> 4, pos.getZ() >> 4),
+                    (chunk, count) -> count == 1 ? null : count - 1);
             schedule.removeIf(entry -> entry.key().pipePos() == pos.asLong());
             roundRobinCursors.keySet().removeIf(key -> key.origin() == pos.asLong());
             invalidateTopology();
@@ -88,9 +92,28 @@ public final class LogisticsNetworkManager {
     }
 
     public void configurationChanged(LogisticsPipeBlockEntity pipe) {
-        pipes.put(pipe.getBlockPos().asLong(), pipe);
+        trackPipe(pipe);
         rebuildExtractions(pipe.getBlockPos());
         invalidateTopology();
+    }
+
+    private void trackPipe(LogisticsPipeBlockEntity pipe) {
+        BlockPos pos = pipe.getBlockPos();
+        if (pipes.put(pos.asLong(), pipe) == null) {
+            pipeCountsByChunk.merge(ChunkPos.pack(pos.getX() >> 4, pos.getZ() >> 4), 1, Integer::sum);
+        }
+    }
+
+    public void chunkTopologyChanged(ChunkPos chunk) {
+        // Include adjacent chunks: endpoints and terminal bridges can cross a border.
+        for (int x = chunk.x() - 1; x <= chunk.x() + 1; x++) {
+            for (int z = chunk.z() - 1; z <= chunk.z() + 1; z++) {
+                if (pipeCountsByChunk.containsKey(ChunkPos.pack(x, z))) {
+                    invalidateTopology();
+                    return;
+                }
+            }
+        }
     }
 
     public void invalidateTopology() {
@@ -135,7 +158,7 @@ public final class LogisticsNetworkManager {
         for (int count = 0; total > 0 && topologyRemaining > 0 && count < total; count++) {
             var entry = pending.get(Math.floorMod(scanCursor++, total));
             int share = Math.max(1, topologyRemaining / Math.max(1, total - count));
-            topologyRemaining -= advanceScan(entry.getValue(), entry.getKey().type(), null, share);
+            topologyRemaining -= advanceScan(entry.getValue(), entry.getKey().type(), share);
         }
         long now = level.getGameTime();
         int scheduled = schedule.size();
@@ -288,7 +311,7 @@ public final class LogisticsNetworkManager {
                 || adapterId != null && (adapter == null || adapter.type() != type)) {
             return List.of();
         }
-        return collectEndpoints(origin, type, mode, adapter);
+        return collectEndpoints(origin, type, mode);
     }
 
     public List<AggregatedResource> resourcesFrom(BlockPos origin, LogisticsResourceType type) {
@@ -437,8 +460,7 @@ public final class LogisticsNetworkManager {
     }
 
     private List<NetworkEndpoint> collectEndpoints(
-            BlockPos origin, LogisticsResourceType type, PipeSideMode mode,
-            @Nullable LogisticsResourceAdapter<?, ?> adapter
+            BlockPos origin, LogisticsResourceType type, PipeSideMode mode
     ) {
         RouteScan scan = route(origin, type);
         if (!scan.complete) {
@@ -709,15 +731,9 @@ public final class LogisticsNetworkManager {
         return new EndpointOrder(ordered, advances);
     }
 
-    private boolean isDue(ExtractionKey key, PipeUpgradeTier tier) {
-        int interval = Math.max(1, tier.interval(key.type()));
-        return Math.floorMod(level.getGameTime() + key.hashCode(), interval) == 0;
-    }
-
     private int advanceScan(
             RouteScan scan,
             LogisticsResourceType type,
-            @Nullable LogisticsResourceAdapter<?, ?> adapter,
             int maximumVisits
     ) {
         int visits = 0;

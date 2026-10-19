@@ -35,7 +35,16 @@ comprueba tanto el estado del menu como el payload enviado al cliente.
 - Servidor: check, checkLogisticsResources, checkMobSimulationResources y
   runGameTestServer correctos; 170 GameTests obligatorios, incluido comercio
   con promocion y envio de ofertas al menu abierto. Registro completo:
-  artifacts/migration-26.3-validation-20261018-2.log.
+  graphify-out/validation/migration-26.3-validation-20261018-2.log.
+- Controles OpenGL sin REI: fixtures interactions y crafting correctas.
+  Arrastre de mejoras, Shift clic/doble clic, conservacion de inventario,
+  retirada/deposito/fabricacion, campos de texto, Ctrl+A, Retroceso, Tab y Escape.
+  check final correcto tras ajustar los codigos SDL3 de teclado.
+
+Las rutas artifacts anteriores identifican las ejecuciones ya finalizadas.
+Ya no se necesitan las capturas y mundos temporales para este trabajo. Su
+borrado fue autorizado, pero el entorno lo bloqueo: artifacts sigue intacto.
+Los registros finales se conservan tambien en graphify-out/validation/.
 
 Las pruebas visuales usan copias desechables de un mundo 26.2. Sus mensajes de
 recetas antiguas retiradas proceden de ese mundo. REI beta emite avisos upstream

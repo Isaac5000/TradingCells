@@ -8,6 +8,45 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
 
 ## Estado actual
 
+- Salidas de interacciones 2026-10-19: copia de ranuras intactas diferida hasta
+  confirmar espacio completo. Sin mutaciones ni referencias compartidas en el
+  resultado. Equivalencia con 500 casos deterministas; `runGameTestServer check`:
+  175/175. Medicion local 41.79-68.97 % menor, no FPS/MSPT globales. Evidencia en
+  `docs/AUDIT_20261018.md`.
+- Interacciones 2026-10-19: limpieza en `finally` sin una segunda copia de reglas
+  del mundo; cada intento sigue recibiendo reglas propias actualizadas.
+  `runGameTestServer check`: 174/174. Preparacion/limpieza local 50.02 % menor,
+  sin atribuir mejora global ni cambiar lotes. Evidencias y limites en
+  `docs/AUDIT_20261018.md`.
+- Listados 2026-10-18: metadatos de pilas repetidas reutilizados solo durante
+  cada lectura, sin cache de cantidades entre ticks. Comparacion acotada tras
+  ocho fallos y mapa de slots por cara consultado una vez. Equivalencia validada
+  con componentes, huecos, cantidades distintas y cambios entre lecturas.
+  `runGameTestServer check`: 173/173. Medicion local de 31 rondas y limites en
+  `docs/AUDIT_20261018.md`; no atribuir mejora de FPS ni dar por resuelto el
+  presupuesto por ranuras. Granjas de interacciones conservan sus lotes.
+- Auditoria y correcciones 2026-10-18: chunks ajenos ya no invalidan redes;
+  indice por chunk conserva bordes y puentes. Limpieza de temporales robusta,
+  dos clases sin consumidores retiradas y documentacion vigente corregida.
+  `compileGameTestJava verifyDomainRules` y `runGameTestServer check` correctos,
+  172/172 GameTests. Graphify actualizado por AST para el proyecto.
+  Pendientes de medicion: presupuesto por ranuras y reparto de interacciones;
+  no cambiar produccion ni transacciones sin esa validacion.
+  Alcance, limites y registros: `docs/AUDIT_20261018.md`.
+- Cierre 2026-10-18: migracion a Minecraft 26.3.0 / NeoForge 26.3.0.88.
+  `check` y 170 GameTests correctos; incluye nuevas ofertas de aldeanos enviadas
+  al cliente sin cerrar el menu al subir de nivel. OpenGL con REI beta y Vulkan
+  sin REI comprobados; tuberias y terminales verifican controles SDL3.
+  Contrato y limites: `docs/MIGRATION_26_3.md`.
+- Graphify 2026-10-18: analisis local de logistica; salida directa para componentes
+  vacios, con identidad equivalente al codec vanilla. Medicion local 86,07 %,
+  sin atribuir mejora global de FPS/MSPT. `check runGameTestServer`: 170 correctos.
+  Informe y reproduccion: `docs/GRAPHIFY_OPTIMIZATION.md`. Grafo con referencias
+  externas incompletas; no usarlo como prueba de codigo muerto.
+- Limpieza solicitada: ya no se necesita `artifacts/` para este trabajo, pero el
+  entorno rechazo su borrado. La carpeta sigue intacta y queda pendiente de
+  eliminacion. Registros finales locales: `graphify-out/validation/`.
+
 - Soldador 2026-10-16: brazo recto hacia delante, sin giro lateral fijo;
   sigue la mirada, conserva agarre alto, hombros fijos y recarga. Primera
   persona intacta. OpenGL+REI/derecha comprobado: `artifacts/storm-straight-arm-opengl`.
@@ -166,8 +205,8 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
   PNG de viales aprobados preservados como fuentes finales. Detalles y pruebas:
   `docs/FIXES_20261001.md` y `docs/FARMER_CROP_DATAPACKS.md`.
 
-- Version de desarrollo no publicada: `1.0.0` para Minecraft `26.2.0` y
-  NeoForge `26.2.0.90`.
+- Version de desarrollo no publicada: `1.0.0` para Minecraft `26.3.0` y
+  NeoForge `26.3.0.88`; versiones efectivas en `gradle.properties`.
 - Java 25 y Gradle Wrapper 9.8.0; `gradlew` esta registrado como ejecutable.
 - La referencia reproducible anterior se documento el `2026-08-31` en
   `docs/releases/1.0.0-validation.md`: dos JAR identicos con 26 GameTests. Es
@@ -177,7 +216,7 @@ XP al romper y recolocar los bloques. El codigo actual es la fuente de verdad.
   Los terminales pasan clics reales y scroll en OpenGL/Vulkan con REI/Jade.
   Evidencia y JAR de desarrollo en `docs/LOGISTICS.md`; la matriz manual,
   reproducibilidad final y CI del commit definitivo siguen abiertas.
-- El arbol actual conserva el recetario del Infusor, cultivos por datapack,
+- El arbol actual conserva recetas del Sintetizador (sin libro propio), cultivos por datapack,
   diagnostico comun y modos de redstone persistentes. Las granjas antiguas por
   familia fueron retiradas por el usuario: no restaurar sus clases ni recursos.
   El objeto Configurador se ha retirado por peticion expresa.
@@ -328,9 +367,9 @@ el estado saneado de Creature Models; no restaurar las implementaciones retirada
 - El render usa abstracciones Minecraft/Blaze3D. No hay ramas OpenGL/Vulkan.
 - Los GameTests verifican contratos observables y se distribuyen por feature; no
   deben acoplarse a metodos internos que puedan moverse entre versiones.
-- Las veintiuna granjas de entidades exponen automatizacion real: entrada desde
-  arriba y laterales y extraccion de salidas desde cualquier cara. La restauracion
-  transaccional de salidas no permite inserciones externas en ellas.
+- Las granjas de entidades e interacciones exponen automatizacion real, con
+  entradas por las caras definidas por cada maquina y extraccion de salidas.
+  La restauracion transaccional no permite inserciones externas en salidas.
 - Las optimizaciones se aceptan desde 3 % local o 10 % estructural, sin regresion
   primaria superior al 1 % y con plantilla identica.
 
