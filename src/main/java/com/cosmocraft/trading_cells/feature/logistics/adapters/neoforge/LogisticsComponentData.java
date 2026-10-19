@@ -28,6 +28,7 @@ public final class LogisticsComponentData {
     }
 
     public static String serialized(DataComponentPatch patch) {
+        if (patch.isEmpty()) { return "{}"; }
         Tag encoded = DataComponentPatch.CODEC.encodeStart(NbtOps.INSTANCE, patch).getOrThrow();
         return encoded.toString();
     }

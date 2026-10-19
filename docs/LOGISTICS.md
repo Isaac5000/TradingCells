@@ -3,6 +3,26 @@
 Estado: desarrollo no publicado. Este documento distingue implementacion de
 aceptacion pendiente; no sustituye la matriz final de publicacion.
 
+### Invalidacion por chunks
+
+Las cargas/descargas de chunks alejados de todas las tuberias registradas no
+reinician rutas ni listados. Un indice de cantidades por chunk incluye en la
+comprobacion los ocho vecinos para cubrir capacidades y puentes de terminales
+en bordes. No carga chunks. Registrar, retirar o reconfigurar tuberias conserva
+la invalidacion completa; los cambios de chunks cercanos tambien. Todavia no
+se realiza invalidacion independiente por componente de red.
+
+### Coste de los listados
+
+La presentacion de objetos reutiliza metadatos de pilas consecutivas iguales
+solo dentro de una lectura. Cantidades e identidades de ranura siguen siendo
+individuales; los iconos se copian. Ocho fallos de reutilizacion desactivan las
+comparaciones restantes, y los mapas por cara se obtienen una vez. No hay datos
+cacheados entre ticks ni cambios en las transacciones de transferencia.
+El presupuesto actual sigue siendo por destinos, no por ranuras; un handler
+grande aun puede requerir una lectura completa. Medidas y limites documentados
+en `AUDIT_20261018.md`.
+
 ## Bloques y uso
 
 - `item_pipe`, `fluid_pipe`, `gas_pipe`, `energy_pipe`, `universal_pipe`.

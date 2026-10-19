@@ -1,4 +1,8 @@
-# Limpieza de recursos y codigo
+# Historico de limpieza de recursos y codigo
+
+Este documento conserva trabajos ya cerrados, no una lista de borrados pendientes.
+La revision posterior esta en `AUDIT_20261018.md`. No repetir eliminaciones
+historicas ni regenerar las fuentes graficas aprobadas.
 
 ## Reorganizacion GUI posterior, cerrada
 

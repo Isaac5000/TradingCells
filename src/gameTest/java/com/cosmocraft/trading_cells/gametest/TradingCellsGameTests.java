@@ -70,6 +70,7 @@ public final class TradingCellsGameTests {
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.InteractionHarvestGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.InteractionFarmGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.InteractionOutputPlanGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.EssenceAutomationGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.CreatureGeneratorGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationLootGameTests.tests());
@@ -82,6 +83,7 @@ public final class TradingCellsGameTests {
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsPayloadGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.shared.MachineItemCapabilityGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsChunkGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsListingGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsCraftingGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsUpgradeGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.logistics.LogisticsContainerGameTests.tests());

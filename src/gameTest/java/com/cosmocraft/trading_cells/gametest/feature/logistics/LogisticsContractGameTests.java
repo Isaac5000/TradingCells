@@ -7,12 +7,14 @@ import com.cosmocraft.trading_cells.feature.logistics.domain.model.*;
 import com.cosmocraft.trading_cells.gametest.shared.GameTestCase;
 import java.util.List;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluids;
@@ -99,6 +101,12 @@ public final class LogisticsContractGameTests {
         var wrong = new PipeFilterRule(PipeFilterRule.Action.ALLOW, PipeFilterRule.MatchKind.ID,
                 "minecraft:diamond_sword", PipeFilterRule.ComponentMatch.SUBSET, "{\"minecraft:damage\":1}", "");
         helper.assertFalse(adapter.matches(resource, fingerprint, wrong), "Substring is not component equality");
+        for (var patch : List.of(DataComponentPatch.EMPTY, DataComponentPatch.builder().build(),
+                DataComponentPatch.builder().remove(DataComponents.CUSTOM_NAME).build(), resource.getComponentsPatch())) {
+            String expected = DataComponentPatch.CODEC.encodeStart(NbtOps.INSTANCE, patch).getOrThrow().toString();
+            helper.assertValueEqual(LogisticsComponentData.serialized(patch), expected, "Serialization preserves vanilla encoding");
+            helper.assertValueEqual(LogisticsComponentData.fingerprint(patch), expected, "Empty and edited identities remain unchanged");
+        }
         helper.succeed();
     }
 

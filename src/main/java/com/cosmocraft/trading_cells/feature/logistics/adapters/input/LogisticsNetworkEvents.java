@@ -30,14 +30,14 @@ public final class LogisticsNetworkEvents {
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
         if (event.getLevel() instanceof ServerLevel level) {
-            LogisticsNetworkManager.get(level).invalidateTopology();
+            LogisticsNetworkManager.get(level).chunkTopologyChanged(event.getChunk().getPos());
         }
     }
 
     @SubscribeEvent
     public static void onChunkUnload(ChunkEvent.Unload event) {
         if (event.getLevel() instanceof ServerLevel level) {
-            LogisticsNetworkManager.get(level).invalidateTopology();
+            LogisticsNetworkManager.get(level).chunkTopologyChanged(event.getChunk().getPos());
         }
     }
 }

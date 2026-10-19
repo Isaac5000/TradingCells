@@ -1,0 +1,18 @@
+allprojects {
+    afterEvaluate {
+        tasks.register('compileFingerprintProbe', JavaCompile) {
+            dependsOn tasks.named('classes')
+            source = files('tools/performance/LogisticsFingerprintBenchmark.java')
+            classpath = sourceSets.main.runtimeClasspath
+            destinationDirectory = layout.buildDirectory.dir('performance/fingerprint-probe')
+            javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(25) }
+        }
+        tasks.register('runFingerprintProbe', JavaExec) {
+            dependsOn tasks.named('compileFingerprintProbe')
+            classpath = files(layout.buildDirectory.dir('performance/fingerprint-probe')) + sourceSets.main.runtimeClasspath
+            mainClass = 'LogisticsFingerprintBenchmark'
+            javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+            maxHeapSize = '256m'
+        }
+    }
+}

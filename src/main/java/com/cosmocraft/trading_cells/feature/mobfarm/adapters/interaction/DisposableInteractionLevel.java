@@ -1,6 +1,7 @@
 package com.cosmocraft.trading_cells.feature.mobfarm.adapters.interaction;
 
 import com.mojang.serialization.Lifecycle;
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -76,7 +77,7 @@ public final class DisposableInteractionLevel extends ServerLevel {
         noSave = true;
     }
 
-    // NeoForge 26.2 exposes no PrimaryLevelData constructor without this deprecated enum.
+    // The current PrimaryLevelData constructor still requires this deprecated enum.
     @SuppressWarnings("deprecation")
     private static PrimaryLevelData createLevelData() {
         return new PrimaryLevelData(new LevelSettings("interaction", GameType.SURVIVAL,
@@ -86,13 +87,24 @@ public final class DisposableInteractionLevel extends ServerLevel {
 
     public static DisposableInteractionLevel create(ServerLevel source) throws IOException {
         Path root = Files.createTempDirectory("trading-cells-interactions-");
-        var access = LevelStorageSource.createDefault(root).createAccess("disposable");
-        try { return new DisposableInteractionLevel(source, root, access); }
-        catch (RuntimeException | Error failure) { access.close(); deleteOwnedDirectory(root); throw failure; }
+        LevelStorageSource.LevelStorageAccess access = null;
+        try {
+            access = LevelStorageSource.createDefault(root).createAccess("disposable");
+            return new DisposableInteractionLevel(source, root, access);
+        } catch (IOException | RuntimeException | Error failure) {
+            try { closeAndDelete(access == null ? () -> { } : access::close, root); }
+            catch (IOException | RuntimeException | Error cleanupFailure) { failure.addSuppressed(cleanupFailure); }
+            throw failure;
+        }
     }
     public void reset(ServerLevel source) {
-        blocks.clear(); drops.clear(); emptyChunks.clear();
+        finishAttempt();
         localRules = source.getGameRules().copy(enabledFeatures());
+    }
+    public void finishAttempt() {
+        blocks.clear(); drops.clear(); emptyChunks.clear();
+        // The next attempt copies current source rules; cleanup needs no replacement copy.
+        localRules = null;
     }
     public List<ItemStack> capturedDrops() { return drops.stream().map(ItemStack::copy).toList(); }
     public void placeTemporaryBlock(BlockPos pos, BlockState state) { blocks.put(pos.immutable(), state); }
@@ -134,7 +146,15 @@ public final class DisposableInteractionLevel extends ServerLevel {
     @Override public void playSeededSound(@Nullable Entity except, Entity entity,
             Holder<SoundEvent> sound, SoundSource source, float volume, float pitch, long seed) { }
     @Override public void close() throws IOException {
-        try { super.close(); } finally { storage.close(); deleteOwnedDirectory(temporaryRoot); }
+        try (Closeable cleanup = () -> closeAndDelete(storage::close, temporaryRoot)) {
+            super.close();
+        }
+    }
+    private static void closeAndDelete(Closeable storage, Path root) throws IOException {
+        // Preserve the close failure and still attempt deletion; suppress secondary failures.
+        try (Closeable cleanup = () -> deleteOwnedDirectory(root)) {
+            storage.close();
+        }
     }
     private static void deleteOwnedDirectory(Path root) throws IOException {
         try (var paths = Files.walk(root)) {
