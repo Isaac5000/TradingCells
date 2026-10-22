@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "trading_cells:block/creature_display_pedestal"
+    },
+    "facing=east": {
+      "model": "trading_cells:block/creature_display_pedestal",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "trading_cells:block/creature_display_pedestal",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "trading_cells:block/creature_display_pedestal",
+      "y": 270
+    }
+  }
+}

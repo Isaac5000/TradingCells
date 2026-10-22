@@ -73,6 +73,7 @@ public final class TradingCellsGameTests {
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.InteractionOutputPlanGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.EssenceAutomationGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.CreatureGeneratorGameTests.tests());
+        tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.CreatureDisplayPedestalGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationLootGameTests.tests());
         tests.addAll(com.cosmocraft.trading_cells.gametest.feature.mobfarm.MobSimulationCatalogGameTests.tests());
         tests.addAll(ExperienceGameTests.tests());

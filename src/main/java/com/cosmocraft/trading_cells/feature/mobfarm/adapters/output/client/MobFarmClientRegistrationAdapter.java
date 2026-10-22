@@ -26,6 +26,8 @@ public final class MobFarmClientRegistrationAdapter {
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(MobFarmRegistrationAdapter.INTERACTION_BLOCK_ENTITY.get(), EntityInteractionFarmRenderer::new);
         event.registerBlockEntityRenderer(MobFarmRegistrationAdapter.BLOCK_ENTITY.get(), MobFarmBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(MobFarmRegistrationAdapter.DISPLAY_PEDESTAL_BLOCK_ENTITY.get(),
+                CreatureDisplayPedestalRenderer::new);
     }
     public static void onRegisterSpecialModelRenderers(RegisterSpecialModelRendererEvent event) {
         event.register(Identifier.fromNamespaceAndPath("trading_cells", "entity_module"), EntityModuleItemRenderer.Unbaked.MAP_CODEC);

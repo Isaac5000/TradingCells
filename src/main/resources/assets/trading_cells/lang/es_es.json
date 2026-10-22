@@ -971,5 +971,6 @@
   "key.trading_cells.storm_reload": "Recargar / expulsar condensador",
   "key.category.trading_cells.equipment": "Trading Cells: equipo",
   "subtitles.trading_cells.electric_arc_loop": "Arco eléctrico crepita",
-  "subtitles.trading_cells.electric_baton_hit": "Descarga de porra eléctrica"
+  "subtitles.trading_cells.electric_baton_hit": "Descarga de porra eléctrica",
+  "block.trading_cells.creature_display_pedestal": "Pedestal de modelos"
 }

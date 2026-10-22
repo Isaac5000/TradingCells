@@ -3,7 +3,10 @@
   "network_registration_version": "2",
   "farmer_crop_schema_version": 1,
   "mob_farm_target_schema_version": 1,
-  "retired_payloads": ["MobFarmCatalogSyncPayload", "RequestMobFarmCatalogPayload"],
+  "retired_payloads": [
+    "MobFarmCatalogSyncPayload",
+    "RequestMobFarmCatalogPayload"
+  ],
   "retired_machine_classes": [
     "feature/configuredmobfarm/adapters/input/ConfiguredMobFarmBlockEntity.java",
     "feature/creeperfarm/adapters/input/CreeperFarmBlockEntity.java",
@@ -11,8 +14,8 @@
     "feature/skeletonfarm/adapters/input/SkeletonFarmBlockEntity.java",
     "feature/zombiefarm/adapters/input/ZombieFarmBlockEntity.java"
   ],
-  "recipe_catalog_count": 82,
-  "recipe_catalog_sha256": "3608A7780EC4CEA22D86583C27F8ACCDD06E108794CF6BD1638801B7F5B54DEF",
+  "recipe_catalog_count": 83,
+  "recipe_catalog_sha256": "1CF3CA1CAF006739FE0E00FF0F1159D2B30C08D34F346C6151204A5877DD0333",
   "payload_ids": {
     "ArcaneInfuserTransferPayload": "arcane_infuser_transfer",
     "InfuserAutomationPayload": "infuser_automation",
@@ -69,13 +72,19 @@
       "FillExperienceStorage"
     ],
     "feature/mobfarm/adapters/input/EntityEssenceData.java": [
-      "TradingCellsEssence", "Type", "State", "Tier", "ThreatScore", "ClassificationVersion"
+      "TradingCellsEssence",
+      "Type",
+      "State",
+      "Tier",
+      "ThreatScore",
+      "ClassificationVersion"
     ],
     "feature/mobfarm/adapters/input/EssenceExtractorItem.java": [
       "TradingCellsSyringeLoaded"
     ],
     "feature/mobfarm/adapters/input/EssenceStabilizerBlockEntity.java": [
-      "StabilizationProgress", "StabilizationRecipe"
+      "StabilizationProgress",
+      "StabilizationRecipe"
     ],
     "feature/mobfarm/adapters/input/EssenceWorkbenchBlockEntity.java": [
       "AutomaticSynthesis"
