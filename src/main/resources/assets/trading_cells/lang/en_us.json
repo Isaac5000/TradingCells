@@ -971,5 +971,6 @@
   "key.trading_cells.storm_reload": "Reload / eject capacitor",
   "key.category.trading_cells.equipment": "Trading Cells: equipment",
   "subtitles.trading_cells.electric_arc_loop": "Electric arc crackles",
-  "subtitles.trading_cells.electric_baton_hit": "Electric baton discharge"
+  "subtitles.trading_cells.electric_baton_hit": "Electric baton discharge",
+  "block.trading_cells.creature_display_pedestal": "Creature Display Pedestal"
 }

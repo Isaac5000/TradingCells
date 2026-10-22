@@ -42,6 +42,18 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 
 public final class MobFarmRegistrationAdapter {
+    public static final DeferredBlock<com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureDisplayPedestalBlock>
+            DISPLAY_PEDESTAL = Registration.BLOCKS.register("creature_display_pedestal",
+                    () -> new com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureDisplayPedestalBlock(
+                            MachineBlockProperties.villager("creature_display_pedestal").lightLevel(state -> 4)));
+    public static final DeferredItem<BlockItem> DISPLAY_PEDESTAL_ITEM = Registration.ITEMS.register("creature_display_pedestal",
+            () -> new BlockItem(DISPLAY_PEDESTAL.get(), properties("creature_display_pedestal").useBlockDescriptionPrefix()));
+    public static final DeferredHolder<BlockEntityType<?>,
+            BlockEntityType<com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureDisplayPedestalBlockEntity>>
+            DISPLAY_PEDESTAL_BLOCK_ENTITY = Registration.BLOCK_ENTITY_TYPES.register("creature_display_pedestal",
+                    () -> new BlockEntityType<>(
+                            com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureDisplayPedestalBlockEntity::new,
+                            DISPLAY_PEDESTAL.get()));
     public static final DeferredBlock<com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureGeneratorBlock> CREATURE_GENERATOR = Registration.BLOCKS.register("creature_generator",
             () -> new com.cosmocraft.trading_cells.feature.mobfarm.adapters.input.CreatureGeneratorBlock(MachineBlockProperties.villager("creature_generator")));
     public static final DeferredItem<BlockItem> CREATURE_GENERATOR_ITEM = Registration.ITEMS.register("creature_generator",
