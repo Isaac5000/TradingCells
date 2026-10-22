@@ -31,6 +31,7 @@
     "trading_cells:essence_workbench",
     "trading_cells:essence_stabilizer",
     "trading_cells:storm_station",
-    "trading_cells:creature_generator"
+    "trading_cells:creature_generator",
+    "trading_cells:creature_display_pedestal"
   ]
 }
