@@ -42,7 +42,9 @@ public final class InteractionFarmGameTests {
                 new GameTestCase("interaction_farm_real_pipes", 100, InteractionFarmGameTests::pipes),
                 new GameTestCase("interaction_farm_components_and_limits", 80, InteractionFarmGameTests::components),
                 new GameTestCase("interaction_farm_capacity_batches", 80, InteractionFarmGameTests::capacity),
-                new GameTestCase("interaction_farm_capacity_pending", 80, InteractionFarmGameTests::capacityPending));
+                new GameTestCase("interaction_farm_capacity_pending", 80, InteractionFarmGameTests::capacityPending),
+                new GameTestCase("interaction_farm_quantity_touch_protection", 80,
+                        InteractionFarmGameTests::quantityTouch));
     }
     private static EntityInteractionFarmBlockEntity farm(GameTestHelper h, String type) {
         h.setBlock(GameTestFixtures.TEST_POS, net.minecraft.world.level.block.Blocks.AIR);
@@ -313,6 +315,25 @@ public final class InteractionFarmGameTests {
         }
         h.succeed();
     }
+    private static void quantityTouch(GameTestHelper h) {
+        var farm = farm(h, "minecraft:bee");
+        var enchantment = h.getLevel().registryAccess()
+                .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(com.cosmocraft.trading_cells.platform.neoforge.machine.MachineToolEnchantments.FARMER_TOUCH);
+        var shears = new ItemStack(Items.SHEARS);
+        shears.enchant(enchantment, 1);
+        shears.setDamageValue(shears.getMaxDamage() - 1);
+        farm.setItem(3, shears);
+        farm.setItem(EntityInteractionFarmBlockEntity.CAPACITY,
+                MobFarmRegistrationAdapter.UPGRADES.get(9).get().getDefaultInstance());
+        cycle(farm);
+        h.assertValueEqual(count(farm, Items.HONEYCOMB), 32 * 3,
+                "32 completed harvests with the maximum quantity upgrade");
+        h.assertTrue(ItemStack.matches(shears, farm.getItem(3)),
+                "Farmer Touch prevents shears breaking across 32 operations");
+        h.succeed();
+    }
+
     private static void capacityPending(GameTestHelper h) {
         var farm = farm(h, "trading_cells_gametest:resource_creature");
         farm.setItem(2, new ItemStack(Items.EMERALD, 8));

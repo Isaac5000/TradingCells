@@ -65,8 +65,9 @@ Excepciones de creativo conservadas. Inventario lleno entrega resultado una vez
 al mundo; no modifica salud, UUID ni loot de la entidad original.
 
 Receta de jeringa: `III/ LB/  B`; I lingote de hierro, L lapislazuli y B hormigon
-negro. Capacidad usa `capacity_<material>_upgrade`; los cinco IDs antiguos
-`mob_farm_capacity_<material>_upgrade` permanecen como alias de registro.
+negro. Cantidad usa `quantity_<material>_upgrade`; los identificadores anteriores
+`capacity_<material>_upgrade` y `mob_farm_capacity_<material>_upgrade`
+permanecen como alias de registro para mantener los mundos existentes.
 
 ## Estabilizador y mesa
 
@@ -133,7 +134,7 @@ Las revisiones mas recientes sustituyen las recetas del plan inicial:
 - Cuatro bases: GBG/BSB/GBG, B hormigon negro, S storm shard; G es hormigon
   verde/lapislazuli/diamante/lingote de netherita segun tier I/II/III/IV.
 - Mejoras progresivas: bloques del material; primera centrada en espada de diamante,
-  siguientes en mejora anterior; esquinas reloj/cofre segun velocidad/capacidad.
+  siguientes en mejora anterior; esquinas reloj/cofre segun velocidad/cantidad.
   Diamante usa popped chorus fruit; netherita usa smithing con bloque y plantilla.
 
 Contrato actual: 164 recetas, fingerprint

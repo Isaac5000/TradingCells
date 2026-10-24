@@ -7,12 +7,12 @@
     "CBC"
   ],
   "key": {
-    "C": "minecraft:iron_block",
-    "B": "minecraft:iron_block",
-    "S": "trading_cells:capacity_copper_upgrade"
+    "C": "minecraft:popped_chorus_fruit",
+    "B": "minecraft:diamond_block",
+    "S": "trading_cells:quantity_gold_upgrade"
   },
   "result": {
-    "id": "trading_cells:capacity_iron_upgrade",
+    "id": "trading_cells:quantity_diamond_upgrade",
     "count": 1
   },
   "show_notification": false

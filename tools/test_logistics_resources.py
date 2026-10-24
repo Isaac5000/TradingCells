@@ -22,7 +22,7 @@ from generate_mob_simulation_resources import outlined_union, resources as simul
 from generate_pipe_textures import TEXTURES as PIPE_TEXTURES, blend
 from generate_family_upgrades import BASES, FAMILIES, MATERIALS, TERMINAL_BODY, family_base, family_texture, generated, luminance, material_ramp, recolor, rivet_pixels, utility_emblem
 from generate_family_upgrades import WOOD_PALETTE, fixed_emblem_pixels, wooden_emblem_pixels
-from generate_family_upgrades import ORIGINALS, FRAMES, emblem_pixels, quarry_frame, generic_frame
+from generate_family_upgrades import ORIGINALS, FRAMES, TEXTURES as UPGRADE_TEXTURES, emblem_pixels, quarry_frame, generic_frame
 from generate_family_upgrades import TERMINALS, TERMINAL_ORIGINALS, TERMINAL_STEEL, logistics_terminal_texture
 
 
@@ -35,7 +35,19 @@ def encoded(image: Image.Image, **options) -> bytes:
 class LogisticsResourceTests(unittest.TestCase):
     def test_gui_backgrounds_live_with_their_machine_resources(self):
         assets = machine_gui_art.generated_assets()
-        self.assertEqual(len(assets), 71, "Nineteen menus, thirteen REI backgrounds and one XP summary")
+        # Compare resources to the declared GUI owners, not a fixed historic
+        # count that changes whenever a supported menu is added.
+        expected = {
+            machine_gui_art.OUTPUT / f"container/{owner}/background{suffix}.png"
+            for owner in machine_gui_art.SCREENS
+            for suffix in machine_gui_art.FRAME_SUFFIXES.values()
+        }
+        expected.update(
+            machine_gui_art.OUTPUT / f"container/{owner}/recipe.png"
+            for owner in machine_gui_art.RECIPE_THEMES
+        )
+        expected.add(machine_gui_art.OUTPUT / "container/essence_workbench/xp_summary.png")
+        self.assertEqual(set(assets), expected, "Each declared menu has its complete artwork")
         owners = set(machine_gui_art.SCREENS) | set(machine_gui_art.RECIPE_THEMES)
         blockstates = machine_gui_art.OUTPUT.parents[1] / "blockstates"
         for path in assets:
@@ -118,10 +130,12 @@ class LogisticsResourceTests(unittest.TestCase):
         self.image = Image.new("RGBA", (2, 2), (10, 20, 30, 255))
         self.expected = encoded(self.image)
 
-    def test_generated_tools_allow_different_png_compression(self):
+    def test_png_encoding_variations_preserve_matching_pixels(self):
+        # Both alternate compression and ancillary metadata modify PNG bytes,
+        # but neither should be treated as a pixel-level resource regression.
         generated = resources()
         for name in ("pipe_wrench", "pipe_target_selector"):
-            with self.subTest(texture=name):
+            with self.subTest(variation="compression", texture=name):
                 relative = f"{ASSETS}/textures/item/{name}.png"
                 expected = generated[relative]
                 with Image.open(BytesIO(expected)) as image:
@@ -129,12 +143,12 @@ class LogisticsResourceTests(unittest.TestCase):
                 self.assertNotEqual(actual, expected)
                 self.assertTrue(resource_matches(relative, actual, expected))
 
-    def test_png_text_metadata_does_not_change_pixels(self):
         metadata = PngInfo()
         metadata.add_text("generator", "another platform")
-        actual = encoded(self.image, pnginfo=metadata)
-        self.assertNotEqual(actual, self.expected)
-        self.assertTrue(resource_matches("sprite.png", actual, self.expected))
+        with self.subTest(variation="metadata"):
+            actual = encoded(self.image, pnginfo=metadata)
+            self.assertNotEqual(actual, self.expected)
+            self.assertTrue(resource_matches("sprite.png", actual, self.expected))
 
     def test_pipe_wrench_uses_the_authored_32_pixel_sprite(self):
         root = Path(__file__).resolve().parents[1]
@@ -724,8 +738,10 @@ class UpgradePaletteTests(unittest.TestCase):
     def test_all_upgrade_items_use_only_their_family_texture(self):
         root = Path(__file__).resolve().parents[1] / "src/main/resources"
         names = [f"{family}_{material}_upgrade" for family in FAMILIES if family != "pipe" for material in MATERIALS]
-        names = [name.removeprefix("mob_farm_") for name in names]
-        names = [name.removeprefix("mob_farm_") for name in names]
+        # Registration IDs were renamed to quantity_*; the texture generator
+        # deliberately retains its legacy family path for artwork compatibility.
+        names = [name.removeprefix("mob_farm_").replace("capacity_", "quantity_", 1)
+                 for name in names]
         names += [f"{tier}_pipe_upgrade" for tier in ("copper", "iron", "gold", "diamond", "netherite")]
         generated_resources = resources()
         for name in names:
@@ -738,7 +754,22 @@ class UpgradePaletteTests(unittest.TestCase):
 
     def test_sprite_transparency_and_opaque_block_housing(self):
         images = generated()
-        self.assertEqual(len(images), 33)
+        # Inventory is derived from the material/family definitions, avoiding
+        # magic totals while detecting missing and unexpected generated sprites.
+        expected = {
+            ORIGINALS / family / f"{material}_upgrade.png"
+            for family in (*FAMILIES, "generic")
+            for material in MATERIALS
+        }
+        expected.update(
+            UPGRADE_TEXTURES.parent / "block/logistics" / f"{name}.png"
+            for name in (TERMINAL_BODY,)
+        )
+        expected.update(
+            UPGRADE_TEXTURES.parent / "block/logistics" / f"{name}_front.png"
+            for name in TERMINALS
+        )
+        self.assertEqual(set(images), expected)
         self.assertFalse(any(path.parent.name == "item" for path in images),
                          "Terminal items use block models, not duplicate item PNGs")
         for path, image in images.items():

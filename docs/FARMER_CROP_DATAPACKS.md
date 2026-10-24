@@ -71,12 +71,12 @@ without Silk Touch; it does not forbid planting or suppress other outputs.
 
 Both farms require a supported hoe to cultivate, including custom datapack
 crops. A missing hoe reports `tool_required`; when the hoe breaks, remaining
-capacity attempts stop immediately. Inserting a replacement resumes operation.
+quantity attempts stop immediately. Inserting a replacement resumes operation.
 
-Capacity upgrades add 2/4/8/16/32 harvest attempts per cycle, with ordinary tool
+Quantity upgrades add 2/4/8/16/32 harvest attempts per cycle, with ordinary tool
 wear per harvest. Speed upgrades control cycle acceleration. Efficiency
 on the hoe does not increase speed; Fortune, Silk Touch and
-Farmer Touch retain their behavior. Capacity is appended after the existing
+Farmer Touch retain their behavior. The quantity slot is appended after the existing
 speed slot, preserving old saved inventory indices and accepting side insertion.
 Fortune applies independently to every harvest, including the extra harvests
-from capacity upgrades and custom datapack outputs.
+from quantity upgrades and custom datapack outputs.

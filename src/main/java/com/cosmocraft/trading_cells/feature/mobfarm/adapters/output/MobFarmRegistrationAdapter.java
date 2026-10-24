@@ -134,10 +134,21 @@ public final class MobFarmRegistrationAdapter {
         String[] materials = {"copper", "iron", "gold", "diamond", "netherite"};
         for (MobFarmUpgradeItem.Kind kind : MobFarmUpgradeItem.Kind.values()) {
             for (int index = 0; index < materials.length; index++) {
-                String id = (kind == MobFarmUpgradeItem.Kind.SPEED ? "speed_" : "capacity_")
+                String id = (kind == MobFarmUpgradeItem.Kind.SPEED ? "speed_" : "quantity_")
                         + materials[index] + "_upgrade";
-                Registration.ITEMS.addAlias(Identifier.fromNamespaceAndPath("trading_cells", "mob_farm_" + id),
-                        Identifier.fromNamespaceAndPath("trading_cells", id));
+                Identifier canonical = Identifier.fromNamespaceAndPath("trading_cells", id);
+                if (kind == MobFarmUpgradeItem.Kind.CAPACITY) {
+                    // Preserve existing inventory / block-entity stacks after the canonical rename.
+                    Registration.ITEMS.addAlias(
+                            Identifier.fromNamespaceAndPath("trading_cells", "capacity_" + materials[index] + "_upgrade"),
+                            canonical);
+                    Registration.ITEMS.addAlias(
+                            Identifier.fromNamespaceAndPath("trading_cells", "mob_farm_capacity_" + materials[index] + "_upgrade"),
+                            canonical);
+                } else {
+                    Registration.ITEMS.addAlias(
+                            Identifier.fromNamespaceAndPath("trading_cells", "mob_farm_" + id), canonical);
+                }
                 int tier = index + 1;
                 upgrades.add(Registration.ITEMS.register(id, () -> new MobFarmUpgradeItem(properties(id).stacksTo(1), kind, tier)));
             }

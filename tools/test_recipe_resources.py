@@ -46,16 +46,19 @@ def ingredient_signature(recipe):
 
 
 class SpawnEggRecipeTests(unittest.TestCase):
-    def test_eggs_are_not_active_infusions(self):
-        for path in RECIPES.glob("*.json"):
-            recipe = read_json(path)
-            self.assertFalse(recipe.get("type") == "trading_cells:arcane_infusion"
-                             and recipe.get("result", {}).get("item", "").endswith("_spawn_egg"), path.name)
-
     def test_retired_recipes_are_recoverable_except_bosses(self):
         archive = ROOT / "docs/archive/arcane_infusions"
         archived = {path.stem for path in archive.glob("*_spawn_egg_infusion.json")}
-        self.assertEqual(len(archived), 86)
+        # Check the archive's purpose, not its historical item count: Minecraft
+        # may add or remove spawn eggs without making the archive invalid.
+        self.assertTrue(archived, "The recoverable spawn-egg recipe archive must not disappear")
+        for name in archived:
+            path = archive / (name + ".json")
+            recipe = read_json(path)
+            with self.subTest(recipe=name):
+                self.assertEqual(recipe.get("type"), "trading_cells:arcane_infusion")
+                self.assertTrue(recipe.get("result", {}).get("item", "").endswith("_spawn_egg"))
+                self.assertFalse((RECIPES / path.name).exists(), "Archived recipes must not load")
         for name in ("wither_spawn_egg_infusion", "ender_dragon_spawn_egg_infusion"):
             self.assertNotIn(name, archived)
             self.assertFalse((RECIPES / (name + ".json")).exists())
@@ -94,10 +97,10 @@ class CurrentMinecraftRegistryTests(unittest.TestCase):
         }
         cls.recipes = [read_json(path) for path in RECIPES.glob("*_spawn_egg_infusion.json")]
 
-    def test_current_jar_and_registration_agree_on_all_88_vanilla_eggs(self):
+    def test_current_jar_and_registration_agree_on_all_vanilla_eggs(self):
         self.assertEqual(self.jar_version, self.version)
         eggs = {item for item in self.items if item.endswith("_spawn_egg")}
-        self.assertEqual(len(eggs), 88)
+        self.assertTrue(eggs, "The current Minecraft client must contain spawn egg items")
         self.assertEqual(eggs, self.registered_eggs)
 
     def test_active_catalog_has_no_spawn_egg_infusions(self):
@@ -204,7 +207,7 @@ class SpecificRecipeTests(unittest.TestCase):
                 "tier_iv": "trading_cells:tier_iii_creature_model_base",
             }[name]
             self.assertEqual(grid[4], expected_center)
-        for family in ("speed", "capacity"):
+        for family in ("speed", "quantity"):
             previous = "minecraft:clock" if family == "speed" else "minecraft:bundle"
             prefix = family
             for material in ("copper", "iron", "gold", "diamond", "netherite"):
@@ -285,9 +288,6 @@ class SimulationRecipeValidationTests(unittest.TestCase):
             validator.validate_entity_farm_recipes([RESOURCE_ROOT], parsed, errors)
         return errors
 
-    def test_active_catalog_passes(self):
-        self.assertEqual(self.validate(), [])
-
     def test_removed_farm_recipes_remain_absent(self):
         for name in ("skeleton", "zombie", "creeper", "raider", "arthropod", "slime", "guardian", "piglin",
                      "blaze", "ghast", "enderman", "shulker", "breeze", "phantom", "livestock", "fish",
@@ -296,6 +296,7 @@ class SimulationRecipeValidationTests(unittest.TestCase):
                 self.assertFalse((RECIPES / f"{name}_farm_infusion.json").exists())
 
     def test_general_farm_layout_and_cost_are_checked(self):
+        self.assertEqual(self.validate(), [], "The real recipe catalog must pass validation")
         for field, value in (("experience", 1), ("result", {"type": "item", "item": "trading_cells:skeleton_farm"})):
             recipe = read_json(RECIPES / "mob_farm_infusion.json")
             recipe[field] = value
