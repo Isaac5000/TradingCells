@@ -852,9 +852,9 @@
     "semantic_hash": ""
   },
   "src/gameTest/java/com/cosmocraft/trading_cells/gametest/TradingCellsGameTests.java": {
-    "mtime": 1792385126.7273874,
-    "seen": 1792385210.6515722,
-    "ast_hash": "50b390f37fb2a3d1e91fac70a82f8a5f",
+    "mtime": 1792698610.0506415,
+    "seen": 1792698868.99079,
+    "ast_hash": "2c8cf2035e4e08fc0eacd4450c325b8a",
     "semantic_hash": ""
   },
   "src/gameTest/java/com/cosmocraft/trading_cells/gametest/feature/breeders/BreederGameTests.java": {
@@ -1026,9 +1026,9 @@
     "semantic_hash": ""
   },
   "src/gameTest/java/com/cosmocraft/trading_cells/gametest/feature/mobfarm/MobSimulationCatalogGameTests.java": {
-    "mtime": 1792169510.9648702,
-    "seen": 1792348724.6384938,
-    "ast_hash": "798c1dae3c80fcc829c8458b03a9c066",
+    "mtime": 1792698764.5184948,
+    "seen": 1792698868.9908323,
+    "ast_hash": "955ec7668e1bf66ddf7035542ea69596",
     "semantic_hash": ""
   },
   "src/gameTest/java/com/cosmocraft/trading_cells/gametest/feature/mobfarm/MobSimulationGameTests.java": {
@@ -2502,9 +2502,9 @@
     "semantic_hash": ""
   },
   "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/output/MobFarmRegistrationAdapter.java": {
-    "mtime": 1791142212.4106865,
-    "seen": 1792348724.6388147,
-    "ast_hash": "78e691e7117a1d46dfb61d0a9dbb4970",
+    "mtime": 1792698249.94069,
+    "seen": 1792698868.9912107,
+    "ast_hash": "01217039f42fae38cef02ed1211f747c",
     "semantic_hash": ""
   },
   "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/output/client/CreatureGeneratorScreen.java": {
@@ -2556,9 +2556,9 @@
     "semantic_hash": ""
   },
   "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/output/client/MobFarmClientRegistrationAdapter.java": {
-    "mtime": 1791142290.8721557,
-    "seen": 1792348724.6388237,
-    "ast_hash": "46e3841ee7bbb9e4fa208f2f5400c86f",
+    "mtime": 1792698251.9298565,
+    "seen": 1792698868.991223,
+    "ast_hash": "a4f2d732221a57d1704a303cac5d8feb",
     "semantic_hash": ""
   },
   "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/output/client/MobFarmScreen.java": {
@@ -4002,9 +4002,9 @@
     "semantic_hash": ""
   },
   "src/main/java/com/cosmocraft/trading_cells/platform/neoforge/registration/CreativeTabRegistration.java": {
-    "mtime": 1792169510.2268064,
-    "seen": 1792348724.6390684,
-    "ast_hash": "d900e7ee3f2b3c667835c613b749519e",
+    "mtime": 1792698228.4176145,
+    "seen": 1792698868.9915342,
+    "ast_hash": "65a0f6a6b98c3b537c22be75bad1426e",
     "semantic_hash": ""
   },
   "src/main/java/com/cosmocraft/trading_cells/platform/neoforge/registration/ExperienceFluidCapabilityRegistration.java": {
@@ -4740,15 +4740,15 @@
     "semantic_hash": ""
   },
   "src/main/resources/assets/trading_cells/lang/en_us.json": {
-    "mtime": 1791798503.99,
-    "seen": 1792348724.639197,
-    "ast_hash": "4fd42dfe18f31bb64f7aaf43340c4009",
+    "mtime": 1792698421.863534,
+    "seen": 1792698868.9916947,
+    "ast_hash": "1e4cfbdc19abd82241b4ea2348db77b8",
     "semantic_hash": ""
   },
   "src/main/resources/assets/trading_cells/lang/es_es.json": {
-    "mtime": 1791798501.214,
-    "seen": 1792348724.6391983,
-    "ast_hash": "fbec89e5b0db81ffa3f94ae4dd4eaad2",
+    "mtime": 1792698414.5755458,
+    "seen": 1792698868.9916956,
+    "ast_hash": "ff6ba6740d44cbbc9c07995cd6bbf8de",
     "semantic_hash": ""
   },
   "src/main/resources/assets/trading_cells/models/block/arcane_infuser.json": {
@@ -10038,9 +10038,9 @@
     "semantic_hash": ""
   },
   "src/main/resources/data/minecraft/tags/block/mineable/pickaxe.json": {
-    "mtime": 1791690501.8905697,
-    "seen": 1792348724.6401126,
-    "ast_hash": "906ec166bb38a684e8ea90e5e4e77885",
+    "mtime": 1792698487.9870653,
+    "seen": 1792698868.992835,
+    "ast_hash": "2cd5d6bcd4a4aa5afdaf5e0483fe78e8",
     "semantic_hash": ""
   },
   "src/main/resources/data/minecraft/tags/block/mineable/shovel.json": {
@@ -11568,9 +11568,9 @@
     "semantic_hash": ""
   },
   "tools/release/contracts-1.0.0.json": {
-    "mtime": 1791827133.694298,
-    "seen": 1792348724.6403735,
-    "ast_hash": "13cfa655d38fbfdc085a2fd95ad625b9",
+    "mtime": 1792698717.565367,
+    "seen": 1792698868.9931822,
+    "ast_hash": "021f400384c47b4df50dfdc84a507860",
     "semantic_hash": ""
   },
   "tools/release/record_release_evidence.py": {
@@ -13863,6 +13863,60 @@
     "mtime": 1792695623.5652602,
     "seen": 1792695652.363583,
     "ast_hash": "ec2dc0dc7bef63488889f34de2f5584d",
+    "semantic_hash": ""
+  },
+  "src/gameTest/java/com/cosmocraft/trading_cells/gametest/feature/mobfarm/CreatureDisplayPedestalGameTests.java": {
+    "mtime": 1792698597.1988573,
+    "seen": 1792698868.9908204,
+    "ast_hash": "2d543b59e279cc3eea98d48040ec7f85",
+    "semantic_hash": ""
+  },
+  "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/input/CreatureDisplayPedestalBlock.java": {
+    "mtime": 1792698485.8356078,
+    "seen": 1792698868.991151,
+    "ast_hash": "b16811ff6f83341177fd604cc0c5dd4f",
+    "semantic_hash": ""
+  },
+  "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/input/CreatureDisplayPedestalBlockEntity.java": {
+    "mtime": 1792698168.7878056,
+    "seen": 1792698868.9911523,
+    "ast_hash": "a5e44391c84a1e29f7a3d399d1c3e2e2",
+    "semantic_hash": ""
+  },
+  "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/output/client/CreatureDisplayPedestalRenderer.java": {
+    "mtime": 1792698170.9455876,
+    "seen": 1792698868.991212,
+    "ast_hash": "7e7df96496d865ab00bcc12364e04b1c",
+    "semantic_hash": ""
+  },
+  "src/main/resources/assets/trading_cells/blockstates/creature_display_pedestal.json": {
+    "mtime": 1792698308.57511,
+    "seen": 1792698868.9915607,
+    "ast_hash": "936df0164ec1a11aa53f5ca56b96f55a",
+    "semantic_hash": ""
+  },
+  "src/main/resources/assets/trading_cells/items/creature_display_pedestal.json": {
+    "mtime": 1792698311.4695325,
+    "seen": 1792698868.9916067,
+    "ast_hash": "0bb1939385d05ba9181bd1e86e32709b",
+    "semantic_hash": ""
+  },
+  "src/main/resources/assets/trading_cells/models/block/creature_display_pedestal.json": {
+    "mtime": 1792698301.47907,
+    "seen": 1792698868.9917037,
+    "ast_hash": "a9cb5fc7e2f387a6bff3a9b9e5c7285e",
+    "semantic_hash": ""
+  },
+  "src/main/resources/data/trading_cells/loot_table/blocks/creature_display_pedestal.json": {
+    "mtime": 1792698316.6054132,
+    "seen": 1792698868.9928598,
+    "ast_hash": "2aebf1abb9e16c710a7b543651d07d89",
+    "semantic_hash": ""
+  },
+  "src/main/resources/data/trading_cells/recipe/creature_display_pedestal.json": {
+    "mtime": 1792698680.2935336,
+    "seen": 1792698868.9929113,
+    "ast_hash": "a196ad2b8ba1cb022f23abad5bd4f90f",
     "semantic_hash": ""
   }
 }

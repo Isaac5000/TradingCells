@@ -13866,33 +13866,33 @@
     "semantic_hash": ""
   },
   "src/gameTest/java/com/cosmocraft/trading_cells/gametest/feature/mobfarm/CreatureDisplayPedestalGameTests.java": {
-    "mtime": 1792698597.1988573,
-    "seen": 1792698868.9908204,
-    "ast_hash": "2d543b59e279cc3eea98d48040ec7f85",
+    "mtime": 1792703187.1850376,
+    "seen": 1792703921.2063596,
+    "ast_hash": "5293bead81397923dcc3af00ee888303",
     "semantic_hash": ""
   },
   "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/input/CreatureDisplayPedestalBlock.java": {
-    "mtime": 1792698485.8356078,
-    "seen": 1792698868.991151,
-    "ast_hash": "b16811ff6f83341177fd604cc0c5dd4f",
+    "mtime": 1792700878.399361,
+    "seen": 1792703921.2066915,
+    "ast_hash": "bf2fcddf355a90ada786c31a68d02bb6",
     "semantic_hash": ""
   },
   "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/input/CreatureDisplayPedestalBlockEntity.java": {
-    "mtime": 1792698168.7878056,
-    "seen": 1792698868.9911523,
-    "ast_hash": "a5e44391c84a1e29f7a3d399d1c3e2e2",
+    "mtime": 1792700747.816979,
+    "seen": 1792703921.206693,
+    "ast_hash": "1d2a471a85e0742df7446f818232d429",
     "semantic_hash": ""
   },
   "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/output/client/CreatureDisplayPedestalRenderer.java": {
-    "mtime": 1792698170.9455876,
-    "seen": 1792698868.991212,
-    "ast_hash": "7e7df96496d865ab00bcc12364e04b1c",
+    "mtime": 1792703174.2742813,
+    "seen": 1792703921.2067537,
+    "ast_hash": "8c7f4e31e047da22e95eeb9045fc6204",
     "semantic_hash": ""
   },
   "src/main/resources/assets/trading_cells/blockstates/creature_display_pedestal.json": {
-    "mtime": 1792698308.57511,
-    "seen": 1792698868.9915607,
-    "ast_hash": "936df0164ec1a11aa53f5ca56b96f55a",
+    "mtime": 1792700760.9017167,
+    "seen": 1792703921.2070944,
+    "ast_hash": "93fef9dd361ca15e5d6eb43f81416c26",
     "semantic_hash": ""
   },
   "src/main/resources/assets/trading_cells/items/creature_display_pedestal.json": {
@@ -13902,9 +13902,9 @@
     "semantic_hash": ""
   },
   "src/main/resources/assets/trading_cells/models/block/creature_display_pedestal.json": {
-    "mtime": 1792698301.47907,
-    "seen": 1792698868.9917037,
-    "ast_hash": "a9cb5fc7e2f387a6bff3a9b9e5c7285e",
+    "mtime": 1792703649.5059175,
+    "seen": 1792703921.207237,
+    "ast_hash": "6eb86634b75e060b9d09ba4916cd38f8",
     "semantic_hash": ""
   },
   "src/main/resources/data/trading_cells/loot_table/blocks/creature_display_pedestal.json": {
@@ -13917,6 +13917,48 @@
     "mtime": 1792698680.2935336,
     "seen": 1792698868.9929113,
     "ast_hash": "a196ad2b8ba1cb022f23abad5bd4f90f",
+    "semantic_hash": ""
+  },
+  "src/main/java/com/cosmocraft/trading_cells/feature/mobfarm/adapters/output/CreatureDisplayOrientation.java": {
+    "mtime": 1792703188.117067,
+    "seen": 1792703921.2067513,
+    "ast_hash": "9f663d97a0a4b15b02327bc7a24cba95",
+    "semantic_hash": ""
+  },
+  "tools/generate_creature_display_pedestal_textures.py": {
+    "mtime": 1792703587.7723303,
+    "seen": 1792703921.208603,
+    "ast_hash": "45de66f760772a67c2c4510577cd7a99",
+    "semantic_hash": ""
+  },
+  "tools/test_creature_display_pedestal_geometry.py": {
+    "mtime": 1792703683.4901972,
+    "seen": 1792703921.20867,
+    "ast_hash": "4e878e8e78c0cd8f24098f1606c1d61e",
+    "semantic_hash": ""
+  },
+  "src/main/resources/assets/trading_cells/textures/block/display_pedestal/aged_metal.png": {
+    "mtime": 1792703691.5452197,
+    "seen": 1792703921.2087548,
+    "ast_hash": "a8c8d0bfd986a11a7cbcb1504cc0f502",
+    "semantic_hash": ""
+  },
+  "src/main/resources/assets/trading_cells/textures/block/display_pedestal/polished_darkstone.png": {
+    "mtime": 1792703691.5452197,
+    "seen": 1792703921.2087557,
+    "ast_hash": "9df7e7c99683c6f18aff9d4a1db4207d",
+    "semantic_hash": ""
+  },
+  "src/main/resources/assets/trading_cells/textures/block/display_pedestal/rune_top.png": {
+    "mtime": 1792703691.5462198,
+    "seen": 1792703921.208757,
+    "ast_hash": "186af74b32c7057c184d6cb80dd819b4",
+    "semantic_hash": ""
+  },
+  "src/main/resources/assets/trading_cells/textures/block/display_pedestal/violet_core.png": {
+    "mtime": 1792703691.5462198,
+    "seen": 1792703921.208758,
+    "ast_hash": "7041653eb268ee4726a2f1cbe20afb37",
     "semantic_hash": ""
   }
 }

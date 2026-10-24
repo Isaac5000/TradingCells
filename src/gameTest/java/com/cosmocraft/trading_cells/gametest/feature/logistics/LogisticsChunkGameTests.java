@@ -24,7 +24,7 @@ public final class LogisticsChunkGameTests {
         return List.of(new GameTestCase("logistics_real_chunk_unload_reload", 1200,
                 LogisticsChunkGameTests::reload),
                 new GameTestCase("logistics_unrelated_chunks_keep_topology", 80, LogisticsChunkGameTests::unrelatedChunks),
-                new GameTestCase("logistics_partial_chunk_split_reconnect", 1800, LogisticsChunkGameTests::split));
+                new GameTestCase("logistics_partial_chunk_split_reconnect", 3600, LogisticsChunkGameTests::split));
     }
 
     private static void unrelatedChunks(GameTestHelper helper) {
@@ -164,9 +164,21 @@ public final class LogisticsChunkGameTests {
         origin.setMode(Direction.WEST, PipeSideMode.EXTRACT);
         int[] stage = {0};
         long[] disconnectedAt = {0};
-        helper.runAtTickTime(1790, () -> helper.assertValueEqual(stage[0], 4,
-                "Partial chunk stage; source=" + source.countItem(Items.DIAMOND)
+        // A chunk force-load schedules work; neither unloading nor loading has
+        // a fixed completion tick. Keep an explicit watchdog for stalled stages,
+        // rather than treating 1790 as the expected time for every run.
+        helper.runAtTickTime(3500, () -> helper.assertTrue(stage[0] == 4,
+                "Partial chunk split/reconnect timed out at stage " + stage[0]
+                        + "; source=" + source.countItem(Items.DIAMOND)
                         + ", target=" + target.countItem(Items.DIAMOND)
+                        + ", sourceRemoved=" + source.isRemoved()
+                        + ", originRemoved=" + origin.isRemoved()
+                        + ", originFace=" + origin.face(Direction.WEST).mode()
+                        + ", registeredPipes=" + LogisticsNetworkManager.get(level).registeredPipeCount()
+                        + ", routeReady=" + LogisticsNetworkManager.get(level).topologyReady(origin.getBlockPos(), com.cosmocraft.trading_cells.feature.logistics.domain.model.LogisticsResourceType.ITEM)
+                        + ", routeEndpoints=" + LogisticsNetworkManager.get(level).endpointsFrom(
+                                origin.getBlockPos(), com.cosmocraft.trading_cells.feature.logistics.domain.model.LogisticsResourceType.ITEM,
+                                PipeSideMode.INSERT, null).size()
                         + ", middleRemoved=" + middle.isRemoved()
                         + ", middleLoaded=" + (level.getChunkSource().getChunkNow(chunkX + 4, chunkZ) != null)));
         helper.onEachTick(() -> {
@@ -190,6 +202,8 @@ public final class LogisticsChunkGameTests {
                 }
                 stage[0] = 3;
             } else if (stage[0] == 3 && target.countItem(Items.DIAMOND) == 8) {
+                // Verify the route actually resumes; no manual pipe refresh is
+                // permitted here, so a real reconnect failure stays visible.
                 helper.assertValueEqual(source.countItem(Items.DIAMOND), 0, "Reconnected network consumes source once");
                 for (int offset = 0; offset <= 128; offset++) {
                     level.setBlockAndUpdate(sourcePos.east(offset), Blocks.AIR.defaultBlockState());

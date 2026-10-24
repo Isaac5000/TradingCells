@@ -52,6 +52,8 @@ public final class MobSimulationGameTests {
                 new GameTestCase("mob_simulation_save_without_chunk_loads", 40, MobSimulationGameTests::saveWithoutChunkLoads),
                 new GameTestCase("mob_simulation_pending_loot_reload", 40, MobSimulationGameTests::pending),
                 new GameTestCase("mob_simulation_ten_xp_per_entity", 40, MobSimulationGameTests::experienceCap),
+                new GameTestCase("mob_simulation_quantity_sword_durability", 40,
+                        MobSimulationGameTests::quantitySwordDurability),
                 new GameTestCase("mob_simulation_filters_and_automation", 40, MobSimulationGameTests::automation),
                 new GameTestCase("mob_simulation_whitelist_persistence", 40, MobSimulationGameTests::whitelist));
     }
@@ -59,10 +61,14 @@ public final class MobSimulationGameTests {
     private static void blockItemNames(GameTestHelper helper) {
         for (String material : List.of("copper", "iron", "gold", "diamond", "netherite")) {
             var oldId = Identifier.fromNamespaceAndPath("trading_cells", "mob_farm_capacity_" + material + "_upgrade");
-            var newId = Identifier.fromNamespaceAndPath("trading_cells", "capacity_" + material + "_upgrade");
+            var previousId = Identifier.fromNamespaceAndPath("trading_cells", "capacity_" + material + "_upgrade");
+            var newId = Identifier.fromNamespaceAndPath("trading_cells", "quantity_" + material + "_upgrade");
             var item = BuiltInRegistries.ITEM.getOptional(newId).orElseThrow();
-            helper.assertTrue(BuiltInRegistries.ITEM.getOptional(oldId).orElseThrow() == item, "Legacy capacity ID resolves to the same item");
-            helper.assertValueEqual(BuiltInRegistries.ITEM.getKey(item), newId, "Capacity uses the new canonical ID");
+            helper.assertTrue(BuiltInRegistries.ITEM.getOptional(oldId).orElseThrow() == item,
+                    "Original mob farm capacity ID still resolves to the quantity item");
+            helper.assertTrue(BuiltInRegistries.ITEM.getOptional(previousId).orElseThrow() == item,
+                    "Previous capacity ID still resolves to the quantity item");
+            helper.assertValueEqual(BuiltInRegistries.ITEM.getKey(item), newId, "Quantity uses the canonical registry ID");
         }
         for (var item : List.of(MobFarmRegistrationAdapter.ITEM.get(), MobFarmRegistrationAdapter.WORKBENCH_ITEM.get())) {
             helper.assertValueEqual(item.getDefaultInstance().getHoverName(), item.getBlock().getName(),
@@ -539,6 +545,48 @@ public final class MobSimulationGameTests {
         BlockEntityStateFixtures.setInt(helper, farm, "StoredExperience", Integer.MAX_VALUE - 5);
         finishCycle(helper, farm);
         helper.assertValueEqual(farm.storedExperience(), Integer.MAX_VALUE, "Batch XP saturates without overflow");
+        helper.succeed();
+    }
+
+    private static void quantitySwordDurability(GameTestHelper helper) {
+        for (int tier : new int[]{0, 1, 2, 3, 4, 5}) {
+            var farm = farm(helper);
+            if (tier > 0) {
+                farm.setItem(MobFarmBlockEntity.CAPACITY_SLOT,
+                        MobFarmRegistrationAdapter.UPGRADES.get(4 + tier).get().getDefaultInstance());
+            }
+            var sword = new ItemStack(Items.IRON_SWORD);
+            farm.setItem(MobFarmBlockEntity.SWORD_SLOT, sword);
+            finishCycle(helper, farm);
+            int killsPerCycle = 1 << tier;
+            helper.assertValueEqual(farm.simulatedKills(), killsPerCycle, "Quantity tier controls simulated kills");
+            helper.assertValueEqual(farm.getItem(MobFarmBlockEntity.SWORD_SLOT).getDamageValue(),
+                    killsPerCycle, "Sword pays one durability per simulated kill at tier " + tier);
+        }
+
+        var breakingFarm = farm(helper);
+        breakingFarm.setItem(MobFarmBlockEntity.CAPACITY_SLOT,
+                MobFarmRegistrationAdapter.UPGRADES.get(6).get().getDefaultInstance());
+        var fragile = new ItemStack(Items.IRON_SWORD);
+        fragile.setDamageValue(fragile.getMaxDamage() - 1);
+        breakingFarm.setItem(MobFarmBlockEntity.SWORD_SLOT, fragile);
+        finishCycle(helper, breakingFarm);
+        helper.assertTrue(breakingFarm.getItem(MobFarmBlockEntity.SWORD_SLOT).isEmpty(),
+                "The last available durability point breaks a sword, even when quantity exceeds it");
+
+        var protectedFarm = farm(helper);
+        protectedFarm.setItem(MobFarmBlockEntity.CAPACITY_SLOT,
+                MobFarmRegistrationAdapter.UPGRADES.get(9).get().getDefaultInstance());
+        var protectedSword = new ItemStack(Items.IRON_SWORD);
+        protectedSword.enchant(helper.getLevel().registryAccess()
+                .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(com.cosmocraft.trading_cells.feature.combat.adapters.api.CombatEnchantments.WARRIOR_TOUCH), 1);
+        protectedSword.setDamageValue(5);
+        protectedFarm.setItem(MobFarmBlockEntity.SWORD_SLOT, protectedSword);
+        finishCycle(helper, protectedFarm);
+        helper.assertValueEqual(protectedFarm.simulatedKills(), 32, "Maximum quantity remains 32");
+        helper.assertValueEqual(protectedFarm.getItem(MobFarmBlockEntity.SWORD_SLOT).getDamageValue(), 5,
+                "Warrior Touch prevents durability loss even when 32 kills are simulated");
         helper.succeed();
     }
 

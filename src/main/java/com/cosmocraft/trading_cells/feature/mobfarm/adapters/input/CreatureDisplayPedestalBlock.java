@@ -123,6 +123,20 @@ public final class CreatureDisplayPedestalBlock extends BaseEntityBlock {
     }
 
     @Override
+    public @NonNull BlockState playerWillDestroy(
+            @NonNull Level level, @NonNull BlockPos pos,
+            @NonNull BlockState state, @NonNull Player player) {
+        // Creative breaking bypasses loot tables. Drop the displayed model
+        // before the block entity is removed; clear it to prevent duplicates.
+        if (!level.isClientSide() && player.isCreative()
+                && level.getBlockEntity(pos) instanceof CreatureDisplayPedestalBlockEntity stand
+                && stand.hasModel()) {
+            Block.popResource(level, pos, stand.removeModel());
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    @Override
     protected @NonNull List<ItemStack> getDrops(@NonNull BlockState state, LootParams.@NonNull Builder params) {
         var drops = new ArrayList<>(super.getDrops(state, params));
         if (params.getOptionalParameter(LootContextParams.BLOCK_ENTITY)

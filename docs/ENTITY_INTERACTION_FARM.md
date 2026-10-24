@@ -11,12 +11,12 @@ No modifica loot, XP, armas, desgaste ni multiplicadores de la granja anterior.
   velocidad `4`, salidas `5-31` (nueve columnas, tres filas), capacidad `32`.
 - Trabajador, modelo, herramienta y mejora: una unidad. ITEM: pila normal.
 - Ciclo: `max(20, ceil(1200 / 2^nivel))`, niveles `0-5`:
-  `1200/600/300/150/75/38` ticks. Capacidad independiente: `1/2/4/8/16/32`
+  `1200/600/300/150/75/38` ticks. Cantidad independiente: `1/2/4/8/16/32`
   operaciones reales por canal y ciclo, sin multiplicar gratuitamente productos.
 - Sin bonificacion de armas, XP generada ni XP operativa.
 - Pausa manual conserva progreso. Sin control de redstone ni salida para comparadores.
   Configuraciones antiguas de redstone se ignoran al cargar, sin perder inventario.
-- Caras relativas al frontal: arriba trabajador/modelo/velocidad/capacidad, izquierda
+- Caras relativas al frontal: arriba trabajador/modelo/velocidad/cantidad, izquierda
   ITEM, derecha TOOL. Salidas extraibles desde cualquier cara; entradas nunca
   extraibles automaticamente. Tolvas y capabilities comparten las reglas.
 
@@ -199,9 +199,9 @@ de cultivos y salidas. Resueltos con el cambio conjunto: 135/135 GameTests y
 indices y las nueve nuevas se anaden al final. Cierre visual y evidencia actual:
 `docs/FIXES_20260928.md`.
 
-## Capacidad y correcciones posteriores (2026-09-30)
+## Cantidad y correcciones posteriores (2026-09-30)
 
-Slot de capacidad `32` anadido sin desplazar las 27 salidas existentes. Cinco
+Slot de cantidad `32` anadido sin desplazar las 27 salidas existentes. Cinco
 tiers con coste real por operacion, Mooshrooms renovables de ambos colores y
 Toque de Granjero para herramientas de interacciones comprobados. Brazo con
 textura estatica, cartel frontal eliminado y menu de 256x228 sin etiquetas
