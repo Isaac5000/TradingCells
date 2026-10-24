@@ -273,7 +273,9 @@ public final class MobFarmBlockEntity extends SimulationInventoryBlockEntity imp
         }
         storedExperience = (int) Math.min(Integer.MAX_VALUE, storedExperience + cycleExperience);
         if (!weapon.warriorTouch()) {
-            items.get(SWORD_SLOT).hurtAndBreak(1, server, (LivingEntity) null, ignored -> items.set(SWORD_SLOT, ItemStack.EMPTY));
+            // Quantity upgrades simulate multiple kills; charge one durability per kill.
+            // Warrior Touch is the only exception. Vanilla Unbreaking still applies naturally.
+            items.get(SWORD_SLOT).hurtAndBreak(kills, server, (LivingEntity) null, ignored -> items.set(SWORD_SLOT, ItemStack.EMPTY));
             inputsDirty = true;
         }
         cycleTicks = 0;

@@ -755,6 +755,17 @@ tasks.register('testRecipeResources', Exec) {
     inputs.dir('src/main/resources/data/trading_cells/recipe')
 }
 
+tasks.register('testCreatureDisplayPedestalGeometry', Exec) {
+    group = 'verification'
+    description = 'Checks pedestal geometry, shading and dropped-block dimensions.'
+    commandLine pythonExecutable, '-B', '-m', 'unittest', 'discover', '-s', 'tools',
+            '-p', 'test_creature_display_pedestal_geometry.py'
+    inputs.files('tools/test_creature_display_pedestal_geometry.py',
+            'tools/generate_creature_display_pedestal_textures.py')
+    inputs.file('src/main/resources/assets/trading_cells/models/block/creature_display_pedestal.json')
+    inputs.dir('src/main/resources/assets/trading_cells/textures/block/display_pedestal')
+}
+
 tasks.register('checkReleaseContracts', Exec) {
     group = 'verification'
     description = 'Verifies the compatibility identifiers frozen for Trading Cells 1.0.0.'
@@ -863,6 +874,8 @@ tasks.named('check').configure {
     dependsOn tasks.named('verifyDomainRules')
     dependsOn tasks.named('checkProjectResources')
     dependsOn tasks.named('testRecipeResources')
+    dependsOn tasks.named('testLogisticsResourceValidation')
+    dependsOn tasks.named('testCreatureDisplayPedestalGeometry')
     dependsOn tasks.named('checkReleaseContracts')
     dependsOn tasks.named('checkPortability')
     dependsOn tasks.named('checkPublishedJarContents')

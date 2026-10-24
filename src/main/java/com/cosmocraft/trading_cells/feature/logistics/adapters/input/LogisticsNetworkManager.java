@@ -223,6 +223,14 @@ public final class LogisticsNetworkManager {
     private RouteScan route(BlockPos origin, LogisticsResourceType type) {
         RouteKey key = new RouteKey(origin.asLong(), Direction.DOWN, type, null);
         var scan = routes.computeIfAbsent(key, ignored -> new RouteScan(topologyRevision, origin));
+        // A chunk can become available after a scan completed without its pipes.
+        // Revisit the topology only when an actual missing pipe has reappeared,
+        // rather than polling or invalidating the network on a fixed timer.
+        if (scan.complete && scan.pendingPipeNeighbors.stream()
+                .anyMatch(position -> loadedPipe(BlockPos.of(position)) != null)) {
+            invalidateTopology();
+            scan = routes.computeIfAbsent(key, ignored -> new RouteScan(topologyRevision, origin));
+        }
         scan.transportRequested = true;
         return scan;
     }
@@ -746,7 +754,20 @@ public final class LogisticsNetworkManager {
             }
             for (Direction direction : Direction.values()) {
                 BlockPos neighborPos = node.pos().relative(direction);
+                // Avoid completing a permanently truncated route while adjacent
+                // chunks or their block entities are still being restored.
+                var neighborChunk = level.getChunkSource().getChunkNow(
+                        neighborPos.getX() >> 4, neighborPos.getZ() >> 4);
+                if (neighborChunk == null) {
+                    scan.pendingPipeNeighbors.add(neighborPos.asLong());
+                    continue;
+                }
                 LogisticsPipeBlockEntity neighborPipe = loadedPipe(neighborPos);
+                if (neighborPipe == null
+                        && neighborChunk.getBlockState(neighborPos).getBlock() instanceof LogisticsPipeBlock) {
+                    scan.pendingPipeNeighbors.add(neighborPos.asLong());
+                    continue;
+                }
                 if (neighborPipe != null) {
                     if (connected(pipe, neighborPipe, direction, type)
                             && scan.visited.add(neighborPos.asLong())) {
@@ -1205,6 +1226,7 @@ public final class LogisticsNetworkManager {
         private final long origin;
         private final ArrayDeque<Node> pending = new ArrayDeque<>();
         private final Set<Long> visited = new HashSet<>();
+        private final Set<Long> pendingPipeNeighbors = new HashSet<>();
         private final List<Destination> destinations = new ArrayList<>();
         private boolean complete;
         private boolean transportRequested;

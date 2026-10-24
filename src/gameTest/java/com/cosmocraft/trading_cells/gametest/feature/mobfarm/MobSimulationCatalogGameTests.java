@@ -24,29 +24,47 @@ public final class MobSimulationCatalogGameTests {
         var tab = CreativeTabRegistration.FARMS_TAB.get();
         helper.assertTrue(tab.getIconItem().is(MobFarmRegistrationAdapter.ITEM.get()), "General farm is the tab icon");
         var items = tab.getDisplayItems().stream().map(stack -> stack.getItem()).toList();
-        helper.assertValueEqual(items.size(), 12, "Two farms, three essence machines, display pedestal, syringe, empty vial and four bases");
-        helper.assertTrue(items.contains(MobFarmRegistrationAdapter.DISPLAY_PEDESTAL_ITEM.get()), "Display pedestal available in creative");
-        helper.assertTrue(items.contains(MobFarmRegistrationAdapter.CREATURE_GENERATOR_ITEM.get()), "Creature generator available in creative");
-        helper.assertTrue(items.contains(MobFarmRegistrationAdapter.ITEM.get()), "General farm available in creative");
-        helper.assertTrue(items.contains(MobFarmRegistrationAdapter.INTERACTION_ITEM.get()), "Interaction farm available in creative");
-        helper.assertTrue(items.contains(MobFarmRegistrationAdapter.WORKBENCH_ITEM.get()), "Workbench available in creative");
-        helper.assertTrue(items.contains(MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get()), "Extractor available in creative");
+        // Require all supported farm items, not an exact tab length: future
+        // machines may be added without invalidating existing availability.
+        var requiredFarmItems = new java.util.ArrayList<net.minecraft.world.item.Item>(List.of(
+                MobFarmRegistrationAdapter.ITEM.get(),
+                MobFarmRegistrationAdapter.INTERACTION_ITEM.get(),
+                MobFarmRegistrationAdapter.WORKBENCH_ITEM.get(),
+                MobFarmRegistrationAdapter.CREATURE_GENERATOR_ITEM.get(),
+                MobFarmRegistrationAdapter.STABILIZER_ITEM.get(),
+                MobFarmRegistrationAdapter.DISPLAY_PEDESTAL_ITEM.get(),
+                MobFarmRegistrationAdapter.ESSENCE_EXTRACTOR.get(),
+                MobFarmRegistrationAdapter.EMPTY_VIAL.get()));
+        MobFarmRegistrationAdapter.MODEL_BASES.forEach(base -> requiredFarmItems.add(base.get()));
+        for (var item : requiredFarmItems) {
+            helper.assertTrue(items.contains(item), "Expected farm item must be available in its creative tab");
+            helper.assertValueEqual(java.util.Collections.frequency(items, item), 1,
+                    "Farm item must appear once");
+        }
         var utilities = CreativeTabRegistration.ITEMS_TAB.get().getDisplayItems().stream().map(stack -> stack.getItem()).toList();
         var expectedUpgrades = new java.util.ArrayList<String>();
         for (String family : List.of("%s_pipe_upgrade", "piglin_barter_%s_upgrade", "quarry_%s_upgrade",
-                "speed_%s_upgrade", "capacity_%s_upgrade")) {
+                "speed_%s_upgrade", "quantity_%s_upgrade")) {
             for (String material : List.of("copper", "iron", "gold", "diamond", "netherite")) {
                 expectedUpgrades.add("trading_cells:" + family.formatted(material));
             }
         }
-        var finalItems = utilities.subList(utilities.size() - expectedUpgrades.size(), utilities.size()).stream()
+        var utilityIds = utilities.stream()
                 .map(item -> BuiltInRegistries.ITEM.getKey(item).toString()).toList();
-        helper.assertValueEqual(finalItems, expectedUpgrades, "Items tab ends with pipe, barter, quarry, speed and capacity upgrades in tier order");
+        int previousIndex = -1;
+        for (String id : expectedUpgrades) {
+            int index = utilityIds.indexOf(id);
+            helper.assertTrue(index > previousIndex,
+                    "Upgrades are present in tier/family order, even if other items are added");
+            helper.assertValueEqual(java.util.Collections.frequency(utilityIds, id), 1,
+                    "Upgrade must appear once in the creative tab");
+            previousIndex = index;
+        }
         for (int tier = 0; tier < 5; tier++) {
             var speed = MobFarmRegistrationAdapter.UPGRADES.get(tier).get();
             helper.assertTrue(utilities.contains(speed) && !items.contains(speed), "Speed upgrades only in Items tab");
             var capacity = MobFarmRegistrationAdapter.UPGRADES.get(5 + tier).get();
-            helper.assertTrue(utilities.contains(capacity) && !items.contains(capacity), "Capacity upgrades only in Items tab");
+            helper.assertTrue(utilities.contains(capacity) && !items.contains(capacity), "Quantity upgrades only in Items tab");
         }
         helper.succeed();
     }
@@ -56,6 +74,14 @@ public final class MobSimulationCatalogGameTests {
         for (String name : List.of("mob_farm_infusion", "essence_workbench", "essence_extractor")) {
             helper.assertTrue(manager.byKey(ResourceKey.create(Registries.RECIPE,
                     Identifier.fromNamespaceAndPath("trading_cells", name))).isPresent(), "Replacement recipe loaded: " + name);
+        }
+        for (String material : List.of("copper", "iron", "gold", "diamond", "netherite")) {
+            var canonical = Identifier.fromNamespaceAndPath("trading_cells", "quantity_" + material + "_upgrade");
+            var previous = Identifier.fromNamespaceAndPath("trading_cells", "capacity_" + material + "_upgrade");
+            helper.assertTrue(manager.byKey(ResourceKey.create(Registries.RECIPE, canonical)).isPresent(),
+                    "Quantity upgrade recipe uses the canonical identifier");
+            helper.assertTrue(manager.byKey(ResourceKey.create(Registries.RECIPE, previous)).isEmpty(),
+                    "Renamed upgrade recipe no longer uses the previous identifier");
         }
         helper.succeed();
     }

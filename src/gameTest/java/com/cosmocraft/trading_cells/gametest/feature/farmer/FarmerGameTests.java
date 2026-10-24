@@ -34,6 +34,7 @@ public final class FarmerGameTests {
             new GameTestCase("farmer_partial_output_capacity", 20, FarmerGameTests::farmerPartialOutputCapacity),
             new GameTestCase("farmer_fortune_matrix", 20, FarmerGameTests::farmerFortuneMatrix),
             new GameTestCase("farmer_capacity_and_enchantments", 20, FarmerGameTests::farmerCapacityAndEnchantments),
+            new GameTestCase("farmer_quantity_touch_prevents_wear", 20, FarmerGameTests::quantityTouch),
             new GameTestCase("farmer_requires_hoe_and_stops_on_break", 20, FarmerGameTests::requiresHoe)
         );
     }
@@ -237,6 +238,8 @@ public final class FarmerGameTests {
                     if (stack.is(piglin ? Items.CRIMSON_STEM : Items.WHEAT)) { count += stack.getCount(); }
                 }
                 helper.assertValueEqual(count, (piglin ? 14 : 11) * (1 << tier), "Capacity multiplier preserves Fortune");
+                helper.assertValueEqual(farmer.getItem(FarmerBlockEntity.HOE_SLOT).getDamageValue(),
+                        1 << tier, "Every quantity harvest consumes one hoe durability point");
                 BlockEntityStateFixtures.clearIndexedSlots(helper, farmer, "Slot",
                         FarmerBlockEntity.FIRST_OUTPUT_SLOT, FarmerBlockEntity.OUTPUT_SLOT_COUNT);
                 farmer.setItem(FarmerBlockEntity.CROP_SLOT, new ItemStack(piglin ? Items.DEAD_FIRE_CORAL : Items.DEAD_BUSH));
@@ -253,6 +256,34 @@ public final class FarmerGameTests {
                         farmer.getItem(FarmerBlockEntity.CAPACITY_SLOT), net.minecraft.core.Direction.DOWN),
                         "Capacity is not an automated output");
             }
+        }
+        helper.succeed();
+    }
+
+    private static void quantityTouch(GameTestHelper helper) {
+        var enchantment = helper.getLevel().registryAccess()
+                .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(com.cosmocraft.trading_cells.platform.neoforge.machine.MachineToolEnchantments.FARMER_TOUCH);
+        for (boolean piglin : new boolean[]{false, true}) {
+            helper.setBlock(GameTestFixtures.TEST_POS, Blocks.AIR);
+            helper.setBlock(GameTestFixtures.TEST_POS, piglin ? FarmerRegistrationAdapter.PIGLIN_FARMER_BLOCK.get()
+                    : FarmerRegistrationAdapter.FARMER_BLOCK.get());
+            var farmer = helper.getBlockEntity(GameTestFixtures.TEST_POS, FarmerBlockEntity.class);
+            farmer.setItem(FarmerBlockEntity.WORKER_SLOT, piglin ? GameTestFixtures.adultPiglinCapture(helper)
+                    : GameTestFixtures.adultVillagerCapture(helper));
+            farmer.setItem(FarmerBlockEntity.CROP_SLOT, new ItemStack(piglin ? Items.CRIMSON_FUNGUS : Items.WHEAT_SEEDS));
+            var hoe = new ItemStack(Items.DIAMOND_HOE);
+            hoe.enchant(enchantment, 1);
+            hoe.setDamageValue(hoe.getMaxDamage() - 1);
+            farmer.setItem(FarmerBlockEntity.HOE_SLOT, hoe);
+            farmer.setItem(FarmerBlockEntity.CAPACITY_SLOT,
+                    com.cosmocraft.trading_cells.feature.mobfarm.adapters.output.MobFarmRegistrationAdapter.UPGRADES
+                            .get(9).get().getDefaultInstance());
+            completeFarmerCycle(farmer);
+            helper.assertTrue(ItemStack.matches(hoe, farmer.getItem(FarmerBlockEntity.HOE_SLOT)),
+                    "Farmer Touch preserves the hoe through 32 harvests");
+            helper.assertFalse(farmer.getItem(FarmerBlockEntity.FIRST_OUTPUT_SLOT).isEmpty(),
+                    "Protected quantity harvests still generate crops");
         }
         helper.succeed();
     }

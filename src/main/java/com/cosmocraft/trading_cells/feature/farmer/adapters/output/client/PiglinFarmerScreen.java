@@ -155,7 +155,7 @@ public final class PiglinFarmerScreen extends MachineContainerScreen<FarmerMenu>
         drawInputLabel(graphics, "gui.trading_cells.input.hoe", INPUT_ROW_Y[1]);
         drawInputLabel(graphics, "gui.trading_cells.input.crop", INPUT_ROW_Y[2]);
         drawInputLabel(graphics, "gui.trading_cells.interaction.speed", INPUT_ROW_Y[3]);
-        drawInputLabel(graphics, "gui.trading_cells.interaction.capacity", 169);
+        drawInputLabel(graphics, "gui.trading_cells.interaction.quantity", 169);
     }
 
     private void drawInputLabel(GuiGraphicsExtractor graphics, String key, int rowY) {

@@ -11,6 +11,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -29,12 +33,54 @@ public final class CreatureDisplayPedestalGameTests {
                 new GameTestCase("creature_display_pedestal_rejects_other_items", 40,
                         CreatureDisplayPedestalGameTests::rejectsOtherItems),
                 new GameTestCase("creature_display_pedestal_cardinal_orientation", 40,
-                        CreatureDisplayPedestalGameTests::cardinalOrientation));
+                        CreatureDisplayPedestalGameTests::cardinalOrientation),
+                new GameTestCase("creature_display_pedestal_creative_break_drop", 40,
+                        CreatureDisplayPedestalGameTests::creativeBreakDrop),
+                new GameTestCase("creature_display_pedestal_survival_loot", 40,
+                        CreatureDisplayPedestalGameTests::survivalLoot));
     }
 
     private static CreatureDisplayPedestalBlockEntity pedestal(GameTestHelper helper) {
         helper.setBlock(POS, MobFarmRegistrationAdapter.DISPLAY_PEDESTAL.get());
         return helper.getBlockEntity(POS, CreatureDisplayPedestalBlockEntity.class);
+    }
+
+    private static void creativeBreakDrop(GameTestHelper helper) {
+        var stand = pedestal(helper);
+        ItemStack model = EntityEssenceData.moduleFor(helper.getLevel(),
+                Identifier.withDefaultNamespace("cow"));
+        helper.assertTrue(stand.insert(model), "Pedestal accepts a creature model");
+        var player = MobSimulationGameTests.connectedPlayer(helper);
+        player.setGameMode(GameType.CREATIVE);
+        BlockPos pos = stand.getBlockPos();
+        player.setPos(pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5);
+
+        helper.assertTrue(player.gameMode.destroyBlock(pos), "Creative player breaks the pedestal");
+        helper.assertTrue(helper.getLevel().getBlockState(pos).isAir(), "Pedestal has been removed");
+        helper.assertTrue(stand.model().isEmpty(), "Block entity is cleared after returning its model");
+
+        var dropped = helper.getLevel().getEntitiesOfClass(
+                ItemEntity.class, new AABB(pos).inflate(2),
+                entity -> entity.getItem().is(MobFarmRegistrationAdapter.ENTITY_MODULE.get()));
+        helper.assertValueEqual(dropped.size(), 1, "Creative destruction drops exactly one model");
+        helper.assertTrue(ItemStack.isSameItemSameComponents(model, dropped.getFirst().getItem()),
+                "Dropped model preserves entity data");
+        helper.succeed();
+    }
+
+    private static void survivalLoot(GameTestHelper helper) {
+        var stand = pedestal(helper);
+        ItemStack model = EntityEssenceData.moduleFor(helper.getLevel(),
+                Identifier.withDefaultNamespace("cow"));
+        helper.assertTrue(stand.insert(model), "Pedestal stores a model");
+        var drops = Block.getDrops(stand.getBlockState(), helper.getLevel(), stand.getBlockPos(),
+                stand, null, ItemStack.EMPTY);
+        helper.assertValueEqual(
+                drops.stream().filter(item -> item.is(MobFarmRegistrationAdapter.ENTITY_MODULE.get())).count(),
+                1L, "Survival loot contains exactly one creature model");
+        helper.assertTrue(drops.stream().anyMatch(item -> ItemStack.isSameItemSameComponents(model, item)),
+                "Survival drop preserves entity data");
+        helper.succeed();
     }
 
     private static void cardinalOrientation(GameTestHelper helper) {

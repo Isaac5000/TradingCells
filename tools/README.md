@@ -11,16 +11,19 @@ son Python 3.11+ portable y resuelven rutas desde `__file__` o argumentos.
 | `generate_machine_gui.py --check` | `checkMachineGuiTextures` |
 | `generate_villager_trade_gui.py --check` | `checkVillagerTradeGuiTextures` |
 | `generate_logistics_resources.py --check` | `checkLogisticsResources`; incluye `verify_pipe_models.py` |
-| `test_logistics_resources.py` | `testLogisticsResourceValidation`; regresiones de comparacion PNG, integrada en `checkLogisticsResources` |
+| `test_logistics_resources.py` | `testLogisticsResourceValidation`; regresiones de comparacion PNG, integrada en `check` y `checkLogisticsResources` |
 | `generate_family_upgrades.py --check` | `checkUpgradeFamilyTextures`; veinticinco mejoras con marcos comunes y dos terminales, integrada en `checkLogisticsResources` |
 | `validate_project_resources.py` | `checkProjectResources` |
 | `test_recipe_resources.py` | `testRecipeResources`; recetas y registro vanilla, requiere `createMinecraftArtifacts` con fuentes |
+| `test_creature_display_pedestal_geometry.py` | `testCreatureDisplayPedestalGeometry`; volumen, color y tamano relativo del objeto del pedestal; integrado en `check` |
 | `release/verify_release_contracts.py` | `checkReleaseContracts` |
 | `release/record_release_evidence.py` | `recordReleaseEvidence` |
 
 ## Antes de subir a GitHub
 
-Ejecutar `./gradlew clean build` (`.\gradlew.bat` en Windows). `releaseCheck`
+Ejecutar `./gradlew clean build` (`.\gradlew.bat` en Windows). `check` incluye las
+pruebas Python de recetas, texturas logisticas y geometria del pedestal, pero no
+lanza Minecraft. `releaseCheck`
 queda reservado para una publicación y añade los GameTests y la comprobación del
 artefacto único.
 La subida de Git y las comprobaciones de GitHub Actions son operaciones distintas:

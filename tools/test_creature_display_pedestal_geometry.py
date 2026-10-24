@@ -53,8 +53,23 @@ class CreatureDisplayPedestalGeometryTests(unittest.TestCase):
                         {face["texture"] for face in element["faces"].values()}, {"#trim"}
                     )
 
-    def test_drop_scale_preserved(self) -> None:
-        self.assertEqual(self.model["display"]["ground"]["scale"], [0.5, 0.5, 0.5])
+    def test_drop_footprint_matches_a_normal_block(self) -> None:
+        # A normal full-cube block displayed on the ground occupies 8 model
+        # units (16 voxels at the standard 0.5 ground transform). The pedestal
+        # has inset geometry, so compare rendered extents rather than a
+        # literal transformation value that would fail after a geometry edit.
+        ground = self.model["display"]["ground"]
+        scale = ground["scale"]
+        self.assertEqual(len(scale), 3)
+        self.assertEqual(scale, [scale[0]] * 3, "Do not distort the dropped pedestal")
+        normal_block_span = 16 * 0.5
+        for axis in range(3):
+            minimum = min(element["from"][axis] for element in self.model["elements"])
+            maximum = max(element["to"][axis] for element in self.model["elements"])
+            rendered_span = (maximum - minimum) * scale[axis]
+            with self.subTest(axis=axis):
+                self.assertGreaterEqual(rendered_span, normal_block_span * 0.75)
+                self.assertLessEqual(rendered_span, normal_block_span * 1.05)
 
 
 if __name__ == "__main__":
