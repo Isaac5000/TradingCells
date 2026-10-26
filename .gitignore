@@ -70,3 +70,9 @@ replay_pid*
 *.bak
 *.swp
 *~
+
+### Skills ###
+.agents/skills/
+.codex/skills/
+.claude/skills/
+.github/skills/
