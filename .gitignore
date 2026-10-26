@@ -76,3 +76,7 @@ replay_pid*
 .codex/skills/
 .claude/skills/
 .github/skills/
+
+# Archivos generados por Graphify
+graphify-out/
+**/graphify-out/
